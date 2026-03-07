@@ -48,9 +48,12 @@ const EventCard = ({ event, index }: { event: EventWithDetails; index: number })
               </span>
             </div>
             <div className="flex items-center justify-between mt-2">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground font-body">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-body">
                 <Users className="h-3 w-3" />
-                {event.spots_taken}/{event.spots_total}
+                <span>{event.spots_taken} / {event.spots_total} joined</span>
+                <div className="w-12 h-1.5 rounded-full bg-muted ml-1">
+                  <div className="h-full rounded-full bg-secondary transition-all" style={{ width: `${Math.min(100, (event.spots_taken / event.spots_total) * 100)}%` }} />
+                </div>
               </div>
               <span className="font-body font-bold text-sm text-foreground">
                 {Number(event.price) === 0 ? "Free" : `€${event.price}`}
