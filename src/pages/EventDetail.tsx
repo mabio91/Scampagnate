@@ -266,8 +266,22 @@ const EventDetail = () => {
           )}
         </motion.div>
 
+        {/* Organizer */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
+          <h3 className="font-display text-lg font-bold text-foreground mb-3">Organizer</h3>
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
+              {event.organizer_name?.[0] || "O"}
+            </div>
+            <div>
+              <p className="text-sm font-body font-semibold text-foreground">{event.organizer_name}</p>
+              <p className="text-xs font-body text-muted-foreground">Event Organizer</p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Price Info */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="py-4">
           {event.payment_type === "deposit" && event.deposit && (
             <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 mb-4">
               <p className="text-sm font-body font-semibold text-foreground">Deposit payment</p>
