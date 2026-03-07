@@ -314,7 +314,7 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground">
-              No past events yet. Join your first event! 🎉
+              No past events yet. Join your first event!
             </p>
           )}
         </div>
