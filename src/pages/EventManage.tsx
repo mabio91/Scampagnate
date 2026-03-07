@@ -95,6 +95,17 @@ const EventManage = () => {
   const checkedIn = registered.filter((r) => r.checked_in);
   const reservedSpots = (event as any)?.reserved_spots || 0;
 
+  const getParticipantName = (reg: any) => {
+    if (reg.sport_level?.startsWith("manual:")) {
+      return { firstName: reg.sport_level.replace("manual:", ""), lastName: "(manual)", isManual: true };
+    }
+    return {
+      firstName: (reg.profiles as any)?.first_name || "?",
+      lastName: (reg.profiles as any)?.last_name || "",
+      isManual: false,
+    };
+  };
+
   const filteredRegistered = meetingPointFilter === "all"
     ? registered
     : registered.filter((r) => r.meeting_point_id === meetingPointFilter);
