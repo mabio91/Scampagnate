@@ -12,6 +12,9 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import OrganizerDashboard from "./pages/OrganizerDashboard";
+import EventForm from "./pages/EventForm";
+import EventManage from "./pages/EventManage";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +33,10 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/organizer" element={<OrganizerDashboard />} />
+            <Route path="/organizer/events/new" element={<EventForm />} />
+            <Route path="/organizer/events/:id" element={<EventManage />} />
+            <Route path="/organizer/events/:id/edit" element={<EventForm />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
