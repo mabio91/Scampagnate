@@ -68,8 +68,7 @@ const EventDetail = () => {
     if (event.status === "closed") return;
 
     if (event.status === "full") {
-      // Waitlist - for now just show toast
-      toast({ title: "Lista d'attesa", description: "Funzionalità in arrivo!" });
+      setShowRegisterDialog(true);
       return;
     }
 
