@@ -319,7 +319,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
   const { toast } = useToast();
 
   if (!event) return null;
-  const imageSrc = useEventImage(event.image_url || "trekking");
+  // image handled by OptimizedImage component
   const isPast = new Date(event.date) < new Date();
 
   const handleUnsave = async (e: React.MouseEvent) => {
