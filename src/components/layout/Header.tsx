@@ -17,7 +17,7 @@ const Header = () => {
           <span className="font-display text-lg font-bold text-foreground">Scampagnate</span>
         </Link>
         <div className="flex items-center gap-3">
-          <button className="p-2 rounded-full hover:bg-muted transition-colors" onClick={() => { navigate("/"); openSearch(); }}>
+          <button className="p-2 rounded-full hover:bg-muted transition-colors" onClick={() => { navigate("/"); toggleSearch(); }}>
             <Search className="h-5 w-5 text-muted-foreground" />
           </button>
           {user ? (
