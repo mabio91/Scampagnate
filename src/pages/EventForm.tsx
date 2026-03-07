@@ -257,6 +257,7 @@ const EventForm = () => {
         featured: form.featured,
         cancellation_policy: form.cancellation_policy || null,
         image_url: imageUrl,
+        equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
       };
