@@ -72,7 +72,7 @@ const EventDetail = () => {
     if (!user) { navigate("/auth"); return; }
     try {
       await toggleSaveMutation.mutateAsync({ eventId: event.id, isSaved });
-      toast({ title: isSaved ? "Removed from saved" : "Saved to wishlist! 🔖" });
+      toast({ title: isSaved ? "Removed from saved" : "Saved to wishlist" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
