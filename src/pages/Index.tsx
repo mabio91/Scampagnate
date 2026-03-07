@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearch } from "@/contexts/SearchContext";
 
 type PriceFilter = "all" | "free" | "paid";
 
@@ -23,6 +24,16 @@ const Index = () => {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const { searchOpen } = useSearch();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // When header search icon is clicked, open filters and focus input
+  useEffect(() => {
+    if (searchOpen) {
+      setShowFilters(true);
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [searchOpen]);
 
   const { data: events, isLoading } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
