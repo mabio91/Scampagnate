@@ -27,11 +27,16 @@ const Index = () => {
   const { searchOpen } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // When header search icon is clicked, open filters and focus input
+  // Sync search bar visibility with header search icon
   useEffect(() => {
     if (searchOpen) {
-      setShowFilters(true);
       setTimeout(() => searchInputRef.current?.focus(), 100);
+    } else {
+      // Reset filters when closing
+      setSearchQuery("");
+      setDateFilter(undefined);
+      setPriceFilter("all");
+      setShowFilters(false);
     }
   }, [searchOpen]);
 
@@ -101,102 +106,111 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {/* Search Bar */}
-            <div className="px-4 mb-2">
-              <div className="relative flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    ref={searchInputRef}
-                    placeholder="Search events..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-8 rounded-full bg-muted border-none font-body"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                    >
-                      <X className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                  )}
-                </div>
-                <Button
-                  variant={showFilters ? "default" : "outline"}
-                  size="icon"
-                  className="rounded-full flex-shrink-0"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Advanced Filters */}
+            {/* Search Bar & Filters - only visible when toggled via header icon */}
             <AnimatePresence>
-              {showFilters && (
+              {searchOpen && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="px-4 py-3 flex flex-wrap items-center gap-2">
-                    {/* Date Filter */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "rounded-full text-xs font-body",
-                            dateFilter && "bg-primary text-primary-foreground border-primary"
-                          )}
-                        >
-                          {dateFilter ? format(dateFilter, "d MMM", { locale: it }) : "Date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={dateFilter}
-                          onSelect={setDateFilter}
-                          className="p-3 pointer-events-auto"
-                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  <div className="px-4 mb-2">
+                    <div className="relative flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          ref={searchInputRef}
+                          placeholder="Search events..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-9 pr-8 rounded-full bg-muted border-none font-body"
                         />
-                        {dateFilter && (
-                          <div className="px-3 pb-3">
-                            <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setDateFilter(undefined)}>
-                              Clear date
-                            </Button>
-                          </div>
+                        {searchQuery && (
+                          <button
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2"
+                          >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                          </button>
                         )}
-                      </PopoverContent>
-                    </Popover>
-
-                    {/* Price Filter */}
-                    {(["all", "free", "paid"] as PriceFilter[]).map((p) => (
+                      </div>
                       <Button
-                        key={p}
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "rounded-full text-xs font-body capitalize",
-                          priceFilter === p && "bg-primary text-primary-foreground border-primary"
-                        )}
-                        onClick={() => setPriceFilter(p)}
+                        variant={showFilters ? "default" : "outline"}
+                        size="icon"
+                        className="rounded-full flex-shrink-0"
+                        onClick={() => setShowFilters(!showFilters)}
                       >
-                        {p === "all" ? "All prices" : p === "free" ? "Free" : "Paid"}
+                        <SlidersHorizontal className="h-4 w-4" />
                       </Button>
-                    ))}
-
-                    {hasActiveFilters && (
-                      <Button variant="ghost" size="sm" className="rounded-full text-xs text-destructive" onClick={clearFilters}>
-                        <X className="h-3 w-3 mr-1" /> Clear all
-                      </Button>
-                    )}
+                    </div>
                   </div>
+
+                  {/* Advanced Filters */}
+                  <AnimatePresence>
+                    {showFilters && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 py-3 flex flex-wrap items-center gap-2">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "rounded-full text-xs font-body",
+                                  dateFilter && "bg-primary text-primary-foreground border-primary"
+                                )}
+                              >
+                                {dateFilter ? format(dateFilter, "d MMM", { locale: it }) : "Date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={dateFilter}
+                                onSelect={setDateFilter}
+                                className="p-3 pointer-events-auto"
+                                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              />
+                              {dateFilter && (
+                                <div className="px-3 pb-3">
+                                  <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setDateFilter(undefined)}>
+                                    Clear date
+                                  </Button>
+                                </div>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+
+                          {(["all", "free", "paid"] as PriceFilter[]).map((p) => (
+                            <Button
+                              key={p}
+                              variant="outline"
+                              size="sm"
+                              className={cn(
+                                "rounded-full text-xs font-body capitalize",
+                                priceFilter === p && "bg-primary text-primary-foreground border-primary"
+                              )}
+                              onClick={() => setPriceFilter(p)}
+                            >
+                              {p === "all" ? "All prices" : p === "free" ? "Free" : "Paid"}
+                            </Button>
+                          ))}
+
+                          {hasActiveFilters && (
+                            <Button variant="ghost" size="sm" className="rounded-full text-xs text-destructive" onClick={clearFilters}>
+                              <X className="h-3 w-3 mr-1" /> Clear all
+                            </Button>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>
