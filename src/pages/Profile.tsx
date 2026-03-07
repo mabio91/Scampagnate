@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Award, Edit3, Check, Camera } from "lucide-react";
+import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useEventImage } from "@/hooks/useEventImage";
+import { useCategories } from "@/hooks/useEvents";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -20,9 +22,12 @@ const Profile = () => {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
+  const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: categories } = useCategories();
 
   const uploadAvatar = async (file: File) => {
     if (!user) return;
@@ -72,6 +77,23 @@ const Profile = () => {
     enabled: !!user,
   });
 
+  const { data: pastEvents } = useQuery({
+    queryKey: ["past-events", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from("event_registrations")
+        .select("*, events(*, event_categories(name, icon))")
+        .eq("user_id", user.id)
+        .in("status", ["registered", "paid"])
+        .order("created_at", { ascending: false });
+
+      const now = new Date();
+      return (data || []).filter((r: any) => new Date(r.events?.date) < now);
+    },
+    enabled: !!user,
+  });
+
   if (!user) {
     return (
       <AppLayout>
@@ -90,7 +112,15 @@ const Profile = () => {
     setLastName(profile?.last_name || "");
     setPhone(profile?.phone || "");
     setBio(profile?.bio || "");
+    const prefs = (profile as any)?.preferences;
+    setSelectedPreferences(Array.isArray(prefs) ? prefs : []);
     setEditing(true);
+  };
+
+  const togglePreference = (categoryName: string) => {
+    setSelectedPreferences((prev) =>
+      prev.includes(categoryName) ? prev.filter((p) => p !== categoryName) : [...prev, categoryName]
+    );
   };
 
   const saveProfile = async () => {
@@ -100,6 +130,7 @@ const Profile = () => {
       last_name: lastName,
       phone,
       bio,
+      preferences: selectedPreferences as any,
       updated_at: new Date().toISOString(),
     }).eq("id", user.id);
 
@@ -117,6 +148,8 @@ const Profile = () => {
     await signOut();
     navigate("/");
   };
+
+  const currentPreferences = Array.isArray((profile as any)?.preferences) ? (profile as any).preferences : [];
 
   return (
     <AppLayout>
@@ -160,7 +193,7 @@ const Profile = () => {
             </h1>
             <p className="text-sm font-body text-muted-foreground">{user.email}</p>
             <p className="text-xs font-body text-secondary mt-0.5">
-              {profile?.total_points || 0} punti
+              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} punti
             </p>
           </div>
           <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-colors">
@@ -189,6 +222,43 @@ const Profile = () => {
               <Label className="font-body text-xs">Bio</Label>
               <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1" rows={2} />
             </div>
+
+            {/* Category Preferences */}
+            {categories && categories.length > 0 && (
+              <div>
+                <Label className="font-body text-xs">Preferenze categorie</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {categories.map((cat: any) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => togglePreference(cat.name)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${
+                        selectedPreferences.includes(cat.name)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {cat.icon} {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Preferences display (when not editing) */}
+        {!editing && currentPreferences.length > 0 && (
+          <div className="mb-6">
+            <h2 className="font-display text-lg font-bold text-foreground mb-2">Preferenze</h2>
+            <div className="flex flex-wrap gap-2">
+              {currentPreferences.map((pref: string) => (
+                <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
+                  {pref}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
@@ -214,12 +284,55 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Past Events */}
+        <div className="mb-6">
+          <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-secondary" /> Eventi Passati
+          </h2>
+          {pastEvents && pastEvents.length > 0 ? (
+            <div className="space-y-2">
+              {pastEvents.map((r: any) => (
+                <PastEventCard key={r.id} registration={r} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm font-body text-muted-foreground">
+              Nessun evento passato ancora. Partecipa al tuo primo evento! 🎉
+            </p>
+          )}
+        </div>
+
         {/* Sign out */}
-        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive/10 font-body">
+        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive/10 font-body mb-8">
           <LogOut className="h-4 w-4 mr-2" /> Esci
         </Button>
       </div>
     </AppLayout>
+  );
+};
+
+const PastEventCard = ({ registration }: { registration: any }) => {
+  const event = registration.events;
+  if (!event) return null;
+  const imageSrc = useEventImage(event.image_url || "trekking");
+
+  return (
+    <Link to={`/event/${event.id}`} className="block">
+      <div className="flex gap-3 p-3 rounded-xl bg-card hover:bg-muted/50 transition-colors">
+        <img src={imageSrc} alt={event.title} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
+          <div className="flex items-center gap-2 mt-1 text-muted-foreground text-xs font-body">
+            <CalendarDays className="h-3 w-3" />
+            {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
+            <MapPin className="h-3 w-3" />
+            <span className="truncate">{event.location}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 };
 

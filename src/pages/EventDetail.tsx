@@ -68,8 +68,7 @@ const EventDetail = () => {
     if (event.status === "closed") return;
 
     if (event.status === "full") {
-      // Waitlist - for now just show toast
-      toast({ title: "Lista d'attesa", description: "Funzionalità in arrivo!" });
+      setShowRegisterDialog(true);
       return;
     }
 
@@ -77,14 +76,20 @@ const EventDetail = () => {
   };
 
   const handleRegister = async () => {
+    const isWaitlist = event.status === "full";
     try {
       await registerMutation.mutateAsync({
         eventId: event.id,
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
+        asWaitlist: isWaitlist,
       });
       setShowRegisterDialog(false);
-      toast({ title: "Iscrizione confermata! ✅", description: `Ti sei iscritto a ${event.title}` });
+      if (isWaitlist) {
+        toast({ title: "In lista d'attesa! ⏳", description: `Sarai notificato quando si libera un posto per ${event.title}` });
+      } else {
+        toast({ title: "Iscrizione confermata! ✅", description: `Ti sei iscritto a ${event.title}` });
+      }
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
     }
@@ -238,9 +243,13 @@ const EventDetail = () => {
             <div className="flex flex-wrap gap-2">
               {participants.slice(0, 5).map((p: any) => (
                 <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm font-body">
-                  <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
-                    {p.profiles?.first_name?.[0] || "?"}
-                  </span>
+                  {p.profiles?.avatar_url ? (
+                    <img src={p.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
+                      {p.profiles?.first_name?.[0] || "?"}
+                    </span>
+                  )}
                   <span className="text-foreground">{p.profiles?.first_name}</span>
                 </div>
               ))}
@@ -353,9 +362,9 @@ const EventDetail = () => {
             <Button
               onClick={handleRegister}
               disabled={registerMutation.isPending || (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint)}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-semibold"
+              className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? "Iscrizione in corso..." : "Conferma Iscrizione"}
+              {registerMutation.isPending ? "Iscrizione in corso..." : event.status === "full" ? "Entra in Lista d'Attesa" : "Conferma Iscrizione"}
             </Button>
           </div>
         </DialogContent>

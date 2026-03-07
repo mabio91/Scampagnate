@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -116,6 +117,29 @@ const Auth = () => {
           <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-semibold">
             {loading ? "Caricamento..." : isLogin ? "Accedi" : "Registrati"}
           </Button>
+
+          {isLogin && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email) {
+                  toast({ title: "Inserisci la tua email", description: "Inserisci l'email per reimpostare la password.", variant: "destructive" });
+                  return;
+                }
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/reset-password`,
+                });
+                if (error) {
+                  toast({ title: "Errore", description: error.message, variant: "destructive" });
+                } else {
+                  toast({ title: "Email inviata!", description: "Controlla la tua email per reimpostare la password." });
+                }
+              }}
+              className="w-full text-center text-sm text-primary font-body hover:underline"
+            >
+              Password dimenticata?
+            </button>
+          )}
         </form>
 
         <p className="text-center text-sm font-body text-muted-foreground mt-6">

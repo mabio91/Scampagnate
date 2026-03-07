@@ -122,14 +122,14 @@ export const useRegisterForEvent = () => {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ eventId, meetingPointId, sportLevel }: { eventId: string; meetingPointId?: string; sportLevel?: string }) => {
+    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean }) => {
       if (!user) throw new Error("Devi effettuare il login");
       const { error } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: user.id,
         meeting_point_id: meetingPointId || null,
         sport_level: sportLevel || null,
-        status: "registered",
+        status: asWaitlist ? "waitlist" : "registered",
       });
       if (error) throw error;
     },
