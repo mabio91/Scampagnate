@@ -327,7 +327,42 @@ const Profile = () => {
   );
 };
 
-const PastEventCard = ({ registration }: { registration: any }) => {
+const PROGRESSION_BADGES = [
+  { name: "Nuovo Arrivato", icon: "🌱", required: 1 },
+  { name: "Scampagnatore", icon: "🥾", required: 3 },
+  { name: "Esploratore", icon: "🗺", required: 5 },
+  { name: "Avventuriero", icon: "⛰", required: 10 },
+  { name: "Veterano delle Scampagnate", icon: "🏆", required: 20 },
+  { name: "Leggenda delle Scampagnate", icon: "👑", required: 50 },
+];
+
+const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: number; earnedBadges: any[] }) => {
+  const earnedNames = new Set(earnedBadges.map((ub: any) => ub.badges?.name));
+  const nextBadge = PROGRESSION_BADGES.find((b) => !earnedNames.has(b.name));
+
+  if (!nextBadge) return null;
+
+  const prevRequired = PROGRESSION_BADGES.filter((b) => b.required < nextBadge.required).pop()?.required || 0;
+  const progress = Math.min(100, Math.round(((attendedCount - prevRequired) / (nextBadge.required - prevRequired)) * 100));
+
+  return (
+    <div className="p-3 rounded-xl bg-muted/50 flex items-center gap-3">
+      <span className="text-2xl opacity-40">{nextBadge.icon}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-body text-muted-foreground">Next badge</p>
+        <p className="text-sm font-body font-semibold text-foreground">{nextBadge.name}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <span className="text-[10px] text-muted-foreground font-body">{attendedCount}/{nextBadge.required}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
   const event = registration.events;
   if (!event) return null;
   const imageSrc = useEventImage(event.image_url || "trekking");
