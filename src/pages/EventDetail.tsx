@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
