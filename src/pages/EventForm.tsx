@@ -195,7 +195,7 @@ const EventForm = () => {
         duration: form.duration || null,
         featured: form.featured,
         cancellation_policy: form.cancellation_policy || null,
-        image_url: form.image_url || null,
+        image_url: imageUrl,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
       };
