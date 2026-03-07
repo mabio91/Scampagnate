@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useEvents";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Loader2, Upload, ImageIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -33,6 +33,10 @@ const EventForm = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(isEditing);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -89,6 +93,9 @@ const EventForm = () => {
         cancellation_policy: event.cancellation_policy || "",
         image_url: event.image_url || "",
       });
+      if (event.image_url) {
+        setImagePreview(event.image_url);
+      }
 
       const { data: points } = await supabase
         .from("event_meeting_points")
@@ -110,6 +117,40 @@ const EventForm = () => {
 
   if (authLoading) return null;
   if (!user || !isOrganizer) return <Navigate to="/" replace />;
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please select an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image must be under 5MB", variant: "destructive" });
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    updateForm("image_url", "");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile || !user) return form.image_url || null;
+    setUploadingImage(true);
+    const ext = imageFile.name.split(".").pop();
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("event-images").upload(path, imageFile);
+    setUploadingImage(false);
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from("event-images").getPublicUrl(path);
+    return urlData.publicUrl;
+  };
 
   const updateForm = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -136,6 +177,7 @@ const EventForm = () => {
 
     setSaving(true);
     try {
+      const imageUrl = await uploadImage();
       const eventData = {
         title: form.title,
         description: form.description,
@@ -153,7 +195,7 @@ const EventForm = () => {
         duration: form.duration || null,
         featured: form.featured,
         cancellation_policy: form.cancellation_policy || null,
-        image_url: form.image_url || null,
+        image_url: imageUrl,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
       };
@@ -256,8 +298,36 @@ const EventForm = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="image_url">Image URL</Label>
-              <Input id="image_url" value={form.image_url} onChange={(e) => updateForm("image_url", e.target.value)} placeholder="https://..." />
+              <Label>Event Image</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              {imagePreview ? (
+                <div className="relative mt-2 rounded-lg overflow-hidden">
+                  <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 p-1 bg-background/80 rounded-full hover:bg-background"
+                  >
+                    <X className="h-4 w-4 text-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors"
+                >
+                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Click to upload image</span>
+                  <span className="text-xs text-muted-foreground">Max 5MB</span>
+                </button>
+              )}
             </div>
           </div>
         </Card>
