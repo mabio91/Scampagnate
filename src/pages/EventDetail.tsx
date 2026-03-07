@@ -5,6 +5,7 @@ import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration } from "@/hooks/useEvents";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +36,7 @@ const EventDetail = () => {
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
+  const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
 
   if (isLoading) {
     return (
@@ -87,6 +89,7 @@ const EventDetail = () => {
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
         asWaitlist: isWaitlist,
+        paymentType: event.payment_type,
       });
       setShowRegisterDialog(false);
       if (isWaitlist) {
@@ -449,6 +452,39 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Additional Registration Fields */}
+            {event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).length > 0 && (
+              <div className="space-y-3">
+                {(event.additional_fields as any[]).map((field: any, idx: number) => (
+                  <div key={idx}>
+                    <Label className="font-body text-sm font-semibold">
+                      {field.label} {field.required && <span className="text-destructive">*</span>}
+                    </Label>
+                    {field.type === "select" && field.options ? (
+                      <Select
+                        value={additionalResponses[field.label] || ""}
+                        onValueChange={(v) => setAdditionalResponses(prev => ({ ...prev, [field.label]: v }))}
+                      >
+                        <SelectTrigger className="mt-1"><SelectValue placeholder={`Select ${field.label.toLowerCase()}`} /></SelectTrigger>
+                        <SelectContent>
+                          {field.options.split(",").map((opt: string) => (
+                            <SelectItem key={opt.trim()} value={opt.trim()}>{opt.trim()}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={additionalResponses[field.label] || ""}
+                        onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {event.payment_type !== "free" && (
               <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1">
                 {(event.payment_type as string) === "deposit" && event.deposit ? (
@@ -482,7 +518,11 @@ const EventDetail = () => {
 
             <Button
               onClick={handleRegister}
-              disabled={registerMutation.isPending || (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint)}
+              disabled={
+                registerMutation.isPending ||
+                (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
+                (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim()))
+              }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
               {registerMutation.isPending ? "Registering..." : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}

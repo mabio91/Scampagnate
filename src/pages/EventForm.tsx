@@ -25,6 +25,13 @@ interface EquipmentItem {
   notes: string;
 }
 
+interface AdditionalField {
+  label: string;
+  type: "text" | "select";
+  required: boolean;
+  options: string; // comma-separated for select type
+}
+
 const useEquipmentTemplates = () => {
   return useQuery({
     queryKey: ["equipment-templates"],
@@ -108,7 +115,7 @@ const EventForm = () => {
     setEquipmentItems((prev) => prev.filter((_, i) => i !== index));
   };
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
-
+  const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
 
   useEffect(() => {
     if (isEditing) {
@@ -171,6 +178,18 @@ const EventForm = () => {
           time: p.time,
           notes: p.notes || "",
         })));
+      }
+
+      // Load additional fields
+      if (event.additional_fields && Array.isArray(event.additional_fields)) {
+        setAdditionalFields(
+          (event.additional_fields as any[]).map((f: any) => ({
+            label: f.label || "",
+            type: f.type || "text",
+            required: f.required || false,
+            options: f.options || "",
+          }))
+        );
       }
     }
     setLoadingEvent(false);
@@ -258,6 +277,7 @@ const EventForm = () => {
         cancellation_policy: form.cancellation_policy || null,
         image_url: imageUrl,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
+        additional_fields: additionalFields.filter((f) => f.label.trim()) as any,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
       };
@@ -579,6 +599,59 @@ const EventForm = () => {
             <p className="text-sm text-muted-foreground font-body text-center py-2">
               No equipment items. Select a template or add items manually.
             </p>
+          )}
+        </Card>
+
+        {/* Additional Registration Fields */}
+        <Card className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-foreground">Registration Fields</h2>
+            <Button type="button" variant="outline" size="sm" onClick={() => setAdditionalFields(prev => [...prev, { label: "", type: "text", required: false, options: "" }])} className="gap-1">
+              <Plus className="h-3.5 w-3.5" /> Add Field
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground font-body">Add custom questions participants must answer during registration (e.g. experience level, equipment availability).</p>
+          {additionalFields.map((field, index) => (
+            <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={field.required}
+                    onCheckedChange={(v) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, required: !!v } : f))}
+                  />
+                  <span className="text-xs font-body text-muted-foreground">
+                    {field.required ? "Required" : "Optional"}
+                  </span>
+                </div>
+                <button type="button" onClick={() => setAdditionalFields(prev => prev.filter((_, i) => i !== index))} className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <Input
+                placeholder="Field label (e.g. Experience level)"
+                value={field.label}
+                onChange={(e) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, label: e.target.value } : f))}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={field.type} onValueChange={(v) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, type: v as "text" | "select" } : f))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Free Text</SelectItem>
+                    <SelectItem value="select">Dropdown</SelectItem>
+                  </SelectContent>
+                </Select>
+                {field.type === "select" && (
+                  <Input
+                    placeholder="Options (comma-separated)"
+                    value={field.options}
+                    onChange={(e) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, options: e.target.value } : f))}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+          {additionalFields.length === 0 && (
+            <p className="text-sm text-muted-foreground font-body text-center py-2">No custom registration fields.</p>
           )}
         </Card>
 
