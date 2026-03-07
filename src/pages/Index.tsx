@@ -124,7 +124,7 @@ const Index = () => {
                           placeholder="Search events..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-9 pr-8 rounded-full bg-muted border-none font-body"
+                          className="pl-9 pr-8 rounded-full bg-muted border-none font-body focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         {searchQuery && (
                           <button
