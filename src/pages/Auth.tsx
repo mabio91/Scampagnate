@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ const Auth = () => {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
@@ -114,32 +116,44 @@ const Auth = () => {
             </label>
           )}
 
+          {isLogin && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
+                <Label htmlFor="rememberMe" className="text-sm font-body text-muted-foreground cursor-pointer">
+                  Remember me
+                </Label>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email) {
+                    toast({ title: "Enter your email", description: "Enter your email to reset your password.", variant: "destructive" });
+                    return;
+                  }
+                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  });
+                  if (error) {
+                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  } else {
+                    toast({ title: "Email sent!", description: "Check your email to reset your password." });
+                  }
+                }}
+                className="text-sm text-primary font-body hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
           <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-semibold">
             {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
           </Button>
-
-          {isLogin && (
-            <button
-              type="button"
-              onClick={async () => {
-                if (!email) {
-                  toast({ title: "Enter your email", description: "Enter your email to reset your password.", variant: "destructive" });
-                  return;
-                }
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                  redirectTo: `${window.location.origin}/reset-password`,
-                });
-                if (error) {
-                  toast({ title: "Error", description: error.message, variant: "destructive" });
-                } else {
-                  toast({ title: "Email sent!", description: "Check your email to reset your password." });
-                }
-              }}
-              className="w-full text-center text-sm text-primary font-body hover:underline"
-            >
-              Forgot password?
-            </button>
-          )}
         </form>
 
         <p className="text-center text-sm font-body text-muted-foreground mt-6">
