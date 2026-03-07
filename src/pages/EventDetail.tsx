@@ -30,8 +30,10 @@ const EventDetail = () => {
   const { data: event, isLoading } = useEvent(id!);
   const { data: participants } = useEventParticipants(id!);
   const { data: myRegistration } = useMyRegistration(id!);
+  const { data: savedEvents } = useSavedEvents();
   const registerMutation = useRegisterForEvent();
   const cancelMutation = useCancelRegistration();
+  const toggleSaveMutation = useToggleSaveEvent();
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
