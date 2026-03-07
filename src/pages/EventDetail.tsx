@@ -132,9 +132,9 @@ const EventDetail = () => {
       });
       setShowRegisterDialog(false);
       if (isWaitlist) {
-        toast({ title: "Added to waitlist! ⏳", description: `You'll be notified when a spot opens for ${event.title}` });
+        toast({ title: "Added to waitlist", description: `You'll be notified when a spot opens for ${event.title}` });
       } else {
-        toast({ title: "Registration confirmed! ✅", description: `You've registered for ${event.title}` });
+        toast({ title: "Registration confirmed", description: `You've registered for ${event.title}` });
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
