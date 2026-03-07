@@ -27,11 +27,16 @@ const Index = () => {
   const { searchOpen } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // When header search icon is clicked, open filters and focus input
+  // Sync search bar visibility with header search icon
   useEffect(() => {
     if (searchOpen) {
-      setShowFilters(true);
       setTimeout(() => searchInputRef.current?.focus(), 100);
+    } else {
+      // Reset filters when closing
+      setSearchQuery("");
+      setDateFilter(undefined);
+      setPriceFilter("all");
+      setShowFilters(false);
     }
   }, [searchOpen]);
 
