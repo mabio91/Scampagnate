@@ -249,6 +249,7 @@ const EventManage = () => {
         isManual ? manualName : ((r.profiles as any)?.first_name || ""),
         isManual ? "(manual)" : ((r.profiles as any)?.last_name || ""),
         isManual ? "" : ((r.profiles as any)?.phone || ""),
+        (r.sport_level && !r.sport_level.startsWith("manual:")) ? r.sport_level : "-",
         r.status,
         r.payment_status || "-",
         mp?.name || "-",
