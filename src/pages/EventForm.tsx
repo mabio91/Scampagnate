@@ -298,8 +298,36 @@ const EventForm = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="image_url">Image URL</Label>
-              <Input id="image_url" value={form.image_url} onChange={(e) => updateForm("image_url", e.target.value)} placeholder="https://..." />
+              <Label>Event Image</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              {imagePreview ? (
+                <div className="relative mt-2 rounded-lg overflow-hidden">
+                  <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 p-1 bg-background/80 rounded-full hover:bg-background"
+                  >
+                    <X className="h-4 w-4 text-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors"
+                >
+                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Click to upload image</span>
+                  <span className="text-xs text-muted-foreground">Max 5MB</span>
+                </button>
+              )}
             </div>
           </div>
         </Card>
