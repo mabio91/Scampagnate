@@ -452,6 +452,39 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Additional Registration Fields */}
+            {event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).length > 0 && (
+              <div className="space-y-3">
+                {(event.additional_fields as any[]).map((field: any, idx: number) => (
+                  <div key={idx}>
+                    <Label className="font-body text-sm font-semibold">
+                      {field.label} {field.required && <span className="text-destructive">*</span>}
+                    </Label>
+                    {field.type === "select" && field.options ? (
+                      <Select
+                        value={additionalResponses[field.label] || ""}
+                        onValueChange={(v) => setAdditionalResponses(prev => ({ ...prev, [field.label]: v }))}
+                      >
+                        <SelectTrigger className="mt-1"><SelectValue placeholder={`Select ${field.label.toLowerCase()}`} /></SelectTrigger>
+                        <SelectContent>
+                          {field.options.split(",").map((opt: string) => (
+                            <SelectItem key={opt.trim()} value={opt.trim()}>{opt.trim()}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={additionalResponses[field.label] || ""}
+                        onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {event.payment_type !== "free" && (
               <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1">
                 {(event.payment_type as string) === "deposit" && event.deposit ? (
