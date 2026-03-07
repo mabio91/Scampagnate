@@ -60,8 +60,9 @@ export const useEvents = (categoryName?: string | null) => {
         meeting_points: e.event_meeting_points || [],
       })) as EventWithDetails[];
     },
-    staleTime: 2 * 60 * 1000, // 2 min cache
+    staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    placeholderData: (prev: any) => prev,
   });
 };
 
