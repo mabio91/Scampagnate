@@ -262,14 +262,30 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Badges - badge names stay Italian */}
+        {/* Badges */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
             <Award className="h-5 w-5 text-secondary" /> Badges
           </h2>
+
+          {/* Scampagnatore Ufficiale highlight */}
+          {userBadges?.some((ub: any) => ub.badges?.name === "Scampagnatore Ufficiale") && (
+            <div className="mb-3 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
+              <span className="text-3xl">🏅</span>
+              <div>
+                <p className="text-sm font-display font-bold text-primary">Scampagnatore Ufficiale</p>
+                <p className="text-[10px] font-body text-muted-foreground">Membro ufficiale della community</p>
+              </div>
+            </div>
+          )}
+
+          {/* Badge progression */}
+          <BadgeProgression attendedCount={profile?.total_points || 0} earnedBadges={userBadges || []} />
+
+          {/* All earned badges */}
           {userBadges && userBadges.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {userBadges.map((ub: any) => (
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              {userBadges.filter((ub: any) => ub.badges?.name !== "Scampagnatore Ufficiale").map((ub: any) => (
                 <div key={ub.id} className="p-3 rounded-xl bg-card text-center">
                   <span className="text-2xl">{ub.badges?.icon}</span>
                   <p className="text-sm font-body font-semibold text-foreground mt-1">{ub.badges?.name}</p>
@@ -278,7 +294,7 @@ const Profile = () => {
               ))}
             </div>
           ) : (
-            <p className="text-sm font-body text-muted-foreground">
+            <p className="text-sm font-body text-muted-foreground mt-2">
               Join events to earn badges! 🏆
             </p>
           )}
@@ -308,6 +324,41 @@ const Profile = () => {
         </Button>
       </div>
     </AppLayout>
+  );
+};
+
+const PROGRESSION_BADGES = [
+  { name: "Nuovo Arrivato", icon: "🌱", required: 1 },
+  { name: "Scampagnatore", icon: "🥾", required: 3 },
+  { name: "Esploratore", icon: "🗺", required: 5 },
+  { name: "Avventuriero", icon: "⛰", required: 10 },
+  { name: "Veterano delle Scampagnate", icon: "🏆", required: 20 },
+  { name: "Leggenda delle Scampagnate", icon: "👑", required: 50 },
+];
+
+const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: number; earnedBadges: any[] }) => {
+  const earnedNames = new Set(earnedBadges.map((ub: any) => ub.badges?.name));
+  const nextBadge = PROGRESSION_BADGES.find((b) => !earnedNames.has(b.name));
+
+  if (!nextBadge) return null;
+
+  const prevRequired = PROGRESSION_BADGES.filter((b) => b.required < nextBadge.required).pop()?.required || 0;
+  const progress = Math.min(100, Math.round(((attendedCount - prevRequired) / (nextBadge.required - prevRequired)) * 100));
+
+  return (
+    <div className="p-3 rounded-xl bg-muted/50 flex items-center gap-3">
+      <span className="text-2xl opacity-40">{nextBadge.icon}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-body text-muted-foreground">Next badge</p>
+        <p className="text-sm font-body font-semibold text-foreground">{nextBadge.name}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <span className="text-[10px] text-muted-foreground font-body">{attendedCount}/{nextBadge.required}</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
