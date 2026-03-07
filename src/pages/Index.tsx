@@ -40,7 +40,7 @@ const Index = () => {
     }
   }, [searchOpen]);
 
-  const { data: events, isLoading } = useEvents(selectedCategory);
+  const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
 
   const hasActiveFilters = searchQuery || dateFilter || priceFilter !== "all";
@@ -94,7 +94,7 @@ const Index = () => {
   return (
     <AppLayout>
       <div className="pt-4 pb-4">
-        {isLoading ? (
+        {isLoading && !events ? (
           <div className="px-4">
             <Skeleton className="w-full h-64 rounded-2xl mb-4" />
             <Skeleton className="w-full h-10 rounded-full mb-4" />
@@ -235,12 +235,12 @@ const Index = () => {
                   </span>
                 )}
               </h2>
-              <div className="space-y-2">
+              <div className={`space-y-2 transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
                 {upcomingEvents.map((event, i) => (
                   <EventCard key={event.id} event={event} index={i} />
                 ))}
               </div>
-              {upcomingEvents.length === 0 && (
+              {!isFetching && upcomingEvents.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground font-body">
                     No events found.
