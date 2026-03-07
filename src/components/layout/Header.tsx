@@ -1,8 +1,11 @@
 import logo from "@/assets/logo.png";
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search, User, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
+  const { user, profile } = useAuth();
+
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
@@ -14,13 +17,20 @@ const Header = () => {
           <button className="p-2 rounded-full hover:bg-muted transition-colors">
             <Search className="h-5 w-5 text-muted-foreground" />
           </button>
-          <button className="p-2 rounded-full hover:bg-muted transition-colors relative">
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-accent rounded-full" />
-          </button>
-          <button className="p-2 rounded-full bg-primary text-primary-foreground">
-            <User className="h-5 w-5" />
-          </button>
+          {user ? (
+            <>
+              <button className="p-2 rounded-full hover:bg-muted transition-colors relative">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+              </button>
+              <Link to="/profile" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-body font-semibold">
+                {profile?.first_name?.[0] || <User className="h-4 w-4" />}
+              </Link>
+            </>
+          ) : (
+            <Link to="/auth" className="p-2 rounded-full bg-primary text-primary-foreground">
+              <LogIn className="h-5 w-5" />
+            </Link>
+          )}
         </div>
       </div>
     </header>
