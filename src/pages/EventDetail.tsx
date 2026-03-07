@@ -386,10 +386,18 @@ const EventDetail = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border p-4 pb-safe z-50">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
-            <p className="text-xs font-body text-muted-foreground">Price</p>
-            <p className="text-xl font-display font-bold text-foreground">
-              {Number(event.price) === 0 ? "Free" : `€${event.price}`}
+            <p className="text-xs font-body text-muted-foreground">
+              {(event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
+            <p className="text-xl font-display font-bold text-foreground">
+              {Number(event.price) === 0 ? "Free" : (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` : `€${event.price}`}
+            </p>
+            {(event.payment_type as string) === "deposit" && event.deposit && (
+              <p className="text-[10px] font-body text-muted-foreground">deposit · €{event.price} total</p>
+            )}
+            {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
+              <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
+            )}
           </div>
           <Button
             onClick={handleCTA}
