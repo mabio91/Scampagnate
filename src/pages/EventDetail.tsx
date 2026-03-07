@@ -222,9 +222,14 @@ const EventDetail = () => {
         <Link to="/" className="absolute top-4 left-4 p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <button onClick={shareEvent} className="absolute top-4 right-4 p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
-          <Share2 className="h-5 w-5" />
-        </button>
+        <div className="absolute top-4 right-4 flex gap-2">
+          <button onClick={handleToggleSave} className="p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
+            {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+          </button>
+          <button onClick={shareEvent} className="p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
+            <Share2 className="h-5 w-5" />
+          </button>
+        </div>
         <div className="absolute bottom-4 left-4 right-4">
           <div className="flex items-center gap-2 mb-2">
             {event.difficulty && (
