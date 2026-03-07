@@ -374,8 +374,10 @@ const EventDetail = () => {
                     )}
                     <span className="text-foreground">{p.profiles?.first_name}</span>
                     {p.badges && p.badges.length > 0 && (
-                      <span className="text-xs" title={p.badges.map((b: any) => b.name).join(", ")}>
-                        {p.badges.slice(0, 2).map((b: any) => b.icon).join("")}
+                      <span className="flex items-center gap-0.5" title={p.badges.map((b: any) => b.name).join(", ")}>
+                        {p.badges.slice(0, 2).map((b: any, i: number) => (
+                          <BadgeIconComp key={i} icon={b.icon} className="h-3.5 w-3.5 text-primary" />
+                        ))}
                       </span>
                     )}
                   </div>
