@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -54,6 +55,72 @@ const Auth = () => {
     }
     setLoading(false);
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({ title: "Enter your email", description: "Please enter your email address.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Email sent!", description: "Check your email to reset your password." });
+    }
+    setLoading(false);
+  };
+
+  // Forgot Password view
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-sm"
+        >
+          <div className="text-center mb-8">
+            <img src={logo} alt="Scampagnate" className="h-16 w-16 rounded-full mx-auto mb-3" />
+            <h1 className="font-display text-3xl font-bold text-foreground">Reset Password</h1>
+            <p className="text-muted-foreground font-body text-sm mt-1">
+              Enter your email and we'll send you a reset link
+            </p>
+          </div>
+
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div>
+              <Label htmlFor="resetEmail" className="font-body text-sm">Email</Label>
+              <Input
+                id="resetEmail"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="mario@example.com"
+                className="mt-1"
+              />
+            </div>
+
+            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-semibold">
+              {loading ? "Sending..." : "Send Reset Link"}
+            </Button>
+          </form>
+
+          <button
+            onClick={() => setIsForgotPassword(false)}
+            className="flex items-center gap-1 text-sm text-primary font-body hover:underline mt-6 mx-auto"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Sign In
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
@@ -130,20 +197,7 @@ const Auth = () => {
               </div>
               <button
                 type="button"
-                onClick={async () => {
-                  if (!email) {
-                    toast({ title: "Enter your email", description: "Enter your email to reset your password.", variant: "destructive" });
-                    return;
-                  }
-                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/reset-password`,
-                  });
-                  if (error) {
-                    toast({ title: "Error", description: error.message, variant: "destructive" });
-                  } else {
-                    toast({ title: "Email sent!", description: "Check your email to reset your password." });
-                  }
-                }}
+                onClick={() => setIsForgotPassword(true)}
                 className="text-sm text-primary font-body hover:underline"
               >
                 Forgot password?
