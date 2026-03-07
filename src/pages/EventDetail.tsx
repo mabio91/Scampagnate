@@ -243,9 +243,13 @@ const EventDetail = () => {
             <div className="flex flex-wrap gap-2">
               {participants.slice(0, 5).map((p: any) => (
                 <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm font-body">
-                  <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
-                    {p.profiles?.first_name?.[0] || "?"}
-                  </span>
+                  {p.profiles?.avatar_url ? (
+                    <img src={p.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
+                      {p.profiles?.first_name?.[0] || "?"}
+                    </span>
+                  )}
                   <span className="text-foreground">{p.profiles?.first_name}</span>
                 </div>
               ))}
