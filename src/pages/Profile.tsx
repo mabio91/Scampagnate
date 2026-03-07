@@ -320,6 +320,11 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Report Issue */}
+        <div className="mb-3">
+          <ReportIssueDialog />
+        </div>
+
         {/* Sign out */}
         <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive/10 font-body mb-8">
           <LogOut className="h-4 w-4 mr-2" /> Sign Out
