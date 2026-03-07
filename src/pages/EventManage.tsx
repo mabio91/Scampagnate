@@ -517,9 +517,14 @@ const EventManage = () => {
                           {firstName} {lastName}
                           {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
                         </p>
-                        {mp && (
-                          <p className="text-[10px] text-muted-foreground font-body">{mp.name}</p>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {mp && (
+                            <p className="text-[10px] text-muted-foreground font-body">{mp.name}</p>
+                          )}
+                          {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
+                            <p className="text-[10px] text-primary font-body">· {reg.sport_level}</p>
+                          )}
+                        </div>
                       </div>
                       {!quickCheckIn && (
                         <Button
