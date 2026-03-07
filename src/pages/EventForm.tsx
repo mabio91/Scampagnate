@@ -25,6 +25,13 @@ interface EquipmentItem {
   notes: string;
 }
 
+interface AdditionalField {
+  label: string;
+  type: "text" | "select";
+  required: boolean;
+  options: string; // comma-separated for select type
+}
+
 const useEquipmentTemplates = () => {
   return useQuery({
     queryKey: ["equipment-templates"],
