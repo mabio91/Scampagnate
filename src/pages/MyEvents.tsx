@@ -6,6 +6,7 @@ import {
   CalendarPlus, ChevronRight, Clock, Calendar, Mail
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import ShareSheet from "@/components/events/ShareSheet";
 import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
 import { useEventImage } from "@/hooks/useEventImage";
 import { Button } from "@/components/ui/button";
