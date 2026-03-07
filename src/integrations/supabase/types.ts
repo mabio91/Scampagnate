@@ -252,6 +252,7 @@ export type Database = {
           organizer_name: string
           payment_type: Database["public"]["Enums"]["payment_type"]
           price: number
+          reserved_spots: number
           spots_taken: number
           spots_total: number
           status: Database["public"]["Enums"]["event_status"]
@@ -280,6 +281,7 @@ export type Database = {
           organizer_name?: string
           payment_type?: Database["public"]["Enums"]["payment_type"]
           price?: number
+          reserved_spots?: number
           spots_taken?: number
           spots_total?: number
           status?: Database["public"]["Enums"]["event_status"]
@@ -308,6 +310,7 @@ export type Database = {
           organizer_name?: string
           payment_type?: Database["public"]["Enums"]["payment_type"]
           price?: number
+          reserved_spots?: number
           spots_taken?: number
           spots_total?: number
           status?: Database["public"]["Enums"]["event_status"]

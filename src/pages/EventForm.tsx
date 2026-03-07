@@ -74,6 +74,7 @@ const EventForm = () => {
     location: "",
     category_id: "",
     spots_total: 20,
+    reserved_spots: 0,
     price: 0,
     deposit: 0,
     payment_type: "free" as PaymentType,
@@ -139,6 +140,7 @@ const EventForm = () => {
         location: event.location,
         category_id: event.category_id || "",
         spots_total: event.spots_total,
+        reserved_spots: (event as any).reserved_spots || 0,
         price: event.price,
         deposit: event.deposit || 0,
         payment_type: event.payment_type,
@@ -266,6 +268,7 @@ const EventForm = () => {
         location: form.location,
         category_id: form.category_id || null,
         spots_total: form.spots_total,
+        reserved_spots: form.reserved_spots,
         price: form.price,
         deposit: form.payment_type === "deposit" ? form.deposit : null,
         payment_type: form.payment_type,
@@ -421,6 +424,11 @@ const EventForm = () => {
             <div>
               <Label htmlFor="spots">Total Spots</Label>
               <Input id="spots" type="number" min={1} value={form.spots_total} onChange={(e) => updateForm("spots_total", parseInt(e.target.value) || 1)} />
+            </div>
+            <div>
+              <Label htmlFor="reserved">Reserved Spots</Label>
+              <Input id="reserved" type="number" min={0} max={form.spots_total} value={form.reserved_spots} onChange={(e) => updateForm("reserved_spots", parseInt(e.target.value) || 0)} />
+              <p className="text-[11px] text-muted-foreground font-body mt-1">Spots reserved for manual/offline registrations. Count toward total capacity.</p>
             </div>
             <div>
               <Label>Payment Type</Label>
