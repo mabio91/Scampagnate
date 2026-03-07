@@ -240,7 +240,7 @@ const EventManage = () => {
 
   const exportCSV = () => {
     if (!registered.length) return;
-    const headers = ["First Name", "Last Name", "Phone", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
+    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
     const rows = registered.map((r) => {
       const mp = meetingPoints?.find((p) => p.id === r.meeting_point_id);
       const isManual = r.sport_level?.startsWith("manual:");
