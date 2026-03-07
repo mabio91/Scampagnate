@@ -362,7 +362,7 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
   );
 };
 
-
+const PastEventCard = ({ registration }: { registration: any }) => {
   const event = registration.events;
   if (!event) return null;
   const imageSrc = useEventImage(event.image_url || "trekking");
