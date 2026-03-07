@@ -67,7 +67,7 @@ const Header = () => {
                 className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-body font-semibold overflow-hidden ml-1"
               >
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" crossOrigin="anonymous" referrerPolicy="no-referrer" loading="eager" />
                 ) : (
                   profile?.first_name?.[0] || <User className="h-4 w-4" />
                 )}
