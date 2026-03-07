@@ -40,7 +40,7 @@ const Index = () => {
     }
   }, [searchOpen]);
 
-  const { data: events, isLoading } = useEvents(selectedCategory);
+  const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
 
   const hasActiveFilters = searchQuery || dateFilter || priceFilter !== "all";
