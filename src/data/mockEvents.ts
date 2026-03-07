@@ -183,9 +183,9 @@ export const mockEvents: EventData[] = [
       { name: "Campo Imperatore", location: "Parcheggio Campo Imperatore", time: "09:30" },
     ],
     participants: [
-      { name: "Alessandro", badge: "🏔" },
+      { name: "Alessandro" },
       { name: "Maria" },
-      { name: "Giovanni", badge: "⛺" },
+      { name: "Giovanni" },
     ],
     organizer: "Gruppo Scampagnate",
   },
