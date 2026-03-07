@@ -255,6 +255,62 @@ export type Database = {
           },
         ]
       }
+      issues: {
+        Row: {
+          created_at: string
+          description: string
+          event_id: string | null
+          id: string
+          priority: string
+          reporter_id: string | null
+          reporter_name: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          event_id?: string | null
+          id?: string
+          priority?: string
+          reporter_id?: string | null
+          reporter_name?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          event_id?: string | null
+          id?: string
+          priority?: string
+          reporter_id?: string | null
+          reporter_name?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issues_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -264,6 +320,7 @@ export type Database = {
           id: string
           last_name: string
           phone: string
+          preferences: Json | null
           total_points: number
           updated_at: string
         }
@@ -275,6 +332,7 @@ export type Database = {
           id: string
           last_name?: string
           phone?: string
+          preferences?: Json | null
           total_points?: number
           updated_at?: string
         }
@@ -286,6 +344,7 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string
+          preferences?: Json | null
           total_points?: number
           updated_at?: string
         }
