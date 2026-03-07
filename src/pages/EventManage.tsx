@@ -396,6 +396,9 @@ const EventManage = () => {
                         </p>
                         <p className="text-[11px] text-muted-foreground font-body">
                           {!isManual && ((reg.profiles as any)?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
+                          {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
+                            <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
+                          )}
                           {reg.payment_status && reg.payment_status !== "not_required" && (
                             <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
                               · {reg.payment_status}
