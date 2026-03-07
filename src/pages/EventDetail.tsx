@@ -241,7 +241,7 @@ const EventDetail = () => {
             )}
             {event.category && (
               <span className="inline-block px-2.5 py-1 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground text-xs font-body font-semibold">
-                {event.category.icon} {event.category.name}
+                {event.category.name}
               </span>
             )}
           </div>

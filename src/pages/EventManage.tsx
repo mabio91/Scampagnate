@@ -405,7 +405,7 @@ const EventManage = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <Badge variant={reg.checked_in ? "default" : "outline"} className="text-[10px]">
-                          {reg.checked_in ? "✓" : reg.status}
+                          {reg.checked_in ? <CheckCircle2 className="h-3 w-3" /> : reg.status}
                         </Badge>
                         <Select onValueChange={(v) => handleStatusChange(reg.id, v)}>
                           <SelectTrigger className="w-8 h-8 p-0 border-0">
