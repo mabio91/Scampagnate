@@ -5,9 +5,9 @@ import { EventWithDetails } from "@/hooks/useEvents";
 import { useEventImage } from "@/hooks/useEventImage";
 
 const statusConfig = {
-  available: { label: "Disponibile", className: "bg-success/10 text-success" },
-  full: { label: "Completo", className: "bg-warning/10 text-warning" },
-  closed: { label: "Chiuso", className: "bg-destructive/10 text-destructive" },
+  available: { label: "Available", className: "bg-success/10 text-success" },
+  full: { label: "Full", className: "bg-warning/10 text-warning" },
+  closed: { label: "Closed", className: "bg-destructive/10 text-destructive" },
 };
 
 const EventCard = ({ event, index }: { event: EventWithDetails; index: number }) => {
