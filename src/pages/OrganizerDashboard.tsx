@@ -47,9 +47,6 @@ const OrganizerDashboard = () => {
     },
   });
 
-  if (loading) return null;
-  if (!user || !isOrganizer) return <Navigate to="/" replace />;
-
   const now = new Date();
   const upcomingEvents = events?.filter((e) => new Date(e.date) >= now) || [];
   const pastEvents = events?.filter((e) => new Date(e.date) < now) || [];
@@ -59,7 +56,8 @@ const OrganizerDashboard = () => {
     if (!events?.length || !allRegistrations) return null;
 
     const totalEvents = events.length;
-    const totalPast = pastEvents.length;
+    const pe = events.filter((e) => new Date(e.date) < new Date());
+    const totalPast = pe.length;
 
     const regsByEvent: Record<string, typeof allRegistrations> = {};
     allRegistrations.forEach((r) => {
@@ -72,7 +70,7 @@ const OrganizerDashboard = () => {
     let totalCancelled = 0;
     let totalNoShows = 0;
 
-    const pastEventStats = pastEvents.map((evt) => {
+    const pastEventStats = pe.map((evt) => {
       const regs = regsByEvent[evt.id] || [];
       const active = regs.filter((r) => r.status === "registered" || r.status === "paid");
       const checkedIn = active.filter((r) => r.checked_in);
@@ -117,7 +115,10 @@ const OrganizerDashboard = () => {
       totalCancelled, totalNoShows, pastEventStats,
       bestAttended, highestAttendance, highestCancellation,
     };
-  }, [events, allRegistrations, pastEvents]);
+  }, [events, allRegistrations]);
+
+  if (loading) return null;
+  if (!user || !isOrganizer) return <Navigate to="/" replace />;
 
   return (
     <AppLayout>
