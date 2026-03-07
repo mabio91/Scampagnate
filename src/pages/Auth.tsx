@@ -150,6 +150,10 @@ const Auth = () => {
               </button>
             </div>
           )}
+
+          <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-semibold">
+            {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
+          </Button>
         </form>
 
         <p className="text-center text-sm font-body text-muted-foreground mt-6">
