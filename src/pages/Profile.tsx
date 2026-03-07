@@ -272,7 +272,7 @@ const Profile = () => {
           {/* Scampagnatore Ufficiale highlight */}
           {userBadges?.some((ub: any) => ub.badges?.name === "Scampagnatore Ufficiale") && (
             <div className="mb-3 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
-              <span className="text-3xl">🏅</span>
+              <BadgeIcon icon="🏅" className="h-7 w-7 text-primary" />
               <div>
                 <p className="text-sm font-display font-bold text-primary">Scampagnatore Ufficiale</p>
                 <p className="text-[10px] font-body text-muted-foreground">Membro ufficiale della community</p>
