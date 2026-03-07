@@ -240,7 +240,7 @@ const EventManage = () => {
 
   const exportCSV = () => {
     if (!registered.length) return;
-    const headers = ["First Name", "Last Name", "Phone", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
+    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
     const rows = registered.map((r) => {
       const mp = meetingPoints?.find((p) => p.id === r.meeting_point_id);
       const isManual = r.sport_level?.startsWith("manual:");
@@ -249,6 +249,7 @@ const EventManage = () => {
         isManual ? manualName : ((r.profiles as any)?.first_name || ""),
         isManual ? "(manual)" : ((r.profiles as any)?.last_name || ""),
         isManual ? "" : ((r.profiles as any)?.phone || ""),
+        (r.sport_level && !r.sport_level.startsWith("manual:")) ? r.sport_level : "-",
         r.status,
         r.payment_status || "-",
         mp?.name || "-",
@@ -396,6 +397,9 @@ const EventManage = () => {
                         </p>
                         <p className="text-[11px] text-muted-foreground font-body">
                           {!isManual && ((reg.profiles as any)?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
+                          {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
+                            <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
+                          )}
                           {reg.payment_status && reg.payment_status !== "not_required" && (
                             <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
                               · {reg.payment_status}
@@ -514,9 +518,14 @@ const EventManage = () => {
                           {firstName} {lastName}
                           {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
                         </p>
-                        {mp && (
-                          <p className="text-[10px] text-muted-foreground font-body">{mp.name}</p>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {mp && (
+                            <p className="text-[10px] text-muted-foreground font-body">{mp.name}</p>
+                          )}
+                          {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
+                            <p className="text-[10px] text-primary font-body">· {reg.sport_level}</p>
+                          )}
+                        </div>
                       </div>
                       {!quickCheckIn && (
                         <Button

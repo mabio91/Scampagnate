@@ -594,13 +594,32 @@ const EventDetail = () => {
 
             {isSportCategory && (
               <div>
-                <Label className="font-body text-sm font-semibold">Sport Level (optional)</Label>
+                <Label className="font-body text-sm font-semibold">Sport Level</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {["Beginner", "Intermediate", "Advanced"].map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => setSportLevel(sportLevel === level ? "" : level)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${
+                        sportLevel === level
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
                 <Input
-                  value={sportLevel}
+                  value={!["Beginner", "Intermediate", "Advanced"].includes(sportLevel) ? sportLevel : ""}
                   onChange={(e) => setSportLevel(e.target.value)}
-                  placeholder="e.g. Intermediate, 3.5"
-                  className="mt-1"
+                  placeholder="Or enter custom level (e.g. 3.5 for padel)"
+                  className="mt-2"
                 />
+                <p className="text-[10px] text-muted-foreground font-body mt-1">
+                  Helps organizers balance teams and plan activities
+                </p>
               </div>
             )}
 
