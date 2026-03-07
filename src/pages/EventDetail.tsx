@@ -157,7 +157,7 @@ const EventDetail = () => {
     if (event.status === "closed") return "Event Closed";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
-    if (isRegistered) return "Registered ✔";
+    if (isRegistered) return "Registered";
     if (event.status === "full") return "Join Waitlist";
     return "Join Event";
   };
