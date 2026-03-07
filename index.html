@@ -9,16 +9,233 @@
     <meta name="apple-mobile-web-app-title" content="Scampagnate" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
-    <title>Scampagnate – Eventi & Community</title>
-    <meta name="description" content="Scopri e partecipa a eventi outdoor, sport, aperitivi e esperienze culturali con la community Scampagnate." />
-    <meta property="og:title" content="Scampagnate – Eventi & Community" />
-    <meta property="og:description" content="Scopri e partecipa a eventi outdoor, sport, aperitivi e esperienze culturali." />
+    <link rel="canonical" href="https://scampagnate.com/" />
+
+    <title>Scampagnate – Eventi Outdoor, Sport, Aperitivi e Community Italia</title>
+    <meta name="description" content="Scampagnate è la community italiana per scoprire e partecipare a eventi outdoor: trekking, escursioni, aperitivi, sport e cultura. Iscriviti gratis, trova eventi vicino a te e unisciti alla community." />
+    <meta name="keywords" content="eventi outdoor Italia, trekking, escursioni, aperitivi, sport all'aperto, community outdoor, scampagnate, eventi natura, gruppo escursionismo" />
+    <meta name="author" content="Scampagnate" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Scampagnate" />
+    <meta property="og:title" content="Scampagnate – Eventi Outdoor, Sport & Community Italia" />
+    <meta property="og:description" content="Scopri e partecipa a eventi outdoor: trekking, escursioni, aperitivi, sport e cultura. Unisciti alla community Scampagnate." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://scampagnate.com/" />
+    <meta property="og:image" content="https://scampagnate.com/pwa-512x512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:locale" content="it_IT" />
+
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Scampagnate – Eventi Outdoor & Community" />
+    <meta name="twitter:description" content="Scopri eventi outdoor, trekking, aperitivi e sport. Unisciti alla community." />
+    <meta name="twitter:image" content="https://scampagnate.com/pwa-512x512.png" />
+
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Scampagnate",
+      "url": "https://scampagnate.com",
+      "logo": "https://scampagnate.com/pwa-512x512.png",
+      "description": "Community italiana per eventi outdoor, trekking, escursioni, aperitivi, sport e cultura.",
+      "sameAs": []
+    }
+    </script>
+
+    <!-- JSON-LD: WebSite with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Scampagnate",
+      "url": "https://scampagnate.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://scampagnate.com/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Cos'è Scampagnate?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Scampagnate è una community e piattaforma italiana per scoprire, organizzare e partecipare a eventi outdoor come trekking, escursioni, aperitivi, sport e esperienze culturali. È gratuita e aperta a tutti."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Come posso iscrivermi a un evento?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Crea un account gratuito su Scampagnate, sfoglia gli eventi disponibili nella home page o cerca per categoria, e clicca su 'Iscriviti' nella pagina dettaglio dell'evento. Riceverai una conferma via notifica."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Scampagnate è gratuita?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sì, l'iscrizione alla piattaforma è completamente gratuita. Alcuni eventi potrebbero avere un costo di partecipazione stabilito dall'organizzatore, che viene indicato nella pagina dell'evento."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Come posso organizzare un evento?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Se hai il ruolo di organizzatore, puoi creare eventi dalla Dashboard Organizzatore. Imposta titolo, data, luogo, prezzo, punti di ritrovo e lista equipaggiamento. Puoi gestire i partecipanti, fare check-in e visualizzare statistiche."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Che tipi di eventi posso trovare?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Su Scampagnate trovi eventi di trekking, escursioni in montagna, aperitivi sociali, attività sportive, esperienze culturali e molto altro. Ogni evento è categorizzato per facilitare la ricerca."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Come funzionano i badge e i punti?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Partecipando agli eventi guadagni punti e sblocchi badge speciali. Dal badge 'Nuovo Arrivato' al primo evento, fino a 'Leggenda delle Scampagnate' dopo 50 eventi. Il badge 'Scampagnatore Ufficiale' si ottiene dopo 5 partecipazioni."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Posso ricevere notifiche sugli eventi?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sì, Scampagnate invia notifiche in-app per conferme di iscrizione, aggiornamenti eventi, promozioni dalla lista d'attesa e promemoria. Se installi la PWA, puoi ricevere anche notifiche push."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- SEO fallback: visible to crawlers, hidden visually, replaced by React -->
+    <style>
+      .seo-fallback {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- SEO fallback content: crawlable static HTML replaced by React on hydration -->
+      <div class="seo-fallback">
+        <header>
+          <h1>Scampagnate – Eventi Outdoor, Sport, Aperitivi e Community Italia</h1>
+          <p>La community italiana per scoprire e partecipare a eventi outdoor: trekking, escursioni, aperitivi, sport e cultura.</p>
+          <nav aria-label="Navigazione principale">
+            <ul>
+              <li><a href="/">Home – Eventi in evidenza</a></li>
+              <li><a href="/my-events">I Miei Eventi</a></li>
+              <li><a href="/merch">Merchandising</a></li>
+              <li><a href="/profile">Profilo</a></li>
+              <li><a href="/auth">Accedi / Registrati</a></li>
+            </ul>
+          </nav>
+        </header>
+
+        <main>
+          <section>
+            <h2>Eventi in Evidenza</h2>
+            <p>Scopri gli eventi più popolari della community Scampagnate. Trekking in montagna, aperitivi al tramonto, escursioni culturali e molto altro ti aspettano. Sfoglia le categorie e trova l'evento perfetto per te.</p>
+          </section>
+
+          <section>
+            <h2>Categorie Eventi</h2>
+            <ul>
+              <li>Trekking e Escursionismo – Camminate in natura, sentieri di montagna e percorsi panoramici</li>
+              <li>Sport all'Aperto – Attività sportive, ciclismo, arrampicata e avventura</li>
+              <li>Aperitivi e Social – Incontri sociali, aperitivi e cene di gruppo</li>
+              <li>Cultura e Scoperta – Visite guidate, esperienze culturali e tour enogastronomici</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Come Funziona Scampagnate</h2>
+            <ol>
+              <li>Crea un account gratuito in pochi secondi</li>
+              <li>Sfoglia gli eventi disponibili o cerca per categoria e data</li>
+              <li>Iscriviti all'evento con un click e ricevi conferma immediata</li>
+              <li>Partecipa, guadagna punti e sblocca badge esclusivi</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>Perché Scegliere Scampagnate</h2>
+            <ul>
+              <li>Community attiva di appassionati outdoor in Italia</li>
+              <li>Eventi verificati con organizzatori affidabili</li>
+              <li>Sistema di badge e gamification per premiare la partecipazione</li>
+              <li>Notifiche in tempo reale e promemoria eventi</li>
+              <li>App PWA installabile su smartphone</li>
+              <li>Gestione completa per organizzatori: check-in, statistiche, partecipanti</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Domande Frequenti (FAQ)</h2>
+
+            <h3>Cos'è Scampagnate?</h3>
+            <p>Scampagnate è una community e piattaforma italiana per scoprire, organizzare e partecipare a eventi outdoor come trekking, escursioni, aperitivi, sport e esperienze culturali. È gratuita e aperta a tutti.</p>
+
+            <h3>Come posso iscrivermi a un evento?</h3>
+            <p>Crea un account gratuito su Scampagnate, sfoglia gli eventi disponibili nella home page o cerca per categoria, e clicca su "Iscriviti" nella pagina dettaglio dell'evento. Riceverai una conferma via notifica.</p>
+
+            <h3>Scampagnate è gratuita?</h3>
+            <p>Sì, l'iscrizione alla piattaforma è completamente gratuita. Alcuni eventi potrebbero avere un costo di partecipazione stabilito dall'organizzatore, che viene indicato nella pagina dell'evento.</p>
+
+            <h3>Come posso organizzare un evento?</h3>
+            <p>Se hai il ruolo di organizzatore, puoi creare eventi dalla Dashboard Organizzatore. Imposta titolo, data, luogo, prezzo, punti di ritrovo e lista equipaggiamento. Puoi gestire i partecipanti, fare check-in e visualizzare statistiche.</p>
+
+            <h3>Che tipi di eventi posso trovare?</h3>
+            <p>Su Scampagnate trovi eventi di trekking, escursioni in montagna, aperitivi sociali, attività sportive, esperienze culturali e molto altro. Ogni evento è categorizzato per facilitare la ricerca.</p>
+
+            <h3>Come funzionano i badge e i punti?</h3>
+            <p>Partecipando agli eventi guadagni punti e sblocchi badge speciali. Dal badge "Nuovo Arrivato" al primo evento, fino a "Leggenda delle Scampagnate" dopo 50 eventi. Il badge "Scampagnatore Ufficiale" si ottiene dopo 5 partecipazioni.</p>
+
+            <h3>Posso ricevere notifiche sugli eventi?</h3>
+            <p>Sì, Scampagnate invia notifiche in-app per conferme di iscrizione, aggiornamenti eventi, promozioni dalla lista d'attesa e promemoria. Se installi la PWA, puoi ricevere anche notifiche push.</p>
+          </section>
+
+          <section>
+            <h2>Merchandising Scampagnate</h2>
+            <p>Scopri il merchandising ufficiale della community: t-shirt, felpe, cappellini e borracce con il logo Scampagnate. Mostra il tuo spirito outdoor!</p>
+          </section>
+        </main>
+
+        <footer>
+          <p>&copy; 2026 Scampagnate. Tutti i diritti riservati. Community italiana per eventi outdoor.</p>
+        </footer>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
