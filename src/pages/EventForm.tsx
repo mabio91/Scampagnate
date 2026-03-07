@@ -11,11 +11,32 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Trash2, Loader2, Upload, ImageIcon, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Plus, Trash2, Loader2, Upload, ImageIcon, X, PackageCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
 
 type PaymentType = Database["public"]["Enums"]["payment_type"];
+
+interface EquipmentItem {
+  name: string;
+  is_mandatory: boolean;
+  notes: string;
+}
+
+const useEquipmentTemplates = () => {
+  return useQuery({
+    queryKey: ["equipment-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipment_templates")
+        .select("*, equipment_template_items(*)");
+      if (error) throw error;
+      return data;
+    },
+  });
+};
 
 interface MeetingPointInput {
   name: string;
@@ -58,7 +79,36 @@ const EventForm = () => {
     image_url: "",
   });
 
+  const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
+  const { data: equipmentTemplates } = useEquipmentTemplates();
+
+  const handleTemplateSelect = (templateId: string) => {
+    const template = equipmentTemplates?.find((t) => t.id === templateId);
+    if (!template) return;
+    const items: EquipmentItem[] = (template.equipment_template_items || [])
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+      .map((item: any) => ({
+        name: item.name,
+        is_mandatory: item.is_mandatory,
+        notes: item.notes || "",
+      }));
+    setEquipmentItems(items);
+    toast({ title: `Template "${template.name}" loaded with ${items.length} items` });
+  };
+
+  const addEquipmentItem = () => {
+    setEquipmentItems((prev) => [...prev, { name: "", is_mandatory: false, notes: "" }]);
+  };
+
+  const updateEquipmentItem = (index: number, field: keyof EquipmentItem, value: any) => {
+    setEquipmentItems((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+
+  const removeEquipmentItem = (index: number) => {
+    setEquipmentItems((prev) => prev.filter((_, i) => i !== index));
+  };
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
+
 
   useEffect(() => {
     if (isEditing) {
@@ -95,6 +145,17 @@ const EventForm = () => {
       });
       if (event.image_url) {
         setImagePreview(event.image_url);
+      }
+
+      // Load equipment list
+      if (event.equipment_list && Array.isArray(event.equipment_list)) {
+        setEquipmentItems(
+          (event.equipment_list as any[]).map((item: any) => ({
+            name: item.name || "",
+            is_mandatory: item.is_mandatory || false,
+            notes: item.notes || "",
+          }))
+        );
       }
 
       const { data: points } = await supabase
@@ -196,6 +257,7 @@ const EventForm = () => {
         featured: form.featured,
         cancellation_policy: form.cancellation_policy || null,
         image_url: imageUrl,
+        equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
       };
@@ -431,6 +493,73 @@ const EventForm = () => {
           ))}
           {meetingPoints.length === 0 && (
             <p className="text-sm text-muted-foreground font-body text-center py-2">No meeting points added</p>
+          )}
+        </Card>
+
+        {/* Equipment List */}
+        <Card className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+              <PackageCheck className="h-4 w-4 text-primary" />
+              Equipment List
+            </h2>
+            <Button type="button" variant="outline" size="sm" onClick={addEquipmentItem} className="gap-1">
+              <Plus className="h-3.5 w-3.5" /> Add Item
+            </Button>
+          </div>
+
+          {/* Template Selector */}
+          {equipmentTemplates && equipmentTemplates.length > 0 && (
+            <div>
+              <Label>Load from Template</Label>
+              <Select onValueChange={handleTemplateSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template to pre-fill..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipmentTemplates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} ({(t.equipment_template_items || []).length} items)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Equipment Items */}
+          {equipmentItems.map((item, index) => (
+            <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={item.is_mandatory}
+                    onCheckedChange={(v) => updateEquipmentItem(index, "is_mandatory", !!v)}
+                  />
+                  <span className="text-xs font-body text-muted-foreground">
+                    {item.is_mandatory ? "Mandatory" : "Optional"}
+                  </span>
+                </div>
+                <button type="button" onClick={() => removeEquipmentItem(index)} className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <Input
+                placeholder="Item name"
+                value={item.name}
+                onChange={(e) => updateEquipmentItem(index, "name", e.target.value)}
+              />
+              <Input
+                placeholder="Notes (optional)"
+                value={item.notes}
+                onChange={(e) => updateEquipmentItem(index, "notes", e.target.value)}
+              />
+            </div>
+          ))}
+          {equipmentItems.length === 0 && (
+            <p className="text-sm text-muted-foreground font-body text-center py-2">
+              No equipment items. Select a template or add items manually.
+            </p>
           )}
         </Card>
 
