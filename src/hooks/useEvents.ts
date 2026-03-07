@@ -90,11 +90,31 @@ export const useEventParticipants = (eventId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, profiles(first_name, last_name, avatar_url)")
+        .select("*, profiles(first_name, last_name, avatar_url), meeting_point:event_meeting_points(id, name)")
         .eq("event_id", eventId)
         .in("status", ["registered", "paid"]);
       if (error) throw error;
-      return data || [];
+
+      // Fetch badges for all participant user_ids
+      const userIds = (data || []).map((r: any) => r.user_id);
+      let badgesMap: Record<string, any[]> = {};
+      if (userIds.length > 0) {
+        const { data: userBadges } = await supabase
+          .from("user_badges")
+          .select("user_id, badges(icon, name)")
+          .in("user_id", userIds);
+        if (userBadges) {
+          for (const ub of userBadges) {
+            if (!badgesMap[ub.user_id]) badgesMap[ub.user_id] = [];
+            badgesMap[ub.user_id].push(ub.badges);
+          }
+        }
+      }
+
+      return (data || []).map((r: any) => ({
+        ...r,
+        badges: badgesMap[r.user_id] || [],
+      }));
     },
     enabled: !!eventId,
   });
