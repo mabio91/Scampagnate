@@ -142,7 +142,7 @@ export const mockEvents: EventData[] = [
     time: "09:30",
     location: "Ostia Antica, Roma",
     category: "Esperienze & Cultura",
-    status: "available",
+    status: "full",
     price: 0,
     paymentType: "free",
     description: "Una visita guidata gratuita al parco archeologico di Ostia Antica. Scopriamo insieme le meraviglie dell'antica Roma portuale.",
