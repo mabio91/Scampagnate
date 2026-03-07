@@ -10,9 +10,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus, Loader2, Zap } from "lucide-react";
+import { ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus, Loader2, Zap, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import EventAnalytics from "@/components/events/EventAnalytics";
 
 const EventManage = () => {
   const { id } = useParams();
@@ -168,6 +169,10 @@ const EventManage = () => {
             <TabsTrigger value="participants" className="flex-1">Participants</TabsTrigger>
             <TabsTrigger value="checkin" className="flex-1">Check-in</TabsTrigger>
             <TabsTrigger value="waitlist" className="flex-1">Waitlist</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1">
+              <BarChart3 className="h-3.5 w-3.5 mr-1" />
+              Stats
+            </TabsTrigger>
           </TabsList>
 
           {/* Participants Tab */}
@@ -342,6 +347,15 @@ const EventManage = () => {
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="mt-3">
+            <EventAnalytics
+              event={event}
+              registrations={registrations || []}
+              meetingPoints={meetingPoints || []}
+            />
           </TabsContent>
         </Tabs>
       </div>
