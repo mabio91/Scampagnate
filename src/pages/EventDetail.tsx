@@ -17,6 +17,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -129,10 +132,37 @@ const EventDetail = () => {
     }
   };
 
-  const openDirections = (location: string) => {
+  const openDirections = (location: string, app: "google" | "apple" | "waze") => {
     const encoded = encodeURIComponent(location);
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`, "_blank");
+    const urls = {
+      google: `https://www.google.com/maps/dir/?api=1&destination=${encoded}`,
+      apple: `https://maps.apple.com/?daddr=${encoded}`,
+      waze: `https://waze.com/ul?q=${encoded}&navigate=yes`,
+    };
+    window.open(urls[app], "_blank");
   };
+
+  const DirectionsButton = ({ location, className = "" }: { location: string; className?: string }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
+          <Navigation className="h-4 w-4" />
+          Get Directions
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onClick={() => openDirections(location, "google")} className="font-body cursor-pointer">
+          <span className="mr-2">📍</span> Google Maps
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openDirections(location, "apple")} className="font-body cursor-pointer">
+          <span className="mr-2">🗺️</span> Apple Maps
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openDirections(location, "waze")} className="font-body cursor-pointer">
+          <span className="mr-2">🚗</span> Waze
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -165,16 +195,19 @@ const EventDetail = () => {
 
       <div className="max-w-lg mx-auto px-4">
         {/* Quick Info */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap gap-4 py-4 border-b border-border">
-          <div className="flex items-center gap-2 text-sm font-body text-foreground">
-            <CalendarDays className="h-4 w-4 text-secondary" />
-            {new Date(event.date).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
-            <span className="text-muted-foreground">· {event.time?.slice(0, 5)}</span>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-4 border-b border-border">
+          <div className="flex flex-wrap gap-4 mb-3">
+            <div className="flex items-center gap-2 text-sm font-body text-foreground">
+              <CalendarDays className="h-4 w-4 text-secondary" />
+              {new Date(event.date).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+              <span className="text-muted-foreground">· {event.time?.slice(0, 5)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm font-body text-foreground">
+              <MapPin className="h-4 w-4 text-secondary" />
+              {event.location}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm font-body text-foreground">
-            <MapPin className="h-4 w-4 text-secondary" />
-            {event.location}
-          </div>
+          <DirectionsButton location={event.location} />
         </motion.div>
 
         {/* Stats */}
@@ -215,7 +248,7 @@ const EventDetail = () => {
             <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
             <div className="space-y-3">
               {event.meeting_points.map((mp) => (
-                <button key={mp.id} onClick={() => openDirections(mp.location)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 text-left">
+                <div key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
                     <MapPin className="h-5 w-5 text-secondary" />
                   </div>
@@ -223,8 +256,8 @@ const EventDetail = () => {
                     <p className="text-sm font-body font-semibold text-foreground">{mp.name}</p>
                     <p className="text-xs font-body text-muted-foreground">{mp.location} · {mp.time?.slice(0, 5)}</p>
                   </div>
-                  <Navigation className="h-4 w-4 text-secondary flex-shrink-0" />
-                </button>
+                  <DirectionsButton location={mp.location} />
+                </div>
               ))}
             </div>
           </motion.div>
