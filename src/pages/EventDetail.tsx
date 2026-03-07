@@ -228,7 +228,7 @@ const EventDetail = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
       {/* Hero */}
       <div className="relative">
         <img src={imageSrc} alt={event.title} className="w-full h-72 object-cover" />

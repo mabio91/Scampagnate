@@ -92,12 +92,31 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
+    overscroll-behavior-y: none;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
+  }
+
+  /* Safe area padding utilities */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .px-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 }
 
@@ -107,5 +126,11 @@
   }
   .font-body {
     font-family: var(--font-body);
+  }
+
+  /* Minimum touch target for accessibility */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
   }
 }

@@ -240,34 +240,34 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
         {/* Quick Actions */}
         {(showActions || isPast) && registration.status !== "cancelled" && (
-          <div className="flex items-center gap-1 px-3 pb-3 pt-0">
-            <button onClick={shareEvent} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted text-muted-foreground text-[11px] font-body hover:bg-muted/80 transition-colors">
-              <Share2 className="h-3 w-3" /> Share
+          <div className="flex items-center gap-2 px-3 pb-3 pt-1">
+            <button onClick={shareEvent} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all">
+              <Share2 className="h-3.5 w-3.5" /> Share
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted text-muted-foreground text-[11px] font-body hover:bg-muted/80 transition-colors">
-                  <CalendarPlus className="h-3 w-3" /> Calendar
+                <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all">
+                  <CalendarPlus className="h-3.5 w-3.5" /> Calendar
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44">
-                <DropdownMenuItem onClick={() => handleCalendarDownload("google")} className="font-body text-xs cursor-pointer">
-                  <Calendar className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Google Calendar
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem onClick={() => handleCalendarDownload("google")} className="font-body text-sm cursor-pointer py-2.5">
+                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" /> Google Calendar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleCalendarDownload("apple")} className="font-body text-xs cursor-pointer">
-                  <CalendarDays className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Apple Calendar
+                <DropdownMenuItem onClick={() => handleCalendarDownload("apple")} className="font-body text-sm cursor-pointer py-2.5">
+                  <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" /> Apple Calendar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleCalendarDownload("outlook")} className="font-body text-xs cursor-pointer">
-                  <Mail className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Outlook Calendar
+                <DropdownMenuItem onClick={() => handleCalendarDownload("outlook")} className="font-body text-sm cursor-pointer py-2.5">
+                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" /> Outlook Calendar
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             {canCancel && (
               <button
                 onClick={() => setShowCancelDialog(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive text-[11px] font-body hover:bg-destructive/20 transition-colors ml-auto"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-body font-medium hover:bg-destructive/20 active:scale-95 transition-all ml-auto"
               >
-                <X className="h-3 w-3" /> Cancel
+                <X className="h-3.5 w-3.5" /> Cancel
               </button>
             )}
           </div>

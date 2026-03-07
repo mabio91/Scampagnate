@@ -14,23 +14,28 @@ const BottomNav = () => {
     { icon: User, label: "Profile", path: "/profile" },
   ];
 
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname === path || location.pathname.startsWith(path + "/");
+  };
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-lg border-t border-border pb-safe">
-      <div className="flex items-center justify-around max-w-lg mx-auto py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border pb-safe">
+      <div className="flex items-center justify-around max-w-lg mx-auto px-2 py-1">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+          const active = isActive(item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-                isActive
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors touch-target justify-center ${
+                active
                   ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground active:text-foreground"
               }`}
             >
-              <item.icon className={`h-5 w-5 ${isActive ? "stroke-[2.5]" : ""}`} />
-              <span className="text-[10px] font-body font-medium">{item.label}</span>
+              <item.icon className={`h-5 w-5 ${active ? "stroke-[2.5]" : ""}`} />
+              <span className="text-[10px] font-body font-medium leading-tight">{item.label}</span>
             </Link>
           );
         })}
