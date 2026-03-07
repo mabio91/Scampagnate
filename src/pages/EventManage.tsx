@@ -32,6 +32,8 @@ const EventManage = () => {
   const queryClient = useQueryClient();
   const [quickCheckIn, setQuickCheckIn] = useState(false);
   const [meetingPointFilter, setMeetingPointFilter] = useState<string>("all");
+  const [checkInSearch, setCheckInSearch] = useState("");
+  const [checkInMpFilter, setCheckInMpFilter] = useState<string>("all");
 
   // Dialogs
   const [showAddParticipant, setShowAddParticipant] = useState(false);
