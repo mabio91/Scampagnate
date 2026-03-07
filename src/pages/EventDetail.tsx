@@ -195,16 +195,19 @@ const EventDetail = () => {
 
       <div className="max-w-lg mx-auto px-4">
         {/* Quick Info */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap gap-4 py-4 border-b border-border">
-          <div className="flex items-center gap-2 text-sm font-body text-foreground">
-            <CalendarDays className="h-4 w-4 text-secondary" />
-            {new Date(event.date).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
-            <span className="text-muted-foreground">· {event.time?.slice(0, 5)}</span>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-4 border-b border-border">
+          <div className="flex flex-wrap gap-4 mb-3">
+            <div className="flex items-center gap-2 text-sm font-body text-foreground">
+              <CalendarDays className="h-4 w-4 text-secondary" />
+              {new Date(event.date).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+              <span className="text-muted-foreground">· {event.time?.slice(0, 5)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm font-body text-foreground">
+              <MapPin className="h-4 w-4 text-secondary" />
+              {event.location}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm font-body text-foreground">
-            <MapPin className="h-4 w-4 text-secondary" />
-            {event.location}
-          </div>
+          <DirectionsButton location={event.location} />
         </motion.div>
 
         {/* Stats */}
