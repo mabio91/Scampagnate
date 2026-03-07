@@ -30,6 +30,13 @@ const CHART_COLORS = [
   "hsl(var(--warning))",
 ];
 
+const tooltipStyle = {
+  backgroundColor: "hsl(var(--card))",
+  border: "1px solid hsl(var(--border))",
+  borderRadius: "var(--radius)",
+  fontSize: 12,
+};
+
 const OrganizerDashboard = () => {
   const { user, isOrganizer, isAdmin, loading } = useAuth();
   const { data: events, isLoading } = useOrganizerEvents();
