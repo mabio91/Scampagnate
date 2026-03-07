@@ -11,11 +11,32 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Trash2, Loader2, Upload, ImageIcon, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Plus, Trash2, Loader2, Upload, ImageIcon, X, PackageCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
 
 type PaymentType = Database["public"]["Enums"]["payment_type"];
+
+interface EquipmentItem {
+  name: string;
+  is_mandatory: boolean;
+  notes: string;
+}
+
+const useEquipmentTemplates = () => {
+  return useQuery({
+    queryKey: ["equipment-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipment_templates")
+        .select("*, equipment_template_items(*)");
+      if (error) throw error;
+      return data;
+    },
+  });
+};
 
 interface MeetingPointInput {
   name: string;
