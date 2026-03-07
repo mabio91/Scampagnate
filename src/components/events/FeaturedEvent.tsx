@@ -7,10 +7,10 @@ import { useEventImage } from "@/hooks/useEventImage";
 const getCountdown = (dateStr: string) => {
   const diff = new Date(dateStr).getTime() - Date.now();
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  if (days === 0) return "Oggi!";
-  if (days === 1) return "Domani";
-  if (days < 0) return "Passato";
-  return `Tra ${days} giorni`;
+  if (days === 0) return "Today!";
+  if (days === 1) return "Tomorrow";
+  if (days < 0) return "Past";
+  return `In ${days} days`;
 };
 
 const FeaturedEvent = ({ event }: { event: EventWithDetails }) => {
