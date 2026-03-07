@@ -67,11 +67,12 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (isRegistered) return;
     if (event.status === "closed") return;
+    if (isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "free" || myRegistration?.payment_status === "paid")) return;
 
-    if (event.status === "full") {
-      setShowRegisterDialog(true);
+    // Pay Now - placeholder for payment flow
+    if (isRegistered && event.payment_type !== "free" && myRegistration?.payment_status !== "paid") {
+      toast({ title: "Payment", description: "Payment flow coming soon!" });
       return;
     }
 
