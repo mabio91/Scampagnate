@@ -93,6 +93,9 @@ const EventForm = () => {
         cancellation_policy: event.cancellation_policy || "",
         image_url: event.image_url || "",
       });
+      if (event.image_url) {
+        setImagePreview(event.image_url);
+      }
 
       const { data: points } = await supabase
         .from("event_meeting_points")
