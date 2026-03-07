@@ -13,8 +13,9 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle,
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle,
 } from "lucide-react";
+import IssuesPanel from "@/components/admin/IssuesPanel";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -29,7 +30,7 @@ const CHART_COLORS = [
 ];
 
 const OrganizerDashboard = () => {
-  const { user, isOrganizer, loading } = useAuth();
+  const { user, isOrganizer, isAdmin, loading } = useAuth();
   const { data: events, isLoading } = useOrganizerEvents();
 
   // Fetch all registrations for organizer's events
@@ -133,12 +134,17 @@ const OrganizerDashboard = () => {
         </div>
 
         <Tabs defaultValue="events" className="w-full">
-          <TabsList className="w-full">
+          <TabsList className={`w-full ${isAdmin ? 'grid grid-cols-4' : ''}`}>
             <TabsTrigger value="events" className="flex-1">Events</TabsTrigger>
             <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
             <TabsTrigger value="analytics" className="flex-1">
               <BarChart3 className="h-3.5 w-3.5 mr-1" /> Analytics
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="issues" className="flex-1">
+                <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Issues
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Events Tab */}
@@ -364,6 +370,13 @@ const OrganizerDashboard = () => {
               </>
             )}
           </TabsContent>
+
+          {/* Issues Tab (Admin only) */}
+          {isAdmin && (
+            <TabsContent value="issues" className="mt-4">
+              <IssuesPanel />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AppLayout>

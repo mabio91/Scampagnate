@@ -13,6 +13,7 @@ import { BadgeIcon } from "@/components/BadgeIcon";
 import { useQuery } from "@tanstack/react-query";
 import OptimizedImage from "@/components/OptimizedImage";
 import { useCategories } from "@/hooks/useEvents";
+import ReportIssueDialog from "@/components/ReportIssueDialog";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -317,6 +318,11 @@ const Profile = () => {
               No past events yet. Join your first event!
             </p>
           )}
+        </div>
+
+        {/* Report Issue */}
+        <div className="mb-3">
+          <ReportIssueDialog />
         </div>
 
         {/* Sign out */}
