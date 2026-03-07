@@ -301,6 +301,14 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
           </div>
         </DialogContent>
       </Dialog>
+
+      <ShareSheet
+        open={showShareSheet}
+        onOpenChange={setShowShareSheet}
+        title={event.title}
+        url={eventUrl}
+        text={shareText}
+      />
     </>
   );
 };
