@@ -358,9 +358,9 @@ const EventDetail = () => {
             <Button
               onClick={handleRegister}
               disabled={registerMutation.isPending || (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint)}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-semibold"
+              className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? "Iscrizione in corso..." : "Conferma Iscrizione"}
+              {registerMutation.isPending ? "Iscrizione in corso..." : event.status === "full" ? "Entra in Lista d'Attesa" : "Conferma Iscrizione"}
             </Button>
           </div>
         </DialogContent>
