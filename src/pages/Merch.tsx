@@ -8,7 +8,7 @@ import merchHoodie from "@/assets/merch-hoodie.jpg";
 import merchCap from "@/assets/merch-cap.jpg";
 import merchBottle from "@/assets/merch-bottle.jpg";
 
-const WHATSAPP_NUMBER = "393331234567"; // Replace with actual number
+const WHATSAPP_NUMBER = "923027858300";
 const WHATSAPP_BASE = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 interface Product {
