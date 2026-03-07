@@ -321,20 +321,57 @@ const EventDetail = () => {
           </div>
         </motion.div>
 
-        {/* Price Info */}
+        {/* Payment & Pricing Info */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="py-4">
-          {event.payment_type === "deposit" && event.deposit && (
-            <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 mb-4">
-              <p className="text-sm font-body font-semibold text-foreground">Deposit payment</p>
-              <p className="text-xs font-body text-muted-foreground mt-1">
-                Deposit: €{event.deposit} · Balance: €{Number(event.price) - Number(event.deposit)} to pay on site
+          {event.payment_type !== "free" && (
+            <div className="p-4 rounded-xl bg-gold/10 border border-gold/20 mb-4 space-y-2">
+              <p className="text-sm font-body font-bold text-foreground">
+                {(event.payment_type as string) === "paid" && "Full Payment Online"}
+                {(event.payment_type as string) === "location" && "Payment on Location"}
+                {(event.payment_type as string) === "deposit" && "Split Payment"}
               </p>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm font-body">
+                  <span className="text-muted-foreground">Total price</span>
+                  <span className="font-semibold text-foreground">€{Number(event.price).toFixed(2)}</span>
+                </div>
+                {event.payment_type === "deposit" && event.deposit && (
+                  <>
+                    <div className="flex justify-between text-sm font-body">
+                      <span className="text-muted-foreground">Deposit (online via Stripe)</span>
+                      <span className="font-semibold text-foreground">€{Number(event.deposit).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
+                      <span className="text-muted-foreground">Remaining balance</span>
+                      <span className="font-semibold text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
+                    </div>
+                    <p className="text-xs font-body text-muted-foreground mt-1">
+                      Remaining balance can be paid before the event or on location.
+                    </p>
+                  </>
+                )}
+                {(event.payment_type as string) === "paid" && (
+                  <p className="text-xs font-body text-muted-foreground">
+                    Full amount will be charged online via Stripe during registration.
+                  </p>
+                )}
+                {(event.payment_type as string) === "location" && (
+                  <p className="text-xs font-body text-muted-foreground">
+                    Payment will be collected on location at the event.
+                  </p>
+                )}
+              </div>
             </div>
           )}
           {event.cancellation_policy && (
             <div className="p-3 rounded-xl bg-muted/50 mb-4">
-              <p className="text-sm font-body font-semibold text-foreground">Cancellation Policy</p>
+              <p className="text-sm font-body font-semibold text-foreground">Cancellation & Refund Policy</p>
               <p className="text-xs font-body text-muted-foreground mt-1">{event.cancellation_policy}</p>
+              {event.payment_type === "deposit" && (
+                <p className="text-xs font-body text-muted-foreground mt-1 italic">
+                  Deposit refund is subject to this cancellation policy.
+                </p>
+              )}
             </div>
           )}
           {isRegistered && (
@@ -349,10 +386,18 @@ const EventDetail = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border p-4 pb-safe z-50">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
-            <p className="text-xs font-body text-muted-foreground">Price</p>
-            <p className="text-xl font-display font-bold text-foreground">
-              {Number(event.price) === 0 ? "Free" : `€${event.price}`}
+            <p className="text-xs font-body text-muted-foreground">
+              {(event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
+            <p className="text-xl font-display font-bold text-foreground">
+              {Number(event.price) === 0 ? "Free" : (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` : `€${event.price}`}
+            </p>
+            {(event.payment_type as string) === "deposit" && event.deposit && (
+              <p className="text-[10px] font-body text-muted-foreground">deposit · €{event.price} total</p>
+            )}
+            {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
+              <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
+            )}
           </div>
           <Button
             onClick={handleCTA}
@@ -405,13 +450,33 @@ const EventDetail = () => {
             )}
 
             {event.payment_type !== "free" && (
-              <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
-                <p className="text-sm font-body font-semibold text-foreground">
-                  {event.payment_type === "deposit" ? `Deposit: €${event.deposit}` : `Total: €${event.price}`}
-                </p>
-                <p className="text-xs font-body text-muted-foreground mt-1">
-                  Payment will be handled separately.
-                </p>
+              <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1">
+                {(event.payment_type as string) === "deposit" && event.deposit ? (
+                  <>
+                    <div className="flex justify-between text-sm font-body">
+                      <span className="text-muted-foreground">Deposit (pay now)</span>
+                      <span className="font-semibold text-foreground">€{Number(event.deposit).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body">
+                      <span className="text-muted-foreground">Remaining (pay later)</span>
+                      <span className="text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-bold text-foreground">€{Number(event.price).toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (event.payment_type as string) === "location" ? (
+                  <>
+                    <p className="text-sm font-body font-semibold text-foreground">€{Number(event.price).toFixed(2)}</p>
+                    <p className="text-xs font-body text-muted-foreground">Payment on location — no charge during registration.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-body font-semibold text-foreground">Total: €{Number(event.price).toFixed(2)}</p>
+                    <p className="text-xs font-body text-muted-foreground">Full payment will be charged online via Stripe.</p>
+                  </>
+                )}
               </div>
             )}
 

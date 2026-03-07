@@ -407,23 +407,42 @@ const EventForm = () => {
               <Select value={form.payment_type} onValueChange={(v) => updateForm("payment_type", v as PaymentType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="deposit">Deposit</SelectItem>
+                  <SelectItem value="free">Free Event</SelectItem>
+                  <SelectItem value="paid">Full Payment Online (Stripe)</SelectItem>
+                  <SelectItem value="location">Payment on Location</SelectItem>
+                  <SelectItem value="deposit">Split Payment (Deposit + Balance)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {form.payment_type !== "free" && (
+            {(form.payment_type !== "free") && (
               <div>
-                <Label htmlFor="price">Price (€)</Label>
+                <Label htmlFor="price">Total Price (€)</Label>
                 <Input id="price" type="number" min={0} step={0.01} value={form.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} />
               </div>
             )}
             {form.payment_type === "deposit" && (
-              <div>
-                <Label htmlFor="deposit">Deposit Amount (€)</Label>
-                <Input id="deposit" type="number" min={0} step={0.01} value={form.deposit} onChange={(e) => updateForm("deposit", parseFloat(e.target.value) || 0)} />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="deposit">Deposit Amount (€)</Label>
+                  <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit} onChange={(e) => updateForm("deposit", parseFloat(e.target.value) || 0)} />
+                </div>
+                {form.price > 0 && form.deposit > 0 && (
+                  <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
+                    <div className="flex justify-between text-sm font-body">
+                      <span className="text-muted-foreground">Total price</span>
+                      <span className="font-semibold text-foreground">€{form.price.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body mt-1">
+                      <span className="text-muted-foreground">Deposit (online)</span>
+                      <span className="font-semibold text-foreground">€{form.deposit.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body mt-1 pt-1 border-t border-gold/20">
+                      <span className="text-muted-foreground">Remaining balance</span>
+                      <span className="font-semibold text-foreground">€{(form.price - form.deposit).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <div>
               <Label htmlFor="cancellation">Cancellation Policy</Label>
