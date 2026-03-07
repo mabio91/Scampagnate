@@ -25,7 +25,7 @@ const CategoryFilter = ({ categories, selected, onSelect }: CategoryFilterProps)
               : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
-          Tutti
+          All
         </button>
         {categories.map((cat) => (
           <motion.button

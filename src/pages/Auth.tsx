@@ -32,21 +32,21 @@ const Auth = () => {
     if (isLogin) {
       const { error } = await signIn(email, password);
       if (error) {
-        toast({ title: "Errore", description: error.message, variant: "destructive" });
+        toast({ title: "Error", description: error.message, variant: "destructive" });
       } else {
         navigate("/");
       }
     } else {
       if (!acceptPrivacy) {
-        toast({ title: "Errore", description: "Devi accettare la privacy policy", variant: "destructive" });
+        toast({ title: "Error", description: "You must accept the privacy policy", variant: "destructive" });
         setLoading(false);
         return;
       }
       const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName, phone });
       if (error) {
-        toast({ title: "Errore", description: error.message, variant: "destructive" });
+        toast({ title: "Error", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Registrazione completata!", description: "Controlla la tua email per confermare l'account." });
+        toast({ title: "Registration complete!", description: "Check your email to confirm your account." });
         setIsLogin(true);
       }
     }
@@ -63,10 +63,10 @@ const Auth = () => {
         <div className="text-center mb-8">
           <img src={logo} alt="Scampagnate" className="h-16 w-16 rounded-full mx-auto mb-3" />
           <h1 className="font-display text-3xl font-bold text-foreground">
-            {isLogin ? "Bentornato!" : "Unisciti a noi"}
+            {isLogin ? "Welcome Back!" : "Join Us"}
           </h1>
           <p className="text-muted-foreground font-body text-sm mt-1">
-            {isLogin ? "Accedi al tuo account" : "Crea il tuo account Scampagnate"}
+            {isLogin ? "Sign in to your account" : "Create your Scampagnate account"}
           </p>
         </div>
 
@@ -75,16 +75,16 @@ const Auth = () => {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="firstName" className="font-body text-sm">Nome</Label>
+                  <Label htmlFor="firstName" className="font-body text-sm">First Name</Label>
                   <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required placeholder="Mario" className="mt-1" />
                 </div>
                 <div>
-                  <Label htmlFor="lastName" className="font-body text-sm">Cognome</Label>
+                  <Label htmlFor="lastName" className="font-body text-sm">Last Name</Label>
                   <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required placeholder="Rossi" className="mt-1" />
                 </div>
               </div>
               <div>
-                <Label htmlFor="phone" className="font-body text-sm">Telefono</Label>
+                <Label htmlFor="phone" className="font-body text-sm">Phone</Label>
                 <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+39 333 1234567" className="mt-1" />
               </div>
             </>
@@ -92,7 +92,7 @@ const Auth = () => {
 
           <div>
             <Label htmlFor="email" className="font-body text-sm">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="mario@esempio.it" className="mt-1" />
+            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="mario@example.com" className="mt-1" />
           </div>
 
           <div>
@@ -109,13 +109,13 @@ const Auth = () => {
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={acceptPrivacy} onChange={(e) => setAcceptPrivacy(e.target.checked)} className="mt-1 accent-primary" />
               <span className="text-xs font-body text-muted-foreground">
-                Accetto la <a href="#" className="text-primary underline">Privacy Policy</a> e i <a href="#" className="text-primary underline">Termini di Servizio</a>
+                I accept the <a href="#" className="text-primary underline">Privacy Policy</a> and <a href="#" className="text-primary underline">Terms of Service</a>
               </span>
             </label>
           )}
 
           <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-semibold">
-            {loading ? "Caricamento..." : isLogin ? "Accedi" : "Registrati"}
+            {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
           </Button>
 
           {isLogin && (
@@ -123,29 +123,29 @@ const Auth = () => {
               type="button"
               onClick={async () => {
                 if (!email) {
-                  toast({ title: "Inserisci la tua email", description: "Inserisci l'email per reimpostare la password.", variant: "destructive" });
+                  toast({ title: "Enter your email", description: "Enter your email to reset your password.", variant: "destructive" });
                   return;
                 }
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
                   redirectTo: `${window.location.origin}/reset-password`,
                 });
                 if (error) {
-                  toast({ title: "Errore", description: error.message, variant: "destructive" });
+                  toast({ title: "Error", description: error.message, variant: "destructive" });
                 } else {
-                  toast({ title: "Email inviata!", description: "Controlla la tua email per reimpostare la password." });
+                  toast({ title: "Email sent!", description: "Check your email to reset your password." });
                 }
               }}
               className="w-full text-center text-sm text-primary font-body hover:underline"
             >
-              Password dimenticata?
+              Forgot password?
             </button>
           )}
         </form>
 
         <p className="text-center text-sm font-body text-muted-foreground mt-6">
-          {isLogin ? "Non hai un account?" : "Hai già un account?"}{" "}
+          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button onClick={() => setIsLogin(!isLogin)} className="text-primary font-semibold">
-            {isLogin ? "Registrati" : "Accedi"}
+            {isLogin ? "Sign Up" : "Sign In"}
           </button>
         </p>
       </motion.div>

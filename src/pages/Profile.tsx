@@ -56,9 +56,9 @@ const Profile = () => {
       if (updateError) throw updateError;
 
       await refreshProfile();
-      toast({ title: "Foto profilo aggiornata!" });
+      toast({ title: "Profile photo updated!" });
     } catch (err: any) {
-      toast({ title: "Errore upload", description: err.message, variant: "destructive" });
+      toast({ title: "Upload error", description: err.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -99,9 +99,9 @@ const Profile = () => {
       <AppLayout>
         <div className="px-4 py-12 text-center">
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Profilo</h1>
-          <p className="text-muted-foreground font-body text-sm mb-4">Accedi per visualizzare il tuo profilo.</p>
-          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Accedi</Button>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Profile</h1>
+          <p className="text-muted-foreground font-body text-sm mb-4">Sign in to view your profile.</p>
+          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Sign In</Button>
         </div>
       </AppLayout>
     );
@@ -135,10 +135,10 @@ const Profile = () => {
     }).eq("id", user.id);
 
     if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       await refreshProfile();
-      toast({ title: "Profilo aggiornato!" });
+      toast({ title: "Profile updated!" });
       setEditing(false);
     }
     setSaving(false);
@@ -193,7 +193,7 @@ const Profile = () => {
             </h1>
             <p className="text-sm font-body text-muted-foreground">{user.email}</p>
             <p className="text-xs font-body text-secondary mt-0.5">
-              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} punti
+              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} points
             </p>
           </div>
           <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-colors">
@@ -206,16 +206,16 @@ const Profile = () => {
           <div className="space-y-3 mb-6 p-4 rounded-xl bg-card">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="font-body text-xs">Nome</Label>
+                <Label className="font-body text-xs">First Name</Label>
                 <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label className="font-body text-xs">Cognome</Label>
+                <Label className="font-body text-xs">Last Name</Label>
                 <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1" />
               </div>
             </div>
             <div>
-              <Label className="font-body text-xs">Telefono</Label>
+              <Label className="font-body text-xs">Phone</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
             </div>
             <div>
@@ -223,10 +223,10 @@ const Profile = () => {
               <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1" rows={2} />
             </div>
 
-            {/* Category Preferences */}
+            {/* Category Preferences - category names stay Italian */}
             {categories && categories.length > 0 && (
               <div>
-                <Label className="font-body text-xs">Preferenze categorie</Label>
+                <Label className="font-body text-xs">Category Preferences</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {categories.map((cat: any) => (
                     <button
@@ -251,7 +251,7 @@ const Profile = () => {
         {/* Preferences display (when not editing) */}
         {!editing && currentPreferences.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-display text-lg font-bold text-foreground mb-2">Preferenze</h2>
+            <h2 className="font-display text-lg font-bold text-foreground mb-2">Preferences</h2>
             <div className="flex flex-wrap gap-2">
               {currentPreferences.map((pref: string) => (
                 <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
@@ -262,10 +262,10 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Badges */}
+        {/* Badges - badge names stay Italian */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <Award className="h-5 w-5 text-secondary" /> Badge
+            <Award className="h-5 w-5 text-secondary" /> Badges
           </h2>
           {userBadges && userBadges.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
@@ -279,7 +279,7 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground">
-              Partecipa agli eventi per guadagnare badge! 🏆
+              Join events to earn badges! 🏆
             </p>
           )}
         </div>
@@ -287,7 +287,7 @@ const Profile = () => {
         {/* Past Events */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-secondary" /> Eventi Passati
+            <CalendarDays className="h-5 w-5 text-secondary" /> Past Events
           </h2>
           {pastEvents && pastEvents.length > 0 ? (
             <div className="space-y-2">
@@ -297,14 +297,14 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground">
-              Nessun evento passato ancora. Partecipa al tuo primo evento! 🎉
+              No past events yet. Join your first event! 🎉
             </p>
           )}
         </div>
 
         {/* Sign out */}
         <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive/10 font-body mb-8">
-          <LogOut className="h-4 w-4 mr-2" /> Esci
+          <LogOut className="h-4 w-4 mr-2" /> Sign Out
         </Button>
       </div>
     </AppLayout>

@@ -3,9 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
-  { icon: CalendarDays, label: "I Miei Eventi", path: "/my-events" },
+  { icon: CalendarDays, label: "My Events", path: "/my-events" },
   { icon: ShoppingBag, label: "Merch", path: "/merch" },
-  { icon: User, label: "Profilo", path: "/profile" },
+  { icon: User, label: "Profile", path: "/profile" },
 ];
 
 const BottomNav = () => {
