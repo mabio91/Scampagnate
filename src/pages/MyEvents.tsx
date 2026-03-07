@@ -170,6 +170,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const { toast } = useToast();
   const cancelMutation = useCancelRegistration();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   if (!event) return null;
   const imageSrc = useEventImage(event.image_url || "trekking");
@@ -179,16 +180,9 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const meetingPoint = registration.meeting_point;
   const canCancel = showActions && registration.status !== "cancelled" && registration.status !== "waitlist";
 
-  const shareEvent = async () => {
-    const url = `${window.location.origin}/event/${event.id}`;
-    const text = `${event.title} - ${new Date(event.date).toLocaleDateString("it-IT")}`;
-    if (navigator.share) {
-      await navigator.share({ title: event.title, text, url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast({ title: "Link copied!" });
-    }
-  };
+  const eventUrl = `${window.location.origin}/event/${event.id}`;
+  const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString("it-IT")}`;
+  const shareEvent = () => setShowShareSheet(true);
 
   const handleCancel = async () => {
     try {
