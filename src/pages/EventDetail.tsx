@@ -5,6 +5,7 @@ import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration } from "@/hooks/useEvents";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useAuth } from "@/contexts/AuthContext";
