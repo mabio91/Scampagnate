@@ -177,6 +177,7 @@ const EventForm = () => {
 
     setSaving(true);
     try {
+      const imageUrl = await uploadImage();
       const eventData = {
         title: form.title,
         description: form.description,
