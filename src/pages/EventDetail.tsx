@@ -3,10 +3,13 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
-  Route, Share2, Navigation, ChevronRight, Heart, Bookmark
+  Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration } from "@/hooks/useEvents";
+import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
