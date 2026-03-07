@@ -267,16 +267,6 @@ const EventManage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const getParticipantName = (reg: any) => {
-    if (reg.sport_level?.startsWith("manual:")) {
-      return { firstName: reg.sport_level.replace("manual:", ""), lastName: "(manual)", isManual: true };
-    }
-    return {
-      firstName: (reg.profiles as any)?.first_name || "?",
-      lastName: (reg.profiles as any)?.last_name || "",
-      isManual: false,
-    };
-  };
 
   if (eventLoading) {
     return (
