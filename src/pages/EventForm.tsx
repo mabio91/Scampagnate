@@ -602,7 +602,59 @@ const EventForm = () => {
           )}
         </Card>
 
-        <Button type="submit" className="w-full" disabled={saving}>
+        {/* Additional Registration Fields */}
+        <Card className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-foreground">Registration Fields</h2>
+            <Button type="button" variant="outline" size="sm" onClick={() => setAdditionalFields(prev => [...prev, { label: "", type: "text", required: false, options: "" }])} className="gap-1">
+              <Plus className="h-3.5 w-3.5" /> Add Field
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground font-body">Add custom questions participants must answer during registration (e.g. experience level, equipment availability).</p>
+          {additionalFields.map((field, index) => (
+            <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={field.required}
+                    onCheckedChange={(v) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, required: !!v } : f))}
+                  />
+                  <span className="text-xs font-body text-muted-foreground">
+                    {field.required ? "Required" : "Optional"}
+                  </span>
+                </div>
+                <button type="button" onClick={() => setAdditionalFields(prev => prev.filter((_, i) => i !== index))} className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <Input
+                placeholder="Field label (e.g. Experience level)"
+                value={field.label}
+                onChange={(e) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, label: e.target.value } : f))}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={field.type} onValueChange={(v) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, type: v as "text" | "select" } : f))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Free Text</SelectItem>
+                    <SelectItem value="select">Dropdown</SelectItem>
+                  </SelectContent>
+                </Select>
+                {field.type === "select" && (
+                  <Input
+                    placeholder="Options (comma-separated)"
+                    value={field.options}
+                    onChange={(e) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, options: e.target.value } : f))}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+          {additionalFields.length === 0 && (
+            <p className="text-sm text-muted-foreground font-body text-center py-2">No custom registration fields.</p>
+          )}
+        </Card>
+
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           {isEditing ? "Update Event" : "Create Event"}
         </Button>
