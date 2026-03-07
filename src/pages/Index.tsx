@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
