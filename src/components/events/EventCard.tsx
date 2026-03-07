@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { EventData } from "@/data/mockEvents";
+import { EventWithDetails } from "@/hooks/useEvents";
 import { useEventImage } from "@/hooks/useEventImage";
 
 const statusConfig = {
@@ -10,8 +10,8 @@ const statusConfig = {
   closed: { label: "Chiuso", className: "bg-destructive/10 text-destructive" },
 };
 
-const EventCard = ({ event, index }: { event: EventData; index: number }) => {
-  const imageSrc = useEventImage(event.image);
+const EventCard = ({ event, index }: { event: EventWithDetails; index: number }) => {
+  const imageSrc = useEventImage(event.image_url || "trekking");
   const status = statusConfig[event.status];
 
   return (
@@ -23,11 +23,7 @@ const EventCard = ({ event, index }: { event: EventData; index: number }) => {
       <Link to={`/event/${event.id}`} className="block">
         <div className="flex gap-3 p-3 rounded-xl bg-card hover:bg-muted/50 transition-colors">
           <div className="relative flex-shrink-0">
-            <img
-              src={imageSrc}
-              alt={event.title}
-              className="w-24 h-24 rounded-xl object-cover"
-            />
+            <img src={imageSrc} alt={event.title} className="w-24 h-24 rounded-xl object-cover" />
             {event.difficulty && (
               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-body font-semibold bg-foreground/70 text-background">
                 {event.difficulty}
@@ -36,9 +32,7 @@ const EventCard = ({ event, index }: { event: EventData; index: number }) => {
           </div>
           <div className="flex-1 min-w-0 py-0.5">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-display text-base font-bold text-foreground truncate">
-                {event.title}
-              </h3>
+              <h3 className="font-display text-base font-bold text-foreground truncate">{event.title}</h3>
               <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold ${status.className}`}>
                 {status.label}
               </span>
@@ -56,10 +50,10 @@ const EventCard = ({ event, index }: { event: EventData; index: number }) => {
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center gap-1 text-xs text-muted-foreground font-body">
                 <Users className="h-3 w-3" />
-                {event.spotsTaken}/{event.spotsTotal}
+                {event.spots_taken}/{event.spots_total}
               </div>
               <span className="font-body font-bold text-sm text-foreground">
-                {event.price === 0 ? "Gratis" : `€${event.price}`}
+                {Number(event.price) === 0 ? "Gratis" : `€${event.price}`}
               </span>
             </div>
             {event.distance && (
