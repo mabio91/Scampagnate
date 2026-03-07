@@ -47,11 +47,11 @@ export interface EventData {
 }
 
 export const categories: { name: EventCategory; icon: string; description: string }[] = [
-  { name: "Trekking & Outdoor", icon: "🏔", description: "Escursioni, camminate e natura" },
-  { name: "Sport & Movimento", icon: "🏸", description: "Padel, corsa e attività sportive" },
-  { name: "Social & Aperitivi", icon: "🥂", description: "Aperitivi, cene e serate sociali" },
-  { name: "Esperienze & Cultura", icon: "🏛", description: "Visite guidate e workshop" },
-  { name: "Eventi Speciali", icon: "✨", description: "Weekend, viaggi ed esperienze uniche" },
+  { name: "Trekking & Outdoor", icon: "mountain", description: "Escursioni, camminate e natura" },
+  { name: "Sport & Movimento", icon: "dumbbell", description: "Padel, corsa e attività sportive" },
+  { name: "Social & Aperitivi", icon: "wine", description: "Aperitivi, cene e serate sociali" },
+  { name: "Esperienze & Cultura", icon: "landmark", description: "Visite guidate e workshop" },
+  { name: "Eventi Speciali", icon: "sparkles", description: "Weekend, viaggi ed esperienze uniche" },
 ];
 
 export const mockEvents: EventData[] = [
