@@ -518,7 +518,11 @@ const EventDetail = () => {
 
             <Button
               onClick={handleRegister}
-              disabled={registerMutation.isPending || (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint)}
+              disabled={
+                registerMutation.isPending ||
+                (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
+                (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim()))
+              }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
               {registerMutation.isPending ? "Registering..." : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
