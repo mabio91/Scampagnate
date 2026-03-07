@@ -450,13 +450,33 @@ const EventDetail = () => {
             )}
 
             {event.payment_type !== "free" && (
-              <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
-                <p className="text-sm font-body font-semibold text-foreground">
-                  {event.payment_type === "deposit" ? `Deposit: €${event.deposit}` : `Total: €${event.price}`}
-                </p>
-                <p className="text-xs font-body text-muted-foreground mt-1">
-                  Payment will be handled separately.
-                </p>
+              <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1">
+                {(event.payment_type as string) === "deposit" && event.deposit ? (
+                  <>
+                    <div className="flex justify-between text-sm font-body">
+                      <span className="text-muted-foreground">Deposit (pay now)</span>
+                      <span className="font-semibold text-foreground">€{Number(event.deposit).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body">
+                      <span className="text-muted-foreground">Remaining (pay later)</span>
+                      <span className="text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-bold text-foreground">€{Number(event.price).toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (event.payment_type as string) === "location" ? (
+                  <>
+                    <p className="text-sm font-body font-semibold text-foreground">€{Number(event.price).toFixed(2)}</p>
+                    <p className="text-xs font-body text-muted-foreground">Payment on location — no charge during registration.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-body font-semibold text-foreground">Total: €{Number(event.price).toFixed(2)}</p>
+                    <p className="text-xs font-body text-muted-foreground">Full payment will be charged online via Stripe.</p>
+                  </>
+                )}
               </div>
             )}
 
