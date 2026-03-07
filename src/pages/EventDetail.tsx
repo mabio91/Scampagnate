@@ -107,17 +107,24 @@ const EventDetail = () => {
     }
   };
 
+  const needsPayment = isRegistered && event.payment_type !== "free" && myRegistration?.payment_status !== "paid";
+  const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
+
   const getCTALabel = () => {
+    if (event.status === "closed") return "Event Closed";
+    if (isOnWaitlist) return "On Waitlist ⏳";
+    if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered ✔";
     if (event.status === "full") return "Join Waitlist";
-    if (event.status === "closed") return "Event Closed";
     return "Join Event";
   };
 
   const getCTAClass = () => {
+    if (event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
+    if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
-    if (event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
     return "bg-primary text-primary-foreground hover:bg-primary/90";
   };
 
