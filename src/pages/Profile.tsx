@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Award, Edit3, Check } from "lucide-react";
+import { User, LogOut, Award, Edit3, Check, Camera } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 const Profile = () => {
@@ -21,6 +21,43 @@ const Profile = () => {
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadAvatar = async (file: File) => {
+    if (!user) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      await refreshProfile();
+      toast({ title: "Foto profilo aggiornata!" });
+    } catch (err: any) {
+      toast({ title: "Errore upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const { data: userBadges } = useQuery({
     queryKey: ["user-badges", user?.id],
