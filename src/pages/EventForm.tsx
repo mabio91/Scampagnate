@@ -115,7 +115,7 @@ const EventForm = () => {
     setEquipmentItems((prev) => prev.filter((_, i) => i !== index));
   };
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
-
+  const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
 
   useEffect(() => {
     if (isEditing) {
