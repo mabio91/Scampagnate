@@ -65,6 +65,42 @@ const EventDetail = () => {
   const imageSrc = useEventImage(event.image_url || "trekking");
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
+  const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
+
+  const handleToggleSave = async () => {
+    if (!user) { navigate("/auth"); return; }
+    try {
+      await toggleSaveMutation.mutateAsync({ eventId: event.id, isSaved });
+      toast({ title: isSaved ? "Removed from saved" : "Saved to wishlist! 🔖" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const generateCalUrl = (type: "google" | "apple" | "outlook") => {
+    const startDate = new Date(`${event.date}T${event.time}`);
+    const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
+    const title = encodeURIComponent(event.title);
+    const location = encodeURIComponent(event.location);
+    const eventUrl = `${window.location.origin}/event/${event.id}`;
+    const details = encodeURIComponent(`${event.title}\n\nLocation: ${event.location}\n\nEvent page: ${eventUrl}`);
+    const formatICS = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    if (type === "google") {
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatICS(startDate)}/${formatICS(endDate)}&location=${location}&details=${details}`;
+    }
+    if (type === "outlook") {
+      return `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${location}&body=${details}`;
+    }
+    const ics = ["BEGIN:VCALENDAR","VERSION:2.0","BEGIN:VEVENT",`DTSTART:${formatICS(startDate)}`,`DTEND:${formatICS(endDate)}`,`SUMMARY:${event.title}`,`LOCATION:${event.location}`,`DESCRIPTION:Event page: ${eventUrl}`,`URL:${eventUrl}`,"END:VEVENT","END:VCALENDAR"].join("\r\n");
+    return URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  };
+
+  const handleAddToCalendar = (type: "google" | "apple" | "outlook") => {
+    const url = generateCalUrl(type);
+    if (type === "apple") {
+      const a = document.createElement("a"); a.href = url; a.download = `${event.title}.ics`; a.click(); URL.revokeObjectURL(url);
+    } else { window.open(url, "_blank"); }
+  };
 
   const handleCTA = () => {
     if (!user) {
