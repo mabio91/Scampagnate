@@ -39,7 +39,7 @@ const FeaturedEvent = ({ event }: { event: EventWithDetails }) => {
               <span className="text-primary-foreground font-body font-bold text-lg">
                 {Number(event.price) === 0 ? "Free" : `€${event.price}`}
               </span>
-              <span className="flex items-center gap-1 text-accent text-sm font-body font-semibold">Scopri <ArrowRight className="h-4 w-4" /></span>
+              <span className="flex items-center gap-1 text-accent text-sm font-body font-semibold">Discover <ArrowRight className="h-4 w-4" /></span>
             </div>
           </div>
         </div>

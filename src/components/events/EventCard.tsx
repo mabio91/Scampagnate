@@ -53,7 +53,7 @@ const EventCard = ({ event, index }: { event: EventWithDetails; index: number })
                 {event.spots_taken}/{event.spots_total}
               </div>
               <span className="font-body font-bold text-sm text-foreground">
-                {Number(event.price) === 0 ? "Gratis" : `€${event.price}`}
+                {Number(event.price) === 0 ? "Free" : `€${event.price}`}
               </span>
             </div>
             {event.distance && (
