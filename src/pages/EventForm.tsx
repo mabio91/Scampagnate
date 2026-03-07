@@ -147,6 +147,17 @@ const EventForm = () => {
         setImagePreview(event.image_url);
       }
 
+      // Load equipment list
+      if (event.equipment_list && Array.isArray(event.equipment_list)) {
+        setEquipmentItems(
+          (event.equipment_list as any[]).map((item: any) => ({
+            name: item.name || "",
+            is_mandatory: item.is_mandatory || false,
+            notes: item.notes || "",
+          }))
+        );
+      }
+
       const { data: points } = await supabase
         .from("event_meeting_points")
         .select("*")
