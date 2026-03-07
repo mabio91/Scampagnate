@@ -12,7 +12,7 @@ import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
+import OptimizedImage, { resolveEventImageSrc } from "@/components/Optimized from "@/components/OptimizedImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,10 +79,7 @@ const EventDetail = () => {
         <p className="text-muted-foreground font-body">Event not found</p>
         <Link to="/" className="text-primary font-body mt-2">Back to Home</Link>
       </div>
-    );
-  }
-
-  const imageSrc = useEventImage(event.image_url || "trekking");
+  resolveEventImageSrc(event.image_urlevent.image_url || "trekking");
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
