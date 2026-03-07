@@ -240,7 +240,7 @@ const Profile = () => {
                           : "bg-muted text-muted-foreground hover:bg-muted/80"
                       }`}
                     >
-                      {cat.icon} {cat.name}
+                      {cat.name}
                     </button>
                   ))}
                 </div>
