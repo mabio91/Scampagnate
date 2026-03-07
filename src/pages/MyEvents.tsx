@@ -174,7 +174,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const [showShareSheet, setShowShareSheet] = useState(false);
 
   if (!event) return null;
-  const imageSrc = useEventImage(event.image_url || "trekking");
+  // image handled by OptimizedImage component
 
   const displayStatus = isPast ? "past" : registration.status;
   const status = statusConfig[displayStatus] || statusConfig.registered;
