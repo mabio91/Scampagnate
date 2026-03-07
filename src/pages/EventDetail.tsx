@@ -261,7 +261,28 @@ const EventDetail = () => {
               {event.location}
             </div>
           </div>
-          <DirectionsButton location={event.location} />
+          <div className="flex items-center gap-2">
+            <DirectionsButton location={event.location} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-sm font-body font-semibold hover:bg-secondary/20 transition-colors">
+                  <CalendarPlus className="h-4 w-4" />
+                  Add to Calendar
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem onClick={() => handleAddToCalendar("google")} className="font-body cursor-pointer">
+                  📅 Google Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAddToCalendar("apple")} className="font-body cursor-pointer">
+                  🍎 Apple Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAddToCalendar("outlook")} className="font-body cursor-pointer">
+                  📧 Outlook Calendar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </motion.div>
 
         {/* Stats */}
