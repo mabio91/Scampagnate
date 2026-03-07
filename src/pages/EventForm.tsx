@@ -74,6 +74,7 @@ const EventForm = () => {
     location: "",
     category_id: "",
     spots_total: 20,
+    reserved_spots: 0,
     price: 0,
     deposit: 0,
     payment_type: "free" as PaymentType,
