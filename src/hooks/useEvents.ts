@@ -37,11 +37,10 @@ export const useEvents = (categoryName?: string | null) => {
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("*, event_categories(name, icon), event_meeting_points(*)")
+        .select("id, title, date, time, location, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)")
         .order("date", { ascending: true });
 
       if (categoryName) {
-        // Filter by category name via join
         const { data: cat } = await supabase
           .from("event_categories")
           .select("id")
@@ -61,6 +60,8 @@ export const useEvents = (categoryName?: string | null) => {
         meeting_points: e.event_meeting_points || [],
       })) as EventWithDetails[];
     },
+    staleTime: 2 * 60 * 1000, // 2 min cache
+    gcTime: 5 * 60 * 1000,
   });
 };
 
