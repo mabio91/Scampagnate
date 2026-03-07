@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star } from "lucide-react";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { useQuery } from "@tanstack/react-query";
-import OptimizedImage from "@/components/OptimizedImage";
+import OptimizedImage from "@/components/OptimizedzedImage";
 import { useCategories } from "@/hooks/useEvents";
 
 const Profile = () => {
@@ -365,8 +365,7 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
 
 const PastEventCard = ({ registration }: { registration: any }) => {
   const event = registration.events;
-  if (!event) return null;
-  const imageSrc = useEventImage(event.image_url || "trekking");
+  if (!event) return null;// image handled by OptimizedImage component");
 
   return (
     <Link to={`/event/${event.id}`} className="block">
