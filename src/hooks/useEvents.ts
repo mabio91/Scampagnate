@@ -264,5 +264,7 @@ export const useCategories = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 10 * 60 * 1000, // categories rarely change
+    gcTime: 30 * 60 * 1000,
   });
 };
