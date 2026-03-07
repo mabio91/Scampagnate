@@ -179,6 +179,18 @@ const EventForm = () => {
           notes: p.notes || "",
         })));
       }
+
+      // Load additional fields
+      if (event.additional_fields && Array.isArray(event.additional_fields)) {
+        setAdditionalFields(
+          (event.additional_fields as any[]).map((f: any) => ({
+            label: f.label || "",
+            type: f.type || "text",
+            required: f.required || false,
+            options: f.options || "",
+          }))
+        );
+      }
     }
     setLoadingEvent(false);
   };
