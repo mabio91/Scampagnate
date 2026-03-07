@@ -428,18 +428,52 @@ const EventDetail = () => {
           )}
         </motion.div>
 
-        {/* Organizer */}
+        {/* Organizer & Contact */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
           <h3 className="font-display text-lg font-bold text-foreground mb-3">Organizer</h3>
           <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
-              {event.organizer_name?.[0] || "O"}
-            </div>
-            <div>
+            {organizerProfile?.avatar_url ? (
+              <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
+                {event.organizer_name?.[0] || "O"}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-body font-semibold text-foreground">{event.organizer_name}</p>
               <p className="text-xs font-body text-muted-foreground">Event Organizer</p>
             </div>
           </div>
+
+          {/* Contact options */}
+          {user && (
+            <div className="flex gap-2 mt-3">
+              {organizerProfile?.phone && (
+                <>
+                  <a
+                    href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-[#25D366]/10 text-[#25D366] text-sm font-body font-semibold hover:bg-[#25D366]/20 transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" /> WhatsApp
+                  </a>
+                  <a
+                    href={`tel:${organizerProfile.phone}`}
+                    className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-body font-semibold hover:bg-primary/20 transition-colors"
+                  >
+                    <Phone className="h-4 w-4" /> Call
+                  </a>
+                </>
+              )}
+              {!organizerProfile?.phone && (
+                <p className="text-xs font-body text-muted-foreground">Contact info not available</p>
+              )}
+            </div>
+          )}
+          {!user && (
+            <p className="text-xs font-body text-muted-foreground mt-2">Sign in to contact the organizer</p>
+          )}
         </motion.div>
 
         {/* Payment & Pricing Info */}
