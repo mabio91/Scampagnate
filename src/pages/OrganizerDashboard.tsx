@@ -19,6 +19,7 @@ import IssuesPanel from "@/components/admin/IssuesPanel";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  LineChart, Line, PieChart, Pie, AreaChart, Area, Legend, CartesianGrid,
 } from "recharts";
 
 const CHART_COLORS = [
