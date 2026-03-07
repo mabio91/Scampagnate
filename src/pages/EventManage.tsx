@@ -348,6 +348,15 @@ const EventManage = () => {
               </div>
             )}
           </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="mt-3">
+            <EventAnalytics
+              event={event}
+              registrations={registrations || []}
+              meetingPoints={meetingPoints || []}
+            />
+          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
