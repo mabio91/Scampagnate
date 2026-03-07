@@ -512,7 +512,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "organizer" | "user"
       event_status: "available" | "full" | "closed"
-      payment_type: "free" | "paid" | "deposit"
+      payment_type: "free" | "paid" | "deposit" | "location"
       registration_status: "registered" | "paid" | "waitlist" | "cancelled"
     }
     CompositeTypes: {
@@ -643,7 +643,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "organizer", "user"],
       event_status: ["available", "full", "closed"],
-      payment_type: ["free", "paid", "deposit"],
+      payment_type: ["free", "paid", "deposit", "location"],
       registration_status: ["registered", "paid", "waitlist", "cancelled"],
     },
   },
