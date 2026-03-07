@@ -106,7 +106,7 @@ export const mockEvents: EventData[] = [
       { name: "Terrazza Romana", location: "Via dei Fori Imperiali 12, Roma", time: "18:30" },
     ],
     participants: [
-      { name: "Francesca", badge: "🥂" },
+      { name: "Francesca" },
       { name: "Luca" },
       { name: "Valentina" },
     ],
