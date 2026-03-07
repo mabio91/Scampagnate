@@ -278,35 +278,73 @@ const EventDetail = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display text-lg font-bold text-foreground">Participants</h3>
-            <span className="text-sm font-body text-muted-foreground">{event.spots_taken} / {event.spots_total}</span>
+            <span className="text-sm font-body text-muted-foreground">{event.spots_taken} / {event.spots_total} joined</span>
           </div>
           <div className="w-full h-2 rounded-full bg-muted mb-3">
             <div className="h-full rounded-full bg-secondary transition-all" style={{ width: `${Math.min(100, (event.spots_taken / event.spots_total) * 100)}%` }} />
           </div>
-          {user && participants && participants.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {participants.slice(0, 5).map((p: any) => (
-                <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm font-body">
-                  {p.profiles?.avatar_url ? (
-                    <img src={p.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                  ) : (
-                    <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
-                      {p.profiles?.first_name?.[0] || "?"}
-                    </span>
-                  )}
-                  <span className="text-foreground">{p.profiles?.first_name}</span>
-                </div>
-              ))}
-              {participants.length > 5 && (
-                <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-muted text-sm font-body text-muted-foreground">
-                  +{participants.length - 5} more <ChevronRight className="h-3 w-3" />
+
+          {/* Guest view: only count */}
+          {!user && (
+            <p className="text-sm font-body text-muted-foreground">
+              {event.spots_taken > 0
+                ? `${event.spots_taken} participant${event.spots_taken > 1 ? "s" : ""} already joined. Sign in to see who's going.`
+                : "No participants yet. Sign in to see who joins."}
+            </p>
+          )}
+
+          {/* Logged-in user view: social preview with badges */}
+          {user && participants && participants.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-body text-muted-foreground mb-2">Participants already joined:</p>
+              <div className="flex flex-wrap gap-2">
+                {participants.slice(0, 6).map((p: any) => (
+                  <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm font-body">
+                    {p.profiles?.avatar_url ? (
+                      <img src={p.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
+                        {p.profiles?.first_name?.[0] || "?"}
+                      </span>
+                    )}
+                    <span className="text-foreground">{p.profiles?.first_name}</span>
+                    {p.badges && p.badges.length > 0 && (
+                      <span className="text-xs" title={p.badges.map((b: any) => b.name).join(", ")}>
+                        {p.badges.slice(0, 2).map((b: any) => b.icon).join("")}
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {participants.length > 6 && (
+                  <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-muted text-sm font-body text-muted-foreground">
+                    +{participants.length - 6} others <ChevronRight className="h-3 w-3" />
+                  </div>
+                )}
+              </div>
+
+              {/* Organizer-only: detailed list with meeting points */}
+              {(user.id === event.organizer_id) && event.meeting_points && event.meeting_points.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Meeting point assignments:</p>
+                  <div className="space-y-1">
+                    {participants.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between text-xs font-body px-2 py-1.5 rounded-lg bg-muted/30">
+                        <span className="text-foreground font-medium">
+                          {p.profiles?.first_name} {p.profiles?.last_name}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {p.meeting_point?.name || "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          ) : (
-            <p className="text-sm font-body text-muted-foreground">
-              {user ? "No participants yet" : "Sign in to see participants"}
-            </p>
+          )}
+
+          {user && (!participants || participants.length === 0) && (
+            <p className="text-sm font-body text-muted-foreground">No participants yet</p>
           )}
         </motion.div>
 
