@@ -230,7 +230,8 @@ const EventDetail = () => {
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
       {/* Hero */}
-      <div classNameOptimizedImage src={event.image_url} alt={event.title} className="w-full h-72 object-cover bg-muted" width={600} height={288} loading="eagw-full h-72 object-cover" />
+      <div className="relative">
+        <OptimizedImage src={event.image_url} alt={event.title} className="w-full h-72 object-cover bg-muted" width={600} height={288} loading="eager" />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
         <Link to="/" className="absolute top-4 left-4 p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
           <ArrowLeft className="h-5 w-5" />
