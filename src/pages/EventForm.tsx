@@ -426,6 +426,11 @@ const EventForm = () => {
               <Input id="spots" type="number" min={1} value={form.spots_total} onChange={(e) => updateForm("spots_total", parseInt(e.target.value) || 1)} />
             </div>
             <div>
+              <Label htmlFor="reserved">Reserved Spots</Label>
+              <Input id="reserved" type="number" min={0} max={form.spots_total} value={form.reserved_spots} onChange={(e) => updateForm("reserved_spots", parseInt(e.target.value) || 0)} />
+              <p className="text-[11px] text-muted-foreground font-body mt-1">Spots reserved for manual/offline registrations. Count toward total capacity.</p>
+            </div>
+            <div>
               <Label>Payment Type</Label>
               <Select value={form.payment_type} onValueChange={(v) => updateForm("payment_type", v as PaymentType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
