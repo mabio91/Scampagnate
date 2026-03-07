@@ -288,7 +288,7 @@ const Profile = () => {
             <div className="grid grid-cols-2 gap-2 mt-3">
               {userBadges.filter((ub: any) => ub.badges?.name !== "Scampagnatore Ufficiale").map((ub: any) => (
                 <div key={ub.id} className="p-3 rounded-xl bg-card text-center">
-                  <span className="text-2xl">{ub.badges?.icon}</span>
+                  <BadgeIcon icon={ub.badges?.icon || ""} className="h-6 w-6 mx-auto text-primary" />
                   <p className="text-sm font-body font-semibold text-foreground mt-1">{ub.badges?.name}</p>
                   <p className="text-[10px] font-body text-muted-foreground">{ub.badges?.description}</p>
                 </div>
