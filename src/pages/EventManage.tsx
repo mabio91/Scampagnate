@@ -169,6 +169,10 @@ const EventManage = () => {
             <TabsTrigger value="participants" className="flex-1">Participants</TabsTrigger>
             <TabsTrigger value="checkin" className="flex-1">Check-in</TabsTrigger>
             <TabsTrigger value="waitlist" className="flex-1">Waitlist</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1">
+              <BarChart3 className="h-3.5 w-3.5 mr-1" />
+              Stats
+            </TabsTrigger>
           </TabsList>
 
           {/* Participants Tab */}
