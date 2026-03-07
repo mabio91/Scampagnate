@@ -154,7 +154,7 @@ export const mockEvents: EventData[] = [
       { name: "Ingresso Scavi", location: "Viale dei Romagnoli 717, Ostia", time: "09:30" },
     ],
     participants: [
-      { name: "Chiara", badge: "🏛" },
+      { name: "Chiara" },
       { name: "Paolo" },
     ],
     organizer: "Gruppo Scampagnate",
