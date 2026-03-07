@@ -268,6 +268,7 @@ const EventForm = () => {
         location: form.location,
         category_id: form.category_id || null,
         spots_total: form.spots_total,
+        reserved_spots: form.reserved_spots,
         price: form.price,
         deposit: form.payment_type === "deposit" ? form.deposit : null,
         payment_type: form.payment_type,
