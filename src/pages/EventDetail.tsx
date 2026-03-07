@@ -41,9 +41,24 @@ const EventDetail = () => {
   const toggleSaveMutation = useToggleSaveEvent();
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
+
+  // Fetch organizer profile for contact info
+  const { data: organizerProfile } = useQuery({
+    queryKey: ["organizer-profile", event?.organizer_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, phone, avatar_url")
+        .eq("id", event!.organizer_id!)
+        .single();
+      return data;
+    },
+    enabled: !!event?.organizer_id,
+  });
 
   if (isLoading) {
     return (
