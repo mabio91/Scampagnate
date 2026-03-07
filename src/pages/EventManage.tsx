@@ -413,27 +413,71 @@ const EventManage = () => {
 
           {/* Check-in Tab */}
           <TabsContent value="checkin" className="space-y-3 mt-3">
-            <div className="flex items-center justify-between">
-              <p className="font-body text-sm text-muted-foreground">
-                {checkedIn.length} / {registered.length} checked in
-              </p>
+            {/* Controls row */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={checkInSearch}
+                  onChange={(e) => setCheckInSearch(e.target.value)}
+                  placeholder="Search participants..."
+                  className="pl-8 h-8 text-sm"
+                />
+              </div>
               <Button
                 variant={quickCheckIn ? "default" : "outline"}
                 size="sm"
-                className="gap-1"
+                className="gap-1 shrink-0"
                 onClick={() => setQuickCheckIn(!quickCheckIn)}
               >
                 <Zap className="h-3.5 w-3.5" />
-                Quick Mode
+                Quick
               </Button>
             </div>
 
-            {registered.length === 0 ? (
-              <p className="text-center text-muted-foreground font-body text-sm py-6">No participants to check in</p>
+            {/* Meeting point filter */}
+            {meetingPoints && meetingPoints.length > 0 && (
+              <div className="space-y-2">
+                <Select value={checkInMpFilter} onValueChange={setCheckInMpFilter}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Filter by meeting point" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Participants</SelectItem>
+                    {meetingPoints.map((mp) => {
+                      const mpCheckedIn = registered.filter((r) => r.meeting_point_id === mp.id && r.checked_in).length;
+                      const mpTotal = registered.filter((r) => r.meeting_point_id === mp.id).length;
+                      return (
+                        <SelectItem key={mp.id} value={mp.id}>
+                          {mp.name} — {mpCheckedIn}/{mpTotal} checked in
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Attendance counter */}
+            <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
+              <p className="font-body text-sm text-foreground font-semibold">
+                {checkInMpFilter === "all" ? "Total" : meetingPoints?.find(m => m.id === checkInMpFilter)?.name || ""}
+              </p>
+              <Badge variant="secondary" className="text-sm font-display">
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                {filteredCheckIn.filter((r) => r.checked_in).length} / {filteredCheckIn.length} checked in
+              </Badge>
+            </div>
+
+            {filteredCheckIn.length === 0 ? (
+              <p className="text-center text-muted-foreground font-body text-sm py-6">
+                {checkInSearch ? "No matching participants" : "No participants to check in"}
+              </p>
             ) : (
               <div className="space-y-2">
-                {registered.map((reg) => {
+                {filteredCheckIn.map((reg) => {
                   const { firstName, lastName, isManual } = getParticipantName(reg);
+                  const mp = meetingPoints?.find((p) => p.id === reg.meeting_point_id);
                   return (
                     <Card
                       key={reg.id}
@@ -456,6 +500,9 @@ const EventManage = () => {
                           {firstName} {lastName}
                           {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
                         </p>
+                        {mp && (
+                          <p className="text-[10px] text-muted-foreground font-body">{mp.name}</p>
+                        )}
                       </div>
                       {!quickCheckIn && (
                         <Button
