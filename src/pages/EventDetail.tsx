@@ -132,10 +132,37 @@ const EventDetail = () => {
     }
   };
 
-  const openDirections = (location: string) => {
+  const openDirections = (location: string, app: "google" | "apple" | "waze") => {
     const encoded = encodeURIComponent(location);
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`, "_blank");
+    const urls = {
+      google: `https://www.google.com/maps/dir/?api=1&destination=${encoded}`,
+      apple: `https://maps.apple.com/?daddr=${encoded}`,
+      waze: `https://waze.com/ul?q=${encoded}&navigate=yes`,
+    };
+    window.open(urls[app], "_blank");
   };
+
+  const DirectionsButton = ({ location, className = "" }: { location: string; className?: string }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
+          <Navigation className="h-4 w-4" />
+          Get Directions
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onClick={() => openDirections(location, "google")} className="font-body cursor-pointer">
+          <span className="mr-2">📍</span> Google Maps
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openDirections(location, "apple")} className="font-body cursor-pointer">
+          <span className="mr-2">🗺️</span> Apple Maps
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openDirections(location, "waze")} className="font-body cursor-pointer">
+          <span className="mr-2">🚗</span> Waze
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <div className="min-h-screen bg-background pb-24">
