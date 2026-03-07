@@ -8,7 +8,7 @@ const Merch = () => {
         <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h1 className="font-display text-2xl font-bold text-foreground mb-2">Merchandise</h1>
         <p className="text-muted-foreground font-body text-sm">
-          Presto disponibile! Il merchandise ufficiale di Scampagnate.
+          Coming soon! Official Scampagnate merchandise.
         </p>
       </div>
     </AppLayout>

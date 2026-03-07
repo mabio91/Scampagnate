@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { CalendarDays, MapPin } from "lucide-react";
@@ -10,9 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const statusLabels: Record<string, string> = {
-  registered: "Iscritto",
-  paid: "Pagato",
-  waitlist: "In attesa",
+  registered: "Registered",
+  paid: "Paid",
+  waitlist: "Waitlist",
 };
 
 const MyEvents = () => {
@@ -25,9 +24,9 @@ const MyEvents = () => {
       <AppLayout>
         <div className="px-4 py-12 text-center">
           <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">I Miei Eventi</h1>
-          <p className="text-muted-foreground font-body text-sm mb-4">Accedi per vedere i tuoi eventi.</p>
-          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Accedi</Button>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">My Events</h1>
+          <p className="text-muted-foreground font-body text-sm mb-4">Sign in to see your events.</p>
+          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Sign In</Button>
         </div>
       </AppLayout>
     );
@@ -40,17 +39,17 @@ const MyEvents = () => {
   return (
     <AppLayout>
       <div className="px-4 py-4">
-        <h1 className="font-display text-2xl font-bold text-foreground mb-4">I Miei Eventi</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground mb-4">My Events</h1>
         <Tabs defaultValue="upcoming">
           <TabsList className="w-full">
-            <TabsTrigger value="upcoming" className="flex-1 font-body">Prossimi ({upcoming.length})</TabsTrigger>
-            <TabsTrigger value="past" className="flex-1 font-body">Passati ({past.length})</TabsTrigger>
+            <TabsTrigger value="upcoming" className="flex-1 font-body">Upcoming ({upcoming.length})</TabsTrigger>
+            <TabsTrigger value="past" className="flex-1 font-body">Past ({past.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming">
             {isLoading ? (
               <div className="space-y-3 mt-4">{[1, 2].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
             ) : upcoming.length === 0 ? (
-              <p className="text-center text-muted-foreground font-body py-8 text-sm">Nessun evento in programma.</p>
+              <p className="text-center text-muted-foreground font-body py-8 text-sm">No upcoming events.</p>
             ) : (
               <div className="space-y-3 mt-4">
                 {upcoming.map((r: any) => (
@@ -61,7 +60,7 @@ const MyEvents = () => {
           </TabsContent>
           <TabsContent value="past">
             {past.length === 0 ? (
-              <p className="text-center text-muted-foreground font-body py-8 text-sm">Nessun evento passato.</p>
+              <p className="text-center text-muted-foreground font-body py-8 text-sm">No past events.</p>
             ) : (
               <div className="space-y-3 mt-4">
                 {past.map((r: any) => (

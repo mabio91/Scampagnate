@@ -49,8 +49,8 @@ const EventDetail = () => {
   if (!event) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center py-20">
-        <p className="text-muted-foreground font-body">Evento non trovato</p>
-        <Link to="/" className="text-primary font-body mt-2">Torna alla Home</Link>
+        <p className="text-muted-foreground font-body">Event not found</p>
+        <Link to="/" className="text-primary font-body mt-2">Back to Home</Link>
       </div>
     );
   }
@@ -86,29 +86,29 @@ const EventDetail = () => {
       });
       setShowRegisterDialog(false);
       if (isWaitlist) {
-        toast({ title: "In lista d'attesa! ⏳", description: `Sarai notificato quando si libera un posto per ${event.title}` });
+        toast({ title: "Added to waitlist! ⏳", description: `You'll be notified when a spot opens for ${event.title}` });
       } else {
-        toast({ title: "Iscrizione confermata! ✅", description: `Ti sei iscritto a ${event.title}` });
+        toast({ title: "Registration confirmed! ✅", description: `You've registered for ${event.title}` });
       }
     } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
   const handleCancel = async () => {
     try {
       await cancelMutation.mutateAsync(event.id);
-      toast({ title: "Iscrizione annullata", description: "La tua iscrizione è stata cancellata." });
+      toast({ title: "Registration cancelled", description: "Your registration has been cancelled." });
     } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
   const getCTALabel = () => {
-    if (isRegistered) return "Iscritto ✔";
-    if (event.status === "full") return "Lista d'attesa";
-    if (event.status === "closed") return "Evento Chiuso";
-    return "Partecipa";
+    if (isRegistered) return "Registered ✔";
+    if (event.status === "full") return "Join Waitlist";
+    if (event.status === "closed") return "Event Closed";
+    return "Join Event";
   };
 
   const getCTAClass = () => {
@@ -125,7 +125,7 @@ const EventDetail = () => {
       await navigator.share({ title: event.title, text, url });
     } else {
       await navigator.clipboard.writeText(url);
-      toast({ title: "Link copiato!" });
+      toast({ title: "Link copied!" });
     }
   };
 
@@ -183,36 +183,36 @@ const EventDetail = () => {
             <div className="text-center">
               <Route className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.distance}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Distanza</p>
+              <p className="text-[10px] text-muted-foreground font-body">Distance</p>
             </div>
             <div className="text-center">
               <Mountain className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.elevation}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Dislivello</p>
+              <p className="text-[10px] text-muted-foreground font-body">Elevation</p>
             </div>
             <div className="text-center">
               <Clock className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.duration}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Durata</p>
+              <p className="text-[10px] text-muted-foreground font-body">Duration</p>
             </div>
             <div className="text-center">
               <Users className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.spots_taken}/{event.spots_total}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Posti</p>
+              <p className="text-[10px] text-muted-foreground font-body">Spots</p>
             </div>
           </motion.div>
         )}
 
         {/* Description */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-2">Descrizione</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">Description</h3>
           <p className="text-sm font-body text-muted-foreground leading-relaxed">{event.description}</p>
         </motion.div>
 
-        {/* Meeting Points */}
+        {/* Meeting Points - names stay Italian */}
         {event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
-            <h3 className="font-display text-lg font-bold text-foreground mb-3">Punti di Ritrovo</h3>
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
             <div className="space-y-3">
               {event.meeting_points.map((mp) => (
                 <button key={mp.id} onClick={() => openDirections(mp.location)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 text-left">
@@ -233,7 +233,7 @@ const EventDetail = () => {
         {/* Participants */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display text-lg font-bold text-foreground">Partecipanti</h3>
+            <h3 className="font-display text-lg font-bold text-foreground">Participants</h3>
             <span className="text-sm font-body text-muted-foreground">{event.spots_taken} / {event.spots_total}</span>
           </div>
           <div className="w-full h-2 rounded-full bg-muted mb-3">
@@ -255,13 +255,13 @@ const EventDetail = () => {
               ))}
               {participants.length > 5 && (
                 <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-muted text-sm font-body text-muted-foreground">
-                  +{participants.length - 5} altri <ChevronRight className="h-3 w-3" />
+                  +{participants.length - 5} more <ChevronRight className="h-3 w-3" />
                 </div>
               )}
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground">
-              {user ? "Nessun partecipante ancora" : "Accedi per vedere i partecipanti"}
+              {user ? "No participants yet" : "Sign in to see participants"}
             </p>
           )}
         </motion.div>
@@ -270,21 +270,21 @@ const EventDetail = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
           {event.payment_type === "deposit" && event.deposit && (
             <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 mb-4">
-              <p className="text-sm font-body font-semibold text-foreground">Pagamento con acconto</p>
+              <p className="text-sm font-body font-semibold text-foreground">Deposit payment</p>
               <p className="text-xs font-body text-muted-foreground mt-1">
-                Acconto: €{event.deposit} · Saldo: €{Number(event.price) - Number(event.deposit)} da pagare in loco
+                Deposit: €{event.deposit} · Balance: €{Number(event.price) - Number(event.deposit)} to pay on site
               </p>
             </div>
           )}
           {event.cancellation_policy && (
             <div className="p-3 rounded-xl bg-muted/50 mb-4">
-              <p className="text-sm font-body font-semibold text-foreground">Politica di cancellazione</p>
+              <p className="text-sm font-body font-semibold text-foreground">Cancellation Policy</p>
               <p className="text-xs font-body text-muted-foreground mt-1">{event.cancellation_policy}</p>
             </div>
           )}
           {isRegistered && (
             <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive text-destructive hover:bg-destructive/10">
-              {cancelMutation.isPending ? "Annullamento..." : "Annulla Iscrizione"}
+              {cancelMutation.isPending ? "Cancelling..." : "Cancel Registration"}
             </Button>
           )}
         </motion.div>
@@ -294,9 +294,9 @@ const EventDetail = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border p-4 pb-safe z-50">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
-            <p className="text-xs font-body text-muted-foreground">Prezzo</p>
+            <p className="text-xs font-body text-muted-foreground">Price</p>
             <p className="text-xl font-display font-bold text-foreground">
-              {Number(event.price) === 0 ? "Gratis" : `€${event.price}`}
+              {Number(event.price) === 0 ? "Free" : `€${event.price}`}
             </p>
           </div>
           <Button
@@ -313,15 +313,16 @@ const EventDetail = () => {
       <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display">Iscrizione a {event.title}</DialogTitle>
+            <DialogTitle className="font-display">Register for {event.title}</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              Completa l'iscrizione selezionando le opzioni richieste.
+              Complete your registration by selecting the required options.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {/* Meeting point names stay Italian */}
             {event.meeting_points && event.meeting_points.length > 0 && (
               <div>
-                <Label className="font-body text-sm font-semibold">Punto di ritrovo</Label>
+                <Label className="font-body text-sm font-semibold">Meeting Point</Label>
                 <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className="mt-2 space-y-2">
                   {event.meeting_points.map((mp) => (
                     <label key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
@@ -338,11 +339,11 @@ const EventDetail = () => {
 
             {isSportCategory && (
               <div>
-                <Label className="font-body text-sm font-semibold">Livello sportivo (opzionale)</Label>
+                <Label className="font-body text-sm font-semibold">Sport Level (optional)</Label>
                 <Input
                   value={sportLevel}
                   onChange={(e) => setSportLevel(e.target.value)}
-                  placeholder="Es: Intermedio, 3.5"
+                  placeholder="e.g. Intermediate, 3.5"
                   className="mt-1"
                 />
               </div>
@@ -351,10 +352,10 @@ const EventDetail = () => {
             {event.payment_type !== "free" && (
               <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
                 <p className="text-sm font-body font-semibold text-foreground">
-                  {event.payment_type === "deposit" ? `Acconto: €${event.deposit}` : `Totale: €${event.price}`}
+                  {event.payment_type === "deposit" ? `Deposit: €${event.deposit}` : `Total: €${event.price}`}
                 </p>
                 <p className="text-xs font-body text-muted-foreground mt-1">
-                  Il pagamento verrà gestito separatamente.
+                  Payment will be handled separately.
                 </p>
               </div>
             )}
@@ -364,7 +365,7 @@ const EventDetail = () => {
               disabled={registerMutation.isPending || (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint)}
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? "Iscrizione in corso..." : event.status === "full" ? "Entra in Lista d'Attesa" : "Conferma Iscrizione"}
+              {registerMutation.isPending ? "Registering..." : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
             </Button>
           </div>
         </DialogContent>

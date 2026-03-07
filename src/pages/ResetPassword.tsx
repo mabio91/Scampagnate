@@ -26,9 +26,9 @@ const ResetPassword = () => {
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Password aggiornata!" });
+      toast({ title: "Password updated!" });
       navigate("/");
     }
     setLoading(false);
@@ -39,8 +39,8 @@ const ResetPassword = () => {
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <div className="text-center">
           <img src={logo} alt="Scampagnate" className="h-16 w-16 rounded-full mx-auto mb-3" />
-          <p className="text-muted-foreground font-body">Link non valido.</p>
-          <Button onClick={() => navigate("/auth")} className="mt-4">Torna al login</Button>
+          <p className="text-muted-foreground font-body">Invalid link.</p>
+          <Button onClick={() => navigate("/auth")} className="mt-4">Back to Login</Button>
         </div>
       </div>
     );
@@ -51,15 +51,15 @@ const ResetPassword = () => {
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <img src={logo} alt="Scampagnate" className="h-16 w-16 rounded-full mx-auto mb-3" />
-          <h1 className="font-display text-2xl font-bold text-foreground">Nuova Password</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">New Password</h1>
         </div>
         <form onSubmit={handleReset} className="space-y-4">
           <div>
-            <Label className="font-body text-sm">Nuova password</Label>
+            <Label className="font-body text-sm">New password</Label>
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1" />
           </div>
           <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground font-body font-semibold">
-            {loading ? "Aggiornamento..." : "Aggiorna Password"}
+            {loading ? "Updating..." : "Update Password"}
           </Button>
         </form>
       </div>
