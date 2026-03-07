@@ -496,6 +496,73 @@ const EventForm = () => {
           )}
         </Card>
 
+        {/* Equipment List */}
+        <Card className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+              <PackageCheck className="h-4 w-4 text-primary" />
+              Equipment List
+            </h2>
+            <Button type="button" variant="outline" size="sm" onClick={addEquipmentItem} className="gap-1">
+              <Plus className="h-3.5 w-3.5" /> Add Item
+            </Button>
+          </div>
+
+          {/* Template Selector */}
+          {equipmentTemplates && equipmentTemplates.length > 0 && (
+            <div>
+              <Label>Load from Template</Label>
+              <Select onValueChange={handleTemplateSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template to pre-fill..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipmentTemplates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} ({(t.equipment_template_items || []).length} items)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Equipment Items */}
+          {equipmentItems.map((item, index) => (
+            <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={item.is_mandatory}
+                    onCheckedChange={(v) => updateEquipmentItem(index, "is_mandatory", !!v)}
+                  />
+                  <span className="text-xs font-body text-muted-foreground">
+                    {item.is_mandatory ? "Mandatory" : "Optional"}
+                  </span>
+                </div>
+                <button type="button" onClick={() => removeEquipmentItem(index)} className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <Input
+                placeholder="Item name"
+                value={item.name}
+                onChange={(e) => updateEquipmentItem(index, "name", e.target.value)}
+              />
+              <Input
+                placeholder="Notes (optional)"
+                value={item.notes}
+                onChange={(e) => updateEquipmentItem(index, "notes", e.target.value)}
+              />
+            </div>
+          ))}
+          {equipmentItems.length === 0 && (
+            <p className="text-sm text-muted-foreground font-body text-center py-2">
+              No equipment items. Select a template or add items manually.
+            </p>
+          )}
+        </Card>
+
         <Button type="submit" className="w-full" disabled={saving}>
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           {isEditing ? "Update Event" : "Create Event"}
