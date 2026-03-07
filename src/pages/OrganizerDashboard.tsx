@@ -30,7 +30,7 @@ const CHART_COLORS = [
 ];
 
 const OrganizerDashboard = () => {
-  const { user, isOrganizer, loading } = useAuth();
+  const { user, isOrganizer, isAdmin, loading } = useAuth();
   const { data: events, isLoading } = useOrganizerEvents();
 
   // Fetch all registrations for organizer's events
