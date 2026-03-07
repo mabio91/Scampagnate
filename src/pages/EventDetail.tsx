@@ -76,14 +76,20 @@ const EventDetail = () => {
   };
 
   const handleRegister = async () => {
+    const isWaitlist = event.status === "full";
     try {
       await registerMutation.mutateAsync({
         eventId: event.id,
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
+        asWaitlist: isWaitlist,
       });
       setShowRegisterDialog(false);
-      toast({ title: "Iscrizione confermata! ✅", description: `Ti sei iscritto a ${event.title}` });
+      if (isWaitlist) {
+        toast({ title: "In lista d'attesa! ⏳", description: `Sarai notificato quando si libera un posto per ${event.title}` });
+      } else {
+        toast({ title: "Iscrizione confermata! ✅", description: `Ti sei iscritto a ${event.title}` });
+      }
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
     }
