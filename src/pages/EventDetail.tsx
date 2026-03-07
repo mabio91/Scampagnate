@@ -87,6 +87,7 @@ const EventDetail = () => {
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
         asWaitlist: isWaitlist,
+        paymentType: event.payment_type,
       });
       setShowRegisterDialog(false);
       if (isWaitlist) {
