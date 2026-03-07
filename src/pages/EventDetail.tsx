@@ -248,7 +248,7 @@ const EventDetail = () => {
             <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
             <div className="space-y-3">
               {event.meeting_points.map((mp) => (
-                <button key={mp.id} onClick={() => openDirections(mp.location)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 text-left">
+                <div key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
                     <MapPin className="h-5 w-5 text-secondary" />
                   </div>
@@ -256,8 +256,8 @@ const EventDetail = () => {
                     <p className="text-sm font-body font-semibold text-foreground">{mp.name}</p>
                     <p className="text-xs font-body text-muted-foreground">{mp.location} · {mp.time?.slice(0, 5)}</p>
                   </div>
-                  <Navigation className="h-4 w-4 text-secondary flex-shrink-0" />
-                </button>
+                  <DirectionsButton location={mp.location} />
+                </div>
               ))}
             </div>
           </motion.div>
