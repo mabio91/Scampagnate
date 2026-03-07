@@ -206,9 +206,8 @@ export const useMyEvents = () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, events(*, event_categories(name, icon))")
+        .select("*, events(*, event_categories(name, icon)), meeting_point:event_meeting_points(id, name, location, time)")
         .eq("user_id", user.id)
-        .neq("status", "cancelled")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];

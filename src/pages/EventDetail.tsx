@@ -3,10 +3,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
-  Route, Share2, Navigation, ChevronRight, Heart, Bookmark
+  Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration } from "@/hooks/useEvents";
+import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,10 @@ const EventDetail = () => {
   const { data: event, isLoading } = useEvent(id!);
   const { data: participants } = useEventParticipants(id!);
   const { data: myRegistration } = useMyRegistration(id!);
+  const { data: savedEvents } = useSavedEvents();
   const registerMutation = useRegisterForEvent();
   const cancelMutation = useCancelRegistration();
+  const toggleSaveMutation = useToggleSaveEvent();
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
@@ -63,6 +65,42 @@ const EventDetail = () => {
   const imageSrc = useEventImage(event.image_url || "trekking");
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
+  const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
+
+  const handleToggleSave = async () => {
+    if (!user) { navigate("/auth"); return; }
+    try {
+      await toggleSaveMutation.mutateAsync({ eventId: event.id, isSaved });
+      toast({ title: isSaved ? "Removed from saved" : "Saved to wishlist! 🔖" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const generateCalUrl = (type: "google" | "apple" | "outlook") => {
+    const startDate = new Date(`${event.date}T${event.time}`);
+    const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
+    const title = encodeURIComponent(event.title);
+    const location = encodeURIComponent(event.location);
+    const eventUrl = `${window.location.origin}/event/${event.id}`;
+    const details = encodeURIComponent(`${event.title}\n\nLocation: ${event.location}\n\nEvent page: ${eventUrl}`);
+    const formatICS = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    if (type === "google") {
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatICS(startDate)}/${formatICS(endDate)}&location=${location}&details=${details}`;
+    }
+    if (type === "outlook") {
+      return `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${location}&body=${details}`;
+    }
+    const ics = ["BEGIN:VCALENDAR","VERSION:2.0","BEGIN:VEVENT",`DTSTART:${formatICS(startDate)}`,`DTEND:${formatICS(endDate)}`,`SUMMARY:${event.title}`,`LOCATION:${event.location}`,`DESCRIPTION:Event page: ${eventUrl}`,`URL:${eventUrl}`,"END:VEVENT","END:VCALENDAR"].join("\r\n");
+    return URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  };
+
+  const handleAddToCalendar = (type: "google" | "apple" | "outlook") => {
+    const url = generateCalUrl(type);
+    if (type === "apple") {
+      const a = document.createElement("a"); a.href = url; a.download = `${event.title}.ics`; a.click(); URL.revokeObjectURL(url);
+    } else { window.open(url, "_blank"); }
+  };
 
   const handleCTA = () => {
     if (!user) {
@@ -184,9 +222,14 @@ const EventDetail = () => {
         <Link to="/" className="absolute top-4 left-4 p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <button onClick={shareEvent} className="absolute top-4 right-4 p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
-          <Share2 className="h-5 w-5" />
-        </button>
+        <div className="absolute top-4 right-4 flex gap-2">
+          <button onClick={handleToggleSave} className="p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
+            {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+          </button>
+          <button onClick={shareEvent} className="p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
+            <Share2 className="h-5 w-5" />
+          </button>
+        </div>
         <div className="absolute bottom-4 left-4 right-4">
           <div className="flex items-center gap-2 mb-2">
             {event.difficulty && (
@@ -218,7 +261,28 @@ const EventDetail = () => {
               {event.location}
             </div>
           </div>
-          <DirectionsButton location={event.location} />
+          <div className="flex items-center gap-2">
+            <DirectionsButton location={event.location} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-sm font-body font-semibold hover:bg-secondary/20 transition-colors">
+                  <CalendarPlus className="h-4 w-4" />
+                  Add to Calendar
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem onClick={() => handleAddToCalendar("google")} className="font-body cursor-pointer">
+                  📅 Google Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAddToCalendar("apple")} className="font-body cursor-pointer">
+                  🍎 Apple Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAddToCalendar("outlook")} className="font-body cursor-pointer">
+                  📧 Outlook Calendar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </motion.div>
 
         {/* Stats */}
