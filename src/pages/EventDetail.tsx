@@ -202,13 +202,13 @@ const EventDetail = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={() => openDirections(location, "google")} className="font-body cursor-pointer">
-          <span className="mr-2">📍</span> Google Maps
+          <MapPinned className="h-4 w-4 mr-2 text-muted-foreground" /> Google Maps
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => openDirections(location, "apple")} className="font-body cursor-pointer">
-          <span className="mr-2">🗺️</span> Apple Maps
+          <Map className="h-4 w-4 mr-2 text-muted-foreground" /> Apple Maps
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => openDirections(location, "waze")} className="font-body cursor-pointer">
-          <span className="mr-2">🚗</span> Waze
+          <Car className="h-4 w-4 mr-2 text-muted-foreground" /> Waze
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
