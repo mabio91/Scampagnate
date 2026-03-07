@@ -37,7 +37,7 @@ const Index = () => {
             />
             <div className="px-4">
               <h2 className="font-display text-xl font-bold text-foreground mb-3">
-                Prossimi Eventi
+                Upcoming Events
               </h2>
               <div className="space-y-2">
                 {upcomingEvents.map((event, i) => (
