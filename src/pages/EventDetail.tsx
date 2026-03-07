@@ -77,7 +77,12 @@ const EventDetail = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center py-20">
         <p className="text-muted-foreground font-body">Event not found</p>
-        <Link to="/" className="text-primary font-body mt-2">Back tresolveEventImageSrc(event.image_urlageSrc(event.image_urlevent.image_url || "trekking");
+        <Link to="/" className="text-primary font-body mt-2">Back to Home</Link>
+      </div>
+    );
+  }
+
+  const imageSrc = resolveEventImageSrc(event.image_url);
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;

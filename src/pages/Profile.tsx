@@ -365,10 +365,13 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
 
 const PastEventCard = ({ registration }: { registration: any }) => {
   const event = registration.events;
-  if (!event) return nu// image handled by OptimizedImage component
+  if (!event) return null;
+
+  return (
     <Link to={`/event/${event.id}`} className="block">
       <div className="flex gap-3 p-3 rounded-xl bg-card hover:bg-muted/50 transition-colors">
-        <img src={imageSOptimizedImage src={event.image_url} alt={event.title} width={64} height={64} className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-mutediv className="flex-1 min-w-0">
+        <OptimizedImage src={event.image_url} alt={event.title} width={64} height={64} className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-muted" />
+        <div className="flex-1 min-w-0">
           <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground text-xs font-body">
             <CalendarDays className="h-3 w-3" />
