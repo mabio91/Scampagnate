@@ -35,6 +35,7 @@ const EventDetail = () => {
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
+  const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
 
   if (isLoading) {
     return (
