@@ -1,0 +1,9 @@
+{
+    "cleanUrls": true,
+    "rewrites": [
+        {
+            "source": "/((?!api|_next|assets|.*\\..*).*)",
+            "destination": "/"
+        }
+    ]
+}
