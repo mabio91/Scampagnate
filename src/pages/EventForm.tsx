@@ -107,7 +107,7 @@ const EventForm = () => {
   const removeEquipmentItem = (index: number) => {
     setEquipmentItems((prev) => prev.filter((_, i) => i !== index));
   };
-
+  const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
 
 
   useEffect(() => {
