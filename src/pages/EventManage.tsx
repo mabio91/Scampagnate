@@ -99,6 +99,17 @@ const EventManage = () => {
     ? registered
     : registered.filter((r) => r.meeting_point_id === meetingPointFilter);
 
+  // Check-in filtered list (by meeting point + search)
+  const filteredCheckIn = registered.filter((r) => {
+    if (checkInMpFilter !== "all" && r.meeting_point_id !== checkInMpFilter) return false;
+    if (checkInSearch) {
+      const { firstName, lastName } = getParticipantName(r);
+      const name = `${firstName} ${lastName}`.toLowerCase();
+      if (!name.includes(checkInSearch.toLowerCase())) return false;
+    }
+    return true;
+  });
+
   const handleCheckIn = async (regId: string, currentState: boolean) => {
     const { error } = await supabase
       .from("event_registrations")
