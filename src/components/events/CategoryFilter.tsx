@@ -1,4 +1,13 @@
 import { motion } from "framer-motion";
+import { Mountain, Dumbbell, Wine, Landmark, Sparkles, type LucideIcon } from "lucide-react";
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  "Trekking & Outdoor": Mountain,
+  "Sport & Movimento": Dumbbell,
+  "Social & Aperitivi": Wine,
+  "Esperienze & Cultura": Landmark,
+  "Eventi Speciali": Sparkles,
+};
 
 interface Category {
   id: string;
