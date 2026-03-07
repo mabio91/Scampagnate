@@ -14,7 +14,6 @@ import { ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus, Lo
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import EventAnalytics from "@/components/events/EventAnalytics";
-import { useToast } from "@/hooks/use-toast";
 
 const EventManage = () => {
   const { id } = useParams();
