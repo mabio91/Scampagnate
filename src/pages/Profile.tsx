@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star } from "lucide-react";
+import { BadgeIcon } from "@/components/BadgeIcon";
 import { useQuery } from "@tanstack/react-query";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useCategories } from "@/hooks/useEvents";
@@ -239,7 +240,7 @@ const Profile = () => {
                           : "bg-muted text-muted-foreground hover:bg-muted/80"
                       }`}
                     >
-                      {cat.icon} {cat.name}
+                      {cat.name}
                     </button>
                   ))}
                 </div>
@@ -271,7 +272,7 @@ const Profile = () => {
           {/* Scampagnatore Ufficiale highlight */}
           {userBadges?.some((ub: any) => ub.badges?.name === "Scampagnatore Ufficiale") && (
             <div className="mb-3 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
-              <span className="text-3xl">🏅</span>
+              <BadgeIcon icon="🏅" className="h-7 w-7 text-primary" />
               <div>
                 <p className="text-sm font-display font-bold text-primary">Scampagnatore Ufficiale</p>
                 <p className="text-[10px] font-body text-muted-foreground">Membro ufficiale della community</p>
@@ -287,7 +288,7 @@ const Profile = () => {
             <div className="grid grid-cols-2 gap-2 mt-3">
               {userBadges.filter((ub: any) => ub.badges?.name !== "Scampagnatore Ufficiale").map((ub: any) => (
                 <div key={ub.id} className="p-3 rounded-xl bg-card text-center">
-                  <span className="text-2xl">{ub.badges?.icon}</span>
+                  <BadgeIcon icon={ub.badges?.icon || ""} className="h-6 w-6 mx-auto text-primary" />
                   <p className="text-sm font-body font-semibold text-foreground mt-1">{ub.badges?.name}</p>
                   <p className="text-[10px] font-body text-muted-foreground">{ub.badges?.description}</p>
                 </div>
@@ -295,7 +296,7 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground mt-2">
-              Join events to earn badges! 🏆
+              Join events to earn badges!
             </p>
           )}
         </div>
@@ -313,7 +314,7 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground">
-              No past events yet. Join your first event! 🎉
+              No past events yet. Join your first event!
             </p>
           )}
         </div>
@@ -347,7 +348,7 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
 
   return (
     <div className="p-3 rounded-xl bg-muted/50 flex items-center gap-3">
-      <span className="text-2xl opacity-40">{nextBadge.icon}</span>
+      <BadgeIcon icon={nextBadge.icon} className="h-6 w-6 text-muted-foreground/40" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-body text-muted-foreground">Next badge</p>
         <p className="text-sm font-body font-semibold text-foreground">{nextBadge.name}</p>

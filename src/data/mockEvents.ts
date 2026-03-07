@@ -47,11 +47,11 @@ export interface EventData {
 }
 
 export const categories: { name: EventCategory; icon: string; description: string }[] = [
-  { name: "Trekking & Outdoor", icon: "🏔", description: "Escursioni, camminate e natura" },
-  { name: "Sport & Movimento", icon: "🏸", description: "Padel, corsa e attività sportive" },
-  { name: "Social & Aperitivi", icon: "🥂", description: "Aperitivi, cene e serate sociali" },
-  { name: "Esperienze & Cultura", icon: "🏛", description: "Visite guidate e workshop" },
-  { name: "Eventi Speciali", icon: "✨", description: "Weekend, viaggi ed esperienze uniche" },
+  { name: "Trekking & Outdoor", icon: "mountain", description: "Escursioni, camminate e natura" },
+  { name: "Sport & Movimento", icon: "dumbbell", description: "Padel, corsa e attività sportive" },
+  { name: "Social & Aperitivi", icon: "wine", description: "Aperitivi, cene e serate sociali" },
+  { name: "Esperienze & Cultura", icon: "landmark", description: "Visite guidate e workshop" },
+  { name: "Eventi Speciali", icon: "sparkles", description: "Weekend, viaggi ed esperienze uniche" },
 ];
 
 export const mockEvents: EventData[] = [
@@ -80,11 +80,11 @@ export const mockEvents: EventData[] = [
       { name: "Parcheggio Monte Livata", location: "Parcheggio Monte Livata", time: "09:30" },
     ],
     participants: [
-      { name: "Matteo", badge: "🏔" },
-      { name: "Giulia", badge: "🥾" },
+      { name: "Matteo" },
+      { name: "Giulia" },
       { name: "Andrea" },
       { name: "Sara" },
-      { name: "Marco", badge: "🏔" },
+      { name: "Marco" },
     ],
     organizer: "Gruppo Scampagnate",
   },
@@ -106,7 +106,7 @@ export const mockEvents: EventData[] = [
       { name: "Terrazza Romana", location: "Via dei Fori Imperiali 12, Roma", time: "18:30" },
     ],
     participants: [
-      { name: "Francesca", badge: "🥂" },
+      { name: "Francesca" },
       { name: "Luca" },
       { name: "Valentina" },
     ],
@@ -131,7 +131,7 @@ export const mockEvents: EventData[] = [
     ],
     participants: [
       { name: "Roberto" },
-      { name: "Elena", badge: "🏸" },
+      { name: "Elena" },
     ],
     organizer: "Gruppo Scampagnate",
   },
@@ -154,7 +154,7 @@ export const mockEvents: EventData[] = [
       { name: "Ingresso Scavi", location: "Viale dei Romagnoli 717, Ostia", time: "09:30" },
     ],
     participants: [
-      { name: "Chiara", badge: "🏛" },
+      { name: "Chiara" },
       { name: "Paolo" },
     ],
     organizer: "Gruppo Scampagnate",
@@ -183,9 +183,9 @@ export const mockEvents: EventData[] = [
       { name: "Campo Imperatore", location: "Parcheggio Campo Imperatore", time: "09:30" },
     ],
     participants: [
-      { name: "Alessandro", badge: "🏔" },
+      { name: "Alessandro" },
       { name: "Maria" },
-      { name: "Giovanni", badge: "⛺" },
+      { name: "Giovanni" },
     ],
     organizer: "Gruppo Scampagnate",
   },

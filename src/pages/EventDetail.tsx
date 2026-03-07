@@ -3,10 +3,12 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
-  Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus
+  Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
+  Calendar, Apple, Mail, Map, Car, MapPinned
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -71,7 +73,7 @@ const EventDetail = () => {
     if (!user) { navigate("/auth"); return; }
     try {
       await toggleSaveMutation.mutateAsync({ eventId: event.id, isSaved });
-      toast({ title: isSaved ? "Removed from saved" : "Saved to wishlist! 🔖" });
+      toast({ title: isSaved ? "Removed from saved" : "Saved to wishlist" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -131,9 +133,9 @@ const EventDetail = () => {
       });
       setShowRegisterDialog(false);
       if (isWaitlist) {
-        toast({ title: "Added to waitlist! ⏳", description: `You'll be notified when a spot opens for ${event.title}` });
+        toast({ title: "Added to waitlist", description: `You'll be notified when a spot opens for ${event.title}` });
       } else {
-        toast({ title: "Registration confirmed! ✅", description: `You've registered for ${event.title}` });
+        toast({ title: "Registration confirmed", description: `You've registered for ${event.title}` });
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -154,9 +156,9 @@ const EventDetail = () => {
 
   const getCTALabel = () => {
     if (event.status === "closed") return "Event Closed";
-    if (isOnWaitlist) return "On Waitlist ⏳";
+    if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
-    if (isRegistered) return "Registered ✔";
+    if (isRegistered) return "Registered";
     if (event.status === "full") return "Join Waitlist";
     return "Join Event";
   };
@@ -201,13 +203,13 @@ const EventDetail = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={() => openDirections(location, "google")} className="font-body cursor-pointer">
-          <span className="mr-2">📍</span> Google Maps
+          <MapPinned className="h-4 w-4 mr-2 text-muted-foreground" /> Google Maps
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => openDirections(location, "apple")} className="font-body cursor-pointer">
-          <span className="mr-2">🗺️</span> Apple Maps
+          <Map className="h-4 w-4 mr-2 text-muted-foreground" /> Apple Maps
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => openDirections(location, "waze")} className="font-body cursor-pointer">
-          <span className="mr-2">🚗</span> Waze
+          <Car className="h-4 w-4 mr-2 text-muted-foreground" /> Waze
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -239,7 +241,7 @@ const EventDetail = () => {
             )}
             {event.category && (
               <span className="inline-block px-2.5 py-1 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground text-xs font-body font-semibold">
-                {event.category.icon} {event.category.name}
+                {event.category.name}
               </span>
             )}
           </div>
@@ -272,13 +274,13 @@ const EventDetail = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
                 <DropdownMenuItem onClick={() => handleAddToCalendar("google")} className="font-body cursor-pointer">
-                  📅 Google Calendar
+                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" /> Google Calendar
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAddToCalendar("apple")} className="font-body cursor-pointer">
-                  🍎 Apple Calendar
+                  <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" /> Apple Calendar
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAddToCalendar("outlook")} className="font-body cursor-pointer">
-                  📧 Outlook Calendar
+                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" /> Outlook Calendar
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -373,8 +375,10 @@ const EventDetail = () => {
                     )}
                     <span className="text-foreground">{p.profiles?.first_name}</span>
                     {p.badges && p.badges.length > 0 && (
-                      <span className="text-xs" title={p.badges.map((b: any) => b.name).join(", ")}>
-                        {p.badges.slice(0, 2).map((b: any) => b.icon).join("")}
+                      <span className="flex items-center gap-0.5" title={p.badges.map((b: any) => b.name).join(", ")}>
+                        {p.badges.slice(0, 2).map((b: any, i: number) => (
+                          <BadgeIconComp key={i} icon={b.icon} className="h-3.5 w-3.5 text-primary" />
+                        ))}
                       </span>
                     )}
                   </div>

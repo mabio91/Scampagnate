@@ -1,4 +1,13 @@
 import { motion } from "framer-motion";
+import { Mountain, Dumbbell, Wine, Landmark, Sparkles, type LucideIcon } from "lucide-react";
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  "Trekking & Outdoor": Mountain,
+  "Sport & Movimento": Dumbbell,
+  "Social & Aperitivi": Wine,
+  "Esperienze & Cultura": Landmark,
+  "Eventi Speciali": Sparkles,
+};
 
 interface Category {
   id: string;
@@ -38,7 +47,7 @@ const CategoryFilter = ({ categories, selected, onSelect }: CategoryFilterProps)
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
-            <span>{cat.icon}</span>
+            {(() => { const Icon = CATEGORY_ICONS[cat.name]; return Icon ? <Icon className="h-4 w-4" /> : null; })()}
             <span className="whitespace-nowrap">{cat.name}</span>
           </motion.button>
         ))}
