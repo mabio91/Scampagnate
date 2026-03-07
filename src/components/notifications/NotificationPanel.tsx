@@ -1,0 +1,101 @@
+import { Bell, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck } from "lucide-react";
+import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
+import { useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import { it } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const typeIcons: Record<string, React.ReactNode> = {
+  registration: <CalendarDays className="h-4 w-4 text-primary" />,
+  waitlist: <Users className="h-4 w-4 text-amber-500" />,
+  waitlist_promotion: <Users className="h-4 w-4 text-green-500" />,
+  payment: <CreditCard className="h-4 w-4 text-green-500" />,
+  event_update: <AlertCircle className="h-4 w-4 text-blue-500" />,
+  info: <Bell className="h-4 w-4 text-muted-foreground" />,
+};
+
+const NotificationItem = ({ notification, onRead }: { notification: Notification; onRead: () => void }) => {
+  const navigate = useNavigate();
+  const markAsRead = useMarkAsRead();
+
+  const handleClick = () => {
+    if (!notification.read) {
+      markAsRead.mutate(notification.id);
+    }
+    if (notification.event_id) {
+      navigate(`/event/${notification.event_id}`);
+      onRead();
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`w-full text-left p-3 flex gap-3 items-start transition-colors hover:bg-muted/50 ${
+        !notification.read ? "bg-primary/5" : ""
+      }`}
+    >
+      <div className="mt-0.5 shrink-0">
+        {typeIcons[notification.type] || typeIcons.info}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm leading-tight ${!notification.read ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+          {notification.title}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+          {notification.message}
+        </p>
+        <p className="text-[10px] text-muted-foreground/60 mt-1">
+          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: it })}
+        </p>
+      </div>
+      {!notification.read && (
+        <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
+      )}
+    </button>
+  );
+};
+
+const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
+  const { data: notifications, isLoading } = useNotifications();
+  const markAllAsRead = useMarkAllAsRead();
+  const hasUnread = notifications?.some((n) => !n.read);
+
+  return (
+    <div className="w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 className="font-display font-semibold text-sm">Notifiche</h3>
+        {hasUnread && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7 gap-1 text-muted-foreground"
+            onClick={() => markAllAsRead.mutate()}
+          >
+            <CheckCheck className="h-3.5 w-3.5" />
+            Segna tutte
+          </Button>
+        )}
+      </div>
+      <ScrollArea className="flex-1">
+        {isLoading ? (
+          <div className="p-6 text-center text-sm text-muted-foreground">Caricamento...</div>
+        ) : !notifications?.length ? (
+          <div className="p-6 text-center">
+            <Bell className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Nessuna notifica</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {notifications.map((n) => (
+              <NotificationItem key={n.id} notification={n} onRead={onClose} />
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+};
+
+export default NotificationPanel;
