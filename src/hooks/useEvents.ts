@@ -13,7 +13,8 @@ export interface EventWithDetails {
   status: "available" | "full" | "closed";
   price: number;
   deposit: number | null;
-  payment_type: "free" | "paid" | "deposit";
+  payment_type: "free" | "paid" | "deposit" | "location";
+  additional_fields: any;
   image_url: string | null;
   difficulty: string | null;
   distance: string | null;
