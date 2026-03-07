@@ -158,7 +158,6 @@ export const mockEvents: EventData[] = [
       { name: "Paolo" },
     ],
     organizer: "Gruppo Scampagnate",
-    status: "full",
   },
   {
     id: "5",
