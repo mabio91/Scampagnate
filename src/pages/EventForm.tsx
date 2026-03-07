@@ -79,7 +79,36 @@ const EventForm = () => {
     image_url: "",
   });
 
-  const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
+  const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
+  const { data: equipmentTemplates } = useEquipmentTemplates();
+
+  const handleTemplateSelect = (templateId: string) => {
+    const template = equipmentTemplates?.find((t) => t.id === templateId);
+    if (!template) return;
+    const items: EquipmentItem[] = (template.equipment_template_items || [])
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+      .map((item: any) => ({
+        name: item.name,
+        is_mandatory: item.is_mandatory,
+        notes: item.notes || "",
+      }));
+    setEquipmentItems(items);
+    toast({ title: `Template "${template.name}" loaded with ${items.length} items` });
+  };
+
+  const addEquipmentItem = () => {
+    setEquipmentItems((prev) => [...prev, { name: "", is_mandatory: false, notes: "" }]);
+  };
+
+  const updateEquipmentItem = (index: number, field: keyof EquipmentItem, value: any) => {
+    setEquipmentItems((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+
+  const removeEquipmentItem = (index: number) => {
+    setEquipmentItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+
 
   useEffect(() => {
     if (isEditing) {
