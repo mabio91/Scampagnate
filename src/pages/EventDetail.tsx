@@ -273,13 +273,13 @@ const EventDetail = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
                 <DropdownMenuItem onClick={() => handleAddToCalendar("google")} className="font-body cursor-pointer">
-                  📅 Google Calendar
+                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" /> Google Calendar
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAddToCalendar("apple")} className="font-body cursor-pointer">
-                  🍎 Apple Calendar
+                  <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" /> Apple Calendar
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAddToCalendar("outlook")} className="font-body cursor-pointer">
-                  📧 Outlook Calendar
+                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" /> Outlook Calendar
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

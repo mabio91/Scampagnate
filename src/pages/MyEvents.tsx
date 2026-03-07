@@ -257,13 +257,13 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-44">
                 <DropdownMenuItem onClick={() => handleCalendarDownload("google")} className="font-body text-xs cursor-pointer">
-                  📅 Google Calendar
+                  <Calendar className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Google Calendar
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleCalendarDownload("apple")} className="font-body text-xs cursor-pointer">
-                  🍎 Apple Calendar
+                  <CalendarDays className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Apple Calendar
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleCalendarDownload("outlook")} className="font-body text-xs cursor-pointer">
-                  📧 Outlook Calendar
+                  <Mail className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Outlook Calendar
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

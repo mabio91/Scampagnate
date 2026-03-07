@@ -755,7 +755,7 @@ const EventManage = () => {
             </p>
             <Button
               onClick={() => {
-                toast({ title: "Message sent! 📨", description: `Notified ${registered.length} participants` });
+                toast({ title: "Message sent", description: `Notified ${registered.length} participants` });
                 setShowMessageDialog(false);
                 setMessageText("");
               }}
