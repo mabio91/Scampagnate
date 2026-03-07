@@ -18,6 +18,7 @@ const Auth = () => {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
