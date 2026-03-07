@@ -33,6 +33,10 @@ const EventForm = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(isEditing);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     title: "",
