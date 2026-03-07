@@ -1,10 +1,13 @@
 import logo from "@/assets/logo.png";
 import { Bell, Search, User, LogIn } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearch } from "@/contexts/SearchContext";
 
 const Header = () => {
   const { user, profile } = useAuth();
+  const { openSearch } = useSearch();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -14,7 +17,7 @@ const Header = () => {
           <span className="font-display text-lg font-bold text-foreground">Scampagnate</span>
         </Link>
         <div className="flex items-center gap-3">
-          <button className="p-2 rounded-full hover:bg-muted transition-colors">
+          <button className="p-2 rounded-full hover:bg-muted transition-colors" onClick={() => { navigate("/"); openSearch(); }}>
             <Search className="h-5 w-5 text-muted-foreground" />
           </button>
           {user ? (

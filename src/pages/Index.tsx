@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearch } from "@/contexts/SearchContext";
 
 type PriceFilter = "all" | "free" | "paid";
 
@@ -23,6 +24,16 @@ const Index = () => {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const { searchOpen } = useSearch();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // When header search icon is clicked, open filters and focus input
+  useEffect(() => {
+    if (searchOpen) {
+      setShowFilters(true);
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [searchOpen]);
 
   const { data: events, isLoading } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
@@ -96,6 +107,7 @@ const Index = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    ref={searchInputRef}
                     placeholder="Search events..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
