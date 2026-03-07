@@ -123,14 +123,24 @@ export const useRegisterForEvent = () => {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean }) => {
+    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, paymentType }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; paymentType?: string }) => {
       if (!user) throw new Error("Devi effettuare il login");
+
+      // Determine payment_status based on payment type
+      let paymentStatus = "pending";
+      if (!paymentType || paymentType === "free") {
+        paymentStatus = "not_required";
+      } else if (paymentType === "location") {
+        paymentStatus = "pay_on_location";
+      }
+
       const { error } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: user.id,
         meeting_point_id: meetingPointId || null,
         sport_level: sportLevel || null,
         status: asWaitlist ? "waitlist" : "registered",
+        payment_status: paymentStatus,
       });
       if (error) throw error;
     },
