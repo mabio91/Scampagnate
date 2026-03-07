@@ -350,12 +350,12 @@ const EventDetail = () => {
                     </p>
                   </>
                 )}
-                {event.payment_type === "paid" && (
+                {(event.payment_type as string) === "paid" && (
                   <p className="text-xs font-body text-muted-foreground">
                     Full amount will be charged online via Stripe during registration.
                   </p>
                 )}
-                {event.payment_type === "location" && (
+                {(event.payment_type as string) === "location" && (
                   <p className="text-xs font-body text-muted-foreground">
                     Payment will be collected on location at the event.
                   </p>
