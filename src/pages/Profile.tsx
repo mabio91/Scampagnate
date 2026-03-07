@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star } from "lucide-react";
+import { BadgeIcon } from "@/components/BadgeIcon";
 import { useQuery } from "@tanstack/react-query";
 import { useEventImage } from "@/hooks/useEventImage";
 import { useCategories } from "@/hooks/useEvents";
