@@ -131,7 +131,7 @@ export const mockEvents: EventData[] = [
     ],
     participants: [
       { name: "Roberto" },
-      { name: "Elena", badge: "🏸" },
+      { name: "Elena" },
     ],
     organizer: "Gruppo Scampagnate",
   },
