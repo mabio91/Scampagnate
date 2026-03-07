@@ -6,6 +6,8 @@ import { useSearch } from "@/contexts/SearchContext";
 
 const Header = () => {
   const { user, profile } = useAuth();
+  const { openSearch } = useSearch();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
