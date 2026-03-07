@@ -190,16 +190,10 @@ const EventDetail = () => {
     return "bg-primary text-primary-foreground hover:bg-primary/90";
   };
 
-  const shareEvent = async () => {
-    const url = window.location.href;
-    const text = `${event.title} - ${new Date(event.date).toLocaleDateString("it-IT")}`;
-    if (navigator.share) {
-      await navigator.share({ title: event.title, text, url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast({ title: "Link copied!" });
-    }
-  };
+  const shareEvent = () => setShowShareSheet(true);
+
+  const eventUrl = `${window.location.origin}/event/${event.id}`;
+  const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}`;
 
   const openDirections = (location: string, app: "google" | "apple" | "waze") => {
     const encoded = encodeURIComponent(location);
