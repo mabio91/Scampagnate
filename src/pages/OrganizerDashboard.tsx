@@ -354,17 +354,77 @@ const OrganizerDashboard = () => {
                       }))} layout="vertical">
                         <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={90} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "var(--radius)",
-                            fontSize: 12,
-                          }}
-                        />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
                         <Bar dataKey="registered" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Registered" />
                         <Bar dataKey="attended" fill="hsl(var(--success))" radius={[0, 4, 4, 0]} name="Attended" />
                       </BarChart>
+                    </ResponsiveContainer>
+                  </Card>
+                )}
+
+                {/* Attendance Rate Trend */}
+                {analytics.pastEventStats.length > 1 && (
+                  <Card className="p-4">
+                    <h3 className="font-display text-sm font-bold text-foreground mb-3">Attendance Rate Trend</h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={analytics.pastEventStats.map(e => ({
+                        name: format(new Date(e.date), "dd MMM"),
+                        rate: e.attendanceRate,
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} domain={[0, 100]} unit="%" />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, "Attendance"]} />
+                        <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))", r: 4 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                )}
+
+                {/* Registration Status Distribution */}
+                {(() => {
+                  const statusData = [
+                    { name: "Attended", value: analytics.totalCheckedIn, fill: "hsl(var(--success))" },
+                    { name: "No-shows", value: analytics.totalNoShows, fill: "hsl(var(--destructive))" },
+                    { name: "Cancelled", value: analytics.totalCancelled, fill: "hsl(var(--warning))" },
+                  ].filter(d => d.value > 0);
+                  if (statusData.length === 0) return null;
+                  return (
+                    <Card className="p-4">
+                      <h3 className="font-display text-sm font-bold text-foreground mb-3">Overall Status Distribution</h3>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} style={{ fontSize: 10 }}>
+                            {statusData.map((entry, i) => (
+                              <Cell key={i} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={tooltipStyle} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </Card>
+                  );
+                })()}
+
+                {/* Registration Trend Area Chart */}
+                {analytics.pastEventStats.length > 1 && (
+                  <Card className="p-4">
+                    <h3 className="font-display text-sm font-bold text-foreground mb-3">Registration Trend</h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <AreaChart data={analytics.pastEventStats.map(e => ({
+                        name: format(new Date(e.date), "dd MMM"),
+                        registered: e.registered,
+                        cancelled: e.cancelled,
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Area type="monotone" dataKey="registered" stroke="hsl(var(--primary))" fill="hsl(var(--primary)/0.2)" strokeWidth={2} name="Registered" />
+                        <Area type="monotone" dataKey="cancelled" stroke="hsl(var(--warning))" fill="hsl(var(--warning)/0.2)" strokeWidth={2} name="Cancelled" />
+                      </AreaChart>
                     </ResponsiveContainer>
                   </Card>
                 )}
