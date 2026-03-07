@@ -8,7 +8,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import ShareSheet from "@/components/events/ShareSheet";
 import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
-import { useEventImage } from "@/hooks/useEventImage";
+import OptimizedImage from "@/components/OptimizedImage";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -174,7 +174,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const [showShareSheet, setShowShareSheet] = useState(false);
 
   if (!event) return null;
-  const imageSrc = useEventImage(event.image_url || "trekking");
+  // image handled by OptimizedImage component
 
   const displayStatus = isPast ? "past" : registration.status;
   const status = statusConfig[displayStatus] || statusConfig.registered;
@@ -212,7 +212,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     <>
       <div className="rounded-xl bg-card overflow-hidden">
         <Link to={`/event/${event.id}`} className="flex gap-3 p-3">
-          <img src={imageSrc} alt={event.title} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
+          <OptimizedImage src={event.image_url} alt={event.title} width={80} height={80} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 bg-muted" />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
@@ -319,7 +319,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
   const { toast } = useToast();
 
   if (!event) return null;
-  const imageSrc = useEventImage(event.image_url || "trekking");
+  // image handled by OptimizedImage component
   const isPast = new Date(event.date) < new Date();
 
   const handleUnsave = async (e: React.MouseEvent) => {
@@ -336,7 +336,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
   return (
     <Link to={`/event/${event.id}`} className="block">
       <div className="flex gap-3 p-3 rounded-xl bg-card hover:bg-muted/50 transition-colors">
-        <img src={imageSrc} alt={event.title} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
+        <OptimizedImage src={event.image_url} alt={event.title} width={80} height={80} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 bg-muted" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>

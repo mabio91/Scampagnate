@@ -12,7 +12,7 @@ import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEventImage } from "@/hooks/useEventImage";
+import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -82,7 +82,7 @@ const EventDetail = () => {
     );
   }
 
-  const imageSrc = useEventImage(event.image_url || "trekking");
+  const imageSrc = resolveEventImageSrc(event.image_url);
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
@@ -231,7 +231,7 @@ const EventDetail = () => {
     <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
       {/* Hero */}
       <div className="relative">
-        <img src={imageSrc} alt={event.title} className="w-full h-72 object-cover" />
+        <OptimizedImage src={event.image_url} alt={event.title} className="w-full h-72 object-cover bg-muted" width={600} height={288} loading="eager" />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
         <Link to="/" className="absolute top-4 left-4 p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
           <ArrowLeft className="h-5 w-5" />
