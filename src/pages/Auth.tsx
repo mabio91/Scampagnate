@@ -41,7 +41,7 @@ const Auth = () => {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
