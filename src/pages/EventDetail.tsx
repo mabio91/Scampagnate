@@ -208,9 +208,9 @@ const EventDetail = () => {
   const DirectionsButton = ({ location, className = "" }: { location: string; className?: string }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
-          <Navigation className="h-4 w-4" />
-          Get Directions
+        <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
+          <Navigation className="h-4 w-4 shrink-0" />
+          <span className="truncate">Directions</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
