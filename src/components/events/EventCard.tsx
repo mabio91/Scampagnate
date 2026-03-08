@@ -15,18 +15,18 @@ const EventCard = memo(({ event, index }: { event: EventWithDetails; index: numb
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
 
   return (
-    <Link to={`/event/${event.id}`} className="block">
-      <div className="flex gap-3 p-3 rounded-xl bg-card hover:bg-muted/50 transition-colors">
+    <Link to={`/event/${event.id}`} className="block group">
+      <div className="flex gap-3 p-3 rounded-2xl bg-card card-hover press-scale border border-transparent hover:border-border/50">
         <div className="relative flex-shrink-0">
           <OptimizedImage
             src={event.image_url}
             alt={event.title}
             width={96}
             height={96}
-            className="w-24 h-24 rounded-xl object-cover bg-muted"
+            className="w-24 h-24 rounded-xl object-cover bg-muted transition-transform duration-300 group-hover:scale-[1.03]"
           />
           {event.difficulty && (
-            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-body font-semibold bg-foreground/70 text-background">
+            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md text-[10px] font-body font-semibold bg-foreground/70 text-background backdrop-blur-sm">
               {event.difficulty}
             </span>
           )}
@@ -43,18 +43,18 @@ const EventCard = memo(({ event, index }: { event: EventWithDetails; index: numb
               <CalendarDays className="h-3 w-3" />
               {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
             </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
+            <span className="flex items-center gap-1 min-w-0">
+              <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{event.location}</span>
             </span>
           </div>
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center justify-between mt-2.5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-body">
               <Users className="h-3 w-3" />
               <span>{event.spots_taken} / {event.spots_total}</span>
-              <div className="w-12 h-1.5 rounded-full bg-muted ml-1">
+              <div className="w-12 h-1.5 rounded-full bg-muted ml-1 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-secondary transition-all"
+                  className="h-full rounded-full bg-secondary transition-all duration-500 ease-out"
                   style={{ width: `${fillPercent}%` }}
                 />
               </div>
@@ -64,7 +64,7 @@ const EventCard = memo(({ event, index }: { event: EventWithDetails; index: numb
             </span>
           </div>
           {event.distance && (
-            <div className="mt-1 text-[11px] text-muted-foreground font-body">
+            <div className="mt-1.5 text-[11px] text-muted-foreground/70 font-body">
               {event.difficulty} · {event.distance} · {event.elevation} · {event.duration}
             </div>
           )}
