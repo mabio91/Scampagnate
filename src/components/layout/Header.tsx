@@ -1,30 +1,15 @@
-import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
 import { Bell, Search, User, LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/contexts/SearchContext";
 import { useUnreadCount } from "@/hooks/useNotifications";
-import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 const Header = () => {
   const { user, profile } = useAuth();
   const { toggleSearch } = useSearch();
   const navigate = useNavigate();
   const { data: unreadCount } = useUnreadCount();
-  const [showNotifications, setShowNotifications] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setShowNotifications(false);
-      }
-    };
-    if (showNotifications) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showNotifications]);
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border pt-safe">
@@ -43,25 +28,18 @@ const Header = () => {
           </button>
           {user ? (
             <>
-              <div className="relative" ref={notifRef}>
-                <button
-                  className="p-2.5 rounded-xl hover:bg-muted transition-colors relative touch-target flex items-center justify-center"
-                  aria-label="Notifications"
-                  onClick={() => setShowNotifications((v) => !v)}
-                >
-                  <Bell className="h-5 w-5 text-muted-foreground" />
-                  {(unreadCount ?? 0) > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                      {unreadCount! > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                </button>
-                {showNotifications && (
-                  <div className="absolute right-0 top-full mt-2 z-50">
-                    <NotificationPanel onClose={() => setShowNotifications(false)} />
-                  </div>
+              <button
+                className="p-2.5 rounded-xl hover:bg-muted transition-colors relative touch-target flex items-center justify-center"
+                aria-label="Notifications"
+                onClick={() => navigate("/notifications")}
+              >
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                {(unreadCount ?? 0) > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                    {unreadCount! > 99 ? "99+" : unreadCount}
+                  </span>
                 )}
-              </div>
+              </button>
               <Link
                 to="/profile"
                 className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-body font-semibold overflow-hidden ml-1"
