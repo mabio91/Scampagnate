@@ -18,7 +18,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   info: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 
-const NotificationItem = ({ notification, onRead }: { notification: Notification; onRead: () => void }) => {
+const NotificationItem = ({ notification, onRead, onSelect }: { notification: Notification; onRead: () => void; onSelect: (n: Notification) => void }) => {
   const navigate = useNavigate();
   const markAsRead = useMarkAsRead();
 
@@ -29,6 +29,8 @@ const NotificationItem = ({ notification, onRead }: { notification: Notification
     if (notification.event_id) {
       navigate(`/event/${notification.event_id}`);
       onRead();
+    } else {
+      onSelect(notification);
     }
   };
 
