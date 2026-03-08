@@ -55,6 +55,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/organizer" element={<OrganizerDashboard />} />
               <Route path="/organizer/events/new" element={<EventForm />} />
               <Route path="/organizer/events/:id" element={<EventManage />} />
