@@ -32,7 +32,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Scampagnate <onboarding@resend.dev>',
+        from: 'Scampagnate <noreply@scampagnate.techyfux.com>',
         to: Array.isArray(to) ? to : [to],
         subject,
         html,
