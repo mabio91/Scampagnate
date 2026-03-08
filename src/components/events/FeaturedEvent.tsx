@@ -34,10 +34,10 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
         <div className="absolute bottom-0 left-0 right-0 p-5">
           <span className="text-xs font-body font-medium text-primary-foreground/70 uppercase tracking-wider">Featured Event</span>
           <h2 className="font-display text-2xl font-bold text-primary-foreground mt-1">{event.title}</h2>
-          <div className="flex items-center gap-4 mt-2 text-primary-foreground/80 text-sm font-body">
-            <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</span>
-            <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{event.location}</span>
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{event.spots_taken}/{event.spots_total}</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-primary-foreground/80 text-xs sm:text-sm font-body">
+            <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5 shrink-0" />{new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</span>
+            <span className="flex items-center gap-1 min-w-0"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{event.location}</span></span>
+            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5 shrink-0" />{event.spots_taken}/{event.spots_total}</span>
           </div>
           <div className="flex items-center justify-between mt-3">
             <span className="text-primary-foreground font-body font-bold text-lg">

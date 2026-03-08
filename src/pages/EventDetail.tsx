@@ -208,9 +208,9 @@ const EventDetail = () => {
   const DirectionsButton = ({ location, className = "" }: { location: string; className?: string }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
-          <Navigation className="h-4 w-4" />
-          Get Directions
+        <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
+          <Navigation className="h-4 w-4 shrink-0" />
+          <span className="truncate">Directions</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
@@ -257,7 +257,7 @@ const EventDetail = () => {
               </span>
             )}
           </div>
-          <h1 className="font-display text-3xl font-bold text-primary-foreground">{event.title}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-primary-foreground leading-tight">{event.title}</h1>
         </div>
       </div>
 
@@ -275,13 +275,13 @@ const EventDetail = () => {
               {event.location}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <DirectionsButton location={event.location} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-sm font-body font-semibold hover:bg-secondary/20 transition-colors">
-                  <CalendarPlus className="h-4 w-4" />
-                  Add to Calendar
+                <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors">
+                  <CalendarPlus className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Add to Calendar</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -337,13 +337,15 @@ const EventDetail = () => {
             <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
             <div className="space-y-3">
               {event.meeting_points.map((mp) => (
-                <div key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-secondary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-body font-semibold text-foreground">{mp.name}</p>
-                    <p className="text-xs font-body text-muted-foreground">{mp.location} · {mp.time?.slice(0, 5)}</p>
+                <div key={mp.id} className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-muted/50">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-secondary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
+                      <p className="text-xs font-body text-muted-foreground truncate">{mp.location} · {mp.time?.slice(0, 5)}</p>
+                    </div>
                   </div>
                   <DirectionsButton location={mp.location} />
                 </div>
