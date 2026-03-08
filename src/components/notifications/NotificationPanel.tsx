@@ -63,22 +63,51 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
   const { data: notifications, isLoading } = useNotifications();
   const markAllAsRead = useMarkAllAsRead();
   const hasUnread = notifications?.some((n) => !n.read);
+  const { isSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
+
+  const handlePushToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+      toast.success("Notifiche push disattivate");
+    } else {
+      const success = await subscribe();
+      if (success) {
+        toast.success("Notifiche push attivate!");
+      } else {
+        toast.error("Non è stato possibile attivare le notifiche push");
+      }
+    }
+  };
 
   return (
     <div className="w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 className="font-display font-semibold text-sm">Notifiche</h3>
-        {hasUnread && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs h-7 gap-1 text-muted-foreground"
-            onClick={() => markAllAsRead.mutate()}
-          >
-            <CheckCheck className="h-3.5 w-3.5" />
-            Segna tutte
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          {isSupported && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`text-xs h-7 gap-1 ${isSubscribed ? "text-primary" : "text-muted-foreground"}`}
+              onClick={handlePushToggle}
+              disabled={pushLoading}
+            >
+              <BellRing className="h-3.5 w-3.5" />
+              {isSubscribed ? "Push ON" : "Push"}
+            </Button>
+          )}
+          {hasUnread && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7 gap-1 text-muted-foreground"
+              onClick={() => markAllAsRead.mutate()}
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              Segna tutte
+            </Button>
+          )}
+        </div>
       </div>
       <ScrollArea className="flex-1">
         {isLoading ? (
