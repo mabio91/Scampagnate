@@ -24,6 +24,10 @@ const ResetPassword = () => {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
