@@ -1,8 +1,14 @@
 import { useState, useCallback, ImgHTMLAttributes, memo } from "react";
 import heroTrekking from "@/assets/hero-trekking.jpg";
+import eventSocial from "@/assets/event-social.jpg";
+import eventSport from "@/assets/event-sport.jpg";
+import eventCulture from "@/assets/event-culture.jpg";
 
 const fallbackMap: Record<string, string> = {
   trekking: heroTrekking,
+  social: eventSocial,
+  sport: eventSport,
+  culture: eventCulture,
 };
 
 const defaultFallback = heroTrekking;
