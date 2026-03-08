@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,18 +7,35 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SearchProvider } from "@/contexts/SearchContext";
 import Index from "./pages/Index";
-import EventDetail from "./pages/EventDetail";
-import MyEvents from "./pages/MyEvents";
-import Merch from "./pages/Merch";
-import Profile from "./pages/Profile";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import OrganizerDashboard from "./pages/OrganizerDashboard";
-import EventForm from "./pages/EventForm";
-import EventManage from "./pages/EventManage";
 
-const queryClient = new QueryClient();
+// Lazy-loaded routes for code splitting
+const EventDetail = lazy(() => import("./pages/EventDetail"));
+const MyEvents = lazy(() => import("./pages/MyEvents"));
+const Merch = lazy(() => import("./pages/Merch"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const OrganizerDashboard = lazy(() => import("./pages/OrganizerDashboard"));
+const EventForm = lazy(() => import("./pages/EventForm"));
+const EventManage = lazy(() => import("./pages/EventManage"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,20 +45,22 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/event/:id" element={<EventDetail />} />
-            <Route path="/my-events" element={<MyEvents />} />
-            <Route path="/merch" element={<Merch />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/organizer" element={<OrganizerDashboard />} />
-            <Route path="/organizer/events/new" element={<EventForm />} />
-            <Route path="/organizer/events/:id" element={<EventManage />} />
-            <Route path="/organizer/events/:id/edit" element={<EventForm />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/event/:id" element={<EventDetail />} />
+              <Route path="/my-events" element={<MyEvents />} />
+              <Route path="/merch" element={<Merch />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/organizer" element={<OrganizerDashboard />} />
+              <Route path="/organizer/events/new" element={<EventForm />} />
+              <Route path="/organizer/events/:id" element={<EventManage />} />
+              <Route path="/organizer/events/:id/edit" element={<EventForm />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
       </SearchProvider>
