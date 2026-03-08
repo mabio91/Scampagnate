@@ -326,7 +326,7 @@ const Profile = () => {
         </div>
 
         {/* Sign out */}
-        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive/10 font-body mb-8">
+        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 font-body mb-8">
           <LogOut className="h-4 w-4 mr-2" /> Sign Out
         </Button>
       </div>
