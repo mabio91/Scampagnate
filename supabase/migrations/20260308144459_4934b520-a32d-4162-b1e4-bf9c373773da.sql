@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trigger_award_badges_on_checkin ON public.event_registrations;
