@@ -128,13 +128,26 @@ export const useMyRegistration = (eventId: string) => {
     queryKey: ["my-registration", eventId, user?.id],
     queryFn: async () => {
       if (!user) return null;
+      // Get the latest non-cancelled registration first, fallback to any
       const { data } = await supabase
         .from("event_registrations")
         .select("*")
         .eq("event_id", eventId)
         .eq("user_id", user.id)
+        .neq("status", "cancelled")
+        .order("created_at", { ascending: false })
         .maybeSingle();
-      return data;
+      if (data) return data;
+      // If no active registration, check for cancelled one
+      const { data: cancelled } = await supabase
+        .from("event_registrations")
+        .select("*")
+        .eq("event_id", eventId)
+        .eq("user_id", user.id)
+        .eq("status", "cancelled")
+        .order("created_at", { ascending: false })
+        .maybeSingle();
+      return cancelled;
     },
     enabled: !!eventId && !!user,
   });
