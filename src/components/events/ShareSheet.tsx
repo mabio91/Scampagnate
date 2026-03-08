@@ -97,7 +97,7 @@ const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs rounded-2xl p-5">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-[300px] rounded-2xl p-4">
         <DialogHeader>
           <DialogTitle className="font-display text-base">Share Event</DialogTitle>
         </DialogHeader>
@@ -105,10 +105,10 @@ const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) =
         {/* Copy link */}
         <button
           onClick={copyLink}
-          className="flex items-center gap-3 w-full p-3.5 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+          className="flex items-center gap-3 w-full p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
         >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <Link2 className="h-5 w-5 text-primary" />
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <Link2 className="h-4.5 w-4.5 text-primary" />
           </div>
           <div className="text-left min-w-0">
             <p className="text-sm font-body font-semibold text-foreground">Copy Link</p>
@@ -117,15 +117,15 @@ const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) =
         </button>
 
         {/* Social options */}
-        <div className="grid grid-cols-5 gap-2 pt-1">
+        <div className="grid grid-cols-5 gap-1.5 pt-1">
           {shareOptions.map((option) => (
             <button
               key={option.name}
               onClick={() => { option.onClick(); onOpenChange(false); }}
-              className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-colors ${option.bgColor}`}
+              className={`flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl transition-colors ${option.bgColor}`}
             >
-              <option.icon className={`h-6 w-6 ${option.iconColor}`} />
-              <span className={`text-[10px] font-body font-medium ${option.iconColor}`}>{option.name}</span>
+              <option.icon className={`h-5 w-5 ${option.iconColor}`} />
+              <span className={`text-[9px] font-body font-medium leading-tight ${option.iconColor}`}>{option.name}</span>
             </button>
           ))}
         </div>
