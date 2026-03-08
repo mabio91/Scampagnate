@@ -53,18 +53,13 @@ self.addEventListener('push', (event) => {
   try {
     const data = event.data.json();
 
-    const options: NotificationOptions = {
+    const options = {
       body: data.message || '',
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',
       tag: data.type || 'default',
-      // @ts-ignore - renotify is valid but not in TS types
-      ...(({ renotify: true }) as any),
       data: { url: data.url || '/' },
       vibrate: [200, 100, 200],
-      actions: data.url && data.url !== '/'
-        ? [{ action: 'open', title: 'Apri' }]
-        : [],
     };
 
     event.waitUntil(
