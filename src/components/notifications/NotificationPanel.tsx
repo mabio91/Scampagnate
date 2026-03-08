@@ -1,4 +1,4 @@
-import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck } from "lucide-react";
+import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock } from "lucide-react";
 import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   waitlist_promotion: <Users className="h-4 w-4 text-green-500" />,
   payment: <CreditCard className="h-4 w-4 text-green-500" />,
   event_update: <AlertCircle className="h-4 w-4 text-blue-500" />,
+  event_reminder: <Clock className="h-4 w-4 text-orange-500" />,
   info: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 
