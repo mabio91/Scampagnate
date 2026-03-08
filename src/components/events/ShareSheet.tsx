@@ -87,11 +87,15 @@ const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) =
       bgColor: "bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20",
     },
     {
-      name: "Telegram",
-      icon: TelegramIcon,
-      onClick: () => window.open(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`, "_blank"),
-      iconColor: "text-[#0088cc]",
-      bgColor: "bg-[#0088cc]/10 hover:bg-[#0088cc]/20",
+      name: "Instagram",
+      icon: InstagramIcon,
+      onClick: () => {
+        navigator.clipboard.writeText(`${shareText} ${url}`);
+        toast({ title: "Link copied! Paste it in your Instagram story" });
+        window.open("https://www.instagram.com/", "_blank");
+      },
+      iconColor: "text-[#E4405F]",
+      bgColor: "bg-[#E4405F]/10 hover:bg-[#E4405F]/20",
     },
   ];
 
