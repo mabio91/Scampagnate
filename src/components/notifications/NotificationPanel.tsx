@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock } from "lucide-react";
 import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -15,10 +16,11 @@ const typeIcons: Record<string, React.ReactNode> = {
   payment: <CreditCard className="h-4 w-4 text-green-500" />,
   event_update: <AlertCircle className="h-4 w-4 text-blue-500" />,
   event_reminder: <Clock className="h-4 w-4 text-orange-500" />,
+  issue_resolved: <CheckCheck className="h-4 w-4 text-green-500" />,
   info: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 
-const NotificationItem = ({ notification, onRead }: { notification: Notification; onRead: () => void }) => {
+const NotificationItem = ({ notification, onRead, onSelect }: { notification: Notification; onRead: () => void; onSelect: (n: Notification) => void }) => {
   const navigate = useNavigate();
   const markAsRead = useMarkAsRead();
 
@@ -29,6 +31,8 @@ const NotificationItem = ({ notification, onRead }: { notification: Notification
     if (notification.event_id) {
       navigate(`/event/${notification.event_id}`);
       onRead();
+    } else {
+      onSelect(notification);
     }
   };
 
@@ -65,6 +69,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
   const markAllAsRead = useMarkAllAsRead();
   const hasUnread = notifications?.some((n) => !n.read);
   const { isSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   const handlePushToggle = async () => {
     if (isSubscribed) {
@@ -79,6 +84,29 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
       }
     }
   };
+
+  if (selectedNotification) {
+    return (
+      <div className="w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSelectedNotification(null)}>
+            ←
+          </Button>
+          <h3 className="font-display font-semibold text-sm truncate">{selectedNotification.title}</h3>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            {typeIcons[selectedNotification.type] || typeIcons.info}
+            <span className="text-xs font-medium text-muted-foreground capitalize">{selectedNotification.type.replace(/_/g, ' ')}</span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">{selectedNotification.message}</p>
+          <p className="text-[10px] text-muted-foreground/60">
+            {formatDistanceToNow(new Date(selectedNotification.created_at), { addSuffix: true, locale: it })}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
@@ -121,7 +149,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
         ) : (
           <div className="divide-y divide-border">
             {notifications.map((n) => (
-              <NotificationItem key={n.id} notification={n} onRead={onClose} />
+              <NotificationItem key={n.id} notification={n} onRead={onClose} onSelect={setSelectedNotification} />
             ))}
           </div>
         )}
