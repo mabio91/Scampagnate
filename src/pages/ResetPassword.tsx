@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Eye, EyeOff } from "lucide-react";
+import { Check, X, Eye, EyeOff, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const getPasswordStrength = (pw: string) => {
