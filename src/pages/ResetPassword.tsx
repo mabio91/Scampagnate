@@ -30,6 +30,7 @@ const ResetPassword = () => {
   const [isRecovery, setIsRecovery] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
 
   useEffect(() => {
     const hash = window.location.hash;
