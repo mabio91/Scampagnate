@@ -61,7 +61,7 @@ const ReportIssueDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full gap-2 border-warning/30 text-warning hover:bg-warning/10">
+        <Button variant="outline" className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
           <AlertTriangle className="h-4 w-4" /> Report an Issue
         </Button>
       </DialogTrigger>
