@@ -85,11 +85,11 @@ const ProductCard = ({ product }: { product: Product }) => {
           {product.description}
         </p>
         <Button
-          className="w-full gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-body text-sm"
+          className="w-full gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-body text-[11px] sm:text-sm px-2 sm:px-4 h-9 sm:h-10"
           onClick={() => window.open(whatsappUrl, "_blank")}
         >
-          <MessageCircle className="h-4 w-4" />
-          Contact us on WhatsApp
+          <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+          <span className="truncate">WhatsApp</span>
         </Button>
       </CardContent>
     </Card>
