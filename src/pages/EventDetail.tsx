@@ -531,7 +531,7 @@ const EventDetail = () => {
           )}
           {isRegistered && (
             <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive text-destructive hover:bg-destructive/10">
-              {cancelMutation.isPending ? "Cancelling..." : "Cancel Registration"}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}
             </Button>
           )}
         </motion.div>
