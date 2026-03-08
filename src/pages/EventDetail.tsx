@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
@@ -531,7 +531,7 @@ const EventDetail = () => {
           )}
           {isRegistered && (
             <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive text-destructive hover:bg-destructive/10">
-              {cancelMutation.isPending ? "Cancelling..." : "Cancel Registration"}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}
             </Button>
           )}
         </motion.div>
@@ -696,7 +696,7 @@ const EventDetail = () => {
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? "Registering..." : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
+              {registerMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registering...</> : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
             </Button>
           </div>
         </DialogContent>

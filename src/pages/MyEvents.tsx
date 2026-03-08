@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
-  CalendarPlus, ChevronRight, Clock, Calendar, Mail
+  CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import ShareSheet from "@/components/events/ShareSheet";
@@ -296,7 +296,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               onClick={handleCancel}
               disabled={cancelMutation.isPending}
             >
-              {cancelMutation.isPending ? "Cancelling..." : "Cancel Registration"}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}
             </Button>
           </div>
         </DialogContent>
