@@ -228,6 +228,13 @@ export type Database = {
             referencedRelation: "event_meeting_points"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_registrations_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       events: {
