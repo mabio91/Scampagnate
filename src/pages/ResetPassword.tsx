@@ -80,7 +80,12 @@ const ResetPassword = () => {
         <form onSubmit={handleReset} className="space-y-4">
           <div>
             <Label className="font-body text-sm">New password</Label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1" />
+            <div className="relative mt-1">
+              <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="pr-10" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {password && (
               <div className="mt-2 space-y-2">
                 <div className="flex items-center gap-2">
