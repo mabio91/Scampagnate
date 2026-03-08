@@ -10,33 +10,80 @@ function buildReminderEmailHtml(eventTitle: string, eventDate: string, eventTime
   return `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f7f5f0;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f5f0;padding:32px 16px;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promemoria Evento</title>
+</head>
+<body style="margin:0;padding:0;background-color:#ffffff;font-family:'DM Sans','Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f2ec;padding:40px 16px;">
     <tr><td align="center">
-      <table width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
-        <tr><td style="background-color:#2d4a33;padding:24px 32px;">
-          <h1 style="margin:0;color:#ffffff;font-size:22px;">🏔️ Scampagnate</h1>
-        </td></tr>
-        <tr><td style="padding:32px;">
-          <h2 style="margin:0 0 8px;color:#1a1a1a;font-size:20px;">Promemoria: evento domani!</h2>
-          <p style="color:#666;font-size:15px;line-height:1.6;margin:16px 0 24px;">
-            Ti ricordiamo che domani parteciperai a:
+      <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(45,74,51,0.08);">
+        
+        <!-- Header -->
+        <tr><td style="background-color:#2d4a33;padding:28px 32px;text-align:center;">
+          <h1 style="margin:0;color:#f5f2ec;font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;font-size:24px;font-weight:700;letter-spacing:0.5px;">
+            Scampagnate
+          </h1>
+          <p style="margin:6px 0 0;color:rgba(245,242,236,0.7);font-size:13px;letter-spacing:1px;text-transform:uppercase;">
+            Eventi &amp; Community
           </p>
-          <table width="100%" style="background:#f7f5f0;border-radius:12px;padding:20px;" cellpadding="0" cellspacing="0">
-            <tr><td style="padding:12px 20px;">
-              <h3 style="margin:0 0 12px;color:#2d4a33;font-size:18px;">${eventTitle}</h3>
-              <p style="margin:4px 0;color:#444;font-size:14px;">📅 <strong>${eventDate}</strong> alle <strong>${eventTime}</strong></p>
-              <p style="margin:4px 0;color:#444;font-size:14px;">📍 ${eventLocation}</p>
+        </td></tr>
+
+        <!-- Accent bar -->
+        <tr><td style="background:linear-gradient(90deg,#c2854a,#d4943a,#c2854a);height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+        <!-- Content -->
+        <tr><td style="padding:36px 32px 28px;">
+          <h2 style="margin:0 0 6px;color:#1f3d24;font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;font-size:21px;font-weight:700;">
+            Promemoria: evento domani
+          </h2>
+          <p style="color:#6b7c6e;font-size:15px;line-height:1.6;margin:12px 0 28px;">
+            Ti ricordiamo che domani parteciperai a un evento. Ecco i dettagli:
+          </p>
+
+          <!-- Event card -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ec;border-radius:12px;border-left:4px solid #c2854a;">
+            <tr><td style="padding:20px 24px;">
+              <h3 style="margin:0 0 14px;color:#2d4a33;font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;">
+                ${eventTitle}
+              </h3>
+              <table cellpadding="0" cellspacing="0" style="width:100%;">
+                <tr>
+                  <td style="padding:4px 0;color:#4a5c4d;font-size:14px;line-height:1.5;vertical-align:top;width:24px;">
+                    <span style="color:#c2854a;font-weight:600;">&#9679;</span>
+                  </td>
+                  <td style="padding:4px 0;color:#4a5c4d;font-size:14px;line-height:1.5;">
+                    <strong style="color:#2d4a33;">${eventDate}</strong> alle <strong style="color:#2d4a33;">${eventTime}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0;color:#4a5c4d;font-size:14px;line-height:1.5;vertical-align:top;width:24px;">
+                    <span style="color:#c2854a;font-weight:600;">&#9679;</span>
+                  </td>
+                  <td style="padding:4px 0;color:#4a5c4d;font-size:14px;line-height:1.5;">
+                    ${eventLocation}
+                  </td>
+                </tr>
+              </table>
             </td></tr>
           </table>
-          <p style="color:#666;font-size:14px;line-height:1.6;margin:24px 0 0;">
-            Non dimenticarti! Controlla l'equipaggiamento e preparati per una bella giornata. 🎒
+
+          <p style="color:#6b7c6e;font-size:14px;line-height:1.7;margin:24px 0 0;">
+            Controlla l'equipaggiamento e preparati per una bella giornata all'aperto. Ci vediamo domani!
           </p>
         </td></tr>
-        <tr><td style="padding:16px 32px;background:#f9f9f9;text-align:center;">
-          <p style="margin:0;color:#999;font-size:12px;">Scampagnate – Eventi & Community</p>
+
+        <!-- Footer -->
+        <tr><td style="padding:20px 32px;background:#f9f7f3;border-top:1px solid #ebe7df;text-align:center;">
+          <p style="margin:0;color:#9a9287;font-size:12px;line-height:1.5;">
+            Scampagnate &mdash; noreply@scampagnate.techyfux.com
+          </p>
+          <p style="margin:4px 0 0;color:#b5afa6;font-size:11px;">
+            Ricevi questa email perch&eacute; sei iscritto a un evento.
+          </p>
         </td></tr>
+
       </table>
     </td></tr>
   </table>
