@@ -28,7 +28,7 @@ const BottomNav = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors touch-target justify-center ${
+              className={`flex flex-col items-center gap-0.5 px-2 sm:px-3 py-2 rounded-xl transition-colors touch-target justify-center ${
                 active
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"

@@ -109,7 +109,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
   }
 
   return (
-    <div className="w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
+    <div className="w-[calc(100vw-2rem)] max-w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 className="font-display font-semibold text-sm">Notifiche</h3>
         <div className="flex items-center gap-1">

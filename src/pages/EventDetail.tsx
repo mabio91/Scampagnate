@@ -257,7 +257,7 @@ const EventDetail = () => {
               </span>
             )}
           </div>
-          <h1 className="font-display text-3xl font-bold text-primary-foreground">{event.title}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-primary-foreground leading-tight">{event.title}</h1>
         </div>
       </div>
 
