@@ -87,7 +87,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
 
   if (selectedNotification) {
     return (
-      <div className="w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
+      <div className="w-[calc(100vw-2rem)] max-w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSelectedNotification(null)}>
             ←
