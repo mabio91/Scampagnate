@@ -28,12 +28,8 @@ const NotificationItem = ({ notification, onRead, onSelect }: { notification: No
     if (!notification.read) {
       markAsRead.mutate(notification.id);
     }
-    if (notification.event_id) {
-      navigate(`/event/${notification.event_id}`);
-      onRead();
-    } else {
-      onSelect(notification);
-    }
+    onRead();
+    navigate("/notifications");
   };
 
   return (
