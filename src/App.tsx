@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
+import { ThemeProvider } from "next-themes";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SearchProvider } from "@/contexts/SearchContext";
@@ -40,36 +41,38 @@ const PageFallback = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <SearchProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Analytics />
-        <BrowserRouter>
-          <Suspense fallback={<PageFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/event/:id" element={<EventDetail />} />
-              <Route path="/my-events" element={<MyEvents />} />
-              <Route path="/merch" element={<Merch />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/organizer" element={<OrganizerDashboard />} />
-              <Route path="/organizer/events/new" element={<EventForm />} />
-              <Route path="/organizer/events/:id" element={<EventManage />} />
-              <Route path="/organizer/events/:id/edit" element={<EventForm />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-      </SearchProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SearchProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Analytics />
+          <BrowserRouter>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/event/:id" element={<EventDetail />} />
+                <Route path="/my-events" element={<MyEvents />} />
+                <Route path="/merch" element={<Merch />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/organizer" element={<OrganizerDashboard />} />
+                <Route path="/organizer/events/new" element={<EventForm />} />
+                <Route path="/organizer/events/:id" element={<EventManage />} />
+                <Route path="/organizer/events/:id/edit" element={<EventForm />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+        </SearchProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

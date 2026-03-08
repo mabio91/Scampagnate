@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
-import { Bell, Search, User, LogIn } from "lucide-react";
+import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/contexts/SearchContext";
 import { useUnreadCount } from "@/hooks/useNotifications";
+import { useTheme } from "next-themes";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 const Header = () => {
@@ -14,6 +15,10 @@ const Header = () => {
   const { data: unreadCount } = useUnreadCount();
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -25,6 +30,10 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, [showNotifications]);
 
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-safe">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
@@ -32,7 +41,20 @@ const Header = () => {
           <img src={logo} alt="Scampagnate" className="h-9 w-9 rounded-full" />
           <span className="font-display text-lg font-bold text-foreground">Scampagnate</span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
+          {mounted && (
+            <button
+              className="p-2.5 rounded-xl hover:bg-muted transition-colors touch-target flex items-center justify-center"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <Moon className="h-5 w-5 text-muted-foreground" />
+              )}
+            </button>
+          )}
           <button
             className="p-2.5 rounded-xl hover:bg-muted transition-colors touch-target flex items-center justify-center"
             onClick={() => { navigate("/"); toggleSearch(); }}
