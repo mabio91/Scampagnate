@@ -696,7 +696,7 @@ const EventDetail = () => {
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? "Registering..." : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
+              {registerMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registering...</> : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
             </Button>
           </div>
         </DialogContent>

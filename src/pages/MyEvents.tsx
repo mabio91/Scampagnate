@@ -296,7 +296,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               onClick={handleCancel}
               disabled={cancelMutation.isPending}
             >
-              {cancelMutation.isPending ? "Cancelling..." : "Cancel Registration"}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}
             </Button>
           </div>
         </DialogContent>

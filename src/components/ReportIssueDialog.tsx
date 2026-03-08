@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -105,7 +105,7 @@ const ReportIssueDialog = () => {
             </Select>
           </div>
           <Button onClick={handleSubmit} disabled={submitting} className="w-full">
-            {submitting ? "Submitting..." : "Submit Report"}
+            {subm<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting...</>tting..." : "Submit Report"}
           </Button>
         </div>
       </DialogContent>
