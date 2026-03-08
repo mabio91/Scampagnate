@@ -19,6 +19,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const OrganizerDashboard = lazy(() => import("./pages/OrganizerDashboard"));
 const EventForm = lazy(() => import("./pages/EventForm"));
 const EventManage = lazy(() => import("./pages/EventManage"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
