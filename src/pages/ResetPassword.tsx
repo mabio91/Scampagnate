@@ -9,6 +9,7 @@ import logo from "@/assets/logo.png";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
   const navigate = useNavigate();
@@ -23,6 +24,10 @@ const ResetPassword = () => {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
@@ -57,6 +62,10 @@ const ResetPassword = () => {
           <div>
             <Label className="font-body text-sm">New password</Label>
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1" />
+          </div>
+          <div>
+            <Label className="font-body text-sm">Confirm password</Label>
+            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="mt-1" />
           </div>
           <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground font-body font-semibold">
             {loading ? "Updating..." : "Update Password"}
