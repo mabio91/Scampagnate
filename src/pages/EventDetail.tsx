@@ -337,13 +337,15 @@ const EventDetail = () => {
             <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
             <div className="space-y-3">
               {event.meeting_points.map((mp) => (
-                <div key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-secondary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-body font-semibold text-foreground">{mp.name}</p>
-                    <p className="text-xs font-body text-muted-foreground">{mp.location} · {mp.time?.slice(0, 5)}</p>
+                <div key={mp.id} className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-muted/50">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-secondary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
+                      <p className="text-xs font-body text-muted-foreground truncate">{mp.location} · {mp.time?.slice(0, 5)}</p>
+                    </div>
                   </div>
                   <DirectionsButton location={mp.location} />
                 </div>
