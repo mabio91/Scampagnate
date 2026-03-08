@@ -301,7 +301,7 @@ const EventManage = () => {
                 <Edit className="h-3.5 w-3.5" /> Edit
               </Button>
             </Link>
-            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setShowDeleteDialog(true)}>
+            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20" onClick={() => setShowDeleteDialog(true)}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
