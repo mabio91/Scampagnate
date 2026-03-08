@@ -105,7 +105,7 @@ const ReportIssueDialog = () => {
             </Select>
           </div>
           <Button onClick={handleSubmit} disabled={submitting} className="w-full">
-            {subm<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting...</>tting..." : "Submit Report"}
+            {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting...</> : "Submit Report"}
           </Button>
         </div>
       </DialogContent>
