@@ -1,10 +1,12 @@
-import { Bell, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck } from "lucide-react";
+import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck } from "lucide-react";
 import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 const typeIcons: Record<string, React.ReactNode> = {
   registration: <CalendarDays className="h-4 w-4 text-primary" />,
