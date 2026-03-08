@@ -188,6 +188,31 @@ const Auth = () => {
             </div>
           </div>
 
+          {!isLogin && password && (
+            <div className="space-y-2 -mt-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-300 ${strength.color}`} style={{ width: `${strength.percent}%` }} />
+                </div>
+                <span className="text-xs font-body font-medium text-muted-foreground w-12">{strength.label}</span>
+              </div>
+              <ul className="space-y-0.5">
+                {([
+                  ["length", "At least 8 characters"],
+                  ["uppercase", "Uppercase letter"],
+                  ["lowercase", "Lowercase letter"],
+                  ["number", "Number"],
+                  ["special", "Special character"],
+                ] as const).map(([key, text]) => (
+                  <li key={key} className="flex items-center gap-1.5 text-xs font-body">
+                    {strength.checks[key] ? <Check className="h-3 w-3 text-green-600" /> : <X className="h-3 w-3 text-muted-foreground/50" />}
+                    <span className={strength.checks[key] ? "text-foreground" : "text-muted-foreground"}>{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {!isLogin && (
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={acceptPrivacy} onChange={(e) => setAcceptPrivacy(e.target.checked)} className="mt-1 accent-primary" />
