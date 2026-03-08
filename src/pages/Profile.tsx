@@ -174,7 +174,7 @@ const Profile = () => {
             className="relative w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group"
           >
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" referrerPolicy="no-referrer" loading="eager" />
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" loading="eager" />
             ) : (
               <span className="text-2xl font-display font-bold text-primary">
                 {profile?.first_name?.[0] || "?"}{profile?.last_name?.[0] || ""}
