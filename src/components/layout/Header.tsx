@@ -26,7 +26,7 @@ const Header = () => {
   }, [showNotifications]);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border pt-safe">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-safe">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
         <Link to="/" className="flex items-center gap-2.5">
           <img src={logo} alt="Scampagnate" className="h-9 w-9 rounded-full" />

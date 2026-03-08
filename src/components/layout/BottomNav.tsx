@@ -20,22 +20,29 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border pb-safe">
-      <div className="flex items-center justify-around max-w-lg mx-auto px-2 py-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50 pb-safe">
+      <div className="flex items-center justify-around max-w-lg mx-auto px-2 py-1.5">
         {navItems.map((item) => {
           const active = isActive(item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-0.5 px-2 sm:px-3 py-2 rounded-xl transition-colors touch-target justify-center ${
+              className={`relative flex flex-col items-center gap-0.5 px-2 sm:px-3 py-2 rounded-xl transition-all duration-200 touch-target justify-center press-scale ${
                 active
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"
               }`}
             >
-              <item.icon className={`h-5 w-5 ${active ? "stroke-[2.5]" : ""}`} />
-              <span className="text-[10px] font-body font-medium leading-tight">{item.label}</span>
+              <div className="relative">
+                <item.icon className={`h-5 w-5 transition-all duration-200 ${active ? "stroke-[2.5]" : ""}`} />
+                {active && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                )}
+              </div>
+              <span className={`text-[10px] font-body leading-tight transition-all duration-200 ${active ? "font-bold" : "font-medium"}`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}

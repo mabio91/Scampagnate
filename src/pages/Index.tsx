@@ -235,15 +235,18 @@ const Index = () => {
                   </span>
                 )}
               </h2>
-              <div className={`space-y-2 transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
+              <div className={`space-y-2.5 stagger-children transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
                 {upcomingEvents.map((event, i) => (
                   <EventCard key={event.id} event={event} index={i} />
                 ))}
               </div>
               {!isFetching && upcomingEvents.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground font-body">
-                    No events found.
+                <div className="text-center py-16 animate-fade-in-up">
+                  <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                    <Search className="h-7 w-7 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-muted-foreground font-body font-medium">
+                    No events found
                   </p>
                   {hasActiveFilters && (
                     <Button variant="link" className="mt-2 text-primary font-body" onClick={clearFilters}>
