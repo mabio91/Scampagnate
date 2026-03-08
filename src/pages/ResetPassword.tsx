@@ -63,6 +63,10 @@ const ResetPassword = () => {
             <Label className="font-body text-sm">New password</Label>
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1" />
           </div>
+          <div>
+            <Label className="font-body text-sm">Confirm password</Label>
+            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="mt-1" />
+          </div>
           <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground font-body font-semibold">
             {loading ? "Updating..." : "Update Password"}
           </Button>
