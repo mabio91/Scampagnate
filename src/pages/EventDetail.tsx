@@ -129,7 +129,7 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (event.status === "closed") return;
+    if (isEventPast || event.status === "closed") return;
     if (isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "free" || myRegistration?.payment_status === "paid")) return;
 
     // Pay Now - placeholder for payment flow
