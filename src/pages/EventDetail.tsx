@@ -86,6 +86,8 @@ const EventDetail = () => {
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
+  const eventStartDate = new Date(`${event.date}T${event.time}`);
+  const isEventPast = eventStartDate < new Date();
 
   const handleToggleSave = async () => {
     if (!user) { navigate("/auth"); return; }
@@ -127,7 +129,7 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (event.status === "closed") return;
+    if (isEventPast || event.status === "closed") return;
     if (isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "free" || myRegistration?.payment_status === "paid")) return;
 
     // Pay Now - placeholder for payment flow
@@ -173,6 +175,7 @@ const EventDetail = () => {
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
+    if (isEventPast) return "Event Started";
     if (event.status === "closed") return "Event Closed";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
@@ -182,7 +185,7 @@ const EventDetail = () => {
   };
 
   const getCTAClass = () => {
-    if (event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (isEventPast || event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
