@@ -86,6 +86,8 @@ const EventDetail = () => {
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
+  const eventStartDate = new Date(`${event.date}T${event.time}`);
+  const isEventPast = eventStartDate < new Date();
 
   const handleToggleSave = async () => {
     if (!user) { navigate("/auth"); return; }
