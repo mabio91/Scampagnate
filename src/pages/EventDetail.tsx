@@ -175,6 +175,7 @@ const EventDetail = () => {
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
+    if (isEventPast) return "Event Started";
     if (event.status === "closed") return "Event Closed";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
@@ -184,7 +185,7 @@ const EventDetail = () => {
   };
 
   const getCTAClass = () => {
-    if (event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (isEventPast || event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
