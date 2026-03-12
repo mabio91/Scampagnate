@@ -105,7 +105,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
   }
 
   return (
-    <div className="w-[calc(100vw-2rem)] max-w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
+    <div className="w-[calc(100vw-2rem)] max-w-80 flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 className="font-display font-semibold text-sm">Notifiche</h3>
         <div className="flex items-center gap-1">
@@ -134,7 +134,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
           )}
         </div>
       </div>
-      <ScrollArea className="flex-1 overflow-hidden" style={{ maxHeight: 'calc(70vh - 52px)' }}>
+      <div className="flex-1 overflow-y-auto max-h-[60vh] overscroll-contain">
         {isLoading ? (
           <div className="p-6 text-center text-sm text-muted-foreground">Caricamento...</div>
         ) : !notifications?.length ? (
@@ -149,7 +149,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
             ))}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 };
