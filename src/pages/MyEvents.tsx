@@ -196,20 +196,6 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   };
 
   const handleCalendarDownload = (type: "google" | "apple" | "outlook") => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    // On mobile, always use .ics file so the OS opens the native calendar app
-    if (isMobile) {
-      const icsUrl = generateCalendarUrl(event, "apple");
-      const a = document.createElement("a");
-      a.href = icsUrl;
-      a.download = `${event.title}.ics`;
-      a.click();
-      URL.revokeObjectURL(icsUrl);
-      return;
-    }
-    
-    // On desktop, use web links for Google/Outlook, .ics for Apple
     const url = generateCalendarUrl(event, type);
     if (type === "apple") {
       const a = document.createElement("a");
