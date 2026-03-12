@@ -134,7 +134,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
           )}
         </div>
       </div>
-      <ScrollArea className="flex-1 overflow-hidden" style={{ maxHeight: 'calc(70vh - 52px)' }}>
+      <div className="flex-1 overflow-y-auto max-h-[60vh] overscroll-contain">
         {isLoading ? (
           <div className="p-6 text-center text-sm text-muted-foreground">Caricamento...</div>
         ) : !notifications?.length ? (
@@ -149,7 +149,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
             ))}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 };
