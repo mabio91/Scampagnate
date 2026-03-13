@@ -32,7 +32,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
+  
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -59,7 +59,7 @@ const Auth = () => {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName, phone });
+      const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName, phone: "" });
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } else {
@@ -165,10 +165,6 @@ const Auth = () => {
                   <Label htmlFor="lastName" className="font-body text-sm">Last Name</Label>
                   <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required placeholder="Rossi" className="mt-1" />
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="phone" className="font-body text-sm">Phone</Label>
-                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+39 333 1234567" className="mt-1" />
               </div>
             </>
           )}
