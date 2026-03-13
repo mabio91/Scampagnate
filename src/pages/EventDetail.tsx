@@ -583,17 +583,39 @@ const EventDetail = () => {
               </div>
             </div>
           )}
-          {event.cancellation_policy && (
-            <div className="p-3 rounded-xl bg-muted/50 mb-4">
-              <p className="text-sm font-body font-semibold text-foreground">Cancellation & Refund Policy</p>
-              <p className="text-xs font-body text-muted-foreground mt-1">{event.cancellation_policy}</p>
-              {event.payment_type === "deposit" && (
-                <p className="text-xs font-body text-muted-foreground mt-1 italic">
-                  Deposit refund is subject to this cancellation policy.
+          {event.cancellation_policy && (() => {
+            const { parseCancellationPolicy: _, ...rest } = {} as any;
+            // Parse policy inline
+            const raw = event.cancellation_policy;
+            const POLICIES: Record<string, { label: string; emoji: string; description: string; colorClass: string; bgClass: string; borderClass: string }> = {
+              flexible: { label: "Flexible", emoji: "✅", description: "Full refund up to 24 hours before the event. No refund within 24 hours.", colorClass: "text-success", bgClass: "bg-success/10", borderClass: "border-success/20" },
+              moderate: { label: "Moderate", emoji: "🕐", description: "Full refund up to 48 hours before the event. No refund within 48 hours.", colorClass: "text-warning", bgClass: "bg-warning/10", borderClass: "border-warning/20" },
+              strict:   { label: "Strict",   emoji: "🚫", description: "Non-refundable. No refund will be issued for any cancellation.", colorClass: "text-destructive", bgClass: "bg-destructive/10", borderClass: "border-destructive/20" },
+              custom:   { label: "Custom",   emoji: "📝", description: "", colorClass: "text-secondary", bgClass: "bg-secondary/10", borderClass: "border-secondary/20" },
+            };
+            const colonIdx = raw.indexOf(":");
+            let type = colonIdx !== -1 ? raw.slice(0, colonIdx) : raw;
+            let customText = colonIdx !== -1 ? raw.slice(colonIdx + 1) : "";
+            if (!POLICIES[type]) { type = "custom"; customText = raw; }
+            const policy = POLICIES[type];
+            return (
+              <div className={`p-4 rounded-xl mb-4 border ${policy.bgClass} ${policy.borderClass}`}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-base">{policy.emoji}</span>
+                  <p className={`text-sm font-body font-bold ${policy.colorClass}`}>{policy.label} Cancellation Policy</p>
+                </div>
+                <p className="text-xs font-body text-muted-foreground leading-relaxed">
+                  {type === "custom" ? customText : policy.description}
                 </p>
-              )}
-            </div>
-          )}
+                {event.payment_type === "deposit" && (
+                  <p className="text-[11px] font-body text-muted-foreground mt-1.5 italic border-t border-current/10 pt-1.5">
+                    Deposit refund is subject to this policy.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
           {isRegistered && (
             <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
               {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}

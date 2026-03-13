@@ -3,6 +3,7 @@ import { useNavigate, useParams, Navigate, useSearchParams } from "react-router-
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useEvents";
 import { supabase } from "@/integrations/supabase/client";
+import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +96,9 @@ const EventForm = () => {
     gallery_images: [] as { url: string; order: number }[],
   });
 
+  const [policyType, setPolicyType] = useState<PolicyType | "">("flexible");  
+  const [policyCustomText, setPolicyCustomText] = useState("");
+
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const { data: equipmentTemplates } = useEquipmentTemplates();
 
@@ -164,6 +168,10 @@ const EventForm = () => {
         visibility: isDuplicating ? "private" : (event.visibility || "public"),
         gallery_images: (event.gallery_images as any[]) || [],
       });
+      // Parse existing cancellation policy
+      const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
+      setPolicyType(pt || "flexible");
+      setPolicyCustomText(ct);
       if (event.image_url) {
         setImagePreview(event.image_url);
       }
@@ -289,7 +297,9 @@ const EventForm = () => {
         elevation: form.elevation || null,
         duration: form.duration || null,
         featured: form.featured,
-        cancellation_policy: form.cancellation_policy || null,
+        cancellation_policy: policyType
+          ? serializeCancellationPolicy(policyType as PolicyType, policyCustomText)
+          : null,
         image_url: imageUrl,
         visibility: form.visibility,
         gallery_images: form.gallery_images as any,
@@ -621,8 +631,32 @@ const EventForm = () => {
               </>
             )}
             <div>
-              <Label htmlFor="cancellation">Cancellation Policy</Label>
-              <Textarea id="cancellation" value={form.cancellation_policy} onChange={(e) => updateForm("cancellation_policy", e.target.value)} placeholder="e.g., Full refund up to 48h before event" rows={2} />
+              <Label>Cancellation Policy</Label>
+              <Select value={policyType} onValueChange={(v) => setPolicyType(v as PolicyType)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a policy type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="flexible">✅ Flexible — refundable up to 24h before</SelectItem>
+                  <SelectItem value="moderate">🕐 Moderate — refundable up to 48h before</SelectItem>
+                  <SelectItem value="strict">🚫 Strict — non-refundable</SelectItem>
+                  <SelectItem value="custom">📝 Custom — define your own policy</SelectItem>
+                </SelectContent>
+              </Select>
+              {policyType && policyType !== "custom" && (
+                <p className="mt-1.5 text-xs text-muted-foreground font-body px-1">
+                  {CANCELLATION_POLICIES[policyType as PolicyType]?.description}
+                </p>
+              )}
+              {policyType === "custom" && (
+                <Textarea
+                  className="mt-2"
+                  value={policyCustomText}
+                  onChange={(e) => setPolicyCustomText(e.target.value)}
+                  placeholder="e.g., Full refund if cancelled 72h in advance. No refunds after that."
+                  rows={3}
+                />
+              )}
             </div>
           </div>
         </Card>

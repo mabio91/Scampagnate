@@ -281,10 +281,21 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
             <DialogTitle className="font-display">Cancel Registration?</DialogTitle>
             <DialogDescription className="font-body text-sm">
               Are you sure you want to cancel your registration for {event.title}?
-              {event.cancellation_policy && (
-                <span className="block mt-2 text-xs italic">{event.cancellation_policy}</span>
-              )}
+              {event.cancellation_policy && (() => {
+                const raw = event.cancellation_policy;
+                const POLICY_LABELS: Record<string, string> = {
+                  flexible: "✅ Flexible — refundable up to 24h before the event.",
+                  moderate: "🕐 Moderate — refundable up to 48h before the event.",
+                  strict: "🚫 Strict — non-refundable.",
+                };
+                const colonIdx = raw.indexOf(":");
+                const type = colonIdx !== -1 ? raw.slice(0, colonIdx) : raw;
+                const customText = colonIdx !== -1 ? raw.slice(colonIdx + 1) : "";
+                const label = POLICY_LABELS[type] || customText || raw;
+                return <span className="block mt-2 text-xs font-semibold text-muted-foreground italic">{label}</span>;
+              })()}
             </DialogDescription>
+
           </DialogHeader>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 font-body" onClick={() => setShowCancelDialog(false)}>
