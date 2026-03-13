@@ -14,6 +14,8 @@ import { useQuery } from "@tanstack/react-query";
 import OptimizedImage from "@/components/OptimizedImage";
 import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
+import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
+import { Info } from "lucide-react";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -27,6 +29,7 @@ const Profile = () => {
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useCategories();
@@ -320,8 +323,17 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Report Issue */}
-        <div className="mb-3">
+        {/* Help & Information */}
+        <div className="mb-6 space-y-3">
+          <h2 className="font-display text-lg font-bold text-foreground">Help & Information</h2>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowDifficultyGuide(true)} 
+            className="w-full justify-start font-body font-semibold h-12"
+          >
+            <Info className="h-5 w-5 mr-3 text-secondary" />
+            Trekking Difficulty Guide
+          </Button>
           <ReportIssueDialog />
         </div>
 
@@ -330,6 +342,10 @@ const Profile = () => {
           <LogOut className="h-4 w-4 mr-2" /> Sign Out
         </Button>
       </div>
+      <DifficultyGuideDialog 
+        open={showDifficultyGuide} 
+        onOpenChange={setShowDifficultyGuide} 
+      />
     </AppLayout>
   );
 };

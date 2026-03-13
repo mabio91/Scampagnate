@@ -488,10 +488,11 @@ const EventForm = () => {
               <Select value={form.difficulty} onValueChange={(v) => updateForm("difficulty", v)}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="moderate">Moderate</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
-                  <SelectItem value="expert">Expert</SelectItem>
+                  <SelectItem value="1">🟢 Livello 1 - Introduzione</SelectItem>
+                  <SelectItem value="2">🟢 Livello 2 - Facile</SelectItem>
+                  <SelectItem value="3">🟡 Livello 3 - Intermedio</SelectItem>
+                  <SelectItem value="4">🟠 Livello 4 - Impegnativo</SelectItem>
+                  <SelectItem value="5">🔴 Livello 5 - Avanzato</SelectItem>
                 </SelectContent>
               </Select>
             </div>

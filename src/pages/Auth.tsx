@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
-import { Eye, EyeOff, ArrowLeft, Check, X, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Check, X, Loader2, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 
 const getPasswordStrength = (pw: string) => {
   const checks = {
@@ -37,6 +38,7 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
 
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -251,7 +253,27 @@ const Auth = () => {
             {isLogin ? "Sign Up" : "Sign In"}
           </button>
         </p>
+
+        {!isLogin && (
+          <div className="mt-8 pt-6 border-t border-border flex flex-col items-center">
+            <button 
+              onClick={() => setShowDifficultyGuide(true)}
+              className="flex items-center gap-1.5 text-sm text-secondary hover:underline font-body font-semibold"
+            >
+              <Info className="h-4 w-4" />
+              View Trekking Difficulty Guide
+            </button>
+            <p className="text-xs text-muted-foreground mt-1.5 text-center px-4">
+              Learn our 5-level standardized criteria for joining events safely.
+            </p>
+          </div>
+        )}
       </motion.div>
+
+      <DifficultyGuideDialog 
+        open={showDifficultyGuide} 
+        onOpenChange={setShowDifficultyGuide} 
+      />
     </div>
   );
 };

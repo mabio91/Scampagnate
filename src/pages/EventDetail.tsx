@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
+import { DifficultyBadge } from "@/components/events/DifficultyBadge";
+import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
@@ -42,6 +44,7 @@ const EventDetail = () => {
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
@@ -251,9 +254,9 @@ const EventDetail = () => {
         <div className="absolute bottom-4 left-4 right-4">
           <div className="flex items-center gap-2 mb-2">
             {event.difficulty && (
-              <span className="inline-block px-2.5 py-1 rounded-full bg-accent text-accent-foreground text-xs font-body font-semibold">
-                {event.difficulty}
-              </span>
+              <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center hover:opacity-90 transition-opacity">
+                <DifficultyBadge difficulty={event.difficulty} className="bg-accent text-accent-foreground" />
+              </button>
             )}
             {event.category && (
               <span className="inline-block px-2.5 py-1 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground text-xs font-body font-semibold">
@@ -706,6 +709,11 @@ const EventDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <DifficultyGuideDialog 
+        open={showDifficultyGuide} 
+        onOpenChange={setShowDifficultyGuide} 
+      />
 
       <ShareSheet
         open={showShareSheet}
