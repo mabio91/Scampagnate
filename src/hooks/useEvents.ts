@@ -27,17 +27,20 @@ export interface EventWithDetails {
   organizer_name: string;
   cancellation_policy: string | null;
   equipment_list: any;
+  visibility: "public" | "private" | "hidden";
+  gallery_images: { url: string; order: number }[] | null;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
 }
 
 export const useEvents = (categoryName?: string | null) => {
+  const { user, isOrganizer, isAdmin } = useAuth();
   return useQuery({
-    queryKey: ["events", categoryName],
+    queryKey: ["events", categoryName, user?.id, isOrganizer, isAdmin],
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)")
+        .select("id, title, date, time, location, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)")
         .order("date", { ascending: true });
 
       if (categoryName) {
@@ -49,6 +52,16 @@ export const useEvents = (categoryName?: string | null) => {
         if (cat) {
           query = query.eq("category_id", cat.id);
         }
+      }
+
+      // Visibility filtering
+      if (!isAdmin && !isOrganizer) {
+        // Regular users/guests see only public events
+        query = query.eq("visibility", "public");
+      } else {
+        // Admin/Organizer can see public and hidden events
+        // Private events are hidden from the discovery list for everyone
+        query = query.or("visibility.eq.public,visibility.eq.hidden");
       }
 
       const { data, error } = await query;

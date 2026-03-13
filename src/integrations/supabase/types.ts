@@ -252,6 +252,7 @@ export type Database = {
           elevation: string | null
           equipment_list: Json | null
           featured: boolean
+          gallery_images: Json | null
           id: string
           image_url: string | null
           location: string
@@ -266,6 +267,7 @@ export type Database = {
           time: string
           title: string
           updated_at: string
+          visibility: Database["public"]["Enums"]["event_visibility"]
         }
         Insert: {
           additional_fields?: Json | null
@@ -281,6 +283,7 @@ export type Database = {
           elevation?: string | null
           equipment_list?: Json | null
           featured?: boolean
+          gallery_images?: Json | null
           id?: string
           image_url?: string | null
           location: string
@@ -295,6 +298,7 @@ export type Database = {
           time: string
           title: string
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["event_visibility"]
         }
         Update: {
           additional_fields?: Json | null
@@ -310,6 +314,7 @@ export type Database = {
           elevation?: string | null
           equipment_list?: Json | null
           featured?: boolean
+          gallery_images?: Json | null
           id?: string
           image_url?: string | null
           location?: string
@@ -324,6 +329,7 @@ export type Database = {
           time?: string
           title?: string
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["event_visibility"]
         }
         Relationships: [
           {
@@ -439,6 +445,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          email: string | null
           experience_grade: number | null
           first_name: string
           id: string
@@ -459,6 +466,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           experience_grade?: number | null
           first_name?: string
           id: string
@@ -479,6 +487,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           experience_grade?: number | null
           first_name?: string
           id?: string
@@ -619,6 +628,7 @@ export type Database = {
       account_status: "Active" | "Suspended" | "Banned"
       app_role: "admin" | "organizer" | "user"
       event_status: "available" | "full" | "closed"
+      event_visibility: "public" | "private" | "hidden"
       payment_type: "free" | "paid" | "deposit" | "location"
       registration_status:
         | "registered"
@@ -756,6 +766,7 @@ export const Constants = {
       account_status: ["Active", "Suspended", "Banned"],
       app_role: ["admin", "organizer", "user"],
       event_status: ["available", "full", "closed"],
+      event_visibility: ["public", "private", "hidden"],
       payment_type: ["free", "paid", "deposit", "location"],
       registration_status: [
         "registered",
