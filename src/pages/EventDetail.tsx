@@ -7,7 +7,7 @@ import {
   Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useCheckEventAccess } from "@/hooks/useEvents";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
@@ -45,9 +45,13 @@ const EventDetail = () => {
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
+  const [showAccessWarning, setShowAccessWarning] = useState(false);
+  const [isRequestingOverride, setIsRequestingOverride] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
+
+  const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
 
   // Fetch organizer profile for contact info
   const { data: organizerProfile } = useQuery({
@@ -143,10 +147,15 @@ const EventDetail = () => {
 
     if (isRegistered) return;
 
+    if (accessData && !accessData.hasAccess) {
+      setShowAccessWarning(true);
+      return;
+    }
+
     setShowRegisterDialog(true);
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (requestApproval = false) => {
     const isWaitlist = event.status === "full";
     try {
       await registerMutation.mutateAsync({
@@ -154,10 +163,16 @@ const EventDetail = () => {
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
         asWaitlist: isWaitlist,
+        requestApproval: requestApproval,
         paymentType: event.payment_type,
       });
       setShowRegisterDialog(false);
-      if (isWaitlist) {
+      setShowAccessWarning(false);
+      setIsRequestingOverride(false);
+      
+      if (requestApproval) {
+        toast({ title: "Request sent", description: "Your manual approval request has been sent to the organizer.", duration: 5000 });
+      } else if (isWaitlist) {
         toast({ title: "Added to waitlist", description: `You'll be notified when a spot opens for ${event.title}` });
       } else {
         toast({ title: "Registration confirmed", description: `You've registered for ${event.title}` });
@@ -177,10 +192,12 @@ const EventDetail = () => {
   };
 
   const needsPayment = isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "paid" || event.payment_type === "deposit") && myRegistration?.payment_status !== "paid";
+  const isPendingApproval = isRegistered && myRegistration?.status === "pending_approval";
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled") return "Event Closed";
+    if (isPendingApproval) return "Approval Pending";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered ✔";
@@ -190,7 +207,7 @@ const EventDetail = () => {
 
   const getCTAClass = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled") return "bg-muted text-muted-foreground cursor-not-allowed";
-    if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
+    if (isOnWaitlist || isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
@@ -696,7 +713,7 @@ const EventDetail = () => {
             )}
 
             <Button
-              onClick={handleRegister}
+              onClick={() => handleRegister(isRequestingOverride)}
               disabled={
                 registerMutation.isPending ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
@@ -704,8 +721,48 @@ const EventDetail = () => {
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registering...</> : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
+              {registerMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{isRequestingOverride ? "Submitting..." : "Registering..."}</>
+              ) : event.status === "full" ? (
+                "Join Waitlist"
+              ) : isRequestingOverride ? (
+                "Submit Request"
+              ) : (
+                "Confirm Registration"
+              )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Access Warning Dialog */}
+      <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Experience Requirement</DialogTitle>
+            <DialogDescription className="font-body text-sm mt-2 text-foreground">
+              {accessData?.reason || "This event requires a higher experience level for safety."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs font-body text-muted-foreground">
+              If you feel you are physically prepared and have the necessary experience to attend this event safely, you can request a manual override. The organizer will review your profile and decide.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 font-body" onClick={() => setShowAccessWarning(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowAccessWarning(false);
+                  setIsRequestingOverride(true);
+                  setShowRegisterDialog(true);
+                }} 
+                className="flex-1 font-body bg-warning text-warning-foreground hover:bg-warning/90"
+              >
+                Request Override
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

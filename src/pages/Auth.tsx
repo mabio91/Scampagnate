@@ -33,7 +33,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,6 +70,20 @@ const Auth = () => {
       }
     }
     setLoading(false);
+  };
+
+  const handleOAuthLogin = async (provider: 'google' | 'apple') => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin,
+        }
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -153,6 +167,43 @@ const Auth = () => {
           <p className="text-muted-foreground font-body text-sm mt-1">
             {isLogin ? "Sign in to your account" : "Create your Scampagnate account"}
           </p>
+        </div>
+
+        <div className="flex flex-col gap-3 mb-6">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 bg-white text-gray-900 border border-gray-200 shadow-sm font-body font-semibold flex items-center justify-center gap-2"
+            onClick={() => handleOAuthLogin('google')}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+              <path d="M12.0003 4.75C13.7703 4.75 15.3553 5.36 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z" fill="#EA4335" />
+              <path d="M23.49 12.275C23.49 11.49 23.415 10.73 23.3 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.945 21.1C22.2 19.01 23.49 15.92 23.49 12.275Z" fill="#4285F4" />
+              <path d="M5.26498 14.2949C5.02498 13.5699 4.88501 12.7999 4.88501 11.9999C4.88501 11.1999 5.01998 10.4299 5.26498 9.7049L1.275 6.60986C0.46 8.22986 0 10.0599 0 11.9999C0 13.9399 0.46 15.7699 1.28 17.3899L5.26498 14.2949Z" fill="#FBBC05" />
+              <path d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.26538 14.29L1.27539 17.385C3.25539 21.31 7.3104 24.0001 12.0004 24.0001Z" fill="#34A853" />
+            </svg>
+            Continue with Google
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 bg-black hover:bg-gray-900 text-white shadow-sm font-body font-semibold flex items-center justify-center gap-2"
+            onClick={() => handleOAuthLogin('apple')}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="currentColor">
+              <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.62-1.48 3.608-2.935 1.156-1.688 1.631-3.324 1.657-3.415-.026-.013-3.181-1.22-3.207-4.856-.026-3.051 2.493-4.506 2.61-4.584-1.428-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.844-1.012 1.415-2.427 1.259-3.83-1.194.052-2.674.805-3.545 1.818-.78.896-1.454 2.338-1.272 3.714 1.337.104 2.713-.688 3.558-1.701z" />
+            </svg>
+            Continue with Apple
+          </Button>
+        </div>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground font-body">Or continue with email</span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -256,7 +307,7 @@ const Auth = () => {
 
         {!isLogin && (
           <div className="mt-8 pt-6 border-t border-border flex flex-col items-center">
-            <button 
+            <button
               onClick={() => setShowDifficultyGuide(true)}
               className="flex items-center gap-1.5 text-sm text-secondary hover:underline font-body font-semibold"
             >
@@ -270,9 +321,9 @@ const Auth = () => {
         )}
       </motion.div>
 
-      <DifficultyGuideDialog 
-        open={showDifficultyGuide} 
-        onOpenChange={setShowDifficultyGuide} 
+      <DifficultyGuideDialog
+        open={showDifficultyGuide}
+        onOpenChange={setShowDifficultyGuide}
       />
     </div>
   );

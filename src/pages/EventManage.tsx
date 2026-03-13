@@ -92,6 +92,7 @@ const EventManage = () => {
   const registered = registrations?.filter((r) => r.status === "registered" || r.status === "paid") || [];
   const waitlisted = registrations?.filter((r) => r.status === "waitlist") || [];
   const cancelled = registrations?.filter((r) => r.status === "cancelled") || [];
+  const pending = registrations?.filter((r) => r.status === "pending_approval") || [];
   const checkedIn = registered.filter((r) => r.checked_in);
   const reservedSpots = (event as any)?.reserved_spots || 0;
 
@@ -149,6 +150,10 @@ const EventManage = () => {
 
   const handlePromoteFromWaitlist = async (regId: string) => {
     await handleStatusChange(regId, "registered");
+  };
+
+  const handleApprovePending = async (regId: string, toWaitlist: boolean = false) => {
+    await handleStatusChange(regId, toWaitlist ? "waitlist" : "registered");
   };
 
   const handleCancelRegistration = async (regId: string) => {
@@ -345,7 +350,15 @@ const EventManage = () => {
             <TabsTrigger value="participants" className="flex-1">Participants</TabsTrigger>
             <TabsTrigger value="checkin" className="flex-1">Check-in</TabsTrigger>
             <TabsTrigger value="waitlist" className="flex-1">Waitlist</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1">
+            <TabsTrigger value="pending" className="flex-1 relative">
+              Pending
+              {pending.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                  {pending.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="hidden sm:flex flex-1">
               <BarChart3 className="h-3.5 w-3.5 mr-1" />
               Stats
             </TabsTrigger>
@@ -587,6 +600,41 @@ const EventManage = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Pending Approvals Tab */}
+          <TabsContent value="pending" className="space-y-3 mt-3">
+            {pending.length === 0 ? (
+              <p className="text-center text-muted-foreground font-body text-sm py-6">No pending manual approvals</p>
+            ) : (
+              <div className="space-y-2">
+                {pending.map((reg) => (
+                  <Card key={reg.id} className="p-3 flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive text-xs font-bold">
+                        {(reg.profiles as any)?.first_name?.[0] || "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body text-sm font-semibold text-foreground truncate">
+                          {(reg.profiles as any)?.first_name} {(reg.profiles as any)?.last_name}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground font-body truncate">
+                          {(reg.profiles as any)?.phone || "No phone"} · Level {(reg.profiles as any)?.experience_grade || "?"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="default" className="flex-1 text-xs" onClick={() => handleApprovePending(reg.id)}>
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleCancelRegistration(reg.id)}>
+                        Reject
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
             )}
           </TabsContent>

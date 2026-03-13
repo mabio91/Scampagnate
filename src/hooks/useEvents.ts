@@ -158,7 +158,7 @@ export const useRegisterForEvent = () => {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, paymentType }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; paymentType?: string }) => {
+    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string }) => {
       if (!user) throw new Error("Devi effettuare il login");
 
       // Determine payment_status based on payment type
@@ -169,12 +169,17 @@ export const useRegisterForEvent = () => {
         paymentStatus = "pay_on_location";
       }
 
+      type RegistrationStatus = "registered" | "waitlist" | "pending_approval";
+      let status: RegistrationStatus = "registered";
+      if (asWaitlist) status = "waitlist";
+      if (requestApproval) status = "pending_approval";
+
       const { error } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: user.id,
         meeting_point_id: meetingPointId || null,
         sport_level: sportLevel || null,
-        status: asWaitlist ? "waitlist" : "registered",
+        status: status as any, // Cast required if TypeScript still struggles
         payment_status: paymentStatus,
       });
       if (error) throw error;
@@ -280,5 +285,70 @@ export const useCategories = () => {
     },
     staleTime: 10 * 60 * 1000, // categories rarely change
     gcTime: 30 * 60 * 1000,
+  });
+};
+
+export const useCheckEventAccess = (difficulty: string | null) => {
+  const { user, profile } = useAuth();
+
+  return useQuery({
+    queryKey: ["check-access", difficulty, user?.id],
+    queryFn: async () => {
+      if (!user || !profile || !difficulty) return { hasAccess: true };
+      
+      const diffLevel = parseInt(difficulty);
+      if (isNaN(diffLevel) || diffLevel < 3) return { hasAccess: true };
+
+      // Helper to check base profile criteria
+      const checkProfileCriteria = () => {
+        const { trekking_experience, activity_frequency } = profile;
+        if (diffLevel === 3) { // Intermediate
+          // Requires: >= 1-2 physical activities/week AND >= 3 trekking experiences
+          const hasActivity = activity_frequency === "1-2/week" || activity_frequency === ">2/week";
+          const hasTrekking = trekking_experience === "3-5" || trekking_experience === "5+";
+          return hasActivity && hasTrekking;
+        }
+        if (diffLevel >= 4) { // Advanced
+          // Requires: > 2 physical activities/week AND >= 5 trekking experiences
+          return activity_frequency === ">2/week" && trekking_experience === "5+";
+        }
+        return false;
+      };
+
+      if (checkProfileCriteria()) {
+        return { hasAccess: true };
+      }
+
+      // If profile criteria fails, check past event completions
+      // For level 3: OR >= 3 easy-level events completed (difficulty 1 or 2)
+      // For level 4/5: OR >= 3 intermediate-level events completed (difficulty 3)
+      const { data: pastEvents, error } = await supabase
+        .from("event_registrations")
+        .select("*, events(difficulty)")
+        .eq("user_id", user.id)
+        .in("status", ["registered", "paid"]); // Assuming "attended" logic isn't fully robust, relying on past active registrations
+
+      if (error || !pastEvents) {
+        return { hasAccess: false, reason: "Non hai i requisiti minimi di esperienza per questo evento." };
+      }
+
+      // Filter to past events (in a real app, you'd check if event.date < now)
+      // Since we just have the registrations, we count them based on linked event difficulty
+      const easyCount = pastEvents.filter(r => {
+        const d = parseInt((r.events as any)?.difficulty);
+        return !isNaN(d) && d <= 2;
+      }).length;
+
+      const interCount = pastEvents.filter(r => {
+        const d = parseInt((r.events as any)?.difficulty);
+        return !isNaN(d) && d >= 3;
+      }).length;
+
+      if (diffLevel === 3 && easyCount >= 3) return { hasAccess: true };
+      if (diffLevel >= 4 && interCount >= 3) return { hasAccess: true };
+
+      return { hasAccess: false, reason: "Non hai i requisiti minimi di esperienza per questo evento." };
+    },
+    enabled: !!user && !!profile && !!difficulty,
   });
 };

@@ -10,6 +10,9 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   total_points: number;
+  trekking_experience?: string;
+  activity_frequency?: string;
+  experience_grade?: number;
 }
 
 type AppRole = "admin" | "organizer" | "user";
