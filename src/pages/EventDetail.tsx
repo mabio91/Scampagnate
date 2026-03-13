@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useCheckEventAccess } from "@/hooks/useEvents";
@@ -169,7 +169,7 @@ const EventDetail = () => {
       setShowRegisterDialog(false);
       setShowAccessWarning(false);
       setIsRequestingOverride(false);
-      
+
       if (requestApproval) {
         toast({ title: "Request sent", description: "Your manual approval request has been sent to the organizer.", duration: 5000 });
       } else if (isWaitlist) {
@@ -573,9 +573,9 @@ const EventDetail = () => {
               {(event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
             <p className="text-xl font-display font-bold text-foreground">
-              {Number(event.price) === 0 && (!profile || profile.membership_status === 'Active') ? "Free" : 
-               (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` : 
-               `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`}
+              {Number(event.price) === 0 && (!profile || profile.membership_status === 'Active') ? "Free" :
+                (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` :
+                  `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`}
             </p>
             {profile?.membership_status !== 'Active' && !isRegistered && (
               <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
@@ -596,7 +596,7 @@ const EventDetail = () => {
               {getCTALabel()}
             </Button>
             {accessData && !accessData.hasAccess && !isRegistered && !isEventPast && event.status !== "closed" && event.status !== "cancelled" && (
-              <button 
+              <button
                 onClick={() => setShowAccessWarning(true)}
                 className="text-[10px] font-body text-primary hover:underline"
               >
@@ -615,13 +615,27 @@ const EventDetail = () => {
             <DialogDescription className="font-body text-sm">
               Complete your registration by selecting the required options.
               {profile?.membership_status !== 'Active' && (
-                <div className="mt-2 p-3 rounded-xl bg-primary/10 border border-primary/20">
-                  <p className="text-xs font-body font-bold text-primary">Membership Required</p>
-                  <p className="text-[10px] font-body text-primary/80 leading-relaxed mt-0.5">
-                    As this is your first event, a €10 membership fee is added. This grants access to the platform for the entire year.
-                  </p>
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-primary/20 text-xs font-bold text-primary">
-                    <span>Membership Fee</span>
+                <div className="mt-3 p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-body font-bold text-primary">Tessera Associativa Scampagnate</p>
+                  </div>
+                  <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
+                    <p>
+                      Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
+                    </p>
+                    <p>
+                      Scampagnate è un’Associazione Sportiva Dilettantistica (ASD) e la quota associativa contribuisce a sostenere l’organizzazione delle attività, la gestione della community e lo svolgimento degli eventi.
+                    </p>
+                    <p>
+                      La quota associativa è di <strong>10€ (una tantum)</strong> e viene richiesta solo al momento della prima iscrizione a un evento.
+                    </p>
+                    <p>
+                      Dopo il pagamento riceverai il tuo numero di tessera personale, che ti permetterà di partecipare liberamente alle attività successive. La tessera fisica verrà consegnata direttamente durante il tuo primo evento.
+                    </p>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-primary/20 text-xs font-bold text-primary">
+                    <span>Quota Associativa</span>
                     <span>€10</span>
                   </div>
                 </div>
@@ -796,11 +810,11 @@ const EventDetail = () => {
 
             <div className="flex flex-col gap-2 pt-2">
               {organizerProfile?.phone && (
-                <Button 
+                <Button
                   asChild
                   className="w-full font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none h-12"
                 >
-                  <a 
+                  <a
                     href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}?text=${encodeURIComponent(`Hi! I’m interested in joining this event but the platform indicates I may not meet the experience requirements. Could you please review my participation? Event: ${event.title}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -810,22 +824,22 @@ const EventDetail = () => {
                   </a>
                 </Button>
               )}
-              
-              <Button 
+
+              <Button
                 onClick={() => {
                   setShowAccessWarning(false);
                   setIsRequestingOverride(true);
                   setShowRegisterDialog(true);
-                }} 
+                }}
                 variant="outline"
                 className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
               >
                 Request Manual Review
               </Button>
 
-              <Button 
-                variant="ghost" 
-                className="w-full font-body text-muted-foreground text-xs h-10" 
+              <Button
+                variant="ghost"
+                className="w-full font-body text-muted-foreground text-xs h-10"
                 onClick={() => setShowAccessWarning(false)}
               >
                 Close
@@ -835,9 +849,9 @@ const EventDetail = () => {
         </DialogContent>
       </Dialog>
 
-      <DifficultyGuideDialog 
-        open={showDifficultyGuide} 
-        onOpenChange={setShowDifficultyGuide} 
+      <DifficultyGuideDialog
+        open={showDifficultyGuide}
+        onOpenChange={setShowDifficultyGuide}
       />
 
       <ShareSheet
