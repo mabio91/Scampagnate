@@ -22,6 +22,7 @@ const OrganizerDashboard = lazy(() => import("./pages/OrganizerDashboard"));
 const EventForm = lazy(() => import("./pages/EventForm"));
 const EventManage = lazy(() => import("./pages/EventManage"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/my-events" element={<MyEvents />} />
                 <Route path="/merch" element={<Merch />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/profile-setup" element={<ProfileSetup />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/notifications" element={<Notifications />} />

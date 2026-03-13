@@ -591,7 +591,7 @@ export type Database = {
       app_role: "admin" | "organizer" | "user"
       event_status: "available" | "full" | "closed"
       payment_type: "free" | "paid" | "deposit" | "location"
-      registration_status: "registered" | "paid" | "waitlist" | "cancelled"
+      registration_status: "registered" | "paid" | "waitlist" | "cancelled" | "pending_approval"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -722,7 +722,7 @@ export const Constants = {
       app_role: ["admin", "organizer", "user"],
       event_status: ["available", "full", "closed"],
       payment_type: ["free", "paid", "deposit", "location"],
-      registration_status: ["registered", "paid", "waitlist", "cancelled"],
+      registration_status: ["registered", "paid", "waitlist", "cancelled", "pending_approval"],
     },
   },
 } as const

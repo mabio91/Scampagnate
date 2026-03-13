@@ -3,6 +3,7 @@ import { CalendarDays, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
+import { DifficultyBadge } from "./DifficultyBadge";
 
 const statusConfig = {
   available: { label: "Available", className: "bg-success/10 text-success" },
@@ -26,9 +27,9 @@ const EventCard = memo(({ event, index }: { event: EventWithDetails; index: numb
             className="w-24 h-24 rounded-xl object-cover bg-muted transition-transform duration-300 group-hover:scale-[1.03]"
           />
           {event.difficulty && (
-            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md text-[10px] font-body font-semibold bg-foreground/70 text-background backdrop-blur-sm">
-              {event.difficulty}
-            </span>
+            <div className="absolute top-1 left-1">
+              <DifficultyBadge difficulty={event.difficulty} className="bg-background/80 backdrop-blur-md text-foreground shadow-sm px-1.5 py-0.5 text-[10px]" showLabel={false} />
+            </div>
           )}
         </div>
         <div className="flex-1 min-w-0 py-0.5">
@@ -65,7 +66,7 @@ const EventCard = memo(({ event, index }: { event: EventWithDetails; index: numb
           </div>
           {event.distance && (
             <div className="mt-1.5 text-[11px] text-muted-foreground/70 font-body">
-              {event.difficulty} · {event.distance} · {event.elevation} · {event.duration}
+              {event.distance} · {event.elevation} · {event.duration}
             </div>
           )}
         </div>

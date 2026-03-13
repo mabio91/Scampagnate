@@ -7,9 +7,11 @@ import {
   Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useCheckEventAccess } from "@/hooks/useEvents";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
+import { DifficultyBadge } from "@/components/events/DifficultyBadge";
+import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
@@ -42,9 +44,14 @@ const EventDetail = () => {
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
+  const [showAccessWarning, setShowAccessWarning] = useState(false);
+  const [isRequestingOverride, setIsRequestingOverride] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
+
+  const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
 
   // Fetch organizer profile for contact info
   const { data: organizerProfile } = useQuery({
@@ -89,6 +96,8 @@ const EventDetail = () => {
   const eventStartDate = new Date(`${event.date}T${event.time}`);
   const isEventPast = eventStartDate < new Date();
 
+  const canViewParticipants = user && (isRegistered || user.id === event.organizer_id);
+
   const handleToggleSave = async () => {
     if (!user) { navigate("/auth"); return; }
     try {
@@ -113,7 +122,7 @@ const EventDetail = () => {
     if (type === "outlook") {
       return `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${location}&body=${details}`;
     }
-    const ics = ["BEGIN:VCALENDAR","VERSION:2.0","BEGIN:VEVENT",`DTSTART:${formatICS(startDate)}`,`DTEND:${formatICS(endDate)}`,`SUMMARY:${event.title}`,`LOCATION:${event.location}`,`DESCRIPTION:Event page: ${eventUrl}`,`URL:${eventUrl}`,"END:VEVENT","END:VCALENDAR"].join("\r\n");
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `DTSTART:${formatICS(startDate)}`, `DTEND:${formatICS(endDate)}`, `SUMMARY:${event.title}`, `LOCATION:${event.location}`, `DESCRIPTION:Event page: ${eventUrl}`, `URL:${eventUrl}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     return URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
   };
 
@@ -129,19 +138,24 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (isEventPast || event.status === "closed") return;
-    if (isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "free" || myRegistration?.payment_status === "paid")) return;
+    if (isEventPast || event.status === "closed" || event.status === "cancelled") return;
 
-    // Pay Now - placeholder for payment flow
-    if (isRegistered && event.payment_type !== "free" && myRegistration?.payment_status !== "paid") {
+    if (needsPayment) {
       toast({ title: "Payment", description: "Payment flow coming soon!" });
+      return;
+    }
+
+    if (isRegistered) return;
+
+    if (accessData && !accessData.hasAccess) {
+      setShowAccessWarning(true);
       return;
     }
 
     setShowRegisterDialog(true);
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (requestApproval = false) => {
     const isWaitlist = event.status === "full";
     try {
       await registerMutation.mutateAsync({
@@ -149,10 +163,16 @@ const EventDetail = () => {
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
         asWaitlist: isWaitlist,
+        requestApproval: requestApproval,
         paymentType: event.payment_type,
       });
       setShowRegisterDialog(false);
-      if (isWaitlist) {
+      setShowAccessWarning(false);
+      setIsRequestingOverride(false);
+      
+      if (requestApproval) {
+        toast({ title: "Request sent", description: "Your manual approval request has been sent to the organizer.", duration: 5000 });
+      } else if (isWaitlist) {
         toast({ title: "Added to waitlist", description: `You'll be notified when a spot opens for ${event.title}` });
       } else {
         toast({ title: "Registration confirmed", description: `You've registered for ${event.title}` });
@@ -171,24 +191,23 @@ const EventDetail = () => {
     }
   };
 
-  const needsPayment = isRegistered && event.payment_type !== "free" && myRegistration?.payment_status !== "paid";
+  const needsPayment = isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "paid" || event.payment_type === "deposit") && myRegistration?.payment_status !== "paid";
+  const isPendingApproval = isRegistered && myRegistration?.status === "pending_approval";
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
-    if (isEventPast) return "Event Started";
-    if (event.status === "closed") return "Event Closed";
-    if (!user) return "Sign in to Join";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled") return "Event Closed";
+    if (isPendingApproval) return "Approval Pending";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
-    if (isRegistered) return "Registered";
+    if (isRegistered) return "Registered ✔";
     if (event.status === "full") return "Join Waitlist";
     return "Join Event";
   };
 
   const getCTAClass = () => {
-    if (isEventPast || event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
-    if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
-    if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (isOnWaitlist || isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
@@ -252,9 +271,9 @@ const EventDetail = () => {
         <div className="absolute bottom-4 left-4 right-4">
           <div className="flex items-center gap-2 mb-2">
             {event.difficulty && (
-              <span className="inline-block px-2.5 py-1 rounded-full bg-accent text-accent-foreground text-xs font-body font-semibold">
-                {event.difficulty}
-              </span>
+              <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center hover:opacity-90 transition-opacity">
+                <DifficultyBadge difficulty={event.difficulty} className="bg-accent text-accent-foreground" />
+              </button>
             )}
             {event.category && (
               <span className="inline-block px-2.5 py-1 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground text-xs font-body font-semibold">
@@ -369,17 +388,17 @@ const EventDetail = () => {
             <div className="h-full rounded-full bg-secondary transition-all" style={{ width: `${Math.min(100, (event.spots_taken / event.spots_total) * 100)}%` }} />
           </div>
 
-          {/* Guest view: only count */}
-          {!user && (
+          {/* Guest view or user not joined: only count */}
+          {!canViewParticipants && (
             <p className="text-sm font-body text-muted-foreground">
               {event.spots_taken > 0
-                ? `${event.spots_taken} participant${event.spots_taken > 1 ? "s" : ""} already joined. Sign in to see who's going.`
-                : "No participants yet. Sign in to see who joins."}
+                ? `${event.spots_taken} participant${event.spots_taken > 1 ? "s" : ""} already joined. ${!user ? 'Sign in and join' : 'Join'} to see who's going.`
+                : `No participants yet. ${!user ? 'Sign in and be' : 'Be'} the first to join.`}
             </p>
           )}
 
           {/* Logged-in user view: social preview with badges */}
-          {user && participants && participants.length > 0 && (
+          {canViewParticipants && participants && participants.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-body text-muted-foreground mb-2">Participants already joined:</p>
               <div className="flex flex-wrap gap-2">
@@ -430,7 +449,7 @@ const EventDetail = () => {
             </div>
           )}
 
-          {user && (!participants || participants.length === 0) && (
+          {canViewParticipants && (!participants || participants.length === 0) && (
             <p className="text-sm font-body text-muted-foreground">No participants yet</p>
           )}
         </motion.div>
@@ -564,7 +583,7 @@ const EventDetail = () => {
           <Button
             onClick={handleCTA}
             className={`px-8 py-3 rounded-xl font-body font-semibold text-base ${getCTAClass()}`}
-            disabled={isEventPast || event.status === "closed" || (isRegistered && !needsPayment && !isOnWaitlist)}
+            disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (isRegistered && !needsPayment)}
           >
             {getCTALabel()}
           </Button>
@@ -608,11 +627,10 @@ const EventDetail = () => {
                       key={level}
                       type="button"
                       onClick={() => setSportLevel(sportLevel === level ? "" : level)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${
-                        sportLevel === level
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
+                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${sportLevel === level
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
                     >
                       {level}
                     </button>
@@ -695,7 +713,7 @@ const EventDetail = () => {
             )}
 
             <Button
-              onClick={handleRegister}
+              onClick={() => handleRegister(isRequestingOverride)}
               disabled={
                 registerMutation.isPending ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
@@ -703,11 +721,56 @@ const EventDetail = () => {
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registering...</> : event.status === "full" ? "Join Waitlist" : "Confirm Registration"}
+              {registerMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{isRequestingOverride ? "Submitting..." : "Registering..."}</>
+              ) : event.status === "full" ? (
+                "Join Waitlist"
+              ) : isRequestingOverride ? (
+                "Submit Request"
+              ) : (
+                "Confirm Registration"
+              )}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Access Warning Dialog */}
+      <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Experience Requirement</DialogTitle>
+            <DialogDescription className="font-body text-sm mt-2 text-foreground">
+              {accessData?.reason || "This event requires a higher experience level for safety."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs font-body text-muted-foreground">
+              If you feel you are physically prepared and have the necessary experience to attend this event safely, you can request a manual override. The organizer will review your profile and decide.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 font-body" onClick={() => setShowAccessWarning(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowAccessWarning(false);
+                  setIsRequestingOverride(true);
+                  setShowRegisterDialog(true);
+                }} 
+                className="flex-1 font-body bg-warning text-warning-foreground hover:bg-warning/90"
+              >
+                Request Override
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <DifficultyGuideDialog 
+        open={showDifficultyGuide} 
+        onOpenChange={setShowDifficultyGuide} 
+      />
 
       <ShareSheet
         open={showShareSheet}
