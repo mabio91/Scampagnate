@@ -12,6 +12,7 @@ import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
+import { CapacityWarning } from "@/components/events/CapacityWarning";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
@@ -417,6 +418,14 @@ const EventDetail = () => {
           <div className="w-full h-2 rounded-full bg-muted mb-3">
             <div className="h-full rounded-full bg-secondary transition-all" style={{ width: `${Math.min(100, (event.spots_taken / event.spots_total) * 100)}%` }} />
           </div>
+          {event.status !== "full" && (
+            <CapacityWarning
+              spotsTaken={event.spots_taken}
+              spotsTotal={event.spots_total}
+              variant="large"
+              className="mb-2"
+            />
+          )}
 
           {/* Guest view or user not joined: only count */}
           {!canViewParticipants && (

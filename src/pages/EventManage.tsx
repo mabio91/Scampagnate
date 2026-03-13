@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus,
-  Loader2, Zap, BarChart3, Trash2, Send, Settings, Search
+  Loader2, Zap, BarChart3, Trash2, Send, Settings, Search, Copy
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -306,6 +306,14 @@ const EventManage = () => {
                 <Edit className="h-3.5 w-3.5" /> Edit
               </Button>
             </Link>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => navigate(`/organizer/events/new?duplicate=${id}`)}
+            >
+              <Copy className="h-3.5 w-3.5" /> Duplicate
+            </Button>
             <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20" onClick={() => setShowDeleteDialog(true)}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>

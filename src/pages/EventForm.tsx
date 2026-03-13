@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams, Navigate } from "react-router-dom";
+import { useNavigate, useParams, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useEvents";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,13 +57,16 @@ interface MeetingPointInput {
 
 const EventForm = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const duplicateId = searchParams.get("duplicate");
   const isEditing = !!id;
+  const isDuplicating = !!duplicateId;
   const navigate = useNavigate();
   const { user, isOrganizer, profile, loading: authLoading } = useAuth();
   const { data: categories } = useCategories();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [loadingEvent, setLoadingEvent] = useState(isEditing);
+  const [loadingEvent, setLoadingEvent] = useState(isEditing || isDuplicating);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -125,27 +128,29 @@ const EventForm = () => {
 
   useEffect(() => {
     if (isEditing) {
-      loadEvent();
+      loadEvent(id);
+    } else if (isDuplicating) {
+      loadEvent(duplicateId);
     }
-  }, [id]);
+  }, [id, duplicateId]);
 
-  const loadEvent = async () => {
+  const loadEvent = async (eventId: string) => {
     const { data: event } = await supabase
       .from("events")
       .select("*")
-      .eq("id", id!)
+      .eq("id", eventId)
       .single();
 
     if (event) {
       setForm({
-        title: event.title,
+        title: isDuplicating ? `Copy of ${event.title}` : event.title,
         description: event.description,
-        date: event.date,
-        time: event.time,
+        date: isDuplicating ? "" : event.date,
+        time: isDuplicating ? "" : event.time,
         location: event.location,
         category_id: event.category_id || "",
         spots_total: event.spots_total,
-        reserved_spots: (event as any).reserved_spots || 0,
+        reserved_spots: isDuplicating ? 0 : ((event as any).reserved_spots || 0),
         price: event.price,
         deposit: event.deposit || 0,
         payment_type: event.payment_type,
@@ -153,10 +158,10 @@ const EventForm = () => {
         distance: event.distance || "",
         elevation: event.elevation || "",
         duration: event.duration || "",
-        featured: event.featured,
+        featured: isDuplicating ? false : event.featured,
         cancellation_policy: event.cancellation_policy || "",
         image_url: event.image_url || "",
-        visibility: event.visibility || "public",
+        visibility: isDuplicating ? "private" : (event.visibility || "public"),
         gallery_images: (event.gallery_images as any[]) || [],
       });
       if (event.image_url) {
@@ -177,7 +182,7 @@ const EventForm = () => {
       const { data: points } = await supabase
         .from("event_meeting_points")
         .select("*")
-        .eq("event_id", id!)
+        .eq("event_id", eventId)
         .order("sort_order");
 
       if (points) {
@@ -350,7 +355,7 @@ const EventForm = () => {
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
           <h1 className="font-display text-xl font-bold text-foreground">
-            {isEditing ? "Edit Event" : "Create Event"}
+            {isEditing ? "Edit Event" : isDuplicating ? "Duplicate Event" : "Create Event"}
           </h1>
         </div>
 
