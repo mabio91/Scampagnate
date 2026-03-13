@@ -16,6 +16,7 @@ import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import { Info } from "lucide-react";
+import { ActivityHistory } from "@/components/profile/ActivityHistory";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -357,6 +358,9 @@ const Profile = () => {
             </p>
           )}
         </div>
+
+        {/* Activity History Dashboard */}
+        <ActivityHistory />
 
         {/* Past Events */}
         <div className="mb-6">
