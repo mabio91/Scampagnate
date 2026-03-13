@@ -177,6 +177,7 @@ const EventDetail = () => {
   const getCTALabel = () => {
     if (isEventPast) return "Event Started";
     if (event.status === "closed") return "Event Closed";
+    if (!user) return "Sign in to Join";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered";
