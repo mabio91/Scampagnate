@@ -67,11 +67,11 @@ export const useEvents = (categoryName?: string | null) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map((e: any) => ({
-        ...e,
-        category: e.event_categories,
-        meeting_points: e.event_meeting_points || [],
-      })) as EventWithDetails[];
+      return (data as any).map((event: any) => ({
+        ...event,
+        category: event.event_categories,
+        meeting_points: event.event_meeting_points
+      })) as unknown as EventWithDetails[];
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -93,7 +93,7 @@ export const useEvent = (id: string) => {
         ...data,
         category: data.event_categories,
         meeting_points: data.event_meeting_points || [],
-      } as EventWithDetails;
+      } as unknown as EventWithDetails;
     },
     enabled: !!id,
   });
@@ -377,5 +377,49 @@ export const useCheckEventAccess = (difficulty: string | null) => {
       return { hasAccess: false, reason: "Non hai i requisiti minimi di esperienza per questo evento." };
     },
     enabled: !!user && !!profile && !!difficulty,
+  });
+};
+
+export const useOrganizerProfile = (organizerId: string | undefined) => {
+  return useQuery({
+    queryKey: ["organizer-profile", organizerId],
+    queryFn: async () => {
+      if (!organizerId) return null;
+
+      // Fetch profile details
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, avatar_url, bio, phone")
+        .eq("id", organizerId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Fetch event count
+      const { count, error: countError } = await supabase
+        .from("events")
+        .select("*", { count: "exact", head: true })
+        .eq("organizer_id", organizerId)
+        .eq("visibility", "public");
+
+      if (countError) throw countError;
+
+      // Fetch events list
+      const { data: events, error: eventsError } = await supabase
+        .from("events")
+        .select("id, title, date, time, location, image_url, difficulty, price, category:event_categories(name)")
+        .eq("organizer_id", organizerId)
+        .eq("visibility", "public")
+        .order("date", { ascending: false });
+
+      if (eventsError) throw eventsError;
+
+      return {
+        profile: profileData,
+        eventCount: count || 0,
+        events: events as any[]
+      };
+    },
+    enabled: !!organizerId
   });
 };

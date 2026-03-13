@@ -24,6 +24,7 @@ const EventForm = lazy(() => import("./pages/EventForm"));
 const EventManage = lazy(() => import("./pages/EventManage"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
+const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile")); // Using alias for robust resolution
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +66,7 @@ const App = () => (
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/organizer" element={<OrganizerDashboard />} />
+                <Route path="/organizer/:id" element={<OrganizerProfile />} />
                 <Route path="/organizer/events/new" element={<EventForm />} />
                 <Route path="/organizer/events/:id" element={<EventManage />} />
                 <Route path="/organizer/events/:id/edit" element={<EventForm />} />

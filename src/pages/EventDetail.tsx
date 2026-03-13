@@ -487,19 +487,19 @@ const EventDetail = () => {
         {/* Organizer & Contact */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
           <h3 className="font-display text-lg font-bold text-foreground mb-3">Organizer</h3>
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+          <Link to={`/organizer/${event.organizer_id}`} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
             {organizerProfile?.avatar_url ? (
-              <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+              <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold group-hover:bg-primary group-hover:text-white transition-all">
                 {event.organizer_name?.[0] || "O"}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-body font-semibold text-foreground">{event.organizer_name}</p>
-              <p className="text-xs font-body text-muted-foreground">Event Organizer</p>
+              <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{event.organizer_name}</p>
+              <p className="text-xs font-body text-muted-foreground">View Profile <ChevronRight className="inline-block h-3 w-3" /></p>
             </div>
-          </div>
+          </Link>
 
           {/* Contact options */}
           {user && (
