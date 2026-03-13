@@ -166,10 +166,6 @@ const Auth = () => {
                   <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required placeholder="Rossi" className="mt-1" />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="phone" className="font-body text-sm">Phone</Label>
-                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+39 333 1234567" className="mt-1" />
-              </div>
             </>
           )}
 
