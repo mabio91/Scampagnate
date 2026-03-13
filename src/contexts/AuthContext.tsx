@@ -17,6 +17,7 @@ interface Profile {
   membership_status?: string;
   membership_registration_date?: string;
   membership_year?: number;
+  account_status?: 'Active' | 'Suspended' | 'Banned';
 }
 
 type AppRole = "admin" | "organizer" | "user";
@@ -33,6 +34,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  restrictionMessage: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,14 +45,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [restrictionMessage, setRestrictionMessage] = useState<string | null>(null);
 
   const fetchUserData = useCallback(async (userId: string) => {
     const [profileRes, rolesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
-    setProfile(profileRes.data);
-    setRoles((rolesRes.data || []).map((r) => r.role));
+    
+    const profileData = profileRes.data;
+    if (profileData && profileData.account_status && profileData.account_status !== 'Active') {
+      const status = profileData.account_status;
+      const message = status === 'Banned' 
+        ? "Your account is permanently banned. Contact support."
+        : "Your account is suspended. Contact support for help.";
+      
+      // Clear data and sign out
+      setProfile(null);
+      setRoles([]);
+      setUser(null);
+      setSession(null);
+      setRestrictionMessage(message);
+      await supabase.auth.signOut();
+      return;
+    }
+
+    setRestrictionMessage(null);
+    setProfile(profileData);
+    setRoles((rolesRes.data || []).map((r) => r.role as AppRole));
   }, []);
 
   useEffect(() => {
@@ -113,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = roles.includes("admin");
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, roles, isOrganizer, isAdmin, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, roles, isOrganizer, isAdmin, loading, signUp, signIn, signOut, refreshProfile, restrictionMessage }}>
       {children}
     </AuthContext.Provider>
   );

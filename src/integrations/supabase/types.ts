@@ -434,39 +434,63 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: Database["public"]["Enums"]["account_status"] | null
+          activity_frequency: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
+          experience_grade: number | null
           first_name: string
           id: string
           last_name: string
+          membership_id: number | null
+          membership_registration_date: string | null
+          membership_status: string | null
+          membership_year: number | null
           phone: string
           preferences: Json | null
           total_points: number
+          trekking_experience: string | null
           updated_at: string
         }
         Insert: {
+          account_status?: Database["public"]["Enums"]["account_status"] | null
+          activity_frequency?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          experience_grade?: number | null
           first_name?: string
           id: string
           last_name?: string
+          membership_id?: number | null
+          membership_registration_date?: string | null
+          membership_status?: string | null
+          membership_year?: number | null
           phone?: string
           preferences?: Json | null
           total_points?: number
+          trekking_experience?: string | null
           updated_at?: string
         }
         Update: {
+          account_status?: Database["public"]["Enums"]["account_status"] | null
+          activity_frequency?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          experience_grade?: number | null
           first_name?: string
           id?: string
           last_name?: string
+          membership_id?: number | null
+          membership_registration_date?: string | null
+          membership_status?: string | null
+          membership_year?: number | null
           phone?: string
           preferences?: Json | null
           total_points?: number
+          trekking_experience?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -579,6 +603,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_membership: {
+        Args: { user_id_param: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -588,10 +616,16 @@ export type Database = {
       }
     }
     Enums: {
+      account_status: "Active" | "Suspended" | "Banned"
       app_role: "admin" | "organizer" | "user"
       event_status: "available" | "full" | "closed"
       payment_type: "free" | "paid" | "deposit" | "location"
-      registration_status: "registered" | "paid" | "waitlist" | "cancelled" | "pending_approval"
+      registration_status:
+        | "registered"
+        | "paid"
+        | "waitlist"
+        | "cancelled"
+        | "pending_approval"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -719,10 +753,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: ["Active", "Suspended", "Banned"],
       app_role: ["admin", "organizer", "user"],
       event_status: ["available", "full", "closed"],
       payment_type: ["free", "paid", "deposit", "location"],
-      registration_status: ["registered", "paid", "waitlist", "cancelled", "pending_approval"],
+      registration_status: [
+        "registered",
+        "paid",
+        "waitlist",
+        "cancelled",
+        "pending_approval",
+      ],
     },
   },
 } as const

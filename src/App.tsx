@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SearchProvider } from "@/contexts/SearchContext";
+import { RestrictionBanner } from "@/components/RestrictionBanner";
 import Index from "./pages/Index";
 
 // Lazy-loaded routes for code splitting
@@ -50,6 +51,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Analytics />
+          <RestrictionBanner />
           <BrowserRouter>
             <Suspense fallback={<PageFallback />}>
               <Routes>
