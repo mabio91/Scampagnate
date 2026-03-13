@@ -202,6 +202,7 @@ const EventDetail = () => {
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered ✔";
     if (event.status === "full") return "Join Waitlist";
+    if (accessData && !accessData.hasAccess) return "Join Event (disabled)";
     return "Join Event";
   };
 
@@ -211,6 +212,7 @@ const EventDetail = () => {
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
+    if (accessData && !accessData.hasAccess) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
     return "bg-primary text-primary-foreground hover:bg-primary/90";
   };
 
@@ -580,13 +582,23 @@ const EventDetail = () => {
               <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
             )}
           </div>
-          <Button
-            onClick={handleCTA}
-            className={`px-8 py-3 rounded-xl font-body font-semibold text-base ${getCTAClass()}`}
-            disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (isRegistered && !needsPayment)}
-          >
-            {getCTALabel()}
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <Button
+              onClick={handleCTA}
+              className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
+              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (isRegistered && !needsPayment)}
+            >
+              {getCTALabel()}
+            </Button>
+            {accessData && !accessData.hasAccess && !isRegistered && !isEventPast && event.status !== "closed" && event.status !== "cancelled" && (
+              <button 
+                onClick={() => setShowAccessWarning(true)}
+                className="text-[10px] font-body text-primary hover:underline"
+              >
+                Request manual approval
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
