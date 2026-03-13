@@ -177,6 +177,7 @@ const EventDetail = () => {
   const getCTALabel = () => {
     if (isEventPast) return "Event Started";
     if (event.status === "closed") return "Event Closed";
+    if (!user) return "Sign in to Join";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered";
@@ -186,6 +187,7 @@ const EventDetail = () => {
 
   const getCTAClass = () => {
     if (isEventPast || event.status === "closed") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
@@ -562,7 +564,7 @@ const EventDetail = () => {
           <Button
             onClick={handleCTA}
             className={`px-8 py-3 rounded-xl font-body font-semibold text-base ${getCTAClass()}`}
-            disabled={event.status === "closed" || (isRegistered && !needsPayment && !isOnWaitlist)}
+            disabled={isEventPast || event.status === "closed" || (isRegistered && !needsPayment && !isOnWaitlist)}
           >
             {getCTALabel()}
           </Button>
