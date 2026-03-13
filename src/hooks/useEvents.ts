@@ -27,17 +27,20 @@ export interface EventWithDetails {
   organizer_name: string;
   cancellation_policy: string | null;
   equipment_list: any;
+  visibility: "public" | "private" | "hidden";
+  gallery_images: { url: string; order: number }[] | null;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
 }
 
 export const useEvents = (categoryName?: string | null) => {
+  const { user, isOrganizer, isAdmin } = useAuth();
   return useQuery({
-    queryKey: ["events", categoryName],
+    queryKey: ["events", categoryName, user?.id, isOrganizer, isAdmin],
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)")
+        .select("id, title, date, time, location, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)")
         .order("date", { ascending: true });
 
       if (categoryName) {
@@ -51,14 +54,24 @@ export const useEvents = (categoryName?: string | null) => {
         }
       }
 
+      // Visibility filtering
+      if (!isAdmin && !isOrganizer) {
+        // Regular users/guests see only public events
+        query = query.eq("visibility", "public");
+      } else {
+        // Admin/Organizer can see public and hidden events
+        // Private events are hidden from the discovery list for everyone
+        query = query.or("visibility.eq.public,visibility.eq.hidden");
+      }
+
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map((e: any) => ({
-        ...e,
-        category: e.event_categories,
-        meeting_points: e.event_meeting_points || [],
-      })) as EventWithDetails[];
+      return (data as any).map((event: any) => ({
+        ...event,
+        category: event.event_categories,
+        meeting_points: event.event_meeting_points
+      })) as unknown as EventWithDetails[];
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -80,7 +93,7 @@ export const useEvent = (id: string) => {
         ...data,
         category: data.event_categories,
         meeting_points: data.event_meeting_points || [],
-      } as EventWithDetails;
+      } as unknown as EventWithDetails;
     },
     enabled: !!id,
   });
@@ -155,7 +168,7 @@ export const useMyRegistration = (eventId: string) => {
 
 export const useRegisterForEvent = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   
   return useMutation({
     mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string }) => {
@@ -163,11 +176,12 @@ export const useRegisterForEvent = () => {
 
       // Determine payment_status based on payment type
       let paymentStatus = "pending";
-      if (!paymentType || paymentType === "free") {
+      if ((!paymentType || paymentType === "free") && profile?.membership_status === "Active") {
         paymentStatus = "not_required";
-      } else if (paymentType === "location") {
+      } else if (paymentType === "location" && profile?.membership_status === "Active") {
         paymentStatus = "pay_on_location";
       }
+      // If membership is not active, always default to "pending" for stripe payment
 
       type RegistrationStatus = "registered" | "waitlist" | "pending_approval";
       let status: RegistrationStatus = "registered";
@@ -183,6 +197,19 @@ export const useRegisterForEvent = () => {
         payment_status: paymentStatus,
       });
       if (error) throw error;
+
+      // Handle Membership Activation if not active
+      if (profile && profile.membership_status !== "Active") {
+        const { error: profileError } = await supabase.rpc('activate_membership' as any, { 
+          user_id_param: user.id 
+        });
+        
+        if (profileError) {
+          console.error("RPC activate_membership failed", profileError);
+          throw profileError;
+        }
+        await refreshProfile();
+      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["event", vars.eventId] });
@@ -350,5 +377,49 @@ export const useCheckEventAccess = (difficulty: string | null) => {
       return { hasAccess: false, reason: "Non hai i requisiti minimi di esperienza per questo evento." };
     },
     enabled: !!user && !!profile && !!difficulty,
+  });
+};
+
+export const useOrganizerProfile = (organizerId: string | undefined) => {
+  return useQuery({
+    queryKey: ["organizer-profile", organizerId],
+    queryFn: async () => {
+      if (!organizerId) return null;
+
+      // Fetch profile details
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, avatar_url, bio, phone")
+        .eq("id", organizerId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Fetch event count
+      const { count, error: countError } = await supabase
+        .from("events")
+        .select("*", { count: "exact", head: true })
+        .eq("organizer_id", organizerId)
+        .eq("visibility", "public");
+
+      if (countError) throw countError;
+
+      // Fetch events list
+      const { data: events, error: eventsError } = await supabase
+        .from("events")
+        .select("id, title, date, time, location, image_url, difficulty, price, category:event_categories(name)")
+        .eq("organizer_id", organizerId)
+        .eq("visibility", "public")
+        .order("date", { ascending: false });
+
+      if (eventsError) throw eventsError;
+
+      return {
+        profile: profileData,
+        eventCount: count || 0,
+        events: events as any[]
+      };
+    },
+    enabled: !!organizerId
   });
 };

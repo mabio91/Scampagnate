@@ -538,6 +538,9 @@ const EventManage = () => {
                           {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
                             <p className="text-[10px] text-primary font-body">· {reg.sport_level}</p>
                           )}
+                          {(reg.profiles as any)?.membership_id && (
+                            <p className="text-[10px] text-secondary font-body font-bold">· ID: {(reg.profiles as any).membership_id}</p>
+                          )}
                         </div>
                       </div>
                       {!quickCheckIn && (
@@ -573,6 +576,9 @@ const EventManage = () => {
                       </p>
                       <p className="text-[11px] text-muted-foreground font-body">
                         Joined {format(new Date(reg.created_at), "dd MMM yyyy")}
+                        {(reg.profiles as any)?.membership_id && (
+                          <span className="text-secondary font-bold"> · ID: {(reg.profiles as any).membership_id}</span>
+                        )}
                       </p>
                     </div>
                     <div className="flex gap-1">

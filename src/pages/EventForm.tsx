@@ -12,7 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Plus, Trash2, Loader2, Upload, ImageIcon, X, PackageCheck } from "lucide-react";
+import {
+  ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain, Route,
+  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
@@ -85,6 +88,8 @@ const EventForm = () => {
     featured: false,
     cancellation_policy: "",
     image_url: "",
+    visibility: "public" as "public" | "private" | "hidden",
+    gallery_images: [] as { url: string; order: number }[],
   });
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
@@ -151,6 +156,8 @@ const EventForm = () => {
         featured: event.featured,
         cancellation_policy: event.cancellation_policy || "",
         image_url: event.image_url || "",
+        visibility: event.visibility || "public",
+        gallery_images: (event.gallery_images as any[]) || [],
       });
       if (event.image_url) {
         setImagePreview(event.image_url);
@@ -252,8 +259,8 @@ const EventForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.date || !form.time || !form.location) {
-      toast({ title: "Please fill required fields", variant: "destructive" });
+    if (!form.title || !form.date || !form.time || !form.location || (!imageFile && !form.image_url)) {
+      toast({ title: "Please fill required fields (including cover image)", variant: "destructive" });
       return;
     }
 
@@ -279,6 +286,8 @@ const EventForm = () => {
         featured: form.featured,
         cancellation_policy: form.cancellation_policy || null,
         image_url: imageUrl,
+        visibility: form.visibility,
+        gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: additionalFields.filter((f) => f.label.trim()) as any,
         organizer_id: user.id,
@@ -382,6 +391,140 @@ const EventForm = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="visibility">Visibility</Label>
+              <Select value={form.visibility} onValueChange={(v) => updateForm("visibility", v)}>
+                <SelectTrigger><SelectValue placeholder="Select visibility" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">🌍 Public (Visible to all)</SelectItem>
+                  <SelectItem value="private">链接 Private (Direct link only)</SelectItem>
+                  <SelectItem value="hidden">👁️ Hidden (Organizers & Admins only)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground font-body mt-1">
+                {form.visibility === "public" && "Visible to everyone on the platform."}
+                {form.visibility === "private" && "Only accessible via direct link. Not listed in discovery."}
+                {form.visibility === "hidden" && "Visible only to organizers and platform administrators."}
+              </p>
+            </div>
+
+            {/* Gallery Images */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Event Gallery (Max 5)</Label>
+                <span className="text-[10px] text-muted-foreground font-body">{form.gallery_images.length}/5 images</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {form.gallery_images.sort((a,b) => a.order - b.order).map((img, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border/50 group">
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0">
+                      <img src={img.url} alt={`Gallery ${index}`} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-body text-muted-foreground truncate">Image {index + 1}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        disabled={index === 0}
+                        onClick={() => {
+                          const newGallery = [...form.gallery_images];
+                          const current = newGallery.find(g => g.order === index);
+                          const prev = newGallery.find(g => g.order === index - 1);
+                          if (current && prev) {
+                            current.order -= 1;
+                            prev.order += 1;
+                            updateForm("gallery_images", [...newGallery]);
+                          }
+                        }}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        disabled={index === form.gallery_images.length - 1}
+                        onClick={() => {
+                          const newGallery = [...form.gallery_images];
+                          const current = newGallery.find(g => g.order === index);
+                          const next = newGallery.find(g => g.order === index + 1);
+                          if (current && next) {
+                            current.order += 1;
+                            next.order -= 1;
+                            updateForm("gallery_images", [...newGallery]);
+                          }
+                        }}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          const newGallery = form.gallery_images
+                            .filter((_, i) => i !== index)
+                            .map((g, i) => ({ ...g, order: i }));
+                          updateForm("gallery_images", newGallery);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {form.gallery_images.length < 5 && (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        const remaining = 5 - form.gallery_images.length;
+                        const filesToUpload = files.slice(0, remaining);
+                        
+                        for (const file of filesToUpload) {
+                          const fileExt = file.name.split('.').pop();
+                          const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+                          const filePath = `${fileName}`;
+
+                          const { data, error } = await supabase.storage
+                            .from('event-images')
+                            .upload(filePath, file);
+
+                          if (error) {
+                            toast({ title: "Upload Error", description: error.message, variant: "destructive" });
+                            continue;
+                          }
+
+                          const { data: { publicUrl } } = supabase.storage
+                            .from('event-images')
+                            .getPublicUrl(filePath);
+
+                          const updatedGallery = [...form.gallery_images, { url: publicUrl, order: form.gallery_images.length }];
+                          updateForm("gallery_images", updatedGallery);
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <Plus className="h-6 w-6 text-muted-foreground mb-2" />
+                      <p className="text-xs font-body font-semibold text-foreground">Add Gallery Images</p>
+                      <p className="text-[10px] text-muted-foreground font-body">PNG, JPG up to 5MB</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div>
               <Label>Event Image</Label>
               <input

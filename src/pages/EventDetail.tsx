@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useCheckEventAccess } from "@/hooks/useEvents";
@@ -32,7 +32,7 @@ import {
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, isOrganizer, isAdmin } = useAuth();
   const { toast } = useToast();
   const { data: event, isLoading } = useEvent(id!);
   const { data: participants } = useEventParticipants(id!);
@@ -169,7 +169,7 @@ const EventDetail = () => {
       setShowRegisterDialog(false);
       setShowAccessWarning(false);
       setIsRequestingOverride(false);
-      
+
       if (requestApproval) {
         toast({ title: "Request sent", description: "Your manual approval request has been sent to the organizer.", duration: 5000 });
       } else if (isWaitlist) {
@@ -202,6 +202,7 @@ const EventDetail = () => {
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered ✔";
     if (event.status === "full") return "Join Waitlist";
+    if (accessData && !accessData.hasAccess) return "Join Event (disabled)";
     return "Join Event";
   };
 
@@ -211,6 +212,7 @@ const EventDetail = () => {
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
+    if (accessData && !accessData.hasAccess) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
     return "bg-primary text-primary-foreground hover:bg-primary/90";
   };
 
@@ -278,6 +280,13 @@ const EventDetail = () => {
             {event.category && (
               <span className="inline-block px-2.5 py-1 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground text-xs font-body font-semibold">
                 {event.category.name}
+              </span>
+            )}
+            {(isOrganizer || isAdmin) && event.visibility !== "public" && (
+              <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
+                event.visibility === 'private' ? 'bg-amber-100/90 text-amber-800' : 'bg-slate-800/80 text-white'
+              } backdrop-blur-sm border border-white/10 shadow-sm`}>
+                {event.visibility === 'private' ? '🔗 Private' : '👁️ Hidden'}
               </span>
             )}
           </div>
@@ -354,6 +363,27 @@ const EventDetail = () => {
           <h3 className="font-display text-lg font-bold text-foreground mb-2">Description</h3>
           <p className="text-sm font-body text-muted-foreground leading-relaxed">{event.description}</p>
         </motion.div>
+
+        {/* Gallery */}
+        {event.gallery_images && event.gallery_images.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="py-4 border-b border-border">
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">Gallery</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 auto-cols-[180px] grid-flow-col grid">
+              {event.gallery_images.sort((a,b) => a.order - b.order).map((img, idx) => (
+                <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer shadow-md active:scale-95 transition-all">
+                  <OptimizedImage 
+                    src={img.url} 
+                    alt={`Gallery ${idx + 1}`} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                    width={180} 
+                    height={180}
+                  />
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Meeting Points - names stay Italian */}
         {event.meeting_points && event.meeting_points.length > 0 && (
@@ -457,19 +487,19 @@ const EventDetail = () => {
         {/* Organizer & Contact */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
           <h3 className="font-display text-lg font-bold text-foreground mb-3">Organizer</h3>
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+          <Link to={`/organizer/${event.organizer_id}`} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
             {organizerProfile?.avatar_url ? (
-              <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+              <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold group-hover:bg-primary group-hover:text-white transition-all">
                 {event.organizer_name?.[0] || "O"}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-body font-semibold text-foreground">{event.organizer_name}</p>
-              <p className="text-xs font-body text-muted-foreground">Event Organizer</p>
+              <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{event.organizer_name}</p>
+              <p className="text-xs font-body text-muted-foreground">View Profile <ChevronRight className="inline-block h-3 w-3" /></p>
             </div>
-          </div>
+          </Link>
 
           {/* Contact options */}
           {user && (
@@ -571,22 +601,37 @@ const EventDetail = () => {
               {(event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
             <p className="text-xl font-display font-bold text-foreground">
-              {Number(event.price) === 0 ? "Free" : (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` : `€${event.price}`}
+              {Number(event.price) === 0 && (!profile || profile.membership_status === 'Active') ? "Free" :
+                (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` :
+                  `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`}
             </p>
+            {profile?.membership_status !== 'Active' && !isRegistered && (
+              <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
+            )}
             {(event.payment_type as string) === "deposit" && event.deposit && (
-              <p className="text-[10px] font-body text-muted-foreground">deposit · €{event.price} total</p>
+              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)} total</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
               <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
             )}
           </div>
-          <Button
-            onClick={handleCTA}
-            className={`px-8 py-3 rounded-xl font-body font-semibold text-base ${getCTAClass()}`}
-            disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (isRegistered && !needsPayment)}
-          >
-            {getCTALabel()}
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <Button
+              onClick={handleCTA}
+              className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
+              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (isRegistered && !needsPayment)}
+            >
+              {getCTALabel()}
+            </Button>
+            {accessData && !accessData.hasAccess && !isRegistered && !isEventPast && event.status !== "closed" && event.status !== "cancelled" && (
+              <button
+                onClick={() => setShowAccessWarning(true)}
+                className="text-[10px] font-body text-primary hover:underline"
+              >
+                Request manual approval
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -597,6 +642,32 @@ const EventDetail = () => {
             <DialogTitle className="font-display">Register for {event.title}</DialogTitle>
             <DialogDescription className="font-body text-sm">
               Complete your registration by selecting the required options.
+              {profile?.membership_status !== 'Active' && (
+                <div className="mt-3 p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-body font-bold text-primary">Tessera Associativa Scampagnate</p>
+                  </div>
+                  <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
+                    <p>
+                      Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
+                    </p>
+                    <p>
+                      Scampagnate è un’Associazione Sportiva Dilettantistica (ASD) e la quota associativa contribuisce a sostenere l’organizzazione delle attività, la gestione della community e lo svolgimento degli eventi.
+                    </p>
+                    <p>
+                      La quota associativa è di <strong>10€ (una tantum)</strong> e viene richiesta solo al momento della prima iscrizione a un evento.
+                    </p>
+                    <p>
+                      Dopo il pagamento riceverai il tuo numero di tessera personale, che ti permetterà di partecipare liberamente alle attività successive. La tessera fisica verrà consegnata direttamente durante il tuo primo evento.
+                    </p>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-primary/20 text-xs font-bold text-primary">
+                    <span>Quota Associativa</span>
+                    <span>€10</span>
+                  </div>
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -737,39 +808,78 @@ const EventDetail = () => {
 
       {/* Access Warning Dialog */}
       <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Experience Requirement</DialogTitle>
             <DialogDescription className="font-body text-sm mt-2 text-foreground">
-              {accessData?.reason || "This event requires a higher experience level for safety."}
+              This event requires a higher trekking experience level.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-xs font-body text-muted-foreground">
-              If you feel you are physically prepared and have the necessary experience to attend this event safely, you can request a manual override. The organizer will review your profile and decide.
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 font-body" onClick={() => setShowAccessWarning(false)}>
-                Cancel
-              </Button>
-              <Button 
+            <div className="space-y-3">
+              <p className="text-sm font-body text-muted-foreground leading-relaxed">
+                Based on your profile, you may not yet meet the recommended experience level for this activity. This helps ensure that all participants can safely complete the route.
+              </p>
+              <p className="text-sm font-body text-muted-foreground leading-relaxed">
+                You can still join this type of event in the future by completing easier or intermediate treks first.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-muted/50 space-y-2 border border-border/50">
+              <p className="text-xs font-body font-bold text-foreground">To join this event you usually need:</p>
+              <ul className="text-xs font-body text-muted-foreground space-y-1 ml-4 list-disc">
+                <li>At least {parseInt(event.difficulty || "0") >= 4 ? "5" : "3"} trekking experiences</li>
+                <li>{parseInt(event.difficulty || "0") >= 4 ? "Frequent" : "Regular"} physical activity</li>
+              </ul>
+              <p className="text-[10px] font-body text-muted-foreground pt-1 border-t border-border/50 italic">
+                OR at least 3 {parseInt(event.difficulty || "0") >= 4 ? "intermediate" : "easy"} trekking events completed on the platform.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              {organizerProfile?.phone && (
+                <Button
+                  asChild
+                  className="w-full font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none h-12"
+                >
+                  <a
+                    href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}?text=${encodeURIComponent(`Hi! I’m interested in joining this event but the platform indicates I may not meet the experience requirements. Could you please review my participation? Event: ${event.title}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Contact Organizer
+                  </a>
+                </Button>
+              )}
+
+              <Button
                 onClick={() => {
                   setShowAccessWarning(false);
                   setIsRequestingOverride(true);
                   setShowRegisterDialog(true);
-                }} 
-                className="flex-1 font-body bg-warning text-warning-foreground hover:bg-warning/90"
+                }}
+                variant="outline"
+                className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
               >
-                Request Override
+                Request Manual Review
+              </Button>
+
+              <Button
+                variant="ghost"
+                className="w-full font-body text-muted-foreground text-xs h-10"
+                onClick={() => setShowAccessWarning(false)}
+              >
+                Close
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      <DifficultyGuideDialog 
-        open={showDifficultyGuide} 
-        onOpenChange={setShowDifficultyGuide} 
+      <DifficultyGuideDialog
+        open={showDifficultyGuide}
+        onOpenChange={setShowDifficultyGuide}
       />
 
       <ShareSheet
