@@ -32,7 +32,7 @@ import {
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const { data: event, isLoading } = useEvent(id!);
   const { data: participants } = useEventParticipants(id!);
@@ -573,10 +573,15 @@ const EventDetail = () => {
               {(event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
             <p className="text-xl font-display font-bold text-foreground">
-              {Number(event.price) === 0 ? "Free" : (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` : `€${event.price}`}
+              {Number(event.price) === 0 && (!profile || profile.membership_status === 'Active') ? "Free" : 
+               (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` : 
+               `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`}
             </p>
+            {profile?.membership_status !== 'Active' && !isRegistered && (
+              <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
+            )}
             {(event.payment_type as string) === "deposit" && event.deposit && (
-              <p className="text-[10px] font-body text-muted-foreground">deposit · €{event.price} total</p>
+              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)} total</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
               <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
@@ -609,6 +614,18 @@ const EventDetail = () => {
             <DialogTitle className="font-display">Register for {event.title}</DialogTitle>
             <DialogDescription className="font-body text-sm">
               Complete your registration by selecting the required options.
+              {profile?.membership_status !== 'Active' && (
+                <div className="mt-2 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                  <p className="text-xs font-body font-bold text-primary">Membership Required</p>
+                  <p className="text-[10px] font-body text-primary/80 leading-relaxed mt-0.5">
+                    As this is your first event, a €10 membership fee is added. This grants access to the platform for the entire year.
+                  </p>
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-primary/20 text-xs font-bold text-primary">
+                    <span>Membership Fee</span>
+                    <span>€10</span>
+                  </div>
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">

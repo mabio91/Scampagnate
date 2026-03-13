@@ -13,6 +13,10 @@ interface Profile {
   trekking_experience?: string;
   activity_frequency?: string;
   experience_grade?: number;
+  membership_id?: number;
+  membership_status?: string;
+  membership_registration_date?: string;
+  membership_year?: number;
 }
 
 type AppRole = "admin" | "organizer" | "user";

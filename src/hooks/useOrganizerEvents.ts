@@ -26,7 +26,7 @@ export const useEventRegistrations = (eventId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, profiles!event_registrations_user_id_profiles_fkey(first_name, last_name, phone, avatar_url)")
+        .select("*, profiles!event_registrations_user_id_profiles_fkey(first_name, last_name, phone, avatar_url, membership_id, membership_status)")
         .eq("event_id", eventId)
         .order("created_at", { ascending: true });
       if (error) throw error;
