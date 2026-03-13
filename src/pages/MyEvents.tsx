@@ -19,6 +19,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
+import { parseEventDateTime } from "@/lib/timezone";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   registered: { label: "Registered", className: "bg-success/10 text-success" },
@@ -29,8 +30,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {
-  const startDate = new Date(`${event.date}T${event.time}`);
+  // Parse start time explicitly in Europe/Rome, ensuring UTC string aligns correctly
+  const startDate = parseEventDateTime(event.date, event.time);
   const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000); // default 3h
+
   const title = encodeURIComponent(event.title);
   const location = encodeURIComponent(event.location);
   const eventUrl = `${window.location.origin}/event/${event.id}`;
