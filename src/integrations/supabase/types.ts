@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -110,6 +110,44 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "event_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_broadcasts: {
+        Row: {
+          channel: string
+          created_at: string
+          event_id: string
+          id: string
+          message: string
+          recipients_count: number
+          sender_id: string | null
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          message: string
+          recipients_count?: number
+          sender_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          message?: string
+          recipients_count?: number
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_broadcasts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -778,3 +816,4 @@ export const Constants = {
     },
   },
 } as const
+
