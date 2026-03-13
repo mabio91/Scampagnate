@@ -749,30 +749,69 @@ const EventDetail = () => {
 
       {/* Access Warning Dialog */}
       <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Experience Requirement</DialogTitle>
             <DialogDescription className="font-body text-sm mt-2 text-foreground">
-              {accessData?.reason || "This event requires a higher experience level for safety."}
+              This event requires a higher trekking experience level.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-xs font-body text-muted-foreground">
-              If you feel you are physically prepared and have the necessary experience to attend this event safely, you can request a manual override. The organizer will review your profile and decide.
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 font-body" onClick={() => setShowAccessWarning(false)}>
-                Cancel
-              </Button>
+            <div className="space-y-3">
+              <p className="text-sm font-body text-muted-foreground leading-relaxed">
+                Based on your profile, you may not yet meet the recommended experience level for this activity. This helps ensure that all participants can safely complete the route.
+              </p>
+              <p className="text-sm font-body text-muted-foreground leading-relaxed">
+                You can still join this type of event in the future by completing easier or intermediate treks first.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-muted/50 space-y-2 border border-border/50">
+              <p className="text-xs font-body font-bold text-foreground">To join this event you usually need:</p>
+              <ul className="text-xs font-body text-muted-foreground space-y-1 ml-4 list-disc">
+                <li>At least {parseInt(event.difficulty || "0") >= 4 ? "5" : "3"} trekking experiences</li>
+                <li>{parseInt(event.difficulty || "0") >= 4 ? "Frequent" : "Regular"} physical activity</li>
+              </ul>
+              <p className="text-[10px] font-body text-muted-foreground pt-1 border-t border-border/50 italic">
+                OR at least 3 {parseInt(event.difficulty || "0") >= 4 ? "intermediate" : "easy"} trekking events completed on the platform.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              {organizerProfile?.phone && (
+                <Button 
+                  asChild
+                  className="w-full font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none h-12"
+                >
+                  <a 
+                    href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}?text=${encodeURIComponent(`Hi! I’m interested in joining this event but the platform indicates I may not meet the experience requirements. Could you please review my participation? Event: ${event.title}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Contact Organizer
+                  </a>
+                </Button>
+              )}
+              
               <Button 
                 onClick={() => {
                   setShowAccessWarning(false);
                   setIsRequestingOverride(true);
                   setShowRegisterDialog(true);
                 }} 
-                className="flex-1 font-body bg-warning text-warning-foreground hover:bg-warning/90"
+                variant="outline"
+                className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
               >
-                Request Override
+                Request Manual Review
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                className="w-full font-body text-muted-foreground text-xs h-10" 
+                onClick={() => setShowAccessWarning(false)}
+              >
+                Close
               </Button>
             </div>
           </div>
