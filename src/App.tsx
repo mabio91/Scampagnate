@@ -26,6 +26,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
 const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
 const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
