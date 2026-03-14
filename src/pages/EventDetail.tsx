@@ -722,7 +722,7 @@ const EventDetail = () => {
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-primary/20 text-xs font-bold text-primary">
                     <span>Quota Associativa</span>
-                    <span>€10</span>
+                    <span>€10 + commissioni Stripe</span>
                   </div>
                 </div>
               )}
