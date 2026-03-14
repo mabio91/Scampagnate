@@ -151,7 +151,7 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (isEventPast || event.status === "closed" || event.status === "cancelled") return;
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return;
 
     if (needsPayment) {
       toast({ title: "Payment", description: "Payment flow coming soon!" });

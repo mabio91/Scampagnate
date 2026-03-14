@@ -458,6 +458,8 @@ const EventManage = () => {
                           <SelectContent>
                             <SelectItem value="registered">Registered</SelectItem>
                             <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="attended">Attended</SelectItem>
+                            <SelectItem value="no_show">No-show</SelectItem>
                             <SelectItem value="cancelled">Cancel</SelectItem>
                           </SelectContent>
                         </Select>
