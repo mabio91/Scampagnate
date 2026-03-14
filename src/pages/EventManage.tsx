@@ -479,46 +479,102 @@ const EventManage = () => {
                   const mp = meetingPoints?.find((p) => p.id === reg.meeting_point_id);
                   const { firstName, lastName, isManual } = getParticipantName(reg);
                   return (
-                    <Card key={reg.id} className="p-3 flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
-                        {isManual ? "M" : ((reg.profiles as any)?.avatar_url ? (
-                          <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                        ) : firstName[0])}
+                    <Card key={reg.id} className="p-3 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
+                          {isManual ? "M" : ((reg.profiles as any)?.avatar_url ? (
+                            <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          ) : firstName[0])}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-body text-sm font-semibold text-foreground truncate">
+                            {firstName} {lastName}
+                            {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground font-body">
+                            {!isManual && ((reg.profiles as any)?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
+                            {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
+                              <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
+                            )}
+                            {reg.payment_status && reg.payment_status !== "not_required" && (
+                              <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
+                                · {reg.payment_status}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge variant={reg.checked_in ? "default" : "outline"} className="text-[10px]">
+                            {reg.checked_in ? <CheckCircle2 className="h-3 w-3" /> : reg.status}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              if (editingParticipant === reg.id) {
+                                setEditingParticipant(null);
+                              } else {
+                                setEditingParticipant(reg.id);
+                                setEditMeetingPoint(reg.meeting_point_id || "");
+                                setEditPaymentStatus(reg.payment_status || "pending");
+                              }
+                            }}
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                          <Select onValueChange={(v) => handleStatusChange(reg.id, v)}>
+                            <SelectTrigger className="w-8 h-8 p-0 border-0">
+                              <span className="sr-only">Actions</span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="registered">Registered</SelectItem>
+                              <SelectItem value="paid">Paid</SelectItem>
+                              <SelectItem value="attended">Attended</SelectItem>
+                              <SelectItem value="no_show">No-show</SelectItem>
+                              <SelectItem value="cancelled">Cancel</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-body text-sm font-semibold text-foreground truncate">
-                          {firstName} {lastName}
-                          {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground font-body">
-                          {!isManual && ((reg.profiles as any)?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
-                          {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
-                            <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
+                      {editingParticipant === reg.id && (
+                        <div className="flex items-end gap-2 pt-1 border-t border-border">
+                          {meetingPoints && meetingPoints.length > 0 && (
+                            <div className="flex-1">
+                              <Label className="font-body text-[10px] text-muted-foreground">Meeting Point</Label>
+                              <Select value={editMeetingPoint} onValueChange={setEditMeetingPoint}>
+                                <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue placeholder="None" /></SelectTrigger>
+                                <SelectContent>
+                                  {meetingPoints.map((mp) => (
+                                    <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           )}
-                          {reg.payment_status && reg.payment_status !== "not_required" && (
-                            <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
-                              · {reg.payment_status}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant={reg.checked_in ? "default" : "outline"} className="text-[10px]">
-                          {reg.checked_in ? <CheckCircle2 className="h-3 w-3" /> : reg.status}
-                        </Badge>
-                        <Select onValueChange={(v) => handleStatusChange(reg.id, v)}>
-                          <SelectTrigger className="w-8 h-8 p-0 border-0">
-                            <span className="sr-only">Actions</span>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="registered">Registered</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="attended">Attended</SelectItem>
-                            <SelectItem value="no_show">No-show</SelectItem>
-                            <SelectItem value="cancelled">Cancel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          <div className="flex-1">
+                            <Label className="font-body text-[10px] text-muted-foreground">Payment</Label>
+                            <Select value={editPaymentStatus} onValueChange={setEditPaymentStatus}>
+                              <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="not_required">Not Required</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => handleUpdateRegistration(reg.id, {
+                              meeting_point_id: editMeetingPoint || null,
+                              payment_status: editPaymentStatus,
+                            })}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      )}
                     </Card>
                   );
                 })}
