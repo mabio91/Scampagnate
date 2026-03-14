@@ -1,5 +1,3 @@
-import { NextRequest, NextResponse } from "next/server";
-
 const BOT_USER_AGENTS = [
   "whatsapp",
   "facebookexternalhit",
@@ -18,20 +16,20 @@ export const config = {
   matcher: "/event/:id*",
 };
 
-export default async function middleware(req: NextRequest) {
+export default async function middleware(req: Request) {
   const ua = req.headers.get("user-agent") || "";
   const isBot = BOT_USER_AGENTS.some((bot) =>
     ua.toLowerCase().includes(bot.toLowerCase())
   );
 
   if (!isBot) {
-    return NextResponse.next();
+    return;
   }
 
-  // Extract event ID from path: /event/{id}
-  const pathParts = req.nextUrl.pathname.split("/");
+  const url = new URL(req.url);
+  const pathParts = url.pathname.split("/");
   const eventId = pathParts[2];
-  if (!eventId) return NextResponse.next();
+  if (!eventId) return;
 
   try {
     const SUPABASE_URL = "https://etiynvukviykquqcsjln.supabase.co";
@@ -48,16 +46,15 @@ export default async function middleware(req: NextRequest) {
       }
     );
 
-    if (!res.ok) return NextResponse.next();
+    if (!res.ok) return;
 
     const events = await res.json();
-    if (!events || events.length === 0) return NextResponse.next();
+    if (!events || events.length === 0) return;
 
     const event = events[0];
     const baseUrl = "https://scampagnate.vercel.app";
     const eventUrl = `${baseUrl}/event/${eventId}`;
 
-    // Resolve image URL
     let imageUrl = `${baseUrl}/pwa-512x512.png`;
     if (event.image_url) {
       if (event.image_url.startsWith("http")) {
@@ -65,7 +62,6 @@ export default async function middleware(req: NextRequest) {
       }
     }
 
-    // Format date
     let formattedDate = "";
     if (event.date) {
       try {
@@ -117,7 +113,7 @@ export default async function middleware(req: NextRequest) {
 </body>
 </html>`;
 
-    return new NextResponse(html, {
+    return new Response(html, {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
@@ -125,7 +121,7 @@ export default async function middleware(req: NextRequest) {
       },
     });
   } catch {
-    return NextResponse.next();
+    return;
   }
 }
 
