@@ -62,7 +62,7 @@ export const mockEvents: EventData[] = [
     time: "08:00",
     location: "Monte Livata, Lazio",
     category: "Trekking & Outdoor",
-    status: "available",
+    status: "published",
     price: 15,
     paymentType: "deposit",
     deposit: 5,
