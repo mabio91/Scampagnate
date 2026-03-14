@@ -1,12 +1,12 @@
 import { FC } from "react";
-import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
+import { Circle, type LucideIcon } from "lucide-react";
 
 export const DIFFICULTY_LEVELS = [
-  { level: "1", name: "Introduzione", icon: "🟢", description: "Perfect for beginners. Simple walking routes, very low elevation gain (up to 150-200m), relaxed pace, 1-2 hours." },
-  { level: "2", name: "Facile", icon: "🟢", description: "Suitable for people who have already done some walking. Moderate elevation gain (200-400m), 2-3 hours." },
-  { level: "3", name: "Intermedio", icon: "🟡", description: "Suitable for moderately active people. Longer climbs (400-700m), sustained pace, 3-5 hours." },
-  { level: "4", name: "Impegnativo", icon: "🟠", description: "Requires good physical condition. Significant elevation gain (700-1100m), more technical terrain, 5-7 hours." },
-  { level: "5", name: "Avanzato", icon: "🔴", description: "Only for experienced hikers. Very high elevation gain (over 1100m), long distances, 7+ hours." },
+  { level: "1", name: "Introduzione", color: "text-success", description: "Perfect for beginners. Simple walking routes, very low elevation gain (up to 150-200m), relaxed pace, 1-2 hours." },
+  { level: "2", name: "Facile", color: "text-success", description: "Suitable for people who have already done some walking. Moderate elevation gain (200-400m), 2-3 hours." },
+  { level: "3", name: "Intermedio", color: "text-warning", description: "Suitable for moderately active people. Longer climbs (400-700m), sustained pace, 3-5 hours." },
+  { level: "4", name: "Impegnativo", color: "text-orange-500", description: "Requires good physical condition. Significant elevation gain (700-1100m), more technical terrain, 5-7 hours." },
+  { level: "5", name: "Avanzato", color: "text-destructive", description: "Only for experienced hikers. Very high elevation gain (over 1100m), long distances, 7+ hours." },
 ];
 
 export const getDifficultyDetails = (difficulty: string | null | undefined) => {
