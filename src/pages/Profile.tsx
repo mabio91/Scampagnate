@@ -305,7 +305,9 @@ const Profile = () => {
                 <div>
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member Since</p>
                   <p className="text-sm font-body font-semibold text-foreground">
-                    {profile.membership_registration_date ? new Date(profile.membership_registration_date).getFullYear() : 'N/A'}
+                    {profile.membership_registration_date 
+                      ? new Date(profile.membership_registration_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) 
+                      : 'N/A'}
                   </p>
                 </div>
                 <div>
