@@ -368,12 +368,12 @@ const EventManage = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">📝 Draft</SelectItem>
-                <SelectItem value="published">✅ Published</SelectItem>
-                <SelectItem value="full">🔴 Full</SelectItem>
-                <SelectItem value="closed">🔒 Closed</SelectItem>
-                <SelectItem value="cancelled">❌ Cancelled</SelectItem>
-                <SelectItem value="past">📦 Past</SelectItem>
+                <SelectItem value="draft"><span className="inline-flex items-center gap-1.5"><FileEdit className="h-3.5 w-3.5 text-muted-foreground" /> Draft</span></SelectItem>
+                <SelectItem value="published"><span className="inline-flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-success" /> Published</span></SelectItem>
+                <SelectItem value="full"><span className="inline-flex items-center gap-1.5"><CircleOff className="h-3.5 w-3.5 text-destructive" /> Full</span></SelectItem>
+                <SelectItem value="closed"><span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-muted-foreground" /> Closed</span></SelectItem>
+                <SelectItem value="cancelled"><span className="inline-flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-destructive" /> Cancelled</span></SelectItem>
+                <SelectItem value="past"><span className="inline-flex items-center gap-1.5"><Archive className="h-3.5 w-3.5 text-muted-foreground" /> Past</span></SelectItem>
               </SelectContent>
             </Select>
             <Link to={`/organizer/events/${id}/edit`}>
