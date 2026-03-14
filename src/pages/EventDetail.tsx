@@ -112,7 +112,7 @@ const EventDetail = () => {
   const eventStartDate = parseEventDateTime(event.date, event.time);
   const isEventPast = eventStartDate < new Date();
 
-  const canViewParticipants = !!user;
+  const canViewParticipants = !!user && (!!isRegistered || user.id === event.organizer_id || isAdmin);
 
   const handleToggleSave = async () => {
     if (!user) { navigate("/auth"); return; }
