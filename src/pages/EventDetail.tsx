@@ -59,12 +59,23 @@ const EventDetail = () => {
   const { data: organizerProfile } = useQuery({
     queryKey: ["organizer-profile", event?.organizer_id],
     queryFn: async () => {
-      const { data } = await supabase
+      if (!event?.organizer_id) return null;
+      // Get public profile data
+      const { data: publicData } = await supabase.rpc("get_public_profile", { profile_id: event.organizer_id });
+      const pub = publicData?.[0] || null;
+      // Try to get phone (only works if user has RLS access — e.g. self, admin, or event participant)
+      let phone: string | null = null;
+      const { data: fullData } = await supabase
         .from("profiles")
-        .select("first_name, last_name, phone, avatar_url")
-        .eq("id", event!.organizer_id!)
+        .select("phone")
+        .eq("id", event.organizer_id)
         .single();
-      return data;
+      if (fullData) phone = fullData.phone;
+      return {
+        first_name: pub?.first_name || "",
+        avatar_url: pub?.avatar_url || null,
+        phone,
+      };
     },
     enabled: !!event?.organizer_id,
   });

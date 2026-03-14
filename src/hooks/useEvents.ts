@@ -401,16 +401,24 @@ export const useOrganizerProfile = (organizerId: string | undefined) => {
     queryFn: async () => {
       if (!organizerId) return null;
 
-      // Fetch profile details
-      const { data: profileData, error: profileError } = await supabase
+      // Fetch public profile data via security definer function (first_name, avatar_url only)
+      const { data: publicProfile } = await supabase.rpc("get_public_profile", { profile_id: organizerId });
+      const publicData = publicProfile?.[0] || null;
+
+      // Try to get extended profile data (phone, bio) — will only work if caller has RLS access
+      let phone: string | null = null;
+      let bio: string | null = null;
+      const { data: fullProfile } = await supabase
         .from("profiles")
-        .select("first_name, last_name, avatar_url, bio, phone, email")
+        .select("phone, bio")
         .eq("id", organizerId)
         .single();
+      if (fullProfile) {
+        phone = fullProfile.phone;
+        bio = fullProfile.bio;
+      }
 
-      if (profileError) throw profileError;
-
-      // Fetch total event count (all events created by organizer)
+      // Fetch total event count
       const { count: totalCount, error: countError } = await supabase
         .from("events")
         .select("*", { count: "exact", head: true })
@@ -418,7 +426,7 @@ export const useOrganizerProfile = (organizerId: string | undefined) => {
 
       if (countError) throw countError;
 
-      // Fetch public events list for display
+      // Fetch public events list
       const { data: events, error: eventsError } = await supabase
         .from("events")
         .select("id, title, date, time, location, image_url, difficulty, price, spots_taken, spots_total, category:event_categories(name)")
@@ -429,7 +437,12 @@ export const useOrganizerProfile = (organizerId: string | undefined) => {
       if (eventsError) throw eventsError;
 
       return {
-        profile: profileData,
+        profile: {
+          first_name: publicData?.first_name || "",
+          avatar_url: publicData?.avatar_url || null,
+          phone,
+          bio,
+        },
         eventCount: totalCount || 0,
         events: events as any[]
       };
