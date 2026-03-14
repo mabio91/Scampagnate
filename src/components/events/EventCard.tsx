@@ -15,8 +15,18 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   past: { label: "Past", className: "bg-muted text-muted-foreground" },
 };
 
+const fallbackStatus = statusConfig.published;
+
+const getEventStatusDisplay = (status: string | null | undefined) => {
+  if (!status || !Object.prototype.hasOwnProperty.call(statusConfig, status)) {
+    return fallbackStatus;
+  }
+
+  return statusConfig[status];
+};
+
 const EventCard = memo(({ event, index }: { event: EventWithDetails; index: number }) => {
-  const status = statusConfig[event.status] || statusConfig.published;
+  const status = getEventStatusDisplay(event.status);
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
 
   return (

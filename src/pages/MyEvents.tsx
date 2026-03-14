@@ -193,7 +193,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   // image handled by OptimizedImage component
 
   const displayStatus = isPast ? "past" : registration.status;
-  const status = statusConfig[displayStatus] || statusConfig.registered;
+  const status = getRegistrationStatusDisplay(displayStatus);
   const meetingPoint = registration.meeting_point;
   const canCancel = showActions && registration.status !== "cancelled" && registration.status !== "waitlist";
 
