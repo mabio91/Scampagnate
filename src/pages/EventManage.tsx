@@ -41,6 +41,8 @@ const EventManage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showCapacityDialog, setShowCapacityDialog] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancellingEvent, setCancellingEvent] = useState(false);
 
   // Add participant state
   const [addMode, setAddMode] = useState<"search" | "manual">("manual");
