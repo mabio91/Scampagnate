@@ -273,13 +273,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "event_registrations_user_id_profiles_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       events: {
@@ -654,29 +647,28 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          first_name: string | null
-          id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          first_name?: string | null
-          id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          first_name?: string | null
-          id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       activate_membership: {
         Args: { user_id_param: string }
         Returns: undefined
+      }
+      get_public_profile: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string
+          first_name: string
+          id: string
+        }[]
+      }
+      get_public_profiles: {
+        Args: { profile_ids: string[] }
+        Returns: {
+          avatar_url: string
+          first_name: string
+          id: string
+        }[]
       }
       has_role: {
         Args: {
