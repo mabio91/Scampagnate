@@ -462,7 +462,30 @@ const EventDetail = () => {
           </motion.div>
         )}
 
-        {/* Meeting Points - names stay Italian */}
+        {/* Equipment List */}
+        {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }} className="py-4 border-b border-border">
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">Recommended Equipment</h3>
+            <div className="space-y-2">
+              {(event.equipment_list as any[]).map((item: any, idx: number) => (
+                <div key={idx} className="flex items-start gap-2 text-sm font-body">
+                  <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${item.is_mandatory ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+                    {item.is_mandatory ? '!' : '·'}
+                  </span>
+                  <div>
+                    <span className={`${item.is_mandatory ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                      {item.name}
+                    </span>
+                    {item.is_mandatory && <span className="text-[10px] text-destructive ml-1">(mandatory)</span>}
+                    {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+
         {event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
             <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
