@@ -581,11 +581,11 @@ const EventForm = () => {
           <div className="space-y-3">
             <div>
               <Label htmlFor="spots">Total Spots</Label>
-              <Input id="spots" type="number" min={1} value={form.spots_total} onChange={(e) => updateForm("spots_total", parseInt(e.target.value) || 1)} />
+              <Input id="spots" type="number" min={1} value={form.spots_total || ""} onChange={(e) => updateForm("spots_total", e.target.value === "" ? 0 : parseInt(e.target.value) || 0)} onBlur={() => { if (!form.spots_total) updateForm("spots_total", 1); }} />
             </div>
             <div>
               <Label htmlFor="reserved">Reserved Spots</Label>
-              <Input id="reserved" type="number" min={0} max={form.spots_total} value={form.reserved_spots} onChange={(e) => updateForm("reserved_spots", parseInt(e.target.value) || 0)} />
+              <Input id="reserved" type="number" min={0} max={form.spots_total} value={form.reserved_spots || ""} onChange={(e) => updateForm("reserved_spots", e.target.value === "" ? 0 : parseInt(e.target.value) || 0)} />
               <p className="text-[11px] text-muted-foreground font-body mt-1">Spots reserved for manual/offline registrations. Count toward total capacity.</p>
             </div>
             <div>
@@ -603,14 +603,14 @@ const EventForm = () => {
             {(form.payment_type !== "free") && (
               <div>
                 <Label htmlFor="price">Total Price (€)</Label>
-                <Input id="price" type="number" min={0} step={0.01} value={form.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} />
+                <Input id="price" type="number" min={0} step={0.01} value={form.price || ""} onChange={(e) => updateForm("price", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
               </div>
             )}
             {form.payment_type === "deposit" && (
               <>
                 <div>
                   <Label htmlFor="deposit">Deposit Amount (€)</Label>
-                  <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit} onChange={(e) => updateForm("deposit", parseFloat(e.target.value) || 0)} />
+                  <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit || ""} onChange={(e) => updateForm("deposit", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
                 </div>
                 {form.price > 0 && form.deposit > 0 && (
                   <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
