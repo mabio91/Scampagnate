@@ -603,7 +603,7 @@ const EventForm = () => {
             {(form.payment_type !== "free") && (
               <div>
                 <Label htmlFor="price">Total Price (€)</Label>
-                <Input id="price" type="number" min={0} step={0.01} value={form.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} />
+                <Input id="price" type="number" min={0} step={0.01} value={form.price || ""} onChange={(e) => updateForm("price", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
               </div>
             )}
             {form.payment_type === "deposit" && (
