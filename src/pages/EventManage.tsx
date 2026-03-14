@@ -1011,10 +1011,10 @@ const EventManage = () => {
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Quick templates</p>
               <div className="flex flex-wrap gap-1.5">
                 {[
-                  { icon: <Clock className="h-3 w-3" />, label: "Time change", text: `⏰ Important update for "${event.title}": the event time has been changed. Please check the event page for the updated schedule.` },
-                  { icon: <AlertTriangle className="h-3 w-3" />, label: "Meeting point", text: `📍 Meeting point update for "${event.title}": the meeting point has been updated. Please check the event page for new details.` },
-                  { icon: <CloudSun className="h-3 w-3" />, label: "Weather alert", text: `🌤️ Weather update for "${event.title}": please check the weather forecast and come prepared. The event will proceed as planned unless further notice.` },
-                  { icon: <Bell className="h-3 w-3" />, label: "Reminder", text: `📢 Reminder: "${event.title}" is coming up! Don't forget to check the event details and prepare accordingly. See you there!` },
+                  { icon: <Clock className="h-3 w-3" />, label: "Time change", text: `Important update for "${event.title}": the event time has been changed. Please check the event page for the updated schedule.` },
+                  { icon: <AlertTriangle className="h-3 w-3" />, label: "Meeting point", text: `Meeting point update for "${event.title}": the meeting point has been updated. Please check the event page for new details.` },
+                  { icon: <CloudSun className="h-3 w-3" />, label: "Weather alert", text: `Weather update for "${event.title}": please check the weather forecast and come prepared. The event will proceed as planned unless further notice.` },
+                  { icon: <Bell className="h-3 w-3" />, label: "Reminder", text: `Reminder: "${event.title}" is coming up! Don't forget to check the event details and prepare accordingly. See you there!` },
                 ].map((tpl) => (
                   <button
                     key={tpl.label}
