@@ -198,17 +198,19 @@ const EventDetail = () => {
 
   const getCTALabel = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled") return "Event Closed";
+    if (!user) return "Sign in to Join";
     if (isPendingApproval) return "Approval Pending";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered ✔";
     if (event.status === "full") return "Join Waitlist";
-    if (accessData && !accessData.hasAccess) return "Join Event (disabled)";
+    if (accessData && !accessData.hasAccess) return "Join Event";
     return "Join Event";
   };
 
   const getCTAClass = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (isOnWaitlist || isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
@@ -650,7 +652,7 @@ const EventDetail = () => {
             <Button
               onClick={handleCTA}
               className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
-              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (isRegistered && !needsPayment)}
+              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
             >
               {getCTALabel()}
             </Button>

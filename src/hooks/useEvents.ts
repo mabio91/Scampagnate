@@ -351,9 +351,10 @@ export const useCheckEventAccess = (difficulty: string | null) => {
       // For level 4/5: OR >= 3 intermediate-level events completed (difficulty 3)
       const { data: pastEvents, error } = await supabase
         .from("event_registrations")
-        .select("*, events(difficulty)")
+        .select("*, events(difficulty, date)")
         .eq("user_id", user.id)
-        .in("status", ["registered", "paid"]); // Assuming "attended" logic isn't fully robust, relying on past active registrations
+        .eq("checked_in", true)
+        .in("status", ["registered", "paid"]);
 
       if (error || !pastEvents) {
         return { hasAccess: false, reason: "Non hai i requisiti minimi di esperienza per questo evento." };
