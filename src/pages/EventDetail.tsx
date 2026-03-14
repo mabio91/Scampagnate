@@ -513,7 +513,7 @@ const EventDetail = () => {
                     {participants.map((p: any) => (
                       <div key={p.id} className="flex items-center justify-between text-xs font-body px-2 py-1.5 rounded-lg bg-muted/30">
                         <span className="text-foreground font-medium">
-                          {p.profiles?.first_name} {p.profiles?.last_name}
+                          {p.profiles?.first_name}
                         </span>
                         <span className="text-muted-foreground">
                           {p.meeting_point?.name || "—"}
