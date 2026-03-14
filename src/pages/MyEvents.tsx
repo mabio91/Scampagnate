@@ -32,6 +32,16 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   pending_approval: { label: "Pending", className: "bg-warning/10 text-warning" },
 };
 
+const fallbackRegistrationStatus = statusConfig.registered;
+
+const getRegistrationStatusDisplay = (status: string | null | undefined) => {
+  if (!status || !Object.prototype.hasOwnProperty.call(statusConfig, status)) {
+    return fallbackRegistrationStatus;
+  }
+
+  return statusConfig[status];
+};
+
 const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {
   // Parse start time explicitly in Europe/Rome, ensuring UTC string aligns correctly
   const startDate = parseEventDateTime(event.date, event.time);
@@ -183,7 +193,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   // image handled by OptimizedImage component
 
   const displayStatus = isPast ? "past" : registration.status;
-  const status = statusConfig[displayStatus] || statusConfig.registered;
+  const status = getRegistrationStatusDisplay(displayStatus);
   const meetingPoint = registration.meeting_point;
   const canCancel = showActions && registration.status !== "cancelled" && registration.status !== "waitlist";
 
