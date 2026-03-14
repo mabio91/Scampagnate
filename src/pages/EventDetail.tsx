@@ -623,9 +623,7 @@ const EventDetail = () => {
             </div>
           )}
           {event.cancellation_policy && (() => {
-            const { parseCancellationPolicy: _, ...rest } = {} as any;
-            // Parse policy inline
-            const { policyType, customText } = parseCancellationPolicy(raw);
+            const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
             if (!policyType) return null;
             const policy = CANCELLATION_POLICIES[policyType];
             const PolicyIcon = policy.icon;
@@ -636,7 +634,7 @@ const EventDetail = () => {
                   <p className={`text-sm font-body font-bold ${policy.colorClass}`}>{policy.label} Cancellation Policy</p>
                 </div>
                 <p className="text-xs font-body text-muted-foreground leading-relaxed">
-                  {type === "custom" ? customText : policy.description}
+                  {policyType === "custom" ? customText : policy.description}
                 </p>
                 {event.payment_type === "deposit" && (
                   <p className="text-[11px] font-body text-muted-foreground mt-1.5 italic border-t border-current/10 pt-1.5">

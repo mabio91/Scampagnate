@@ -299,10 +299,10 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
             <DialogDescription className="font-body text-sm">
               Are you sure you want to cancel your registration for {event.title}?
               {event.cancellation_policy && (() => {
-                const { policyType, customText } = parseCancellationPolicy(raw);
+                const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
                 if (!policyType) return null;
                 const pol = CANCELLATION_POLICIES[policyType];
-                const label = policyType === "custom" ? customText || raw : `${pol.label} — ${pol.description.split(".")[0]}.`;
+                const label = policyType === "custom" ? customText || event.cancellation_policy : `${pol.label} — ${pol.description.split(".")[0]}.`;
                 return <span className="block mt-2 text-xs font-semibold text-muted-foreground italic">{label}</span>;
               })()}
             </DialogDescription>
