@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,11 +11,27 @@ serve(async (req) => {
   }
 
   try {
-    const vapidKeys = webpush.generateVAPIDKeys();
+    // Generate VAPID keys using Web Crypto API (no npm dependency needed)
+    const keyPair = await crypto.subtle.generateKey(
+      { name: "ECDSA", namedCurve: "P-256" },
+      true,
+      ["sign", "verify"]
+    );
+
+    const publicKeyBuffer = await crypto.subtle.exportKey("raw", keyPair.publicKey);
+    const privateKeyBuffer = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+    // Convert to URL-safe base64
+    const toBase64Url = (buffer: ArrayBuffer) => {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      bytes.forEach(b => binary += String.fromCharCode(b));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    };
 
     return new Response(JSON.stringify({
-      publicKey: vapidKeys.publicKey,
-      privateKey: vapidKeys.privateKey,
+      publicKey: toBase64Url(publicKeyBuffer),
+      privateKey: toBase64Url(privateKeyBuffer),
       instructions: "Store privateKey as VAPID_PRIVATE_KEY secret and publicKey as VITE_VAPID_PUBLIC_KEY env variable"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
