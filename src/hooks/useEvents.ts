@@ -103,15 +103,28 @@ export const useEventParticipants = (eventId: string) => {
   return useQuery({
     queryKey: ["event-participants", eventId],
     queryFn: async () => {
+      // Fetch registrations with meeting points (no profile join — use RPC for public profile data)
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, profiles(first_name, last_name, avatar_url), meeting_point:event_meeting_points(id, name)")
+        .select("*, meeting_point:event_meeting_points(id, name)")
         .eq("event_id", eventId)
         .in("status", ["registered", "paid"]);
       if (error) throw error;
 
-      // Fetch badges for all participant user_ids
       const userIds = (data || []).map((r: any) => r.user_id);
+      
+      // Fetch public profile data via security definer function (bypasses RLS safely)
+      let profilesMap: Record<string, { first_name: string; avatar_url: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: publicProfiles } = await supabase.rpc("get_public_profiles", { profile_ids: userIds });
+        if (publicProfiles) {
+          for (const p of publicProfiles) {
+            profilesMap[p.id] = { first_name: p.first_name, avatar_url: p.avatar_url };
+          }
+        }
+      }
+
+      // Fetch badges for all participant user_ids
       let badgesMap: Record<string, any[]> = {};
       if (userIds.length > 0) {
         const { data: userBadges } = await supabase
@@ -128,6 +141,7 @@ export const useEventParticipants = (eventId: string) => {
 
       return (data || []).map((r: any) => ({
         ...r,
+        profiles: profilesMap[r.user_id] || { first_name: "?", avatar_url: null },
         badges: badgesMap[r.user_id] || [],
       }));
     },
