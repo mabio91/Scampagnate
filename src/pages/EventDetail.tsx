@@ -233,7 +233,7 @@ const EventDetail = () => {
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled") return "Event Closed";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Event Closed";
     if (!user) return "Sign in to Join";
     if (isPendingApproval) return "Approval Pending";
     if (isOnWaitlist) return "On Waitlist";
