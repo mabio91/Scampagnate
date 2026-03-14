@@ -71,6 +71,7 @@ const App = () => (
                 <Route path="/organizer/events/new" element={<EventForm />} />
                 <Route path="/organizer/events/:id" element={<EventManage />} />
                 <Route path="/organizer/events/:id/edit" element={<EventForm />} />
+                <Route path="/membership-success" element={<MembershipSuccess />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
