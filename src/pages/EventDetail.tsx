@@ -198,12 +198,13 @@ const EventDetail = () => {
 
   const getCTALabel = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled") return "Event Closed";
+    if (!user) return "Sign in to Join";
     if (isPendingApproval) return "Approval Pending";
     if (isOnWaitlist) return "On Waitlist";
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered ✔";
     if (event.status === "full") return "Join Waitlist";
-    if (accessData && !accessData.hasAccess) return "Join Event (disabled)";
+    if (accessData && !accessData.hasAccess) return "Join Event";
     return "Join Event";
   };
 
