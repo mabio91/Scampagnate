@@ -319,7 +319,27 @@ const EventManage = () => {
               {format(new Date(event.date), "dd MMM yyyy")} · {event.time}
             </p>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 items-center">
+            <Select 
+              value={event.status} 
+              onValueChange={async (v) => {
+                const { error } = await supabase.from("events").update({ status: v as any }).eq("id", id!);
+                if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+                else { queryClient.invalidateQueries({ queryKey: ["event-detail", id] }); toast({ title: `Event status: ${v}` }); }
+              }}
+            >
+              <SelectTrigger className="w-[110px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">📝 Draft</SelectItem>
+                <SelectItem value="published">✅ Published</SelectItem>
+                <SelectItem value="full">🔴 Full</SelectItem>
+                <SelectItem value="closed">🔒 Closed</SelectItem>
+                <SelectItem value="cancelled">❌ Cancelled</SelectItem>
+                <SelectItem value="past">📦 Past</SelectItem>
+              </SelectContent>
+            </Select>
             <Link to={`/organizer/events/${id}/edit`}>
               <Button variant="outline" size="sm" className="gap-1">
                 <Edit className="h-3.5 w-3.5" /> Edit

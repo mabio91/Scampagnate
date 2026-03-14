@@ -16,7 +16,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 const EventCard = memo(({ event, index }: { event: EventWithDetails; index: number }) => {
-  const status = statusConfig[event.status];
+  const status = statusConfig[event.status] || statusConfig.published;
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
 
   return (
