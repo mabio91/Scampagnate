@@ -7,6 +7,7 @@ import {
   Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
+import { parseEventDateTime } from "@/lib/timezone";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useCheckEventAccess } from "@/hooks/useEvents";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
@@ -107,7 +108,7 @@ const EventDetail = () => {
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
-  const eventStartDate = new Date(`${event.date}T${event.time}`);
+  const eventStartDate = parseEventDateTime(event.date, event.time);
   const isEventPast = eventStartDate < new Date();
 
   const canViewParticipants = user && (isRegistered || user.id === event.organizer_id);
