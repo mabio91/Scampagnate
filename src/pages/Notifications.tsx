@@ -16,6 +16,8 @@ const typeIcons: Record<string, React.ReactNode> = {
   payment: <CreditCard className="h-5 w-5 text-success" />,
   event_update: <AlertCircle className="h-5 w-5 text-secondary" />,
   event_reminder: <Clock className="h-5 w-5 text-accent" />,
+  event_reminder_24h: <Clock className="h-5 w-5 text-orange-500" />,
+  event_reminder_3h: <Clock className="h-5 w-5 text-destructive" />,
   issue_resolved: <CheckCheck className="h-5 w-5 text-success" />,
   info: <Bell className="h-5 w-5 text-muted-foreground" />,
 };
