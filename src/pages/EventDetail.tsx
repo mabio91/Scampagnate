@@ -122,7 +122,25 @@ const EventDetail = () => {
     }
   };
 
-  const generateCalUrl = (type: "google" | "apple" | "outlook") => {
+  const isMobileDevice = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const generateICSBlob = () => {
+    const startDate = new Date(`${event.date}T${event.time}`);
+    const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
+    const eventUrl = `${window.location.origin}/event/${event.id}`;
+    const formatICS = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Events//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+      "BEGIN:VEVENT",
+      `DTSTART:${formatICS(startDate)}`, `DTEND:${formatICS(endDate)}`,
+      `SUMMARY:${event.title}`, `LOCATION:${event.location}`,
+      `DESCRIPTION:Event page: ${eventUrl}`, `URL:${eventUrl}`,
+      "END:VEVENT", "END:VCALENDAR"
+    ].join("\r\n");
+    return URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  };
+
+  const generateWebCalUrl = (type: "google" | "outlook") => {
     const startDate = new Date(`${event.date}T${event.time}`);
     const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
     const title = encodeURIComponent(event.title);
@@ -133,18 +151,35 @@ const EventDetail = () => {
     if (type === "google") {
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatICS(startDate)}/${formatICS(endDate)}&location=${location}&details=${details}`;
     }
-    if (type === "outlook") {
-      return `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${location}&body=${details}`;
-    }
-    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `DTSTART:${formatICS(startDate)}`, `DTEND:${formatICS(endDate)}`, `SUMMARY:${event.title}`, `LOCATION:${event.location}`, `DESCRIPTION:Event page: ${eventUrl}`, `URL:${eventUrl}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
-    return URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+    return `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${location}&body=${details}`;
   };
 
   const handleAddToCalendar = (type: "google" | "apple" | "outlook") => {
-    const url = generateCalUrl(type);
+    // On mobile, always download .ics file — it opens the native calendar app
+    if (isMobileDevice()) {
+      const url = generateICSBlob();
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${event.title.replace(/[^a-zA-Z0-9]/g, "_")}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return;
+    }
+    // On desktop, use web URLs for Google/Outlook, .ics for Apple
     if (type === "apple") {
-      const a = document.createElement("a"); a.href = url; a.download = `${event.title}.ics`; a.click(); URL.revokeObjectURL(url);
-    } else { window.open(url, "_blank"); }
+      const url = generateICSBlob();
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${event.title.replace(/[^a-zA-Z0-9]/g, "_")}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else {
+      window.open(generateWebCalUrl(type), "_blank");
+    }
   };
 
   const handleCTA = () => {
