@@ -49,9 +49,47 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
         <p className={`text-sm leading-tight ${!notification.read ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>
           {notification.title}
         </p>
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-          {notification.message}
-        </p>
+        {/* Render reminder messages with structured content */}
+        {(notification.type === 'event_reminder_24h' || notification.type === 'event_reminder_3h') ? (
+          <div className="mt-1 space-y-1">
+            {notification.message.split('\n').map((line, i) => {
+              // Detect navigation link
+              const mapsMatch = line.match(/🗺️.*?(https:\/\/\S+)/);
+              if (mapsMatch) {
+                return (
+                  <a
+                    key={i}
+                    href={mapsMatch[1]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 text-xs font-body font-semibold text-primary hover:underline mt-1"
+                  >
+                    <Navigation className="h-3.5 w-3.5" />
+                    Apri Navigazione
+                  </a>
+                );
+              }
+              // Detect meeting point line
+              if (line.includes('📍')) {
+                return (
+                  <p key={i} className="flex items-start gap-1 text-xs text-foreground font-body font-medium">
+                    <MapPin className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
+                    <span>{line.replace('📍 ', '')}</span>
+                  </p>
+                );
+              }
+              if (line.trim()) {
+                return <p key={i} className="text-xs text-muted-foreground font-body line-clamp-2 leading-relaxed">{line}</p>;
+              }
+              return null;
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+            {notification.message}
+          </p>
+        )}
         <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-medium">
           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: it })}
         </p>
