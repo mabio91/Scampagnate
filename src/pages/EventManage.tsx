@@ -828,41 +828,95 @@ const EventManage = () => {
           <div className="space-y-3">
             {addMode === "search" ? (
               <>
-                <div>
-                  <Label className="font-body text-xs">Search by name</Label>
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Type at least 2 characters..."
-                    className="mt-1"
-                  />
-                </div>
-                {searchResults && searchResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {searchResults.map((u: any) => (
-                      <button
-                        key={u.id}
-                        onClick={() => handleAddExistingUser(u.id)}
-                        disabled={addingParticipant}
-                        className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
-                      >
-                        {u.avatar_url ? (
-                          <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                            {u.first_name?.[0] || "?"}
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-body font-semibold text-foreground">{u.first_name} {u.last_name}</p>
-                          <p className="text-[10px] font-body text-muted-foreground">{u.phone || "No phone"}</p>
+                {selectedSearchUser ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                      {selectedSearchUser.avatar_url ? (
+                        <img src={selectedSearchUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                          {selectedSearchUser.first_name?.[0] || "?"}
                         </div>
-                      </button>
-                    ))}
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm font-body font-semibold text-foreground">{selectedSearchUser.first_name} {selectedSearchUser.last_name}</p>
+                        <p className="text-[10px] font-body text-muted-foreground">{selectedSearchUser.phone || "No phone"}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedSearchUser(null)}>Change</Button>
+                    </div>
+
+                    {meetingPoints && meetingPoints.length > 0 && (
+                      <div>
+                        <Label className="font-body text-xs">Meeting Point</Label>
+                        <Select value={manualMeetingPoint} onValueChange={setManualMeetingPoint}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select meeting point" /></SelectTrigger>
+                          <SelectContent>
+                            {meetingPoints.map((mp) => (
+                              <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div>
+                      <Label className="font-body text-xs">Payment Status</Label>
+                      <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="not_required">Not Required</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button
+                      onClick={handleConfirmAddSearchUser}
+                      disabled={addingParticipant}
+                      className="w-full font-body"
+                    >
+                      {addingParticipant ? "Adding..." : "Confirm & Add Participant"}
+                    </Button>
                   </div>
-                )}
-                {searchQuery.length >= 2 && searchResults?.length === 0 && (
-                  <p className="text-xs text-muted-foreground font-body text-center py-2">No users found</p>
+                ) : (
+                  <>
+                    <div>
+                      <Label className="font-body text-xs">Search by name</Label>
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Type at least 2 characters..."
+                        className="mt-1"
+                      />
+                    </div>
+                    {searchResults && searchResults.length > 0 && (
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {searchResults.map((u: any) => (
+                          <button
+                            key={u.id}
+                            onClick={() => handleSelectSearchUser(u)}
+                            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                          >
+                            {u.avatar_url ? (
+                              <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                                {u.first_name?.[0] || "?"}
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-sm font-body font-semibold text-foreground">{u.first_name} {u.last_name}</p>
+                              <p className="text-[10px] font-body text-muted-foreground">{u.phone || "No phone"}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {searchQuery.length >= 2 && searchResults?.length === 0 && (
+                      <p className="text-xs text-muted-foreground font-body text-center py-2">No users found</p>
+                    )}
+                  </>
                 )}
               </>
             ) : (
@@ -877,40 +931,42 @@ const EventManage = () => {
               </div>
             )}
 
-            {meetingPoints && meetingPoints.length > 0 && (
-              <div>
-                <Label className="font-body text-xs">Meeting Point</Label>
-                <Select value={manualMeetingPoint} onValueChange={setManualMeetingPoint}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select meeting point" /></SelectTrigger>
-                  <SelectContent>
-                    {meetingPoints.map((mp) => (
-                      <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {addMode !== "search" && (
+              <>
+                {meetingPoints && meetingPoints.length > 0 && (
+                  <div>
+                    <Label className="font-body text-xs">Meeting Point</Label>
+                    <Select value={manualMeetingPoint} onValueChange={setManualMeetingPoint}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Select meeting point" /></SelectTrigger>
+                      <SelectContent>
+                        {meetingPoints.map((mp) => (
+                          <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-            <div>
-              <Label className="font-body text-xs">Payment Status</Label>
-              <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="not_required">Not Required</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div>
+                  <Label className="font-body text-xs">Payment Status</Label>
+                  <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="not_required">Not Required</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {addMode === "manual" && (
-              <Button
-                onClick={handleAddManualParticipant}
-                disabled={!manualName.trim() || addingParticipant}
-                className="w-full font-body"
-              >
-                {addingParticipant ? "Adding..." : "Add Participant"}
-              </Button>
+                <Button
+                  onClick={handleAddManualParticipant}
+                  disabled={!manualName.trim() || addingParticipant}
+                  className="w-full font-body"
+                >
+                  {addingParticipant ? "Adding..." : "Add Participant"}
+                </Button>
+              </>
             )}
           </div>
         </DialogContent>
