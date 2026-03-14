@@ -49,7 +49,11 @@ const EventManage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [manualName, setManualName] = useState("");
   const [manualMeetingPoint, setManualMeetingPoint] = useState("");
-  const [manualPaymentStatus, setManualPaymentStatus] = useState("paid");
+  const [manualPaymentStatus, setManualPaymentStatus] = useState("pending");
+  const [selectedSearchUser, setSelectedSearchUser] = useState<any>(null);
+  const [editingParticipant, setEditingParticipant] = useState<string | null>(null);
+  const [editMeetingPoint, setEditMeetingPoint] = useState("");
+  const [editPaymentStatus, setEditPaymentStatus] = useState("");
   const [addingParticipant, setAddingParticipant] = useState(false);
 
   // Message state
@@ -181,13 +185,20 @@ const EventManage = () => {
     await handleStatusChange(regId, "cancelled");
   };
 
-  // Add existing user as participant
-  const handleAddExistingUser = async (userId: string) => {
+  // Select a searched user (don't add yet, show edit form first)
+  const handleSelectSearchUser = (user: any) => {
+    setSelectedSearchUser(user);
+    setSearchQuery("");
+  };
+
+  // Confirm adding the selected searched user
+  const handleConfirmAddSearchUser = async () => {
+    if (!selectedSearchUser) return;
     setAddingParticipant(true);
     try {
       const { error } = await supabase.from("event_registrations").insert({
         event_id: id!,
-        user_id: userId,
+        user_id: selectedSearchUser.id,
         meeting_point_id: manualMeetingPoint || null,
         status: "registered",
         payment_status: manualPaymentStatus,
@@ -196,12 +207,30 @@ const EventManage = () => {
       queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
       queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
       setShowAddParticipant(false);
+      setSelectedSearchUser(null);
       setSearchQuery("");
+      setManualMeetingPoint("");
+      setManualPaymentStatus("pending");
       toast({ title: "Participant added!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setAddingParticipant(false);
+    }
+  };
+
+  // Update meeting point or payment status on existing registration
+  const handleUpdateRegistration = async (regId: string, updates: { meeting_point_id?: string | null; payment_status?: string }) => {
+    const { error } = await supabase
+      .from("event_registrations")
+      .update(updates)
+      .eq("id", regId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+      setEditingParticipant(null);
+      toast({ title: "Participant updated" });
     }
   };
 
@@ -450,46 +479,102 @@ const EventManage = () => {
                   const mp = meetingPoints?.find((p) => p.id === reg.meeting_point_id);
                   const { firstName, lastName, isManual } = getParticipantName(reg);
                   return (
-                    <Card key={reg.id} className="p-3 flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
-                        {isManual ? "M" : ((reg.profiles as any)?.avatar_url ? (
-                          <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                        ) : firstName[0])}
+                    <Card key={reg.id} className="p-3 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
+                          {isManual ? "M" : ((reg.profiles as any)?.avatar_url ? (
+                            <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          ) : firstName[0])}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-body text-sm font-semibold text-foreground truncate">
+                            {firstName} {lastName}
+                            {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground font-body">
+                            {!isManual && ((reg.profiles as any)?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
+                            {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
+                              <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
+                            )}
+                            {reg.payment_status && reg.payment_status !== "not_required" && (
+                              <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
+                                · {reg.payment_status}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge variant={reg.checked_in ? "default" : "outline"} className="text-[10px]">
+                            {reg.checked_in ? <CheckCircle2 className="h-3 w-3" /> : reg.status}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              if (editingParticipant === reg.id) {
+                                setEditingParticipant(null);
+                              } else {
+                                setEditingParticipant(reg.id);
+                                setEditMeetingPoint(reg.meeting_point_id || "");
+                                setEditPaymentStatus(reg.payment_status || "pending");
+                              }
+                            }}
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                          <Select onValueChange={(v) => handleStatusChange(reg.id, v)}>
+                            <SelectTrigger className="w-8 h-8 p-0 border-0">
+                              <span className="sr-only">Actions</span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="registered">Registered</SelectItem>
+                              <SelectItem value="paid">Paid</SelectItem>
+                              <SelectItem value="attended">Attended</SelectItem>
+                              <SelectItem value="no_show">No-show</SelectItem>
+                              <SelectItem value="cancelled">Cancel</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-body text-sm font-semibold text-foreground truncate">
-                          {firstName} {lastName}
-                          {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground font-body">
-                          {!isManual && ((reg.profiles as any)?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
-                          {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
-                            <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
+                      {editingParticipant === reg.id && (
+                        <div className="flex items-end gap-2 pt-1 border-t border-border">
+                          {meetingPoints && meetingPoints.length > 0 && (
+                            <div className="flex-1">
+                              <Label className="font-body text-[10px] text-muted-foreground">Meeting Point</Label>
+                              <Select value={editMeetingPoint} onValueChange={setEditMeetingPoint}>
+                                <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue placeholder="None" /></SelectTrigger>
+                                <SelectContent>
+                                  {meetingPoints.map((mp) => (
+                                    <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           )}
-                          {reg.payment_status && reg.payment_status !== "not_required" && (
-                            <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
-                              · {reg.payment_status}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant={reg.checked_in ? "default" : "outline"} className="text-[10px]">
-                          {reg.checked_in ? <CheckCircle2 className="h-3 w-3" /> : reg.status}
-                        </Badge>
-                        <Select onValueChange={(v) => handleStatusChange(reg.id, v)}>
-                          <SelectTrigger className="w-8 h-8 p-0 border-0">
-                            <span className="sr-only">Actions</span>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="registered">Registered</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="attended">Attended</SelectItem>
-                            <SelectItem value="no_show">No-show</SelectItem>
-                            <SelectItem value="cancelled">Cancel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          <div className="flex-1">
+                            <Label className="font-body text-[10px] text-muted-foreground">Payment</Label>
+                            <Select value={editPaymentStatus} onValueChange={setEditPaymentStatus}>
+                              <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="not_required">Not Required</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => handleUpdateRegistration(reg.id, {
+                              meeting_point_id: editMeetingPoint || null,
+                              payment_status: editPaymentStatus,
+                            })}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      )}
                     </Card>
                   );
                 })}
@@ -743,41 +828,95 @@ const EventManage = () => {
           <div className="space-y-3">
             {addMode === "search" ? (
               <>
-                <div>
-                  <Label className="font-body text-xs">Search by name</Label>
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Type at least 2 characters..."
-                    className="mt-1"
-                  />
-                </div>
-                {searchResults && searchResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {searchResults.map((u: any) => (
-                      <button
-                        key={u.id}
-                        onClick={() => handleAddExistingUser(u.id)}
-                        disabled={addingParticipant}
-                        className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
-                      >
-                        {u.avatar_url ? (
-                          <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                            {u.first_name?.[0] || "?"}
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-body font-semibold text-foreground">{u.first_name} {u.last_name}</p>
-                          <p className="text-[10px] font-body text-muted-foreground">{u.phone || "No phone"}</p>
+                {selectedSearchUser ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                      {selectedSearchUser.avatar_url ? (
+                        <img src={selectedSearchUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                          {selectedSearchUser.first_name?.[0] || "?"}
                         </div>
-                      </button>
-                    ))}
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm font-body font-semibold text-foreground">{selectedSearchUser.first_name} {selectedSearchUser.last_name}</p>
+                        <p className="text-[10px] font-body text-muted-foreground">{selectedSearchUser.phone || "No phone"}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedSearchUser(null)}>Change</Button>
+                    </div>
+
+                    {meetingPoints && meetingPoints.length > 0 && (
+                      <div>
+                        <Label className="font-body text-xs">Meeting Point</Label>
+                        <Select value={manualMeetingPoint} onValueChange={setManualMeetingPoint}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select meeting point" /></SelectTrigger>
+                          <SelectContent>
+                            {meetingPoints.map((mp) => (
+                              <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div>
+                      <Label className="font-body text-xs">Payment Status</Label>
+                      <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="not_required">Not Required</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button
+                      onClick={handleConfirmAddSearchUser}
+                      disabled={addingParticipant}
+                      className="w-full font-body"
+                    >
+                      {addingParticipant ? "Adding..." : "Confirm & Add Participant"}
+                    </Button>
                   </div>
-                )}
-                {searchQuery.length >= 2 && searchResults?.length === 0 && (
-                  <p className="text-xs text-muted-foreground font-body text-center py-2">No users found</p>
+                ) : (
+                  <>
+                    <div>
+                      <Label className="font-body text-xs">Search by name</Label>
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Type at least 2 characters..."
+                        className="mt-1"
+                      />
+                    </div>
+                    {searchResults && searchResults.length > 0 && (
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {searchResults.map((u: any) => (
+                          <button
+                            key={u.id}
+                            onClick={() => handleSelectSearchUser(u)}
+                            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                          >
+                            {u.avatar_url ? (
+                              <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                                {u.first_name?.[0] || "?"}
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-sm font-body font-semibold text-foreground">{u.first_name} {u.last_name}</p>
+                              <p className="text-[10px] font-body text-muted-foreground">{u.phone || "No phone"}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {searchQuery.length >= 2 && searchResults?.length === 0 && (
+                      <p className="text-xs text-muted-foreground font-body text-center py-2">No users found</p>
+                    )}
+                  </>
                 )}
               </>
             ) : (
@@ -792,40 +931,42 @@ const EventManage = () => {
               </div>
             )}
 
-            {meetingPoints && meetingPoints.length > 0 && (
-              <div>
-                <Label className="font-body text-xs">Meeting Point</Label>
-                <Select value={manualMeetingPoint} onValueChange={setManualMeetingPoint}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select meeting point" /></SelectTrigger>
-                  <SelectContent>
-                    {meetingPoints.map((mp) => (
-                      <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {addMode !== "search" && (
+              <>
+                {meetingPoints && meetingPoints.length > 0 && (
+                  <div>
+                    <Label className="font-body text-xs">Meeting Point</Label>
+                    <Select value={manualMeetingPoint} onValueChange={setManualMeetingPoint}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Select meeting point" /></SelectTrigger>
+                      <SelectContent>
+                        {meetingPoints.map((mp) => (
+                          <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-            <div>
-              <Label className="font-body text-xs">Payment Status</Label>
-              <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="not_required">Not Required</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div>
+                  <Label className="font-body text-xs">Payment Status</Label>
+                  <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="not_required">Not Required</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {addMode === "manual" && (
-              <Button
-                onClick={handleAddManualParticipant}
-                disabled={!manualName.trim() || addingParticipant}
-                className="w-full font-body"
-              >
-                {addingParticipant ? "Adding..." : "Add Participant"}
-              </Button>
+                <Button
+                  onClick={handleAddManualParticipant}
+                  disabled={!manualName.trim() || addingParticipant}
+                  className="w-full font-body"
+                >
+                  {addingParticipant ? "Adding..." : "Add Participant"}
+                </Button>
+              </>
             )}
           </div>
         </DialogContent>
