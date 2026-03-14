@@ -119,7 +119,7 @@ export const mockEvents: EventData[] = [
     time: "10:00",
     location: "Padel Club Roma Sud",
     category: "Sport & Movimento",
-    status: "available",
+    status: "published",
     price: 20,
     paymentType: "paid",
     description: "Torneo di padel amatoriale aperto a tutti i livelli. Squadre miste formate il giorno stesso. Pranzo e premiazione inclusi.",
