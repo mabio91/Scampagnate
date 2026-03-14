@@ -1084,7 +1084,7 @@ const EventManage = () => {
                       .map((r) => ({
                         user_id: r.user_id,
                         type: "broadcast",
-                        title: `📢 ${event.title}`,
+                        title: event.title,
                         message: messageText,
                         event_id: event.id,
                         read: false,
