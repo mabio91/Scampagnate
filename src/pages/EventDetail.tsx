@@ -492,8 +492,8 @@ const EventDetail = () => {
             <span className="text-sm font-body font-semibold text-secondary">{event.spots_taken} Joined</span>
           </div>
 
-          {/* Avatar circles row */}
-          {participants && participants.length > 0 && (
+          {/* Avatar circles row - only for logged-in users */}
+          {canViewParticipants && participants && participants.length > 0 && (
             <div className="flex items-center mb-3">
               <div className="flex -space-x-3">
                 {participants.slice(0, 4).map((p: any, idx: number) => (
