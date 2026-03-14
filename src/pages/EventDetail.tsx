@@ -112,7 +112,7 @@ const EventDetail = () => {
   const eventStartDate = parseEventDateTime(event.date, event.time);
   const isEventPast = eventStartDate < new Date();
 
-  const canViewParticipants = user && (isRegistered || user.id === event.organizer_id);
+  const canViewParticipants = !!user;
 
   const handleToggleSave = async () => {
     if (!user) { navigate("/auth"); return; }
@@ -492,8 +492,8 @@ const EventDetail = () => {
             <span className="text-sm font-body font-semibold text-secondary">{event.spots_taken} Joined</span>
           </div>
 
-          {/* Avatar circles row */}
-          {participants && participants.length > 0 && (
+          {/* Avatar circles row - only for logged-in users */}
+          {canViewParticipants && participants && participants.length > 0 && (
             <div className="flex items-center mb-3">
               <div className="flex -space-x-3">
                 {participants.slice(0, 4).map((p: any, idx: number) => (
@@ -746,7 +746,7 @@ const EventDetail = () => {
             <Button
               onClick={handleCTA}
               className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
-              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
+              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
             >
               {getCTALabel()}
             </Button>
