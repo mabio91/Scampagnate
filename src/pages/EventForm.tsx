@@ -581,7 +581,7 @@ const EventForm = () => {
           <div className="space-y-3">
             <div>
               <Label htmlFor="spots">Total Spots</Label>
-              <Input id="spots" type="number" min={1} value={form.spots_total} onChange={(e) => updateForm("spots_total", parseInt(e.target.value) || 1)} />
+              <Input id="spots" type="number" min={1} value={form.spots_total || ""} onChange={(e) => updateForm("spots_total", e.target.value === "" ? 0 : parseInt(e.target.value) || 0)} onBlur={() => { if (!form.spots_total) updateForm("spots_total", 1); }} />
             </div>
             <div>
               <Label htmlFor="reserved">Reserved Spots</Label>
