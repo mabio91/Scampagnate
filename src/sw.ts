@@ -65,18 +65,21 @@ self.addEventListener('push', (event) => {
   try {
     const data = event.data.json();
 
-    const options: NotificationOptions = {
+    const options = {
       body: data.message || '',
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',
       tag: data.type || 'default',
-      renotify: true,
       data: { url: data.url || '/' },
       vibrate: [200, 100, 200],
-      actions: data.url && data.url !== '/'
-        ? [{ action: 'open', title: 'Apri' }]
-        : [],
-    };
+    } as any;
+
+    // Add renotify for tag-based deduplication
+    options.renotify = true;
+
+    if (data.url && data.url !== '/') {
+      options.actions = [{ action: 'open', title: 'Apri' }];
+    }
 
     event.waitUntil(
       self.registration.showNotification(data.title || 'Scampagnate', options)
