@@ -5,7 +5,7 @@ export type EventCategory =
   | "Esperienze & Cultura"
   | "Eventi Speciali";
 
-export type EventStatus = "available" | "full" | "closed";
+export type EventStatus = "draft" | "published" | "full" | "closed" | "cancelled" | "past";
 export type PaymentType = "free" | "paid" | "deposit";
 
 export interface MeetingPoint {
