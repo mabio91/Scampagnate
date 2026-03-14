@@ -6,7 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function buildReminderEmailHtml(eventTitle: string, eventDate: string, eventTime: string, eventLocation: string): string {
+function buildReminderEmailHtml(
+  eventTitle: string,
+  eventDate: string,
+  eventTime: string,
+  eventLocation: string,
+  meetingPointName: string | null,
+  meetingPointLocation: string | null,
+  meetingPointTime: string | null,
+  mapsLink: string,
+  reminderType: '24h' | '3h'
+): string {
+  const headline = reminderType === '24h' ? 'Promemoria: evento domani' : 'Evento tra 3 ore!';
+  const subtitle = reminderType === '24h'
+    ? 'Ti ricordiamo che domani parteciperai a un evento. Ecco i dettagli:'
+    : 'Il tuo evento inizia tra poco! Ecco un riepilogo rapido:';
+
+  const meetingPointHtml = meetingPointName ? `
+    <tr>
+      <td style="padding:4px 0;color:#4a5c4d;font-size:14px;line-height:1.5;vertical-align:top;width:24px;">
+        <span style="color:#c2854a;font-weight:600;">&#9679;</span>
+      </td>
+      <td style="padding:4px 0;color:#4a5c4d;font-size:14px;line-height:1.5;">
+        <strong style="color:#2d4a33;">Punto di ritrovo:</strong> ${meetingPointName}${meetingPointLocation ? ` — ${meetingPointLocation}` : ''}${meetingPointTime ? ` alle ${meetingPointTime}` : ''}
+      </td>
+    </tr>` : '';
+
   return `
 <!DOCTYPE html>
 <html>
@@ -36,10 +61,10 @@ function buildReminderEmailHtml(eventTitle: string, eventDate: string, eventTime
         <!-- Content -->
         <tr><td style="padding:36px 32px 28px;">
           <h2 style="margin:0 0 6px;color:#1f3d24;font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;font-size:21px;font-weight:700;">
-            Promemoria: evento domani
+            ${headline}
           </h2>
           <p style="color:#6b7c6e;font-size:15px;line-height:1.6;margin:12px 0 28px;">
-            Ti ricordiamo che domani parteciperai a un evento. Ecco i dettagli:
+            ${subtitle}
           </p>
 
           <!-- Event card -->
@@ -65,12 +90,24 @@ function buildReminderEmailHtml(eventTitle: string, eventDate: string, eventTime
                     ${eventLocation}
                   </td>
                 </tr>
+                ${meetingPointHtml}
               </table>
             </td></tr>
           </table>
 
+          <!-- Navigation button -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+            <tr><td align="center">
+              <a href="${mapsLink}" target="_blank" style="display:inline-block;background-color:#2d4a33;color:#f5f2ec;font-family:'DM Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;padding:14px 32px;border-radius:12px;text-decoration:none;">
+                📍 Apri Navigazione
+              </a>
+            </td></tr>
+          </table>
+
           <p style="color:#6b7c6e;font-size:14px;line-height:1.7;margin:24px 0 0;">
-            Controlla l'equipaggiamento e preparati per una bella giornata all'aperto. Ci vediamo domani!
+            ${reminderType === '24h' 
+              ? "Controlla l'equipaggiamento e preparati per una bella giornata all'aperto. Ci vediamo domani!" 
+              : "Assicurati di avere tutto pronto. A tra poco!"}
           </p>
         </td></tr>
 
@@ -101,48 +138,64 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Find events happening in the next 24-25 hours
-    const now = new Date();
-    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const in25h = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+    // Parse reminder_type from request body (default: '24h')
+    let reminderType: '24h' | '3h' = '24h';
+    try {
+      const body = await req.json();
+      if (body?.reminder_type === '3h') reminderType = '3h';
+    } catch {
+      // No body or invalid JSON — default to 24h
+    }
 
-    const tomorrow24 = in24h.toISOString().split('T')[0];
-    const tomorrow25 = in25h.toISOString().split('T')[0];
+    const now = new Date();
+    const windowStartMs = reminderType === '24h' ? 24 * 60 * 60 * 1000 : 3 * 60 * 60 * 1000;
+    const windowEndMs = windowStartMs + 60 * 60 * 1000; // 1-hour window
+
+    const windowStart = new Date(now.getTime() + windowStartMs);
+    const windowEnd = new Date(now.getTime() + windowEndMs);
+
+    const dateStart = windowStart.toISOString().split('T')[0];
+    const dateEnd = windowEnd.toISOString().split('T')[0];
+
+    const datesToQuery = dateStart === dateEnd ? [dateStart] : [dateStart, dateEnd];
 
     const { data: events, error: eventsError } = await supabase
       .from('events')
       .select('id, title, date, time, location')
-      .in('date', [tomorrow24, tomorrow25])
+      .in('date', datesToQuery)
       .eq('status', 'available');
 
     if (eventsError) throw eventsError;
 
     if (!events || events.length === 0) {
-      console.log('No events in the 24-25h window');
-      return new Response(JSON.stringify({ reminders_sent: 0 }), {
+      console.log(`No events in the ${reminderType} window`);
+      return new Response(JSON.stringify({ reminders_sent: 0, reminder_type: reminderType }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const upcomingEvents = events.filter((event) => {
       const eventDateTime = new Date(`${event.date}T${event.time}`);
-      return eventDateTime >= in24h && eventDateTime < in25h;
+      return eventDateTime >= windowStart && eventDateTime < windowEnd;
     });
 
     if (upcomingEvents.length === 0) {
-      console.log('No events precisely in the 24-25h window after time filtering');
-      return new Response(JSON.stringify({ reminders_sent: 0 }), {
+      console.log(`No events precisely in the ${reminderType} window after time filtering`);
+      return new Response(JSON.stringify({ reminders_sent: 0, reminder_type: reminderType }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const notifType = reminderType === '24h' ? 'event_reminder_24h' : 'event_reminder_3h';
 
     let totalReminders = 0;
     let totalEmails = 0;
 
     for (const event of upcomingEvents) {
+      // Fetch registrations with meeting points
       const { data: registrations, error: regError } = await supabase
         .from('event_registrations')
-        .select('user_id')
+        .select('user_id, meeting_point_id')
         .eq('event_id', event.id)
         .in('status', ['registered', 'paid']);
 
@@ -153,60 +206,89 @@ serve(async (req) => {
 
       if (!registrations || registrations.length === 0) continue;
 
+      // Fetch meeting points for this event
+      const { data: meetingPoints } = await supabase
+        .from('event_meeting_points')
+        .select('id, name, location, time')
+        .eq('event_id', event.id);
+
+      const mpMap: Record<string, { name: string; location: string; time: string }> = {};
+      if (meetingPoints) {
+        for (const mp of meetingPoints) {
+          mpMap[mp.id] = { name: mp.name, location: mp.location, time: mp.time };
+        }
+      }
+
       const userIds = registrations.map((r) => r.user_id);
 
-      // Check for existing reminders to avoid duplicates
+      // Check for existing reminders of this type to avoid duplicates
       const { data: existingNotifs } = await supabase
         .from('notifications')
         .select('user_id')
         .eq('event_id', event.id)
-        .eq('type', 'event_reminder')
+        .eq('type', notifType)
         .in('user_id', userIds);
 
       const alreadyNotified = new Set((existingNotifs || []).map((n) => n.user_id));
-      const usersToNotify = userIds.filter((uid) => !alreadyNotified.has(uid));
+      const regsToNotify = registrations.filter((r) => !alreadyNotified.has(r.user_id));
 
-      if (usersToNotify.length === 0) continue;
+      if (regsToNotify.length === 0) continue;
 
-      // Create in-app reminder notifications
-      const notifications = usersToNotify.map((userId) => ({
-        user_id: userId,
-        type: 'event_reminder',
-        title: 'Promemoria evento domani!',
-        message: `"${event.title}" è domani alle ${event.time} a ${event.location}. Non dimenticarti!`,
-        event_id: event.id,
-        read: false,
-      }));
+      const formattedDate = new Date(event.date).toLocaleDateString('it-IT', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+
+      const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
+
+      // Create in-app reminder notifications with meeting point details
+      const notifications = regsToNotify.map((reg) => {
+        const mp = reg.meeting_point_id ? mpMap[reg.meeting_point_id] : null;
+        const mpText = mp ? `\n📍 Punto di ritrovo: ${mp.name} (${mp.location}) alle ${mp.time}` : '';
+        const timeLabel = reminderType === '24h' ? 'domani' : 'tra 3 ore';
+
+        return {
+          user_id: reg.user_id,
+          type: notifType,
+          title: reminderType === '24h' ? `⏰ Evento ${timeLabel}!` : `🚀 Evento ${timeLabel}!`,
+          message: `"${event.title}" è ${timeLabel} alle ${event.time} a ${event.location}.${mpText}\n🗺️ Apri navigazione: ${mapsLink}`,
+          event_id: event.id,
+          read: false,
+        };
+      });
 
       const { error: insertError } = await supabase.from('notifications').insert(notifications);
 
       if (insertError) {
-        console.error(`Error inserting reminders for event ${event.id}:`, insertError);
+        console.error(`Error inserting ${reminderType} reminders for event ${event.id}:`, insertError);
         continue;
       }
 
-      totalReminders += usersToNotify.length;
+      totalReminders += regsToNotify.length;
 
-      // Send reminder emails to users with email addresses
-      // Fetch user emails from auth (via service role)
-      for (const userId of usersToNotify) {
+      // Send reminder emails
+      for (const reg of regsToNotify) {
         try {
-          const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+          const { data: userData, error: userError } = await supabase.auth.admin.getUserById(reg.user_id);
           if (userError || !userData?.user?.email) continue;
 
-          const formattedDate = new Date(event.date).toLocaleDateString('it-IT', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          });
+          const mp = reg.meeting_point_id ? mpMap[reg.meeting_point_id] : null;
 
           const emailHtml = buildReminderEmailHtml(
             event.title,
             formattedDate,
             event.time,
-            event.location
+            event.location,
+            mp?.name || null,
+            mp?.location || null,
+            mp?.time || null,
+            mapsLink,
+            reminderType
           );
+
+          const subjectPrefix = reminderType === '24h' ? 'Domani' : 'Tra 3 ore';
 
           const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
             method: 'POST',
@@ -216,7 +298,7 @@ serve(async (req) => {
             },
             body: JSON.stringify({
               to: userData.user.email,
-              subject: `Promemoria: "${event.title}" è domani!`,
+              subject: `${subjectPrefix}: "${event.title}"!`,
               html: emailHtml,
             }),
           });
@@ -225,19 +307,19 @@ serve(async (req) => {
             totalEmails++;
           } else {
             const errBody = await emailRes.text();
-            console.error(`Email send failed for ${userId}:`, errBody);
+            console.error(`Email send failed for ${reg.user_id}:`, errBody);
           }
         } catch (emailErr) {
-          console.error(`Email error for user ${userId}:`, emailErr);
+          console.error(`Email error for user ${reg.user_id}:`, emailErr);
         }
       }
 
-      console.log(`Sent ${usersToNotify.length} reminders and emails for event "${event.title}"`);
+      console.log(`Sent ${regsToNotify.length} ${reminderType} reminders for event "${event.title}"`);
     }
 
-    console.log(`Total: ${totalReminders} reminders, ${totalEmails} emails sent`);
+    console.log(`Total ${reminderType}: ${totalReminders} reminders, ${totalEmails} emails sent`);
     return new Response(
-      JSON.stringify({ reminders_sent: totalReminders, emails_sent: totalEmails, events_processed: upcomingEvents.length }),
+      JSON.stringify({ reminders_sent: totalReminders, emails_sent: totalEmails, events_processed: upcomingEvents.length, reminder_type: reminderType }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
