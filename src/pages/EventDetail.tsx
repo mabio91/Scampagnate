@@ -746,7 +746,7 @@ const EventDetail = () => {
             <Button
               onClick={handleCTA}
               className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
-              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
+              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
             >
               {getCTALabel()}
             </Button>
