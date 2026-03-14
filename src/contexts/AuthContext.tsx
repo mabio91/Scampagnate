@@ -30,7 +30,7 @@ interface AuthContextType {
   isOrganizer: boolean;
   isAdmin: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, metadata: { first_name: string; last_name: string; phone: string }) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, metadata: { first_name: string; last_name: string; phone: string }) => Promise<{ error: any; session: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
