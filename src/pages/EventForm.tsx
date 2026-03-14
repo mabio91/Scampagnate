@@ -585,7 +585,7 @@ const EventForm = () => {
             </div>
             <div>
               <Label htmlFor="reserved">Reserved Spots</Label>
-              <Input id="reserved" type="number" min={0} max={form.spots_total} value={form.reserved_spots} onChange={(e) => updateForm("reserved_spots", parseInt(e.target.value) || 0)} />
+              <Input id="reserved" type="number" min={0} max={form.spots_total} value={form.reserved_spots || ""} onChange={(e) => updateForm("reserved_spots", e.target.value === "" ? 0 : parseInt(e.target.value) || 0)} />
               <p className="text-[11px] text-muted-foreground font-body mt-1">Spots reserved for manual/offline registrations. Count toward total capacity.</p>
             </div>
             <div>
