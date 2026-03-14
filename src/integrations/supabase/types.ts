@@ -660,6 +660,7 @@ export type Database = {
           avatar_url: string
           first_name: string
           id: string
+          last_name_initial: string
         }[]
       }
       get_public_profiles: {
@@ -668,6 +669,7 @@ export type Database = {
           avatar_url: string
           first_name: string
           id: string
+          last_name_initial: string
         }[]
       }
       has_role: {
