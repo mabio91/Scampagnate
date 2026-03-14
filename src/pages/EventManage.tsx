@@ -325,6 +325,10 @@ const EventManage = () => {
             <Select 
               value={event.status} 
               onValueChange={async (v) => {
+                if (v === 'cancelled') {
+                  setShowCancelConfirm(true);
+                  return;
+                }
                 const { error } = await supabase.from("events").update({ status: v as any }).eq("id", id!);
                 if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
                 else { queryClient.invalidateQueries({ queryKey: ["event-detail", id] }); toast({ title: `Event status: ${v}` }); }
