@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.auto-past-events]
 verify_jwt = false
+
+[functions.notify-event-cancelled]
+verify_jwt = false
