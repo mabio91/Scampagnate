@@ -41,6 +41,8 @@ const EventManage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showCapacityDialog, setShowCapacityDialog] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancellingEvent, setCancellingEvent] = useState(false);
 
   // Add participant state
   const [addMode, setAddMode] = useState<"search" | "manual">("manual");
@@ -323,6 +325,10 @@ const EventManage = () => {
             <Select 
               value={event.status} 
               onValueChange={async (v) => {
+                if (v === 'cancelled') {
+                  setShowCancelConfirm(true);
+                  return;
+                }
                 const { error } = await supabase.from("events").update({ status: v as any }).eq("id", id!);
                 if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
                 else { queryClient.invalidateQueries({ queryKey: ["event-detail", id] }); toast({ title: `Event status: ${v}` }); }
@@ -1074,6 +1080,58 @@ const EventManage = () => {
             </div>
             <Button onClick={handleUpdateCapacity} disabled={newCapacity < registered.length} className="w-full font-body">
               Update Capacity
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Event Confirmation Dialog */}
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Cancella evento
+            </DialogTitle>
+            <DialogDescription>
+              Sei sicuro di voler cancellare "{event?.title}"? Tutti i partecipanti ({registered.length + waitlisted.length + pending.length}) riceveranno una notifica e un'email di cancellazione. Le iscrizioni verranno annullate. Questa azione non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => setShowCancelConfirm(false)} disabled={cancellingEvent}>
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={cancellingEvent}
+              onClick={async () => {
+                setCancellingEvent(true);
+                try {
+                  // Update event status first
+                  const { error } = await supabase.from("events").update({ status: "cancelled" as any }).eq("id", id!);
+                  if (error) throw error;
+
+                  // Trigger cancellation notifications via edge function
+                  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'etiynvukviykquqcsjln';
+                  await fetch(`https://${projectId}.supabase.co/functions/v1/notify-event-cancelled`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
+                    body: JSON.stringify({ event_id: id }),
+                  });
+
+                  queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+                  queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+                  toast({ title: "Evento cancellato", description: "Tutti i partecipanti sono stati notificati." });
+                } catch (err: any) {
+                  toast({ title: "Errore", description: err.message, variant: "destructive" });
+                } finally {
+                  setCancellingEvent(false);
+                  setShowCancelConfirm(false);
+                }
+              }}
+            >
+              {cancellingEvent ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Conferma cancellazione
             </Button>
           </div>
         </DialogContent>
