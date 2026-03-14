@@ -24,7 +24,8 @@ const EventForm = lazy(() => import("./pages/EventForm"));
 const EventManage = lazy(() => import("./pages/EventManage"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
-const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile")); // Using alias for robust resolution
+const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
+const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
