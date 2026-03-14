@@ -51,6 +51,7 @@ const EventDetail = () => {
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
+  const [membershipLoading, setMembershipLoading] = useState(false);
 
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
 
