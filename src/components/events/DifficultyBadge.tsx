@@ -28,7 +28,7 @@ export const DifficultyBadge: FC<DifficultyBadgeProps> = ({ difficulty, classNam
 
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 text-accent-foreground text-xs font-body font-semibold ${className}`}>
-      <BadgeIconComp icon={details.icon} className="h-3.5 w-3.5" />
+      <Circle className={`h-3 w-3 fill-current ${details.color}`} />
       {showLabel && details.name}
     </span>
   );

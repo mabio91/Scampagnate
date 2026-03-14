@@ -298,16 +298,10 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
             <DialogDescription className="font-body text-sm">
               Are you sure you want to cancel your registration for {event.title}?
               {event.cancellation_policy && (() => {
-                const raw = event.cancellation_policy;
-                const POLICY_LABELS: Record<string, string> = {
-                  flexible: "✅ Flexible — refundable up to 24h before the event.",
-                  moderate: "🕐 Moderate — refundable up to 48h before the event.",
-                  strict: "🚫 Strict — non-refundable.",
-                };
-                const colonIdx = raw.indexOf(":");
-                const type = colonIdx !== -1 ? raw.slice(0, colonIdx) : raw;
-                const customText = colonIdx !== -1 ? raw.slice(colonIdx + 1) : "";
-                const label = POLICY_LABELS[type] || customText || raw;
+                const { policyType, customText } = parseCancellationPolicy(raw);
+                if (!policyType) return null;
+                const pol = CANCELLATION_POLICIES[policyType];
+                const label = policyType === "custom" ? customText || raw : `${pol.label} — ${pol.description.split(".")[0]}.`;
                 return <span className="block mt-2 text-xs font-semibold text-muted-foreground italic">{label}</span>;
               })()}
             </DialogDescription>

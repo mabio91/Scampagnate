@@ -1104,7 +1104,7 @@ const EventManage = () => {
                       recipients_count: notifs.length,
                     });
 
-                    toast({ title: "Broadcast sent ✅", description: `${notifs.length} participants notified via in-app notifications.` });
+                    toast({ title: "Broadcast sent", description: `${notifs.length} participants notified via in-app notifications.` });
                   } else {
                     // WhatsApp: open for each participant who has a phone
                     const phoneParts = registered
