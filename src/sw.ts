@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { CacheFirst } from 'workbox-strategies';
+import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
@@ -13,10 +13,10 @@ cleanupOutdatedCaches();
 // Precache all build assets
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Navigation routing (SPA fallback) — deny /~oauth
+// Navigation routing (SPA fallback) — deny OAuth and API routes
 const navigationRoute = new NavigationRoute(
   createHandlerBoundToURL('/index.html'),
-  { denylist: [/^\/~oauth/] }
+  { denylist: [/^\/~oauth/, /^\/api\//, /^\/auth\//] }
 );
 registerRoute(navigationRoute);
 
@@ -43,6 +43,18 @@ registerRoute(
   })
 );
 
+// Cache Supabase Storage images (event images, avatars)
+registerRoute(
+  /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/public\/.*/i,
+  new StaleWhileRevalidate({
+    cacheName: 'supabase-images-cache',
+    plugins: [
+      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 7 * 24 * 60 * 60 }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+    ],
+  })
+);
+
 // ==========================================
 // Push Notification Handling
 // ==========================================
@@ -60,7 +72,14 @@ self.addEventListener('push', (event) => {
       tag: data.type || 'default',
       data: { url: data.url || '/' },
       vibrate: [200, 100, 200],
-    };
+    } as any;
+
+    // Add renotify for tag-based deduplication
+    options.renotify = true;
+
+    if (data.url && data.url !== '/') {
+      options.actions = [{ action: 'open', title: 'Apri' }];
+    }
 
     event.waitUntil(
       self.registration.showNotification(data.title || 'Scampagnate', options)
@@ -85,7 +104,7 @@ self.addEventListener('notificationclick', (event) => {
           }
         } catch {}
       }
-      // Open a new window
+      // Open a new window with full URL
       return self.clients.openWindow(url);
     })
   );

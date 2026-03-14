@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
+        id: "/",
         name: "Scampagnate – Eventi & Community",
         short_name: "Scampagnate",
         description: "Scopri e partecipa a eventi outdoor, sport, aperitivi e esperienze culturali con la community Scampagnate.",
@@ -32,6 +33,7 @@ export default defineConfig(({ mode }) => ({
         orientation: "portrait",
         scope: "/",
         start_url: "/",
+        categories: ["social", "lifestyle", "entertainment"],
         icons: [
           {
             src: "pwa-192x192.png",
