@@ -32,6 +32,16 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   pending_approval: { label: "Pending", className: "bg-warning/10 text-warning" },
 };
 
+const fallbackRegistrationStatus = statusConfig.registered;
+
+const getRegistrationStatusDisplay = (status: string | null | undefined) => {
+  if (!status || !Object.prototype.hasOwnProperty.call(statusConfig, status)) {
+    return fallbackRegistrationStatus;
+  }
+
+  return statusConfig[status];
+};
+
 const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {
   // Parse start time explicitly in Europe/Rome, ensuring UTC string aligns correctly
   const startDate = parseEventDateTime(event.date, event.time);
