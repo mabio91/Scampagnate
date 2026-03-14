@@ -210,6 +210,7 @@ const EventDetail = () => {
 
   const getCTAClass = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (isOnWaitlist || isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered) return "bg-success text-success-foreground";
