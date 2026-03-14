@@ -61,10 +61,15 @@ const Auth = () => {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName, phone: "" });
+      const { error, session } = await signUp(email, password, { first_name: firstName, last_name: lastName, phone: "" });
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (session) {
+        // Email confirmation disabled — user is auto-logged in
+        toast({ title: "Welcome!", description: "Your account has been created successfully." });
+        navigate("/");
       } else {
+        // Email confirmation required
         toast({ title: "Registration complete!", description: "Check your email to confirm your account." });
         setIsLogin(true);
       }
