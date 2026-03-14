@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.create-membership-checkout]
+verify_jwt = false
+
+[functions.verify-membership-payment]
+verify_jwt = false

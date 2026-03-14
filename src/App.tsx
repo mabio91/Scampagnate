@@ -24,7 +24,8 @@ const EventForm = lazy(() => import("./pages/EventForm"));
 const EventManage = lazy(() => import("./pages/EventManage"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
-const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile")); // Using alias for robust resolution
+const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
+const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="/organizer/events/new" element={<EventForm />} />
                 <Route path="/organizer/events/:id" element={<EventManage />} />
                 <Route path="/organizer/events/:id/edit" element={<EventForm />} />
+                <Route path="/membership-success" element={<MembershipSuccess />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

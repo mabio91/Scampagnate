@@ -51,6 +51,7 @@ const EventDetail = () => {
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
+  const [membershipLoading, setMembershipLoading] = useState(false);
 
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
 
@@ -156,7 +157,31 @@ const EventDetail = () => {
     setShowRegisterDialog(true);
   };
 
+  const handleMembershipCheckout = async () => {
+    setMembershipLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-membership-checkout", {
+        body: { eventId: event.id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      setMembershipLoading(false);
+    }
+  };
+
   const handleRegister = async (requestApproval = false) => {
+    // If user is not an active member, redirect to membership checkout
+    if (profile?.membership_status !== 'Active') {
+      await handleMembershipCheckout();
+      return;
+    }
+
     const isWaitlist = event.status === "full";
     try {
       await registerMutation.mutateAsync({
@@ -697,7 +722,7 @@ const EventDetail = () => {
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-primary/20 text-xs font-bold text-primary">
                     <span>Quota Associativa</span>
-                    <span>€10</span>
+                    <span>€10 + commissioni Stripe</span>
                   </div>
                 </div>
               )}
@@ -819,14 +844,19 @@ const EventDetail = () => {
             <Button
               onClick={() => handleRegister(isRequestingOverride)}
               disabled={
-                registerMutation.isPending ||
+                registerMutation.isPending || membershipLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
                 (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim()))
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{isRequestingOverride ? "Submitting..." : "Registering..."}</>
+              {(registerMutation.isPending || membershipLoading) ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? "Redirecting to payment..." : isRequestingOverride ? "Submitting..." : "Registering..."}</>
+              ) : profile?.membership_status !== 'Active' ? (
+                <>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pay Membership & Register
+                </>
               ) : event.status === "full" ? (
                 "Join Waitlist"
               ) : isRequestingOverride ? (
