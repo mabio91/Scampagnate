@@ -59,7 +59,7 @@ const OrganizerProfile = () => {
   }
 
   const { profile, eventCount, events } = organizer;
-  const fullName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
+  const fullName = profile?.first_name || "Organizer";
   const upcomingEvents = events?.filter(e => new Date(e.date) >= new Date()) || [];
   const pastEvents = events?.filter(e => new Date(e.date) < new Date()) || [];
 
