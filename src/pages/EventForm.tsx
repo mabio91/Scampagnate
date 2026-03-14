@@ -610,7 +610,7 @@ const EventForm = () => {
               <>
                 <div>
                   <Label htmlFor="deposit">Deposit Amount (€)</Label>
-                  <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit} onChange={(e) => updateForm("deposit", parseFloat(e.target.value) || 0)} />
+                  <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit || ""} onChange={(e) => updateForm("deposit", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
                 </div>
                 {form.price > 0 && form.deposit > 0 && (
                   <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">

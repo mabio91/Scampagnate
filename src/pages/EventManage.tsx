@@ -1042,8 +1042,8 @@ const EventManage = () => {
               <Input
                 type="number"
                 min={registered.length}
-                value={newCapacity}
-                onChange={(e) => setNewCapacity(parseInt(e.target.value) || 0)}
+                value={newCapacity || ""}
+                onChange={(e) => setNewCapacity(e.target.value === "" ? 0 : parseInt(e.target.value) || 0)}
                 className="mt-1"
               />
               <p className="text-[11px] text-muted-foreground font-body mt-1">
