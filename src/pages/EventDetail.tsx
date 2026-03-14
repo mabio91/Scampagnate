@@ -151,7 +151,7 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (isEventPast || event.status === "closed" || event.status === "cancelled") return;
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return;
 
     if (needsPayment) {
       toast({ title: "Payment", description: "Payment flow coming soon!" });
@@ -233,7 +233,7 @@ const EventDetail = () => {
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled") return "Event Closed";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Event Closed";
     if (!user) return "Sign in to Join";
     if (isPendingApproval) return "Approval Pending";
     if (isOnWaitlist) return "On Waitlist";
@@ -245,7 +245,7 @@ const EventDetail = () => {
   };
 
   const getCTAClass = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "bg-muted text-muted-foreground cursor-not-allowed";
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (isOnWaitlist || isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";

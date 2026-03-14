@@ -6,14 +6,17 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { CapacityWarning } from "./CapacityWarning";
 
-const statusConfig = {
-  available: { label: "Available", className: "bg-success/10 text-success" },
+const statusConfig: Record<string, { label: string; className: string }> = {
+  draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
+  published: { label: "Open", className: "bg-success/10 text-success" },
   full: { label: "Full", className: "bg-warning/10 text-warning" },
   closed: { label: "Closed", className: "bg-destructive/10 text-destructive" },
+  cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive" },
+  past: { label: "Past", className: "bg-muted text-muted-foreground" },
 };
 
 const EventCard = memo(({ event, index }: { event: EventWithDetails; index: number }) => {
-  const status = statusConfig[event.status];
+  const status = statusConfig[event.status] || statusConfig.published;
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
 
   return (

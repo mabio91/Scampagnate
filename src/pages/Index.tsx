@@ -52,6 +52,7 @@ const Index = () => {
 
     return events
       .filter((e) => new Date(e.date) >= now)
+      .filter((e) => e.status !== "draft" && e.status !== "past" && e.status !== "cancelled")
       .filter((e) => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
@@ -77,7 +78,7 @@ const Index = () => {
     if (!events) return null;
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const upcoming = events.filter((e) => new Date(e.date) >= now);
+    const upcoming = events.filter((e) => new Date(e.date) >= now && e.status !== "draft" && e.status !== "past" && e.status !== "cancelled");
     const manual = upcoming.find((e) => e.featured);
     if (manual) return manual;
     // Auto-select nearest upcoming event

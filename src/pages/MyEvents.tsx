@@ -26,7 +26,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   paid: { label: "Paid", className: "bg-success/10 text-success" },
   waitlist: { label: "Waitlist", className: "bg-warning/10 text-warning" },
   cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive" },
+  attended: { label: "Attended", className: "bg-primary/10 text-primary" },
+  no_show: { label: "No-show", className: "bg-destructive/10 text-destructive" },
   past: { label: "Past", className: "bg-muted text-muted-foreground" },
+  pending_approval: { label: "Pending", className: "bg-warning/10 text-warning" },
 };
 
 const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {

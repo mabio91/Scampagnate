@@ -10,7 +10,7 @@ export interface EventWithDetails {
   time: string;
   location: string;
   category_id: string | null;
-  status: "available" | "full" | "closed" | "cancelled";
+  status: "draft" | "published" | "full" | "closed" | "cancelled" | "past";
   price: number;
   deposit: number | null;
   payment_type: "free" | "paid" | "deposit" | "location";

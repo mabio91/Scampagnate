@@ -5,7 +5,7 @@ export type EventCategory =
   | "Esperienze & Cultura"
   | "Eventi Speciali";
 
-export type EventStatus = "available" | "full" | "closed";
+export type EventStatus = "draft" | "published" | "full" | "closed" | "cancelled" | "past";
 export type PaymentType = "free" | "paid" | "deposit";
 
 export interface MeetingPoint {
@@ -62,7 +62,7 @@ export const mockEvents: EventData[] = [
     time: "08:00",
     location: "Monte Livata, Lazio",
     category: "Trekking & Outdoor",
-    status: "available",
+    status: "published",
     price: 15,
     paymentType: "deposit",
     deposit: 5,
@@ -95,7 +95,7 @@ export const mockEvents: EventData[] = [
     time: "18:30",
     location: "Terrazza Romana, Roma",
     category: "Social & Aperitivi",
-    status: "available",
+    status: "published",
     price: 25,
     paymentType: "paid",
     description: "Un aperitivo esclusivo su una terrazza panoramica nel cuore di Roma. Drink, stuzzichini e buona compagnia con vista sulla città eterna.",
@@ -119,7 +119,7 @@ export const mockEvents: EventData[] = [
     time: "10:00",
     location: "Padel Club Roma Sud",
     category: "Sport & Movimento",
-    status: "available",
+    status: "published",
     price: 20,
     paymentType: "paid",
     description: "Torneo di padel amatoriale aperto a tutti i livelli. Squadre miste formate il giorno stesso. Pranzo e premiazione inclusi.",
@@ -166,7 +166,7 @@ export const mockEvents: EventData[] = [
     time: "07:00",
     location: "Gran Sasso, Abruzzo",
     category: "Eventi Speciali",
-    status: "available",
+    status: "published",
     price: 45,
     paymentType: "deposit",
     deposit: 15,

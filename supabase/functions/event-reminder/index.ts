@@ -163,7 +163,7 @@ serve(async (req) => {
       .from('events')
       .select('id, title, date, time, location')
       .in('date', datesToQuery)
-      .eq('status', 'available');
+      .eq('status', 'published');
 
     if (eventsError) throw eventsError;
 
