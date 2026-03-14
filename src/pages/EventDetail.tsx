@@ -844,14 +844,19 @@ const EventDetail = () => {
             <Button
               onClick={() => handleRegister(isRequestingOverride)}
               disabled={
-                registerMutation.isPending ||
+                registerMutation.isPending || membershipLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
                 (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim()))
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {registerMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{isRequestingOverride ? "Submitting..." : "Registering..."}</>
+              {(registerMutation.isPending || membershipLoading) ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? "Redirecting to payment..." : isRequestingOverride ? "Submitting..." : "Registering..."}</>
+              ) : profile?.membership_status !== 'Active' ? (
+                <>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pay Membership & Register
+                </>
               ) : event.status === "full" ? (
                 "Join Waitlist"
               ) : isRequestingOverride ? (
