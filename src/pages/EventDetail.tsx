@@ -54,6 +54,7 @@ const EventDetail = () => {
   const [sportLevel, setSportLevel] = useState("");
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
   const [membershipLoading, setMembershipLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [showAllParticipants, setShowAllParticipants] = useState(false);
 
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
@@ -192,7 +193,7 @@ const EventDetail = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return;
 
     if (needsPayment) {
-      toast({ title: "Payment", description: "Payment flow coming soon!" });
+      handleEventPayment();
       return;
     }
 
@@ -221,6 +222,25 @@ const EventDetail = () => {
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
       setMembershipLoading(false);
+    }
+  };
+
+  const handleEventPayment = async () => {
+    if (!myRegistration) return;
+    setPaymentLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-event-checkout", {
+        body: { eventId: event.id, registrationId: myRegistration.id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      setPaymentLoading(false);
     }
   };
 
@@ -769,9 +789,11 @@ const EventDetail = () => {
             <Button
               onClick={handleCTA}
               className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
-              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
+              disabled={paymentLoading || isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
             >
-              {getCTALabel()}
+              {paymentLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</>
+              ) : getCTALabel()}
             </Button>
             {accessData && !accessData.hasAccess && !isRegistered && !isEventPast && event.status !== "closed" && event.status !== "cancelled" && (
               <button
