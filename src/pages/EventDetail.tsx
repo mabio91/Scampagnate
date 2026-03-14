@@ -225,7 +225,25 @@ const EventDetail = () => {
     }
   };
 
-  const handleRegister = async (requestApproval = false) => {
+  const handleEventPayment = async () => {
+    if (!myRegistration) return;
+    setPaymentLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-event-checkout", {
+        body: { eventId: event.id, registrationId: myRegistration.id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      setPaymentLoading(false);
+    }
+  };
+
     // If user is not an active member, redirect to membership checkout
     if (profile?.membership_status !== 'Active') {
       await handleMembershipCheckout();
