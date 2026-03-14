@@ -789,9 +789,11 @@ const EventDetail = () => {
             <Button
               onClick={handleCTA}
               className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
-              disabled={isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
+              disabled={paymentLoading || isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
             >
-              {getCTALabel()}
+              {paymentLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</>
+              ) : getCTALabel()}
             </Button>
             {accessData && !accessData.hasAccess && !isRegistered && !isEventPast && event.status !== "closed" && event.status !== "cancelled" && (
               <button
