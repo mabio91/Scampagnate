@@ -95,7 +95,7 @@ export const mockEvents: EventData[] = [
     time: "18:30",
     location: "Terrazza Romana, Roma",
     category: "Social & Aperitivi",
-    status: "available",
+    status: "published",
     price: 25,
     paymentType: "paid",
     description: "Un aperitivo esclusivo su una terrazza panoramica nel cuore di Roma. Drink, stuzzichini e buona compagnia con vista sulla città eterna.",
