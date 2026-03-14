@@ -166,7 +166,7 @@ export const mockEvents: EventData[] = [
     time: "07:00",
     location: "Gran Sasso, Abruzzo",
     category: "Eventi Speciali",
-    status: "available",
+    status: "published",
     price: 45,
     paymentType: "deposit",
     deposit: 15,
