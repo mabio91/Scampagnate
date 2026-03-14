@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizerEvents } from "@/hooks/useOrganizerEvents";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle, AlertTriangle,
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
 import { format } from "date-fns";
@@ -38,6 +38,7 @@ const tooltipStyle = {
 };
 
 const OrganizerDashboard = () => {
+  const navigate = useNavigate();
   const { user, isOrganizer, isAdmin, loading } = useAuth();
   const { data: events, isLoading } = useOrganizerEvents();
 
@@ -206,6 +207,16 @@ const OrganizerDashboard = () => {
                         <Badge variant={event.status === "full" ? "destructive" : "secondary"} className="text-[10px]">
                           {event.spots_taken}/{event.spots_total}
                         </Badge>
+                        <div className="flex gap-1 ml-1" onClick={(e) => e.preventDefault()}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => navigate(`/organizer/events/new?duplicate=${event.id}`)}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </Card>
                     </Link>

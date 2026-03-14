@@ -382,41 +382,40 @@ export const useCheckEventAccess = (difficulty: string | null) => {
 
 export const useOrganizerProfile = (organizerId: string | undefined) => {
   return useQuery({
-    queryKey: ["organizer-profile", organizerId],
+    queryKey: ["organizer-full-profile", organizerId],
     queryFn: async () => {
       if (!organizerId) return null;
 
       // Fetch profile details
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("first_name, last_name, avatar_url, bio, phone")
+        .select("first_name, last_name, avatar_url, bio, phone, email")
         .eq("id", organizerId)
         .single();
 
       if (profileError) throw profileError;
 
-      // Fetch event count
-      const { count, error: countError } = await supabase
+      // Fetch total event count (all events created by organizer)
+      const { count: totalCount, error: countError } = await supabase
         .from("events")
         .select("*", { count: "exact", head: true })
-        .eq("organizer_id", organizerId)
-        .eq("visibility", "public");
+        .eq("organizer_id", organizerId);
 
       if (countError) throw countError;
 
-      // Fetch events list
+      // Fetch public events list for display
       const { data: events, error: eventsError } = await supabase
         .from("events")
-        .select("id, title, date, time, location, image_url, difficulty, price, category:event_categories(name)")
+        .select("id, title, date, time, location, image_url, difficulty, price, spots_taken, spots_total, category:event_categories(name)")
         .eq("organizer_id", organizerId)
         .eq("visibility", "public")
-        .order("date", { ascending: false });
+        .order("date", { ascending: true });
 
       if (eventsError) throw eventsError;
 
       return {
         profile: profileData,
-        eventCount: count || 0,
+        eventCount: totalCount || 0,
         events: events as any[]
       };
     },

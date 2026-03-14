@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams, Navigate } from "react-router-dom";
+import { useNavigate, useParams, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useEvents";
 import { supabase } from "@/integrations/supabase/client";
+import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,13 +58,16 @@ interface MeetingPointInput {
 
 const EventForm = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const duplicateId = searchParams.get("duplicate");
   const isEditing = !!id;
+  const isDuplicating = !!duplicateId;
   const navigate = useNavigate();
   const { user, isOrganizer, profile, loading: authLoading } = useAuth();
   const { data: categories } = useCategories();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [loadingEvent, setLoadingEvent] = useState(isEditing);
+  const [loadingEvent, setLoadingEvent] = useState(isEditing || isDuplicating);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -91,6 +95,9 @@ const EventForm = () => {
     visibility: "public" as "public" | "private" | "hidden",
     gallery_images: [] as { url: string; order: number }[],
   });
+
+  const [policyType, setPolicyType] = useState<PolicyType | "">("flexible");  
+  const [policyCustomText, setPolicyCustomText] = useState("");
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const { data: equipmentTemplates } = useEquipmentTemplates();
@@ -125,27 +132,29 @@ const EventForm = () => {
 
   useEffect(() => {
     if (isEditing) {
-      loadEvent();
+      loadEvent(id);
+    } else if (isDuplicating) {
+      loadEvent(duplicateId);
     }
-  }, [id]);
+  }, [id, duplicateId]);
 
-  const loadEvent = async () => {
+  const loadEvent = async (eventId: string) => {
     const { data: event } = await supabase
       .from("events")
       .select("*")
-      .eq("id", id!)
+      .eq("id", eventId)
       .single();
 
     if (event) {
       setForm({
-        title: event.title,
+        title: isDuplicating ? `Copy of ${event.title}` : event.title,
         description: event.description,
-        date: event.date,
-        time: event.time,
+        date: isDuplicating ? "" : event.date,
+        time: isDuplicating ? "" : event.time,
         location: event.location,
         category_id: event.category_id || "",
         spots_total: event.spots_total,
-        reserved_spots: (event as any).reserved_spots || 0,
+        reserved_spots: isDuplicating ? 0 : ((event as any).reserved_spots || 0),
         price: event.price,
         deposit: event.deposit || 0,
         payment_type: event.payment_type,
@@ -153,12 +162,16 @@ const EventForm = () => {
         distance: event.distance || "",
         elevation: event.elevation || "",
         duration: event.duration || "",
-        featured: event.featured,
+        featured: isDuplicating ? false : event.featured,
         cancellation_policy: event.cancellation_policy || "",
         image_url: event.image_url || "",
-        visibility: event.visibility || "public",
+        visibility: isDuplicating ? "private" : (event.visibility || "public"),
         gallery_images: (event.gallery_images as any[]) || [],
       });
+      // Parse existing cancellation policy
+      const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
+      setPolicyType(pt || "flexible");
+      setPolicyCustomText(ct);
       if (event.image_url) {
         setImagePreview(event.image_url);
       }
@@ -177,7 +190,7 @@ const EventForm = () => {
       const { data: points } = await supabase
         .from("event_meeting_points")
         .select("*")
-        .eq("event_id", id!)
+        .eq("event_id", eventId)
         .order("sort_order");
 
       if (points) {
@@ -284,7 +297,9 @@ const EventForm = () => {
         elevation: form.elevation || null,
         duration: form.duration || null,
         featured: form.featured,
-        cancellation_policy: form.cancellation_policy || null,
+        cancellation_policy: policyType
+          ? serializeCancellationPolicy(policyType as PolicyType, policyCustomText)
+          : null,
         image_url: imageUrl,
         visibility: form.visibility,
         gallery_images: form.gallery_images as any,
@@ -350,7 +365,7 @@ const EventForm = () => {
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
           <h1 className="font-display text-xl font-bold text-foreground">
-            {isEditing ? "Edit Event" : "Create Event"}
+            {isEditing ? "Edit Event" : isDuplicating ? "Duplicate Event" : "Create Event"}
           </h1>
         </div>
 
@@ -616,8 +631,32 @@ const EventForm = () => {
               </>
             )}
             <div>
-              <Label htmlFor="cancellation">Cancellation Policy</Label>
-              <Textarea id="cancellation" value={form.cancellation_policy} onChange={(e) => updateForm("cancellation_policy", e.target.value)} placeholder="e.g., Full refund up to 48h before event" rows={2} />
+              <Label>Cancellation Policy</Label>
+              <Select value={policyType} onValueChange={(v) => setPolicyType(v as PolicyType)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a policy type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="flexible">✅ Flexible — refundable up to 24h before</SelectItem>
+                  <SelectItem value="moderate">🕐 Moderate — refundable up to 48h before</SelectItem>
+                  <SelectItem value="strict">🚫 Strict — non-refundable</SelectItem>
+                  <SelectItem value="custom">📝 Custom — define your own policy</SelectItem>
+                </SelectContent>
+              </Select>
+              {policyType && policyType !== "custom" && (
+                <p className="mt-1.5 text-xs text-muted-foreground font-body px-1">
+                  {CANCELLATION_POLICIES[policyType as PolicyType]?.description}
+                </p>
+              )}
+              {policyType === "custom" && (
+                <Textarea
+                  className="mt-2"
+                  value={policyCustomText}
+                  onChange={(e) => setPolicyCustomText(e.target.value)}
+                  placeholder="e.g., Full refund if cancelled 72h in advance. No refunds after that."
+                  rows={3}
+                />
+              )}
             </div>
           </div>
         </Card>

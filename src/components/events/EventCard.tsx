@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
+import { CapacityWarning } from "./CapacityWarning";
 
 const statusConfig = {
   available: { label: "Available", className: "bg-success/10 text-success" },
@@ -64,6 +65,7 @@ const EventCard = memo(({ event, index }: { event: EventWithDetails; index: numb
               {Number(event.price) === 0 ? "Free" : `€${event.price}`}
             </span>
           </div>
+          <CapacityWarning spotsTaken={event.spots_taken} spotsTotal={event.spots_total} className="mt-1.5" />
           {event.distance && (
             <div className="mt-1.5 text-[11px] text-muted-foreground/70 font-body">
               {event.distance} · {event.elevation} · {event.duration}

@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus,
-  Loader2, Zap, BarChart3, Trash2, Send, Settings, Search
+  Loader2, Zap, BarChart3, Trash2, Send, Settings, Search, Copy,
+  MessageCircle, Bell, Clock, CloudSun, AlertTriangle, History
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +52,24 @@ const EventManage = () => {
 
   // Message state
   const [messageText, setMessageText] = useState("");
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [broadcastChannel, setBroadcastChannel] = useState<"notification" | "whatsapp">("notification");
+
+  // Broadcast history
+  const { data: broadcastHistory } = useQuery({
+    queryKey: ["event-broadcasts", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_broadcasts")
+        .select("*")
+        .eq("event_id", id!)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
 
   // Capacity state
   const [newCapacity, setNewCapacity] = useState(0);
@@ -306,6 +325,14 @@ const EventManage = () => {
                 <Edit className="h-3.5 w-3.5" /> Edit
               </Button>
             </Link>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => navigate(`/organizer/events/new?duplicate=${id}`)}
+            >
+              <Copy className="h-3.5 w-3.5" /> Duplicate
+            </Button>
             <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20" onClick={() => setShowDeleteDialog(true)}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -796,37 +823,206 @@ const EventManage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Message Participants Dialog */}
+      {/* Broadcast Message Dialog */}
       <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Message Participants</DialogTitle>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Send className="h-5 w-5 text-primary" /> Broadcast Message
+            </DialogTitle>
             <DialogDescription className="font-body text-sm">
-              Send a message to all {registered.length} registered participants.
+              Send a message to all {registered.length} registered participants of this event.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+
+          <div className="space-y-4">
+            {/* Quick Templates */}
+            <div>
+              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Quick templates</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { icon: <Clock className="h-3 w-3" />, label: "Time change", text: `⏰ Important update for "${event.title}": the event time has been changed. Please check the event page for the updated schedule.` },
+                  { icon: <AlertTriangle className="h-3 w-3" />, label: "Meeting point", text: `📍 Meeting point update for "${event.title}": the meeting point has been updated. Please check the event page for new details.` },
+                  { icon: <CloudSun className="h-3 w-3" />, label: "Weather alert", text: `🌤️ Weather update for "${event.title}": please check the weather forecast and come prepared. The event will proceed as planned unless further notice.` },
+                  { icon: <Bell className="h-3 w-3" />, label: "Reminder", text: `📢 Reminder: "${event.title}" is coming up! Don't forget to check the event details and prepare accordingly. See you there!` },
+                ].map((tpl) => (
+                  <button
+                    key={tpl.label}
+                    onClick={() => setMessageText(tpl.text)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-body font-medium rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors active:scale-95"
+                  >
+                    {tpl.icon} {tpl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Message Input */}
             <Textarea
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="Type your broadcast message..."
               rows={4}
               className="font-body"
             />
-            <p className="text-[11px] text-muted-foreground font-body">
-              Message will be sent as a notification to all registered participants.
-            </p>
+
+            {/* Channel Selection */}
+            <div>
+              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Delivery channel</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setBroadcastChannel("notification")}
+                  className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-body font-medium transition-all ${
+                    broadcastChannel === "notification"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                  }`}
+                >
+                  <Bell className="h-4 w-4" />
+                  <div className="text-left">
+                    <p className="font-semibold text-xs">In-App</p>
+                    <p className="text-[10px] opacity-70">Notification</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setBroadcastChannel("whatsapp")}
+                  className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-body font-medium transition-all ${
+                    broadcastChannel === "whatsapp"
+                      ? "border-[#25D366] bg-[#25D366]/5 text-[#25D366]"
+                      : "border-border bg-card text-muted-foreground hover:border-[#25D366]/30"
+                  }`}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <div className="text-left">
+                    <p className="font-semibold text-xs">WhatsApp</p>
+                    <p className="text-[10px] opacity-70">Each user</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Send Button */}
             <Button
-              onClick={() => {
-                toast({ title: "Message sent", description: `Notified ${registered.length} participants` });
-                setShowMessageDialog(false);
-                setMessageText("");
+              onClick={async () => {
+                if (!messageText.trim() || !event || !user) return;
+                setSendingBroadcast(true);
+                try {
+                  if (broadcastChannel === "notification") {
+                    // Insert a notification for each registered participant
+                    const notifs = registered
+                      .filter((r) => r.user_id && !r.sport_level?.startsWith("manual:"))
+                      .map((r) => ({
+                        user_id: r.user_id,
+                        type: "broadcast",
+                        title: `📢 ${event.title}`,
+                        message: messageText,
+                        event_id: event.id,
+                        read: false,
+                      }));
+
+                    if (notifs.length > 0) {
+                      const { error: notifErr } = await supabase.from("notifications").insert(notifs);
+                      if (notifErr) throw notifErr;
+                    }
+
+                    // Log the broadcast
+                    await supabase.from("event_broadcasts").insert({
+                      event_id: event.id,
+                      sender_id: user.id,
+                      message: messageText,
+                      channel: "notification",
+                      recipients_count: notifs.length,
+                    });
+
+                    toast({ title: "Broadcast sent ✅", description: `${notifs.length} participants notified via in-app notifications.` });
+                  } else {
+                    // WhatsApp: open for each participant who has a phone
+                    const phoneParts = registered
+                      .filter((r) => (r.profiles as any)?.phone)
+                      .map((r) => (r.profiles as any).phone.replace(/[^0-9+]/g, ""));
+
+                    if (phoneParts.length === 0) {
+                      toast({ title: "No phone numbers", description: "No registered participants have phone numbers.", variant: "destructive" });
+                      setSendingBroadcast(false);
+                      return;
+                    }
+
+                    // Log the broadcast
+                    await supabase.from("event_broadcasts").insert({
+                      event_id: event.id,
+                      sender_id: user.id,
+                      message: messageText,
+                      channel: "whatsapp",
+                      recipients_count: phoneParts.length,
+                    });
+
+                    // Open WhatsApp for the first participant (user can send one by one)
+                    const encodedMsg = encodeURIComponent(messageText);
+                    window.open(`https://wa.me/${phoneParts[0]}?text=${encodedMsg}`, "_blank");
+
+                    // Copy remaining numbers to clipboard for convenience
+                    if (phoneParts.length > 1) {
+                      const remaining = phoneParts.slice(1).join("\n");
+                      await navigator.clipboard.writeText(remaining);
+                      toast({
+                        title: `WhatsApp opened for 1st contact`,
+                        description: `${phoneParts.length - 1} more phone numbers copied to clipboard. Send the message to each participant.`,
+                        duration: 8000,
+                      });
+                    } else {
+                      toast({ title: "WhatsApp opened", description: "Message ready to send." });
+                    }
+                  }
+
+                  queryClient.invalidateQueries({ queryKey: ["event-broadcasts", id] });
+                  setShowMessageDialog(false);
+                  setMessageText("");
+                } catch (err: any) {
+                  toast({ title: "Error", description: err.message, variant: "destructive" });
+                } finally {
+                  setSendingBroadcast(false);
+                }
               }}
-              disabled={!messageText.trim()}
+              disabled={!messageText.trim() || sendingBroadcast}
               className="w-full font-body"
             >
-              <Send className="h-4 w-4 mr-2" /> Send Message
+              {sendingBroadcast ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" />
+                  {broadcastChannel === "whatsapp" ? "Open WhatsApp" : `Send to ${registered.length} participants`}
+                </>
+              )}
             </Button>
+
+            {/* Broadcast History */}
+            {broadcastHistory && broadcastHistory.length > 0 && (
+              <div className="border-t border-border pt-3">
+                <p className="text-xs font-body font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <History className="h-3 w-3" /> Previous broadcasts
+                </p>
+                <div className="space-y-2 max-h-36 overflow-y-auto">
+                  {broadcastHistory.map((b: any) => (
+                    <div key={b.id} className="p-2.5 rounded-lg bg-muted/50 text-xs font-body">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`flex items-center gap-1 font-semibold ${
+                          b.channel === "whatsapp" ? "text-[#25D366]" : "text-primary"
+                        }`}>
+                          {b.channel === "whatsapp" ? <MessageCircle className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
+                          {b.channel === "whatsapp" ? "WhatsApp" : "In-App"}
+                        </span>
+                        <span className="text-muted-foreground text-[10px]">
+                          {new Date(b.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}{" "}
+                          {new Date(b.created_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground line-clamp-2">{b.message}</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">→ {b.recipients_count} recipients</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
