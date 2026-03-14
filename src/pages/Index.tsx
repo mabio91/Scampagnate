@@ -52,6 +52,7 @@ const Index = () => {
 
     return events
       .filter((e) => new Date(e.date) >= now)
+      .filter((e) => e.status !== "draft" && e.status !== "past" && e.status !== "cancelled")
       .filter((e) => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
