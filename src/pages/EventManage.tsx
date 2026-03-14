@@ -185,13 +185,20 @@ const EventManage = () => {
     await handleStatusChange(regId, "cancelled");
   };
 
-  // Add existing user as participant
-  const handleAddExistingUser = async (userId: string) => {
+  // Select a searched user (don't add yet, show edit form first)
+  const handleSelectSearchUser = (user: any) => {
+    setSelectedSearchUser(user);
+    setSearchQuery("");
+  };
+
+  // Confirm adding the selected searched user
+  const handleConfirmAddSearchUser = async () => {
+    if (!selectedSearchUser) return;
     setAddingParticipant(true);
     try {
       const { error } = await supabase.from("event_registrations").insert({
         event_id: id!,
-        user_id: userId,
+        user_id: selectedSearchUser.id,
         meeting_point_id: manualMeetingPoint || null,
         status: "registered",
         payment_status: manualPaymentStatus,
@@ -200,12 +207,30 @@ const EventManage = () => {
       queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
       queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
       setShowAddParticipant(false);
+      setSelectedSearchUser(null);
       setSearchQuery("");
+      setManualMeetingPoint("");
+      setManualPaymentStatus("pending");
       toast({ title: "Participant added!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setAddingParticipant(false);
+    }
+  };
+
+  // Update meeting point or payment status on existing registration
+  const handleUpdateRegistration = async (regId: string, updates: { meeting_point_id?: string | null; payment_status?: string }) => {
+    const { error } = await supabase
+      .from("event_registrations")
+      .update(updates)
+      .eq("id", regId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+      setEditingParticipant(null);
+      toast({ title: "Participant updated" });
     }
   };
 
