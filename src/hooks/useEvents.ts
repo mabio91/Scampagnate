@@ -114,12 +114,12 @@ export const useEventParticipants = (eventId: string) => {
       const userIds = (data || []).map((r: any) => r.user_id);
       
       // Fetch public profile data via security definer function (bypasses RLS safely)
-      let profilesMap: Record<string, { first_name: string; avatar_url: string | null }> = {};
+      let profilesMap: Record<string, { first_name: string; avatar_url: string | null; last_name_initial: string | null }> = {};
       if (userIds.length > 0) {
         const { data: publicProfiles } = await supabase.rpc("get_public_profiles", { profile_ids: userIds });
         if (publicProfiles) {
           for (const p of publicProfiles) {
-            profilesMap[p.id] = { first_name: p.first_name, avatar_url: p.avatar_url };
+            profilesMap[p.id] = { first_name: p.first_name, avatar_url: p.avatar_url, last_name_initial: (p as any).last_name_initial || null };
           }
         }
       }
