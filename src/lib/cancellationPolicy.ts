@@ -1,11 +1,12 @@
 // Shared cancellation policy definitions
+import { CheckCircle2, Clock, ShieldX, FileEdit, type LucideIcon } from "lucide-react";
 
 export type PolicyType = "flexible" | "moderate" | "strict" | "custom";
 
 export interface PolicyDefinition {
   type: PolicyType;
   label: string;
-  emoji: string;
+  icon: LucideIcon;
   description: string;
   colorClass: string;
   bgClass: string;
@@ -16,7 +17,7 @@ export const CANCELLATION_POLICIES: Record<PolicyType, PolicyDefinition> = {
   flexible: {
     type: "flexible",
     label: "Flexible",
-    emoji: "✅",
+    icon: CheckCircle2,
     description: "Full refund up to 24 hours before the event. No refund within 24 hours.",
     colorClass: "text-success",
     bgClass: "bg-success/10",
@@ -25,7 +26,7 @@ export const CANCELLATION_POLICIES: Record<PolicyType, PolicyDefinition> = {
   moderate: {
     type: "moderate",
     label: "Moderate",
-    emoji: "🕐",
+    icon: Clock,
     description: "Full refund up to 48 hours before the event. No refund within 48 hours.",
     colorClass: "text-warning",
     bgClass: "bg-warning/10",
@@ -34,7 +35,7 @@ export const CANCELLATION_POLICIES: Record<PolicyType, PolicyDefinition> = {
   strict: {
     type: "strict",
     label: "Strict",
-    emoji: "🚫",
+    icon: ShieldX,
     description: "Non-refundable. No refund will be issued for any cancellation.",
     colorClass: "text-destructive",
     bgClass: "bg-destructive/10",
@@ -43,7 +44,7 @@ export const CANCELLATION_POLICIES: Record<PolicyType, PolicyDefinition> = {
   custom: {
     type: "custom",
     label: "Custom",
-    emoji: "📝",
+    icon: FileEdit,
     description: "Organizer-defined policy — see details below.",
     colorClass: "text-secondary",
     bgClass: "bg-secondary/10",

@@ -637,10 +637,17 @@ const EventForm = () => {
                   <SelectValue placeholder="Select a policy type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="flexible">✅ Flexible — refundable up to 24h before</SelectItem>
-                  <SelectItem value="moderate">🕐 Moderate — refundable up to 48h before</SelectItem>
-                  <SelectItem value="strict">🚫 Strict — non-refundable</SelectItem>
-                  <SelectItem value="custom">📝 Custom — define your own policy</SelectItem>
+                  {(Object.values(CANCELLATION_POLICIES)).map((p) => {
+                    const Icon = p.icon;
+                    return (
+                      <SelectItem key={p.type} value={p.type}>
+                        <span className={`inline-flex items-center gap-1.5 ${p.colorClass}`}>
+                          <Icon className="h-3.5 w-3.5" />
+                          {p.label} — {p.type === "custom" ? "define your own policy" : p.type === "strict" ? "non-refundable" : `refundable up to ${p.type === "flexible" ? "24h" : "48h"} before`}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {policyType && policyType !== "custom" && (

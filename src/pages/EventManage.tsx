@@ -19,7 +19,8 @@ import {
 import {
   ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus,
   Loader2, Zap, BarChart3, Trash2, Send, Settings, Search, Copy,
-  MessageCircle, Bell, Clock, CloudSun, AlertTriangle, History
+  MessageCircle, Bell, Clock, CloudSun, AlertTriangle, History,
+  FileEdit, Eye, CircleOff, Lock, XCircle, Archive
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -367,12 +368,12 @@ const EventManage = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">📝 Draft</SelectItem>
-                <SelectItem value="published">✅ Published</SelectItem>
-                <SelectItem value="full">🔴 Full</SelectItem>
-                <SelectItem value="closed">🔒 Closed</SelectItem>
-                <SelectItem value="cancelled">❌ Cancelled</SelectItem>
-                <SelectItem value="past">📦 Past</SelectItem>
+                <SelectItem value="draft"><span className="inline-flex items-center gap-1.5"><FileEdit className="h-3.5 w-3.5 text-muted-foreground" /> Draft</span></SelectItem>
+                <SelectItem value="published"><span className="inline-flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-success" /> Published</span></SelectItem>
+                <SelectItem value="full"><span className="inline-flex items-center gap-1.5"><CircleOff className="h-3.5 w-3.5 text-destructive" /> Full</span></SelectItem>
+                <SelectItem value="closed"><span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-muted-foreground" /> Closed</span></SelectItem>
+                <SelectItem value="cancelled"><span className="inline-flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-destructive" /> Cancelled</span></SelectItem>
+                <SelectItem value="past"><span className="inline-flex items-center gap-1.5"><Archive className="h-3.5 w-3.5 text-muted-foreground" /> Past</span></SelectItem>
               </SelectContent>
             </Select>
             <Link to={`/organizer/events/${id}/edit`}>
@@ -1010,10 +1011,10 @@ const EventManage = () => {
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Quick templates</p>
               <div className="flex flex-wrap gap-1.5">
                 {[
-                  { icon: <Clock className="h-3 w-3" />, label: "Time change", text: `⏰ Important update for "${event.title}": the event time has been changed. Please check the event page for the updated schedule.` },
-                  { icon: <AlertTriangle className="h-3 w-3" />, label: "Meeting point", text: `📍 Meeting point update for "${event.title}": the meeting point has been updated. Please check the event page for new details.` },
-                  { icon: <CloudSun className="h-3 w-3" />, label: "Weather alert", text: `🌤️ Weather update for "${event.title}": please check the weather forecast and come prepared. The event will proceed as planned unless further notice.` },
-                  { icon: <Bell className="h-3 w-3" />, label: "Reminder", text: `📢 Reminder: "${event.title}" is coming up! Don't forget to check the event details and prepare accordingly. See you there!` },
+                  { icon: <Clock className="h-3 w-3" />, label: "Time change", text: `Important update for "${event.title}": the event time has been changed. Please check the event page for the updated schedule.` },
+                  { icon: <AlertTriangle className="h-3 w-3" />, label: "Meeting point", text: `Meeting point update for "${event.title}": the meeting point has been updated. Please check the event page for new details.` },
+                  { icon: <CloudSun className="h-3 w-3" />, label: "Weather alert", text: `Weather update for "${event.title}": please check the weather forecast and come prepared. The event will proceed as planned unless further notice.` },
+                  { icon: <Bell className="h-3 w-3" />, label: "Reminder", text: `Reminder: "${event.title}" is coming up! Don't forget to check the event details and prepare accordingly. See you there!` },
                 ].map((tpl) => (
                   <button
                     key={tpl.label}
@@ -1083,7 +1084,7 @@ const EventManage = () => {
                       .map((r) => ({
                         user_id: r.user_id,
                         type: "broadcast",
-                        title: `📢 ${event.title}`,
+                        title: event.title,
                         message: messageText,
                         event_id: event.id,
                         read: false,
@@ -1103,7 +1104,7 @@ const EventManage = () => {
                       recipients_count: notifs.length,
                     });
 
-                    toast({ title: "Broadcast sent ✅", description: `${notifs.length} participants notified via in-app notifications.` });
+                    toast({ title: "Broadcast sent", description: `${notifs.length} participants notified via in-app notifications.` });
                   } else {
                     // WhatsApp: open for each participant who has a phone
                     const phoneParts = registered

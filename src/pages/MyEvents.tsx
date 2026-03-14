@@ -5,6 +5,7 @@ import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
   CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2
 } from "lucide-react";
+import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
 import ShareSheet from "@/components/events/ShareSheet";
 import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
@@ -298,16 +299,10 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
             <DialogDescription className="font-body text-sm">
               Are you sure you want to cancel your registration for {event.title}?
               {event.cancellation_policy && (() => {
-                const raw = event.cancellation_policy;
-                const POLICY_LABELS: Record<string, string> = {
-                  flexible: "✅ Flexible — refundable up to 24h before the event.",
-                  moderate: "🕐 Moderate — refundable up to 48h before the event.",
-                  strict: "🚫 Strict — non-refundable.",
-                };
-                const colonIdx = raw.indexOf(":");
-                const type = colonIdx !== -1 ? raw.slice(0, colonIdx) : raw;
-                const customText = colonIdx !== -1 ? raw.slice(colonIdx + 1) : "";
-                const label = POLICY_LABELS[type] || customText || raw;
+                const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
+                if (!policyType) return null;
+                const pol = CANCELLATION_POLICIES[policyType];
+                const label = policyType === "custom" ? customText || event.cancellation_policy : `${pol.label} — ${pol.description.split(".")[0]}.`;
                 return <span className="block mt-2 text-xs font-semibold text-muted-foreground italic">{label}</span>;
               })()}
             </DialogDescription>
