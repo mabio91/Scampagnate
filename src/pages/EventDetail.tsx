@@ -157,7 +157,31 @@ const EventDetail = () => {
     setShowRegisterDialog(true);
   };
 
+  const handleMembershipCheckout = async () => {
+    setMembershipLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-membership-checkout", {
+        body: { eventId: event.id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      setMembershipLoading(false);
+    }
+  };
+
   const handleRegister = async (requestApproval = false) => {
+    // If user is not an active member, redirect to membership checkout
+    if (profile?.membership_status !== 'Active') {
+      await handleMembershipCheckout();
+      return;
+    }
+
     const isWaitlist = event.status === "full";
     try {
       await registerMutation.mutateAsync({
