@@ -49,7 +49,11 @@ const EventManage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [manualName, setManualName] = useState("");
   const [manualMeetingPoint, setManualMeetingPoint] = useState("");
-  const [manualPaymentStatus, setManualPaymentStatus] = useState("paid");
+  const [manualPaymentStatus, setManualPaymentStatus] = useState("pending");
+  const [selectedSearchUser, setSelectedSearchUser] = useState<any>(null);
+  const [editingParticipant, setEditingParticipant] = useState<string | null>(null);
+  const [editMeetingPoint, setEditMeetingPoint] = useState("");
+  const [editPaymentStatus, setEditPaymentStatus] = useState("");
   const [addingParticipant, setAddingParticipant] = useState(false);
 
   // Message state
