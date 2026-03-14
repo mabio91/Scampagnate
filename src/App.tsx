@@ -73,6 +73,7 @@ const App = () => (
                 <Route path="/organizer/events/:id" element={<EventManage />} />
                 <Route path="/organizer/events/:id/edit" element={<EventForm />} />
                 <Route path="/membership-success" element={<MembershipSuccess />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
