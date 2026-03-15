@@ -105,6 +105,16 @@ const ProposalsPanel = () => {
                 </Button>
               </div>
             )}
+            {p.status === "reviewed" && (
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" className="text-xs h-7" onClick={() => updateStatus(p.id, "converted")}>
+                  <CheckCircle2 className="h-3 w-3 mr-1" /> Converti in Evento
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => updateStatus(p.id, "archived")}>
+                  <Archive className="h-3 w-3 mr-1" /> Archivia
+                </Button>
+              </div>
+            )}
           </Card>
         );
       })}
