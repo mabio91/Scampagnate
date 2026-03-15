@@ -15,6 +15,7 @@ import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "@/contexts/SearchContext";
+import ProposalSuggestionCard from "@/components/ProposalSuggestionCard";
 
 type PriceFilter = "all" | "free" | "paid";
 
