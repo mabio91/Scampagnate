@@ -1,5 +1,5 @@
-import { FC } from "react";
-import { Circle, type LucideIcon } from "lucide-react";
+import { forwardRef } from "react";
+import { Circle } from "lucide-react";
 
 export const DIFFICULTY_LEVELS = [
   { level: "1", name: "Introduzione", color: "text-success", description: "Perfect for beginners. Simple walking routes, very low elevation gain (up to 150-200m), relaxed pace, 1-2 hours." },
@@ -11,7 +11,6 @@ export const DIFFICULTY_LEVELS = [
 
 export const getDifficultyDetails = (difficulty: string | null | undefined) => {
   if (!difficulty) return null;
-  // It could be the numeric string "1", "2" or the actual string name if old data 
   const found = DIFFICULTY_LEVELS.find(d => d.level === difficulty || d.name === difficulty);
   return found || null;
 };
@@ -22,14 +21,18 @@ interface DifficultyBadgeProps {
   showLabel?: boolean;
 }
 
-export const DifficultyBadge: FC<DifficultyBadgeProps> = ({ difficulty, className = "", showLabel = true }) => {
-  const details = getDifficultyDetails(difficulty);
-  if (!details) return null;
+export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>(
+  ({ difficulty, className = "", showLabel = true }, ref) => {
+    const details = getDifficultyDetails(difficulty);
+    if (!details) return null;
 
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 text-accent-foreground text-xs font-body font-semibold ${className}`}>
-      <Circle className={`h-3 w-3 fill-current ${details.color}`} />
-      {showLabel && details.name}
-    </span>
-  );
-};
+    return (
+      <span ref={ref} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 text-accent-foreground text-xs font-body font-semibold ${className}`}>
+        <Circle className={`h-3 w-3 fill-current ${details.color}`} />
+        {showLabel && details.name}
+      </span>
+    );
+  }
+);
+
+DifficultyBadge.displayName = "DifficultyBadge";
