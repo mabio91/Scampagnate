@@ -454,6 +454,11 @@ const OrganizerDashboard = () => {
             )}
           </TabsContent>
 
+          {/* Proposals Tab */}
+          <TabsContent value="proposals" className="mt-4">
+            <ProposalsPanel />
+          </TabsContent>
+
           {/* Issues Tab (Admin only) */}
           {isAdmin && (
             <TabsContent value="issues" className="mt-4">
