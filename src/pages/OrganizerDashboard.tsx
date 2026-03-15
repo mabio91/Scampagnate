@@ -13,9 +13,10 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
+import ProposalsPanel from "@/components/admin/ProposalsPanel";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
