@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_proposals: {
+        Row: {
+          activity_title: string
+          created_at: string
+          description: string
+          id: string
+          location: string
+          max_participants: number | null
+          proposer_id: string | null
+          proposer_name: string
+          status: string
+          suggested_date: string | null
+          suggested_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity_title: string
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          max_participants?: number | null
+          proposer_id?: string | null
+          proposer_name?: string
+          status?: string
+          suggested_date?: string | null
+          suggested_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity_title?: string
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          max_participants?: number | null
+          proposer_id?: string | null
+          proposer_name?: string
+          status?: string
+          suggested_date?: string | null
+          suggested_time?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           category: string | null

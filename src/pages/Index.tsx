@@ -15,6 +15,7 @@ import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "@/contexts/SearchContext";
+import ProposalSuggestionCard from "@/components/ProposalSuggestionCard";
 
 type PriceFilter = "all" | "free" | "paid";
 
@@ -225,6 +226,13 @@ const Index = () => {
               selected={selectedCategory}
               onSelect={setSelectedCategory}
             />
+
+            {/* Activity Suggestion Card - show occasionally */}
+            {!hasActiveFilters && upcomingEvents.length > 2 && (
+              <div className="mb-4">
+                <ProposalSuggestionCard />
+              </div>
+            )}
 
             {/* Event List */}
             <div className="px-4">

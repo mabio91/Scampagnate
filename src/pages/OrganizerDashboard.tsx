@@ -13,9 +13,10 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
+import ProposalsPanel from "@/components/admin/ProposalsPanel";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -143,15 +144,18 @@ const OrganizerDashboard = () => {
         </div>
 
         <Tabs defaultValue="events" className="w-full">
-          <TabsList className={`w-full ${isAdmin ? 'grid grid-cols-4' : ''}`}>
-            <TabsTrigger value="events" className="flex-1">Events</TabsTrigger>
-            <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1">
-              <BarChart3 className="h-3.5 w-3.5 mr-1" /> Analytics
+          <TabsList className={`w-full grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+            <TabsTrigger value="events" className="flex-1 text-xs">Events</TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 text-xs">History</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1 text-xs">
+              <BarChart3 className="h-3 w-3 mr-0.5" /> Analytics
+            </TabsTrigger>
+            <TabsTrigger value="proposals" className="flex-1 text-xs">
+              <Lightbulb className="h-3 w-3 mr-0.5" /> Proposals
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="issues" className="flex-1">
-                <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Issues
+              <TabsTrigger value="issues" className="flex-1 text-xs">
+                <AlertTriangle className="h-3 w-3 mr-0.5" /> Issues
               </TabsTrigger>
             )}
           </TabsList>
@@ -448,6 +452,11 @@ const OrganizerDashboard = () => {
                 )}
               </>
             )}
+          </TabsContent>
+
+          {/* Proposals Tab */}
+          <TabsContent value="proposals" className="mt-4">
+            <ProposalsPanel />
           </TabsContent>
 
           {/* Issues Tab (Admin only) */}
