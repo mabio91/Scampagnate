@@ -15,6 +15,7 @@ import ShareSheet from "@/components/events/ShareSheet";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
+import { WeatherForecast } from "@/components/events/WeatherForecast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
