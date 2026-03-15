@@ -227,6 +227,13 @@ const Index = () => {
               onSelect={setSelectedCategory}
             />
 
+            {/* Activity Suggestion Card - show occasionally */}
+            {!hasActiveFilters && upcomingEvents.length > 2 && (
+              <div className="mb-4">
+                <ProposalSuggestionCard />
+              </div>
+            )}
+
             {/* Event List */}
             <div className="px-4">
               <h2 className="font-display text-xl font-bold text-foreground mb-3">
