@@ -15,6 +15,7 @@ import ShareSheet from "@/components/events/ShareSheet";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
+import { WeatherForecast } from "@/components/events/WeatherForecast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
@@ -454,6 +455,11 @@ const EventDetail = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Weather Forecast */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }} className="py-4 border-b border-border">
+          <WeatherForecast location={event.location} date={event.date} />
+        </motion.div>
 
         {/* Description */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
