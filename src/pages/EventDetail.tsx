@@ -457,9 +457,7 @@ const EventDetail = () => {
         )}
 
         {/* Weather Forecast */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }} className="py-4 border-b border-border">
-          <WeatherForecast location={event.location} date={event.date} />
-        </motion.div>
+        <WeatherForecast location={event.location} date={event.date} />
 
         {/* Description */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
