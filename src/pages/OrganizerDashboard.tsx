@@ -145,7 +145,7 @@ const OrganizerDashboard = () => {
         </div>
 
         <Tabs defaultValue="events" className="w-full">
-          <TabsList className={`w-full grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+          <TabsList className={`w-full grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <TabsTrigger value="events" className="flex-1 text-xs">Events</TabsTrigger>
             <TabsTrigger value="history" className="flex-1 text-xs">History</TabsTrigger>
             <TabsTrigger value="analytics" className="flex-1 text-xs">
@@ -153,6 +153,9 @@ const OrganizerDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="proposals" className="flex-1 text-xs">
               <Lightbulb className="h-3 w-3 mr-0.5" /> Proposals
+            </TabsTrigger>
+            <TabsTrigger value="discounts" className="flex-1 text-xs">
+              <Ticket className="h-3 w-3 mr-0.5" /> Discounts
             </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="issues" className="flex-1 text-xs">
