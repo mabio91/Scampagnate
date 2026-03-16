@@ -354,6 +354,22 @@ const EventForm = () => {
         if (error) throw error;
       }
 
+      // Handle price options
+      if (isEditing) {
+        await supabase.from("event_price_options").delete().eq("event_id", eventId!);
+      }
+      const validPriceOptions = priceOptions.filter(o => o.name.trim());
+      if (validPriceOptions.length > 0) {
+        const optionsData = validPriceOptions.map((o, i) => ({
+          event_id: eventId!,
+          name: o.name,
+          price: o.price,
+          sort_order: i,
+        }));
+        const { error: poError } = await supabase.from("event_price_options").insert(optionsData);
+        if (poError) throw poError;
+      }
+
       toast({ title: isEditing ? "Event updated!" : "Event created!" });
       navigate(`/organizer/events/${eventId}`);
     } catch (err: any) {
