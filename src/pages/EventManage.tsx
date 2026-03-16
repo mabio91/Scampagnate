@@ -97,6 +97,21 @@ const EventManage = () => {
   const { data: registrations, isLoading: regsLoading } = useEventRegistrations(id!);
   const { data: meetingPoints } = useEventMeetingPoints(id!);
 
+  // Fetch price options for this event
+  const { data: priceOptions } = useQuery({
+    queryKey: ["event-price-options", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_price_options")
+        .select("*")
+        .eq("event_id", id!)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   // Search users for adding existing participants
   const { data: searchResults } = useQuery({
     queryKey: ["search-users", searchQuery],
@@ -296,16 +311,18 @@ const EventManage = () => {
 
   const exportCSV = () => {
     if (!registered.length) return;
-    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
+    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Price Option", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
     const rows = registered.map((r) => {
       const mp = meetingPoints?.find((p) => p.id === r.meeting_point_id);
       const isManual = r.sport_level?.startsWith("manual:");
       const manualName = isManual ? r.sport_level!.replace("manual:", "") : "";
+      const po = priceOptions?.find((p: any) => p.id === (r as any).price_option_id);
       return [
         isManual ? manualName : ((r.profiles as any)?.first_name || ""),
         isManual ? "(manual)" : ((r.profiles as any)?.last_name || ""),
         isManual ? "" : ((r.profiles as any)?.phone || ""),
         (r.sport_level && !r.sport_level.startsWith("manual:")) ? r.sport_level : "-",
+        po?.name || "-",
         r.status,
         r.payment_status || "-",
         mp?.name || "-",
@@ -497,6 +514,10 @@ const EventManage = () => {
                             {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
                               <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
                             )}
+                            {(reg as any).price_option_id && priceOptions?.length > 0 && (() => {
+                              const po = priceOptions.find((p: any) => p.id === (reg as any).price_option_id);
+                              return po ? <span className="text-secondary ml-1">· {po.name}</span> : null;
+                            })()}
                             {reg.payment_status && reg.payment_status !== "not_required" && (
                               <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
                                 · {reg.payment_status}

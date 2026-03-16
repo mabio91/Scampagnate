@@ -358,6 +358,41 @@ export type Database = {
           },
         ]
       }
+      event_price_options: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_price_options_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_registrations: {
         Row: {
           checked_in: boolean
@@ -366,6 +401,7 @@ export type Database = {
           id: string
           meeting_point_id: string | null
           payment_status: string | null
+          price_option_id: string | null
           sport_level: string | null
           status: Database["public"]["Enums"]["registration_status"]
           user_id: string
@@ -377,6 +413,7 @@ export type Database = {
           id?: string
           meeting_point_id?: string | null
           payment_status?: string | null
+          price_option_id?: string | null
           sport_level?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
           user_id: string
@@ -388,6 +425,7 @@ export type Database = {
           id?: string
           meeting_point_id?: string | null
           payment_status?: string | null
+          price_option_id?: string | null
           sport_level?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
           user_id?: string
@@ -405,6 +443,13 @@ export type Database = {
             columns: ["meeting_point_id"]
             isOneToOne: false
             referencedRelation: "event_meeting_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_price_option_id_fkey"
+            columns: ["price_option_id"]
+            isOneToOne: false
+            referencedRelation: "event_price_options"
             referencedColumns: ["id"]
           },
           {

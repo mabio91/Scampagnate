@@ -25,7 +25,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { eventId, registrationId, discountCodeId } = await req.json();
+    const { eventId, registrationId, discountCodeId, priceOptionId } = await req.json();
     if (!eventId || !registrationId) throw new Error("Event ID and Registration ID required");
 
     // Fetch event details
@@ -37,12 +37,39 @@ serve(async (req) => {
 
     if (eventError || !event) throw new Error("Event not found");
 
+    // Check if registration has a price option
+    let priceOptionName = "";
+    let effectivePriceOptionId = priceOptionId;
+    
+    if (!effectivePriceOptionId) {
+      // Check the registration for a stored price_option_id
+      const { data: reg } = await supabaseClient
+        .from("event_registrations")
+        .select("price_option_id")
+        .eq("id", registrationId)
+        .single();
+      if (reg?.price_option_id) {
+        effectivePriceOptionId = reg.price_option_id;
+      }
+    }
+
     // Determine base amount
     let amountCents: number;
     let description: string;
     let originalPrice: number;
 
-    if (event.payment_type === "deposit" && event.deposit) {
+    if (effectivePriceOptionId) {
+      // Use price from the selected option
+      const { data: priceOption, error: poError } = await supabaseClient
+        .from("event_price_options")
+        .select("name, price")
+        .eq("id", effectivePriceOptionId)
+        .single();
+      if (poError || !priceOption) throw new Error("Price option not found");
+      originalPrice = Number(priceOption.price);
+      priceOptionName = priceOption.name;
+      description = `"${event.title}" — ${priceOption.name}`;
+    } else if (event.payment_type === "deposit" && event.deposit) {
       originalPrice = Number(event.deposit);
       description = `Deposit for "${event.title}" (Total: €${Number(event.price).toFixed(2)})`;
     } else if (event.payment_type === "paid") {

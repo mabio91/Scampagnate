@@ -59,6 +59,7 @@ const EventDetail = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
+  const [selectedPriceOption, setSelectedPriceOption] = useState("");
 
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
 
@@ -236,6 +237,11 @@ const EventDetail = () => {
       if (appliedDiscount?.discount_code_id) {
         body.discountCodeId = appliedDiscount.discount_code_id;
       }
+      // Pass price option if selected
+      const regPriceOptionId = (myRegistration as any).price_option_id;
+      if (regPriceOptionId) {
+        body.priceOptionId = regPriceOptionId;
+      }
       const { data, error } = await supabase.functions.invoke("create-event-checkout", {
         body,
       });
@@ -273,6 +279,7 @@ const EventDetail = () => {
         asWaitlist: isWaitlist,
         requestApproval: requestApproval,
         paymentType: event.payment_type,
+        priceOptionId: selectedPriceOption || undefined,
       });
       setShowRegisterDialog(false);
       setShowAccessWarning(false);
@@ -795,7 +802,7 @@ const EventDetail = () => {
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
             <p className="text-xs font-body text-muted-foreground">
-              {(event.payment_type as string) === "deposit" ? "From" : "Price"}
+              {event.price_options && event.price_options.length > 0 ? "From" : (event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
             {appliedDiscount && needsPayment ? (
               <div className="flex items-center gap-2">
@@ -808,9 +815,16 @@ const EventDetail = () => {
               </div>
             ) : (
               <p className="text-xl font-display font-bold text-foreground">
-                {Number(event.price) === 0 && (!profile || profile.membership_status === 'Active') ? "Free" :
-                  (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` :
-                    `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`}
+                {(() => {
+                  const hasPriceOptions = event.price_options && event.price_options.length > 0;
+                  if (hasPriceOptions) {
+                    const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
+                    return `€${minPrice.toFixed(2)}`;
+                  }
+                  if (Number(event.price) === 0 && (!profile || profile.membership_status === 'Active')) return "Free";
+                  if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
+                  return `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`;
+                })()}
               </p>
             )}
             {profile?.membership_status !== 'Active' && !isRegistered && (
@@ -929,6 +943,24 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Price Options */}
+            {event.price_options && event.price_options.length > 0 && (
+              <div>
+                <Label className="font-body text-sm font-semibold">Choose your option</Label>
+                <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="mt-2 space-y-2">
+                  {event.price_options.map((opt: any) => (
+                    <label key={opt.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted transition-colors">
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value={opt.id} />
+                        <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
+                      </div>
+                      <span className="text-sm font-display font-bold text-foreground">€{Number(opt.price).toFixed(2)}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
+
             {/* Additional Registration Fields */}
             {event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).length > 0 && (
               <div className="space-y-3">
@@ -973,47 +1005,66 @@ const EventDetail = () => {
 
             {event.payment_type !== "free" && (
               <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1">
-                {(event.payment_type as string) === "deposit" && event.deposit ? (
-                  <>
-                    <div className="flex justify-between text-sm font-body">
-                      <span className="text-muted-foreground">Deposit (pay now)</span>
-                      <span className={`font-semibold text-foreground ${appliedDiscount ? "line-through text-muted-foreground" : ""}`}>€{Number(event.deposit).toFixed(2)}</span>
-                    </div>
-                    {appliedDiscount && (
+                {(() => {
+                  const selectedOpt = event.price_options?.find((o: any) => o.id === selectedPriceOption);
+                  const displayPrice = selectedOpt ? Number(selectedOpt.price) : Number(event.price);
+                  const displayLabel = selectedOpt ? selectedOpt.name : null;
+
+                  if ((event.payment_type as string) === "deposit" && event.deposit && !selectedOpt) {
+                    return (
+                      <>
+                        <div className="flex justify-between text-sm font-body">
+                          <span className="text-muted-foreground">Deposit (pay now)</span>
+                          <span className={`font-semibold text-foreground ${appliedDiscount ? "line-through text-muted-foreground" : ""}`}>€{Number(event.deposit).toFixed(2)}</span>
+                        </div>
+                        {appliedDiscount && (
+                          <div className="flex justify-between text-sm font-body">
+                            <span className="text-success font-semibold">Discounted deposit</span>
+                            <span className="font-bold text-success">€{Number(appliedDiscount.final_price).toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm font-body">
+                          <span className="text-muted-foreground">Remaining (pay later)</span>
+                          <span className="text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
+                          <span className="text-muted-foreground">Total</span>
+                          <span className="font-bold text-foreground">€{Number(event.price).toFixed(2)}</span>
+                        </div>
+                      </>
+                    );
+                  }
+
+                  if ((event.payment_type as string) === "location") {
+                    return (
+                      <>
+                        <div className="flex justify-between text-sm font-body">
+                          <span className="text-muted-foreground">{displayLabel || "Total"}</span>
+                          <span className="font-semibold text-foreground">€{displayPrice.toFixed(2)}</span>
+                        </div>
+                        <p className="text-xs font-body text-muted-foreground">Payment on location — no charge during registration.</p>
+                      </>
+                    );
+                  }
+
+                  return (
+                    <>
                       <div className="flex justify-between text-sm font-body">
-                        <span className="text-success font-semibold">Discounted deposit</span>
-                        <span className="font-bold text-success">€{Number(appliedDiscount.final_price).toFixed(2)}</span>
+                        <span className="text-muted-foreground">{displayLabel || "Total"}</span>
+                        <span className={`font-semibold text-foreground ${appliedDiscount ? "line-through text-muted-foreground" : "font-bold"}`}>€{displayPrice.toFixed(2)}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between text-sm font-body">
-                      <span className="text-muted-foreground">Remaining (pay later)</span>
-                      <span className="text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
-                      <span className="text-muted-foreground">Total</span>
-                      <span className="font-bold text-foreground">€{Number(event.price).toFixed(2)}</span>
-                    </div>
-                  </>
-                ) : (event.payment_type as string) === "location" ? (
-                  <>
-                    <p className="text-sm font-body font-semibold text-foreground">€{Number(event.price).toFixed(2)}</p>
-                    <p className="text-xs font-body text-muted-foreground">Payment on location — no charge during registration.</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between text-sm font-body">
-                      <span className="text-muted-foreground">Total</span>
-                      <span className={`font-semibold text-foreground ${appliedDiscount ? "line-through text-muted-foreground" : "font-bold"}`}>€{Number(event.price).toFixed(2)}</span>
-                    </div>
-                    {appliedDiscount && (
-                      <div className="flex justify-between text-sm font-body">
-                        <span className="text-success font-semibold">With discount</span>
-                        <span className="font-bold text-success">€{Number(appliedDiscount.final_price).toFixed(2)}</span>
-                      </div>
-                    )}
-                    <p className="text-xs font-body text-muted-foreground">Full payment will be charged online via Stripe.</p>
-                  </>
-                )}
+                      {appliedDiscount && (
+                        <div className="flex justify-between text-sm font-body">
+                          <span className="text-success font-semibold">With discount</span>
+                          <span className="font-bold text-success">€{Number(appliedDiscount.final_price).toFixed(2)}</span>
+                        </div>
+                      )}
+                      <p className="text-xs font-body text-muted-foreground">
+                        {(event.payment_type === "paid" || selectedOpt) ? "Full payment will be charged online via Stripe." : ""}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
@@ -1022,6 +1073,7 @@ const EventDetail = () => {
               disabled={
                 registerMutation.isPending || membershipLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
+                (event.price_options && event.price_options.length > 0 && !selectedPriceOption) ||
                 (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim()))
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}

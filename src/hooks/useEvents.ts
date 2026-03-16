@@ -31,6 +31,7 @@ export interface EventWithDetails {
   gallery_images: { url: string; order: number }[] | null;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
+  price_options?: { id: string; name: string; price: number; sort_order: number }[];
 }
 
 export const useEvents = (categoryName?: string | null) => {
@@ -40,7 +41,7 @@ export const useEvents = (categoryName?: string | null) => {
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)")
+        .select("id, title, date, time, location, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order)")
         .order("date", { ascending: true });
 
       if (categoryName) {
@@ -70,7 +71,8 @@ export const useEvents = (categoryName?: string | null) => {
       return (data as any).map((event: any) => ({
         ...event,
         category: event.event_categories,
-        meeting_points: event.event_meeting_points
+        meeting_points: event.event_meeting_points,
+        price_options: event.event_price_options?.sort((a: any, b: any) => a.sort_order - b.sort_order) || [],
       })) as unknown as EventWithDetails[];
     },
     staleTime: 2 * 60 * 1000,
@@ -85,7 +87,7 @@ export const useEvent = (id: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("*, event_categories(name, icon), event_meeting_points(*)")
+        .select("*, event_categories(name, icon), event_meeting_points(*), event_price_options(id, name, price, sort_order)")
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -93,6 +95,7 @@ export const useEvent = (id: string) => {
         ...data,
         category: data.event_categories,
         meeting_points: data.event_meeting_points || [],
+        price_options: ((data as any).event_price_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
       } as unknown as EventWithDetails;
     },
     enabled: !!id,
@@ -185,7 +188,7 @@ export const useRegisterForEvent = () => {
   const { user, profile, refreshProfile } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string }) => {
+    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType, priceOptionId }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string; priceOptionId?: string }) => {
       if (!user) throw new Error("Devi effettuare il login");
 
       // Determine payment_status based on payment type
@@ -207,9 +210,10 @@ export const useRegisterForEvent = () => {
         user_id: user.id,
         meeting_point_id: meetingPointId || null,
         sport_level: sportLevel || null,
-        status: status as any, // Cast required if TypeScript still struggles
+        status: status as any,
         payment_status: paymentStatus,
-      });
+        price_option_id: priceOptionId || null,
+      } as any);
       if (error) throw error;
 
       // Handle Membership Activation if not active
