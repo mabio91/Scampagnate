@@ -797,15 +797,26 @@ const EventDetail = () => {
             <p className="text-xs font-body text-muted-foreground">
               {(event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
-            <p className="text-xl font-display font-bold text-foreground">
-              {Number(event.price) === 0 && (!profile || profile.membership_status === 'Active') ? "Free" :
-                (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` :
-                  `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`}
-            </p>
+            {appliedDiscount && needsPayment ? (
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-display font-bold text-muted-foreground line-through">
+                  €{Number(appliedDiscount.original_price).toFixed(2)}
+                </p>
+                <p className="text-xl font-display font-bold text-success">
+                  €{Number(appliedDiscount.final_price).toFixed(2)}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xl font-display font-bold text-foreground">
+                {Number(event.price) === 0 && (!profile || profile.membership_status === 'Active') ? "Free" :
+                  (event.payment_type as string) === "deposit" && event.deposit ? `€${event.deposit}` :
+                    `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`}
+              </p>
+            )}
             {profile?.membership_status !== 'Active' && !isRegistered && (
               <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
             )}
-            {(event.payment_type as string) === "deposit" && event.deposit && (
+            {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
               <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)} total</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
