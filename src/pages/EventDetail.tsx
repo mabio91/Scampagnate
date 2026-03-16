@@ -59,6 +59,7 @@ const EventDetail = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
+  const [selectedPriceOption, setSelectedPriceOption] = useState("");
 
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
 
