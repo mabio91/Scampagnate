@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -57,6 +58,7 @@ const EventDetail = () => {
   const [membershipLoading, setMembershipLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showAllParticipants, setShowAllParticipants] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
 
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
 
@@ -230,10 +232,20 @@ const EventDetail = () => {
     if (!myRegistration) return;
     setPaymentLoading(true);
     try {
+      const body: any = { eventId: event.id, registrationId: myRegistration.id };
+      if (appliedDiscount?.discount_code_id) {
+        body.discountCodeId = appliedDiscount.discount_code_id;
+      }
       const { data, error } = await supabase.functions.invoke("create-event-checkout", {
-        body: { eventId: event.id, registrationId: myRegistration.id },
+        body,
       });
       if (error) throw error;
+      if (data?.free) {
+        toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
+        setPaymentLoading(false);
+        window.location.reload();
+        return;
+      }
       if (data?.url) {
         window.location.href = data.url;
       } else {
@@ -928,14 +940,29 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Discount Code */}
+            {event.payment_type !== "free" && event.payment_type !== "location" && user && (
+              <DiscountCodeInput
+                eventId={event.id}
+                userId={user.id}
+                onDiscountApplied={setAppliedDiscount}
+              />
+            )}
+
             {event.payment_type !== "free" && (
               <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1">
                 {(event.payment_type as string) === "deposit" && event.deposit ? (
                   <>
                     <div className="flex justify-between text-sm font-body">
                       <span className="text-muted-foreground">Deposit (pay now)</span>
-                      <span className="font-semibold text-foreground">€{Number(event.deposit).toFixed(2)}</span>
+                      <span className={`font-semibold text-foreground ${appliedDiscount ? "line-through text-muted-foreground" : ""}`}>€{Number(event.deposit).toFixed(2)}</span>
                     </div>
+                    {appliedDiscount && (
+                      <div className="flex justify-between text-sm font-body">
+                        <span className="text-success font-semibold">Discounted deposit</span>
+                        <span className="font-bold text-success">€{Number(appliedDiscount.final_price).toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm font-body">
                       <span className="text-muted-foreground">Remaining (pay later)</span>
                       <span className="text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
@@ -952,7 +979,16 @@ const EventDetail = () => {
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-body font-semibold text-foreground">Total: €{Number(event.price).toFixed(2)}</p>
+                    <div className="flex justify-between text-sm font-body">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className={`font-semibold text-foreground ${appliedDiscount ? "line-through text-muted-foreground" : "font-bold"}`}>€{Number(event.price).toFixed(2)}</span>
+                    </div>
+                    {appliedDiscount && (
+                      <div className="flex justify-between text-sm font-body">
+                        <span className="text-success font-semibold">With discount</span>
+                        <span className="font-bold text-success">€{Number(appliedDiscount.final_price).toFixed(2)}</span>
+                      </div>
+                    )}
                     <p className="text-xs font-body text-muted-foreground">Full payment will be charged online via Stripe.</p>
                   </>
                 )}

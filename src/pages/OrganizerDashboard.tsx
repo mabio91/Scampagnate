@@ -13,10 +13,11 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb, Ticket
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
 import ProposalsPanel from "@/components/admin/ProposalsPanel";
+import DiscountCodesPanel from "@/components/admin/DiscountCodesPanel";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -144,7 +145,7 @@ const OrganizerDashboard = () => {
         </div>
 
         <Tabs defaultValue="events" className="w-full">
-          <TabsList className={`w-full grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+          <TabsList className={`w-full grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <TabsTrigger value="events" className="flex-1 text-xs">Events</TabsTrigger>
             <TabsTrigger value="history" className="flex-1 text-xs">History</TabsTrigger>
             <TabsTrigger value="analytics" className="flex-1 text-xs">
@@ -152,6 +153,9 @@ const OrganizerDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="proposals" className="flex-1 text-xs">
               <Lightbulb className="h-3 w-3 mr-0.5" /> Proposals
+            </TabsTrigger>
+            <TabsTrigger value="discounts" className="flex-1 text-xs">
+              <Ticket className="h-3 w-3 mr-0.5" /> Discounts
             </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="issues" className="flex-1 text-xs">
@@ -457,6 +461,11 @@ const OrganizerDashboard = () => {
           {/* Proposals Tab */}
           <TabsContent value="proposals" className="mt-4">
             <ProposalsPanel />
+          </TabsContent>
+
+          {/* Discounts Tab */}
+          <TabsContent value="discounts" className="mt-4">
+            <DiscountCodesPanel />
           </TabsContent>
 
           {/* Issues Tab (Admin only) */}
