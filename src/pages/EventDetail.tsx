@@ -951,6 +951,8 @@ const EventDetail = () => {
                     </label>
                   ))}
                 </RadioGroup>
+              </div>
+            )}
 
             {/* Additional Registration Fields */}
             {event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).length > 0 && (
