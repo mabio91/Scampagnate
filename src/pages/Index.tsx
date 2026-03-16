@@ -247,9 +247,12 @@ const Index = () => {
                 )}
               </h2>
               <div className={`space-y-2.5 stagger-children transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
-                {upcomingEvents.map((event, i) => (
-                  <EventCard key={event.id} event={event} index={i} />
-                ))}
+                {upcomingEvents.map((event, i) => {
+                  const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
+                  return (
+                    <EventCard key={event.id} event={event} index={i} discount={discount} />
+                  );
+                })}
               </div>
               {!isFetching && upcomingEvents.length === 0 && (
                 <div className="text-center py-16 animate-fade-in-up">
