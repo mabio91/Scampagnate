@@ -89,6 +89,102 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_code_usage: {
+        Row: {
+          created_at: string
+          discount_code_id: string
+          discounted_price: number
+          event_id: string
+          id: string
+          original_price: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount_code_id: string
+          discounted_price: number
+          event_id: string
+          id?: string
+          original_price: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          discount_code_id?: string
+          discounted_price?: number
+          event_id?: string
+          id?: string
+          original_price?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_code_usage_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_code_usage_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discount_codes: {
+        Row: {
+          applies_to_all: boolean
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string
+          discount_type: string
+          discount_value: number
+          event_ids: string[] | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          times_used: number
+          updated_at: string
+        }
+        Insert: {
+          applies_to_all?: boolean
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          discount_type: string
+          discount_value: number
+          event_ids?: string[] | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          times_used?: number
+          updated_at?: string
+        }
+        Update: {
+          applies_to_all?: boolean
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          discount_type?: string
+          discount_value?: number
+          event_ids?: string[] | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          times_used?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       equipment_template_items: {
         Row: {
           id: string
@@ -723,6 +819,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validate_discount_code: {
+        Args: { p_code: string; p_event_id: string; p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {
