@@ -97,6 +97,21 @@ const EventManage = () => {
   const { data: registrations, isLoading: regsLoading } = useEventRegistrations(id!);
   const { data: meetingPoints } = useEventMeetingPoints(id!);
 
+  // Fetch price options for this event
+  const { data: priceOptions } = useQuery({
+    queryKey: ["event-price-options", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_price_options")
+        .select("*")
+        .eq("event_id", id!)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   // Search users for adding existing participants
   const { data: searchResults } = useQuery({
     queryKey: ["search-users", searchQuery],
