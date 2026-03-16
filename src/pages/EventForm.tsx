@@ -662,6 +662,49 @@ const EventForm = () => {
                 )}
               </>
             )}
+
+            {/* Price Options */}
+            {form.payment_type !== "free" && (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-semibold">Price Options</Label>
+                    <p className="text-[11px] text-muted-foreground font-body">Offer multiple participation packages (e.g. "Trekking only", "Trekking + lunch").</p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0 }])} className="gap-1">
+                    <Plus className="h-3.5 w-3.5" /> Add
+                  </Button>
+                </div>
+                {priceOptions.map((opt, index) => (
+                  <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Option name (e.g. Trekking + lunch)"
+                        value={opt.name}
+                        onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, name: e.target.value } : o))}
+                      />
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        placeholder="€"
+                        value={opt.price || ""}
+                        onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, price: parseFloat(e.target.value) || 0 } : o))}
+                      />
+                    </div>
+                    <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                {priceOptions.length === 0 && (
+                  <p className="text-xs text-muted-foreground font-body text-center py-1">No price options. The base price will be used.</p>
+                )}
+              </div>
+            )}
+
             <div>
               <Label>Cancellation Policy</Label>
               <Select value={policyType} onValueChange={(v) => setPolicyType(v as PolicyType)}>
