@@ -10,26 +10,56 @@ const BOT_USER_AGENTS = [
   "Pinterest",
   "Googlebot",
   "bingbot",
+  "bot",
+  "crawl",
+  "spider",
+  "OpenGraph",
+  "Iframely",
+  "embedly",
 ];
 
 export const config = {
-  matcher: "/event/:id*",
+  runtime: "edge",
 };
 
-export default async function middleware(req: Request) {
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+export default async function handler(req: Request) {
+  const url = new URL(req.url);
   const ua = req.headers.get("user-agent") || "";
   const isBot = BOT_USER_AGENTS.some((bot) =>
     ua.toLowerCase().includes(bot.toLowerCase())
   );
 
+  const pathParts = url.pathname.split("/");
+  const eventId = pathParts[pathParts.length - 1];
+
+  // For non-bots, fetch and serve the SPA index.html so the client-side router handles it
   if (!isBot) {
-    return;
+    try {
+      const spaResponse = await fetch(`${url.origin}/index.html`);
+      const spaHtml = await spaResponse.text();
+      return new Response(spaHtml, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      });
+    } catch {
+      return new Response("", { status: 302, headers: { Location: "/" } });
+    }
   }
 
-  const url = new URL(req.url);
-  const pathParts = url.pathname.split("/");
-  const eventId = pathParts[2];
-  if (!eventId) return;
+  if (!eventId) {
+    return new Response("Not found", { status: 404 });
+  }
 
   try {
     const SUPABASE_URL = "https://etiynvukviykquqcsjln.supabase.co";
@@ -46,20 +76,22 @@ export default async function middleware(req: Request) {
       }
     );
 
-    if (!res.ok) return;
+    if (!res.ok) {
+      return new Response("Not found", { status: 404 });
+    }
 
     const events = await res.json();
-    if (!events || events.length === 0) return;
+    if (!events || events.length === 0) {
+      return new Response("Not found", { status: 404 });
+    }
 
     const event = events[0];
-    const baseUrl = "https://scampagnate.vercel.app";
+    const baseUrl = url.origin;
     const eventUrl = `${baseUrl}/event/${eventId}`;
 
     let imageUrl = `${baseUrl}/pwa-512x512.png`;
-    if (event.image_url) {
-      if (event.image_url.startsWith("http")) {
-        imageUrl = event.image_url;
-      }
+    if (event.image_url && event.image_url.startsWith("http")) {
+      imageUrl = event.image_url;
     }
 
     let formattedDate = "";
@@ -121,15 +153,6 @@ export default async function middleware(req: Request) {
       },
     });
   } catch {
-    return;
+    return new Response("Error", { status: 500 });
   }
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 }
