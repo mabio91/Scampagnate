@@ -368,8 +368,7 @@ const EventManage = () => {
               {format(new Date(event.date), "dd MMM yyyy")} · {event.time}
             </p>
           </div>
-          <div className="flex gap-1 items-center">
-            <Select 
+          <Select 
               value={event.status} 
               onValueChange={async (v) => {
                 if (v === 'cancelled') {
@@ -381,7 +380,7 @@ const EventManage = () => {
                 else { queryClient.invalidateQueries({ queryKey: ["event-detail", id] }); toast({ title: `Event status: ${v}` }); }
               }}
             >
-              <SelectTrigger className="w-[110px] h-8 text-xs">
+              <SelectTrigger className="w-[100px] h-8 text-xs shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -393,23 +392,26 @@ const EventManage = () => {
                 <SelectItem value="past"><span className="inline-flex items-center gap-1.5"><Archive className="h-3.5 w-3.5 text-muted-foreground" /> Past</span></SelectItem>
               </SelectContent>
             </Select>
-            <Link to={`/organizer/events/${id}/edit`}>
-              <Button variant="outline" size="sm" className="gap-1">
-                <Edit className="h-3.5 w-3.5" /> Edit
-              </Button>
-            </Link>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
-              onClick={() => navigate(`/organizer/events/new?duplicate=${id}`)}
-            >
-              <Copy className="h-3.5 w-3.5" /> Duplicate
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-2 flex-wrap">
+          <Link to={`/organizer/events/${id}/edit`}>
+            <Button variant="outline" size="sm" className="gap-1">
+              <Edit className="h-3.5 w-3.5" /> Edit
             </Button>
-            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20" onClick={() => setShowDeleteDialog(true)}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          </Link>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
+            onClick={() => navigate(`/organizer/events/new?duplicate=${id}`)}
+          >
+            <Copy className="h-3.5 w-3.5" /> Duplicate
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20" onClick={() => setShowDeleteDialog(true)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
 
         {/* Quick Stats */}
