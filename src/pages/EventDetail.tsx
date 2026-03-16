@@ -1054,6 +1054,7 @@ const EventDetail = () => {
               disabled={
                 registerMutation.isPending || membershipLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
+                (event.price_options && event.price_options.length > 0 && !selectedPriceOption) ||
                 (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim()))
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
