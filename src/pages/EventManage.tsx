@@ -448,11 +448,11 @@ const EventManage = () => {
         </div>
 
         <Tabs defaultValue="participants" className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="participants" className="flex-1">Participants</TabsTrigger>
-            <TabsTrigger value="checkin" className="flex-1">Check-in</TabsTrigger>
-            <TabsTrigger value="waitlist" className="flex-1">Waitlist</TabsTrigger>
-            <TabsTrigger value="pending" className="flex-1 relative">
+          <TabsList className="w-full flex overflow-x-auto no-scrollbar">
+            <TabsTrigger value="participants" className="flex-1 min-w-0 text-xs px-2">Participants</TabsTrigger>
+            <TabsTrigger value="checkin" className="flex-1 min-w-0 text-xs px-2">Check-in</TabsTrigger>
+            <TabsTrigger value="waitlist" className="flex-1 min-w-0 text-xs px-2">Waitlist</TabsTrigger>
+            <TabsTrigger value="pending" className="flex-1 min-w-0 text-xs px-2 relative">
               Pending
               {pending.length > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
@@ -460,9 +460,9 @@ const EventManage = () => {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="hidden sm:flex flex-1">
-              <BarChart3 className="h-3.5 w-3.5 mr-1" />
-              Stats
+            <TabsTrigger value="analytics" className="flex-1 min-w-0 text-xs px-2">
+              <BarChart3 className="h-3.5 w-3.5 mr-0.5 shrink-0" />
+              <span className="truncate">Stats</span>
             </TabsTrigger>
           </TabsList>
 
