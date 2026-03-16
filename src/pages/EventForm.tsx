@@ -130,6 +130,12 @@ const EventForm = () => {
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
 
+  interface PriceOptionInput {
+    name: string;
+    price: number;
+  }
+  const [priceOptions, setPriceOptions] = useState<PriceOptionInput[]>([]);
+
   useEffect(() => {
     if (isEditing) {
       loadEvent(id);
