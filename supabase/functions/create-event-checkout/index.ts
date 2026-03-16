@@ -25,7 +25,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { eventId, registrationId } = await req.json();
+    const { eventId, registrationId, discountCodeId } = await req.json();
     if (!eventId || !registrationId) throw new Error("Event ID and Registration ID required");
 
     // Fetch event details
@@ -37,21 +37,104 @@ serve(async (req) => {
 
     if (eventError || !event) throw new Error("Event not found");
 
-    // Determine amount to charge
+    // Determine base amount
     let amountCents: number;
     let description: string;
+    let originalPrice: number;
 
     if (event.payment_type === "deposit" && event.deposit) {
-      amountCents = Math.round(Number(event.deposit) * 100);
+      originalPrice = Number(event.deposit);
       description = `Deposit for "${event.title}" (Total: €${Number(event.price).toFixed(2)})`;
     } else if (event.payment_type === "paid") {
-      amountCents = Math.round(Number(event.price) * 100);
+      originalPrice = Number(event.price);
       description = `Full payment for "${event.title}"`;
     } else {
       throw new Error("This event does not require online payment");
     }
 
-    if (amountCents <= 0) throw new Error("Invalid payment amount");
+    let finalPrice = originalPrice;
+
+    // Apply discount if provided
+    if (discountCodeId) {
+      // Use service role to validate and record discount
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      const { data: discount, error: discountError } = await supabaseAdmin
+        .from("discount_codes")
+        .select("*")
+        .eq("id", discountCodeId)
+        .eq("is_active", true)
+        .single();
+
+      if (discountError || !discount) throw new Error("Invalid discount code");
+
+      // Validate expiration
+      if (discount.expires_at && new Date(discount.expires_at) < new Date()) {
+        throw new Error("Discount code expired");
+      }
+
+      // Validate max uses
+      if (discount.max_uses !== null && discount.times_used >= discount.max_uses) {
+        throw new Error("Discount code fully used");
+      }
+
+      // Validate event applicability
+      if (!discount.applies_to_all && discount.event_ids && !discount.event_ids.includes(eventId)) {
+        throw new Error("Discount code not valid for this event");
+      }
+
+      // Check duplicate usage
+      const { data: existingUsage } = await supabaseAdmin
+        .from("discount_code_usage")
+        .select("id")
+        .eq("discount_code_id", discountCodeId)
+        .eq("user_id", user.id)
+        .eq("event_id", eventId)
+        .maybeSingle();
+
+      if (existingUsage) throw new Error("Discount already used for this event");
+
+      // Calculate discounted price
+      if (discount.discount_type === "percentage") {
+        finalPrice = Math.max(0, originalPrice - (originalPrice * Number(discount.discount_value) / 100));
+      } else {
+        finalPrice = Math.max(0, originalPrice - Number(discount.discount_value));
+      }
+
+      finalPrice = Math.round(finalPrice * 100) / 100;
+
+      // Record usage
+      await supabaseAdmin.from("discount_code_usage").insert({
+        discount_code_id: discountCodeId,
+        user_id: user.id,
+        event_id: eventId,
+        original_price: originalPrice,
+        discounted_price: finalPrice,
+      });
+
+      description += ` (Discount: ${discount.code})`;
+    }
+
+    amountCents = Math.round(finalPrice * 100);
+    if (amountCents <= 0) {
+      // Free after discount — mark as paid directly
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      await supabaseAdmin
+        .from("event_registrations")
+        .update({ payment_status: "paid", status: "paid" })
+        .eq("id", registrationId);
+
+      return new Response(JSON.stringify({ free: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -90,6 +173,7 @@ serve(async (req) => {
         event_id: eventId,
         registration_id: registrationId,
         payment_type: event.payment_type,
+        discount_code_id: discountCodeId || "",
       },
     });
 
