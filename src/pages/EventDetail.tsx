@@ -237,6 +237,11 @@ const EventDetail = () => {
       if (appliedDiscount?.discount_code_id) {
         body.discountCodeId = appliedDiscount.discount_code_id;
       }
+      // Pass price option if selected
+      const regPriceOptionId = (myRegistration as any).price_option_id;
+      if (regPriceOptionId) {
+        body.priceOptionId = regPriceOptionId;
+      }
       const { data, error } = await supabase.functions.invoke("create-event-checkout", {
         body,
       });
