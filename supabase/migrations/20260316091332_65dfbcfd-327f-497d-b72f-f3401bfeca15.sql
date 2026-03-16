@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_membership_id_unique UNIQUE (membership_id);
