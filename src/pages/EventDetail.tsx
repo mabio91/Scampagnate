@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 
 const EventDetail = () => {
   const { id } = useParams();
