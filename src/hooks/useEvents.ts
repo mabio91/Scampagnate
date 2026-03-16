@@ -95,6 +95,7 @@ export const useEvent = (id: string) => {
         ...data,
         category: data.event_categories,
         meeting_points: data.event_meeting_points || [],
+        price_options: ((data as any).event_price_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
       } as unknown as EventWithDetails;
     },
     enabled: !!id,
