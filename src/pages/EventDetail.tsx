@@ -240,6 +240,12 @@ const EventDetail = () => {
         body,
       });
       if (error) throw error;
+      if (data?.free) {
+        toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
+        setPaymentLoading(false);
+        window.location.reload();
+        return;
+      }
       if (data?.url) {
         window.location.href = data.url;
       } else {
