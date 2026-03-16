@@ -311,16 +311,18 @@ const EventManage = () => {
 
   const exportCSV = () => {
     if (!registered.length) return;
-    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
+    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Price Option", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
     const rows = registered.map((r) => {
       const mp = meetingPoints?.find((p) => p.id === r.meeting_point_id);
       const isManual = r.sport_level?.startsWith("manual:");
       const manualName = isManual ? r.sport_level!.replace("manual:", "") : "";
+      const po = priceOptions?.find((p: any) => p.id === (r as any).price_option_id);
       return [
         isManual ? manualName : ((r.profiles as any)?.first_name || ""),
         isManual ? "(manual)" : ((r.profiles as any)?.last_name || ""),
         isManual ? "" : ((r.profiles as any)?.phone || ""),
         (r.sport_level && !r.sport_level.startsWith("manual:")) ? r.sport_level : "-",
+        po?.name || "-",
         r.status,
         r.payment_status || "-",
         mp?.name || "-",
