@@ -44,6 +44,7 @@ const Index = () => {
 
   const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
+  const { data: discountMap } = useActiveDiscounts();
 
   const hasActiveFilters = searchQuery || dateFilter || priceFilter !== "all";
 
