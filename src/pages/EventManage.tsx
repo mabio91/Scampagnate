@@ -368,8 +368,7 @@ const EventManage = () => {
               {format(new Date(event.date), "dd MMM yyyy")} · {event.time}
             </p>
           </div>
-          <div className="flex gap-1 items-center">
-            <Select 
+          <Select 
               value={event.status} 
               onValueChange={async (v) => {
                 if (v === 'cancelled') {
@@ -381,7 +380,7 @@ const EventManage = () => {
                 else { queryClient.invalidateQueries({ queryKey: ["event-detail", id] }); toast({ title: `Event status: ${v}` }); }
               }}
             >
-              <SelectTrigger className="w-[110px] h-8 text-xs">
+              <SelectTrigger className="w-[100px] h-8 text-xs shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -393,23 +392,26 @@ const EventManage = () => {
                 <SelectItem value="past"><span className="inline-flex items-center gap-1.5"><Archive className="h-3.5 w-3.5 text-muted-foreground" /> Past</span></SelectItem>
               </SelectContent>
             </Select>
-            <Link to={`/organizer/events/${id}/edit`}>
-              <Button variant="outline" size="sm" className="gap-1">
-                <Edit className="h-3.5 w-3.5" /> Edit
-              </Button>
-            </Link>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
-              onClick={() => navigate(`/organizer/events/new?duplicate=${id}`)}
-            >
-              <Copy className="h-3.5 w-3.5" /> Duplicate
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-2 flex-wrap">
+          <Link to={`/organizer/events/${id}/edit`}>
+            <Button variant="outline" size="sm" className="gap-1">
+              <Edit className="h-3.5 w-3.5" /> Edit
             </Button>
-            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20" onClick={() => setShowDeleteDialog(true)}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          </Link>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
+            onClick={() => navigate(`/organizer/events/new?duplicate=${id}`)}
+          >
+            <Copy className="h-3.5 w-3.5" /> Duplicate
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20" onClick={() => setShowDeleteDialog(true)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
 
         {/* Quick Stats */}
@@ -446,11 +448,11 @@ const EventManage = () => {
         </div>
 
         <Tabs defaultValue="participants" className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="participants" className="flex-1">Participants</TabsTrigger>
-            <TabsTrigger value="checkin" className="flex-1">Check-in</TabsTrigger>
-            <TabsTrigger value="waitlist" className="flex-1">Waitlist</TabsTrigger>
-            <TabsTrigger value="pending" className="flex-1 relative">
+          <TabsList className="w-full flex overflow-x-auto no-scrollbar">
+            <TabsTrigger value="participants" className="flex-1 min-w-0 text-xs px-2">Participants</TabsTrigger>
+            <TabsTrigger value="checkin" className="flex-1 min-w-0 text-xs px-2">Check-in</TabsTrigger>
+            <TabsTrigger value="waitlist" className="flex-1 min-w-0 text-xs px-2">Waitlist</TabsTrigger>
+            <TabsTrigger value="pending" className="flex-1 min-w-0 text-xs px-2 relative">
               Pending
               {pending.length > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
@@ -458,9 +460,9 @@ const EventManage = () => {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="hidden sm:flex flex-1">
-              <BarChart3 className="h-3.5 w-3.5 mr-1" />
-              Stats
+            <TabsTrigger value="analytics" className="flex-1 min-w-0 text-xs px-2">
+              <BarChart3 className="h-3.5 w-3.5 mr-0.5 shrink-0" />
+              <span className="truncate">Stats</span>
             </TabsTrigger>
           </TabsList>
 

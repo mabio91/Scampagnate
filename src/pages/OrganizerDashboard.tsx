@@ -145,21 +145,21 @@ const OrganizerDashboard = () => {
         </div>
 
         <Tabs defaultValue="events" className="w-full">
-          <TabsList className={`w-full grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
-            <TabsTrigger value="events" className="flex-1 text-xs">Events</TabsTrigger>
-            <TabsTrigger value="history" className="flex-1 text-xs">History</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 text-xs">
-              <BarChart3 className="h-3 w-3 mr-0.5" /> Analytics
+          <TabsList className="w-full flex overflow-x-auto no-scrollbar">
+            <TabsTrigger value="events" className="flex-1 min-w-0 text-xs px-2">Events</TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 min-w-0 text-xs px-2">History</TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1 min-w-0 text-xs px-2">
+              <BarChart3 className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="proposals" className="flex-1 text-xs">
-              <Lightbulb className="h-3 w-3 mr-0.5" /> Proposals
+            <TabsTrigger value="proposals" className="flex-1 min-w-0 text-xs px-2">
+              <Lightbulb className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Proposals</span>
             </TabsTrigger>
-            <TabsTrigger value="discounts" className="flex-1 text-xs">
-              <Ticket className="h-3 w-3 mr-0.5" /> Discounts
+            <TabsTrigger value="discounts" className="flex-1 min-w-0 text-xs px-2">
+              <Ticket className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Discounts</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="issues" className="flex-1 text-xs">
-                <AlertTriangle className="h-3 w-3 mr-0.5" /> Issues
+              <TabsTrigger value="issues" className="flex-1 min-w-0 text-xs px-2">
+                <AlertTriangle className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Issues</span>
               </TabsTrigger>
             )}
           </TabsList>
