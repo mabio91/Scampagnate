@@ -232,8 +232,12 @@ const EventDetail = () => {
     if (!myRegistration) return;
     setPaymentLoading(true);
     try {
+      const body: any = { eventId: event.id, registrationId: myRegistration.id };
+      if (appliedDiscount?.discount_code_id) {
+        body.discountCodeId = appliedDiscount.discount_code_id;
+      }
       const { data, error } = await supabase.functions.invoke("create-event-checkout", {
-        body: { eventId: event.id, registrationId: myRegistration.id },
+        body,
       });
       if (error) throw error;
       if (data?.url) {
