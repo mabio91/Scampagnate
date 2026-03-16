@@ -512,6 +512,10 @@ const EventManage = () => {
                             {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
                               <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
                             )}
+                            {(reg as any).price_option_id && priceOptions?.length > 0 && (() => {
+                              const po = priceOptions.find((p: any) => p.id === (reg as any).price_option_id);
+                              return po ? <span className="text-secondary ml-1">· {po.name}</span> : null;
+                            })()}
                             {reg.payment_status && reg.payment_status !== "not_required" && (
                               <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
                                 · {reg.payment_status}
