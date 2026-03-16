@@ -71,7 +71,8 @@ export const useEvents = (categoryName?: string | null) => {
       return (data as any).map((event: any) => ({
         ...event,
         category: event.event_categories,
-        meeting_points: event.event_meeting_points
+        meeting_points: event.event_meeting_points,
+        price_options: event.event_price_options?.sort((a: any, b: any) => a.sort_order - b.sort_order) || [],
       })) as unknown as EventWithDetails[];
     },
     staleTime: 2 * 60 * 1000,
