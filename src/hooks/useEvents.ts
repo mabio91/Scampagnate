@@ -31,6 +31,7 @@ export interface EventWithDetails {
   gallery_images: { url: string; order: number }[] | null;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
+  price_options?: { id: string; name: string; price: number; sort_order: number }[];
 }
 
 export const useEvents = (categoryName?: string | null) => {
