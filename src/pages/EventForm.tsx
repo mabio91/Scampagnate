@@ -219,6 +219,16 @@ const EventForm = () => {
           }))
         );
       }
+
+      // Load price options
+      const { data: options } = await supabase
+        .from("event_price_options")
+        .select("*")
+        .eq("event_id", eventId)
+        .order("sort_order");
+      if (options && options.length > 0) {
+        setPriceOptions(options.map((o: any) => ({ name: o.name, price: Number(o.price) })));
+      }
     }
     setLoadingEvent(false);
   };
