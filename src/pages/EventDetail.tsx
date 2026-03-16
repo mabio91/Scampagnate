@@ -861,7 +861,7 @@ const EventDetail = () => {
 
       {/* Registration Dialog */}
       <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Register for {event.title}</DialogTitle>
             <DialogDescription className="font-body text-sm">
