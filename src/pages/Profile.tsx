@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star, CreditCard } from "lucide-react";
+import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star, CreditCard, Copy } from "lucide-react";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { useQuery } from "@tanstack/react-query";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -295,7 +295,17 @@ const Profile = () => {
               {profile?.membership_id && (
                 <div className="text-right">
                   <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Member ID</p>
-                  <p className="text-lg font-display font-bold text-foreground mt-0.5">#{profile.membership_id}</p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(profile.membership_id));
+                      toast({ title: "Copied!", description: `Member ID #${profile.membership_id} copied to clipboard.` });
+                    }}
+                    className="flex items-center gap-1.5 mt-0.5 group cursor-pointer"
+                    title="Copy Member ID"
+                  >
+                    <p className="text-lg font-display font-bold text-foreground">#{profile.membership_id}</p>
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
                 </div>
               )}
             </div>
