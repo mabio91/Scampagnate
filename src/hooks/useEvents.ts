@@ -188,7 +188,7 @@ export const useRegisterForEvent = () => {
   const { user, profile, refreshProfile } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string }) => {
+    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType, priceOptionId }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string; priceOptionId?: string }) => {
       if (!user) throw new Error("Devi effettuare il login");
 
       // Determine payment_status based on payment type
@@ -210,9 +210,10 @@ export const useRegisterForEvent = () => {
         user_id: user.id,
         meeting_point_id: meetingPointId || null,
         sport_level: sportLevel || null,
-        status: status as any, // Cast required if TypeScript still struggles
+        status: status as any,
         payment_status: paymentStatus,
-      });
+        price_option_id: priceOptionId || null,
+      } as any);
       if (error) throw error;
 
       // Handle Membership Activation if not active
