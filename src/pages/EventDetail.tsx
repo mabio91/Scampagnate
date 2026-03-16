@@ -771,6 +771,17 @@ const EventDetail = () => {
             );
           })()}
 
+          {/* Discount code for Pay Now state */}
+          {needsPayment && user && (
+            <div className="mb-4">
+              <DiscountCodeInput
+                eventId={event.id}
+                userId={user.id}
+                onDiscountApplied={setAppliedDiscount}
+              />
+            </div>
+          )}
+
           {isRegistered && (
             <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
               {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}
