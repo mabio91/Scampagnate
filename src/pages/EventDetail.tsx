@@ -279,6 +279,7 @@ const EventDetail = () => {
         asWaitlist: isWaitlist,
         requestApproval: requestApproval,
         paymentType: event.payment_type,
+        priceOptionId: selectedPriceOption || undefined,
       });
       setShowRegisterDialog(false);
       setShowAccessWarning(false);
