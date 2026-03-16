@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { CalendarDays, MapPin, Users } from "lucide-react";
+import { CalendarDays, MapPin, Users, Ticket } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -25,7 +25,13 @@ const getEventStatusDisplay = (status: string | null | undefined) => {
   return statusConfig[status];
 };
 
-const EventCard = memo(({ event, index }: { event: EventWithDetails; index: number }) => {
+export interface EventDiscount {
+  discount_type: string;
+  discount_value: number;
+  code: string;
+}
+
+const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; index: number; discount?: EventDiscount | null }) => {
   const status = getEventStatusDisplay(event.status);
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
 
@@ -43,6 +49,14 @@ const EventCard = memo(({ event, index }: { event: EventWithDetails; index: numb
           {event.difficulty && (
             <div className="absolute top-1 left-1">
               <DifficultyBadge difficulty={event.difficulty} className="bg-background/80 backdrop-blur-md text-foreground shadow-sm px-1.5 py-0.5 text-[10px]" showLabel={false} />
+            </div>
+          )}
+          {discount && (
+            <div className="absolute bottom-1 left-1 right-1">
+              <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-accent/90 backdrop-blur-md text-accent-foreground text-[9px] font-body font-bold shadow-sm">
+                <Ticket className="h-2.5 w-2.5" />
+                {discount.discount_type === "percentage" ? `-${discount.discount_value}%` : `-€${discount.discount_value}`}
+              </span>
             </div>
           )}
         </div>

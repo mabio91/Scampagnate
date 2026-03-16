@@ -4,6 +4,7 @@ import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
 import EventCard from "@/components/events/EventCard";
 import { useEvents, useCategories } from "@/hooks/useEvents";
+import { useActiveDiscounts } from "@/hooks/useActiveDiscounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
