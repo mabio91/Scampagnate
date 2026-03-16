@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
 import ProposalsPanel from "@/components/admin/ProposalsPanel";
+import DiscountCodesPanel from "@/components/admin/DiscountCodesPanel";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
