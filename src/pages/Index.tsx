@@ -4,6 +4,7 @@ import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
 import EventCard from "@/components/events/EventCard";
 import { useEvents, useCategories } from "@/hooks/useEvents";
+import { useActiveDiscounts } from "@/hooks/useActiveDiscounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ const Index = () => {
 
   const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
+  const { data: discountMap } = useActiveDiscounts();
 
   const hasActiveFilters = searchQuery || dateFilter || priceFilter !== "all";
 
@@ -245,9 +247,12 @@ const Index = () => {
                 )}
               </h2>
               <div className={`space-y-2.5 stagger-children transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
-                {upcomingEvents.map((event, i) => (
-                  <EventCard key={event.id} event={event} index={i} />
-                ))}
+                {upcomingEvents.map((event, i) => {
+                  const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
+                  return (
+                    <EventCard key={event.id} event={event} index={i} discount={discount} />
+                  );
+                })}
               </div>
               {!isFetching && upcomingEvents.length === 0 && (
                 <div className="text-center py-16 animate-fade-in-up">
