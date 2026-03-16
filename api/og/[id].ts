@@ -13,9 +13,6 @@ const BOT_USER_AGENTS = [
   "bot",
   "crawl",
   "spider",
-  "curl",
-  "wget",
-  "python-requests",
   "OpenGraph",
   "Iframely",
   "embedly",
@@ -41,17 +38,27 @@ export default async function handler(req: Request) {
     ua.toLowerCase().includes(bot.toLowerCase())
   );
 
-  // Extract event ID from the path: /api/og/[id]
   const pathParts = url.pathname.split("/");
   const eventId = pathParts[pathParts.length - 1];
 
-  if (!eventId) {
-    return Response.redirect(`${url.origin}/event/${eventId || ""}`, 302);
+  // For non-bots, fetch and serve the SPA index.html so the client-side router handles it
+  if (!isBot) {
+    try {
+      const spaResponse = await fetch(`${url.origin}/index.html`);
+      const spaHtml = await spaResponse.text();
+      return new Response(spaHtml, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      });
+    } catch {
+      return new Response("", { status: 302, headers: { Location: "/" } });
+    }
   }
 
-  // For non-bots, redirect to the SPA
-  if (!isBot) {
-    return Response.redirect(`${url.origin}/event/${eventId}`, 302);
+  if (!eventId) {
+    return new Response("Not found", { status: 404 });
   }
 
   try {
@@ -70,12 +77,12 @@ export default async function handler(req: Request) {
     );
 
     if (!res.ok) {
-      return Response.redirect(`${url.origin}/event/${eventId}`, 302);
+      return new Response("Not found", { status: 404 });
     }
 
     const events = await res.json();
     if (!events || events.length === 0) {
-      return Response.redirect(`${url.origin}/event/${eventId}`, 302);
+      return new Response("Not found", { status: 404 });
     }
 
     const event = events[0];
@@ -83,10 +90,8 @@ export default async function handler(req: Request) {
     const eventUrl = `${baseUrl}/event/${eventId}`;
 
     let imageUrl = `${baseUrl}/pwa-512x512.png`;
-    if (event.image_url) {
-      if (event.image_url.startsWith("http")) {
-        imageUrl = event.image_url;
-      }
+    if (event.image_url && event.image_url.startsWith("http")) {
+      imageUrl = event.image_url;
     }
 
     let formattedDate = "";
@@ -132,8 +137,6 @@ export default async function handler(req: Request) {
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${imageUrl}" />
-
-  <meta http-equiv="refresh" content="0;url=${eventUrl}" />
 </head>
 <body>
   <h1>${escapeHtml(title)}</h1>
@@ -150,6 +153,6 @@ export default async function handler(req: Request) {
       },
     });
   } catch {
-    return Response.redirect(`${url.origin}/event/${eventId}`, 302);
+    return new Response("Error", { status: 500 });
   }
 }
