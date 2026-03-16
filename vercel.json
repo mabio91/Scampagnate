@@ -2,6 +2,10 @@
     "cleanUrls": true,
     "rewrites": [
         {
+            "source": "/event/:id",
+            "destination": "/api/og/:id"
+        },
+        {
             "source": "/((?!api|_next|assets|.*\\..*).*)",
             "destination": "/"
         }
