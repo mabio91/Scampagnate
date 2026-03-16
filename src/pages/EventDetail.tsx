@@ -936,6 +936,22 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Price Options */}
+            {event.price_options && event.price_options.length > 0 && (
+              <div>
+                <Label className="font-body text-sm font-semibold">Choose your option</Label>
+                <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="mt-2 space-y-2">
+                  {event.price_options.map((opt: any) => (
+                    <label key={opt.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted transition-colors">
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value={opt.id} />
+                        <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
+                      </div>
+                      <span className="text-sm font-display font-bold text-foreground">€{Number(opt.price).toFixed(2)}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+
             {/* Additional Registration Fields */}
             {event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).length > 0 && (
               <div className="space-y-3">
