@@ -29,6 +29,7 @@ export interface EventWithDetails {
   equipment_list: any;
   visibility: "public" | "private" | "hidden";
   gallery_images: { url: string; order: number }[] | null;
+  access_rules: any;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
   price_options?: { id: string; name: string; price: number; sort_order: number }[];
