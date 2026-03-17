@@ -321,7 +321,7 @@ const EventDetail = () => {
     if (needsPayment) return "Pay Now";
     if (isRegistered) return "Registered ✔";
     if (event.status === "full") return "Join Waitlist";
-    if (accessData && !accessData.hasAccess) return "Join Event";
+    if (accessData && !accessData.hasAccess) return "View Requirements";
     return "Join Event";
   };
 
