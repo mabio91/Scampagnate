@@ -14,7 +14,7 @@ export const useActiveDiscounts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("discount_codes")
-        .select("code, discount_type, discount_value, applies_to_all, event_ids, expires_at, max_uses, times_used")
+        .select("code, discount_type, discount_value, applies_to_all, event_ids, expires_at, starts_at, max_uses, times_used, assigned_user_id")
         .eq("is_active", true);
 
       if (error) throw error;
@@ -23,10 +23,14 @@ export const useActiveDiscounts = () => {
       const discountMap: Record<string, { discount_type: string; discount_value: number; code: string }> = {};
 
       for (const dc of data || []) {
+        // Skip not yet started
+        if (dc.starts_at && new Date(dc.starts_at) > now) continue;
         // Skip expired
         if (dc.expires_at && new Date(dc.expires_at) < now) continue;
         // Skip fully used
         if (dc.max_uses !== null && dc.times_used >= dc.max_uses) continue;
+        // Skip user-specific codes from public display
+        if (dc.assigned_user_id) continue;
 
         // Pick the best (highest value) discount per event
         const addForEvent = (eventId: string) => {
