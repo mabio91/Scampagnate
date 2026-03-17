@@ -130,6 +130,9 @@ const EventForm = () => {
   };
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
+  const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
+  const [exclusivityLabel, setExclusivityLabel] = useState("");
+  const [restrictionMessage, setRestrictionMessage] = useState("");
 
   interface PriceOptionInput {
     name: string;
