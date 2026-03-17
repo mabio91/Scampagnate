@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Percent, Hash, Ticket, Copy, Pencil, Loader2 } from "lucide-react";
+import { Plus, Percent, Hash, Ticket, Copy, Pencil, Loader2, User, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
 interface DiscountCode {
@@ -24,8 +24,11 @@ interface DiscountCode {
   applies_to_all: boolean;
   max_uses: number | null;
   times_used: number;
+  starts_at: string | null;
   expires_at: string | null;
   is_active: boolean;
+  is_single_use: boolean;
+  assigned_user_id: string | null;
   created_by: string | null;
   created_at: string;
 }
@@ -45,7 +48,10 @@ const DiscountCodesPanel = () => {
     applies_to_all: false,
     event_ids_text: "",
     max_uses: "",
+    starts_at: "",
     expires_at: "",
+    is_single_use: false,
+    assigned_user_id: "",
   });
 
   const { data: codes, isLoading } = useQuery({
@@ -85,7 +91,10 @@ const DiscountCodesPanel = () => {
           ? form.event_ids_text.split(",").map((s) => s.trim()).filter(Boolean)
           : null,
         max_uses: form.max_uses ? parseInt(form.max_uses) : null,
+        starts_at: form.starts_at || null,
         expires_at: form.expires_at || null,
+        is_single_use: form.is_single_use,
+        assigned_user_id: form.assigned_user_id.trim() || null,
         created_by: user?.id,
       };
 
@@ -102,6 +111,7 @@ const DiscountCodesPanel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["discount-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["active-discounts"] });
       toast({ title: editingCode ? "Code updated" : "Code created" });
       resetForm();
     },
@@ -120,6 +130,7 @@ const DiscountCodesPanel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["discount-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["active-discounts"] });
     },
   });
 
@@ -134,7 +145,10 @@ const DiscountCodesPanel = () => {
       applies_to_all: false,
       event_ids_text: "",
       max_uses: "",
+      starts_at: "",
       expires_at: "",
+      is_single_use: false,
+      assigned_user_id: "",
     });
   };
 
@@ -148,7 +162,10 @@ const DiscountCodesPanel = () => {
       applies_to_all: code.applies_to_all,
       event_ids_text: code.event_ids?.join(", ") || "",
       max_uses: code.max_uses?.toString() || "",
+      starts_at: code.starts_at ? code.starts_at.split("T")[0] : "",
       expires_at: code.expires_at ? code.expires_at.split("T")[0] : "",
+      is_single_use: code.is_single_use,
+      assigned_user_id: code.assigned_user_id || "",
     });
     setShowForm(true);
   };
@@ -189,6 +206,14 @@ const DiscountCodesPanel = () => {
                   <Badge variant={code.is_active ? "default" : "secondary"} className="text-[10px]">
                     {code.is_active ? "Active" : "Inactive"}
                   </Badge>
+                  {code.is_single_use && (
+                    <Badge variant="outline" className="text-[10px]">Single-use</Badge>
+                  )}
+                  {code.assigned_user_id && (
+                    <Badge variant="outline" className="text-[10px] gap-0.5">
+                      <User className="h-2.5 w-2.5" /> Personal
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => openEdit(code)} className="text-muted-foreground hover:text-foreground">
@@ -209,8 +234,11 @@ const DiscountCodesPanel = () => {
                 <span>• Used {code.times_used}{code.max_uses ? `/${code.max_uses}` : ""} times</span>
                 {code.applies_to_all && <span>• All events</span>}
                 {code.event_ids && !code.applies_to_all && <span>• {code.event_ids.length} event(s)</span>}
+                {code.starts_at && (
+                  <span>• From {format(new Date(code.starts_at), "dd MMM yyyy")}</span>
+                )}
                 {code.expires_at && (
-                  <span>• Expires {format(new Date(code.expires_at), "dd MMM yyyy")}</span>
+                  <span>• Until {format(new Date(code.expires_at), "dd MMM yyyy")}</span>
                 )}
               </div>
             </Card>
@@ -242,7 +270,7 @@ const DiscountCodesPanel = () => {
               <Input
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="Early bird discount"
+                placeholder="Early bird discount, referral code, etc."
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -305,23 +333,65 @@ const DiscountCodesPanel = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Max Uses</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={form.max_uses}
-                  onChange={(e) => setForm((f) => ({ ...f, max_uses: e.target.value }))}
-                  placeholder="Unlimited"
+            {/* Validity Period */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" /> Validity Period
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Starts</Label>
+                  <Input
+                    type="date"
+                    value={form.starts_at}
+                    onChange={(e) => setForm((f) => ({ ...f, starts_at: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Expires</Label>
+                  <Input
+                    type="date"
+                    value={form.expires_at}
+                    onChange={(e) => setForm((f) => ({ ...f, expires_at: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label>Max Uses</Label>
+              <Input
+                type="number"
+                min={1}
+                value={form.max_uses}
+                onChange={(e) => setForm((f) => ({ ...f, max_uses: e.target.value }))}
+                placeholder="Unlimited"
+              />
+            </div>
+
+            {/* Advanced: Single-use & User Assignment */}
+            <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+              <p className="text-xs font-semibold text-foreground">Advanced Options</p>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm">Single-use per user</Label>
+                  <p className="text-[11px] text-muted-foreground">Each user can use this code only once across all events</p>
+                </div>
+                <Switch
+                  checked={form.is_single_use}
+                  onCheckedChange={(checked) => setForm((f) => ({ ...f, is_single_use: checked }))}
                 />
               </div>
+
               <div>
-                <Label>Expires</Label>
+                <Label className="text-sm">Assign to specific user (UUID)</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">Leave empty for public codes. Paste user ID for personalized codes.</p>
                 <Input
-                  type="date"
-                  value={form.expires_at}
-                  onChange={(e) => setForm((f) => ({ ...f, expires_at: e.target.value }))}
+                  value={form.assigned_user_id}
+                  onChange={(e) => setForm((f) => ({ ...f, assigned_user_id: e.target.value.trim() }))}
+                  placeholder="e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  className="font-mono text-xs"
                 />
               </div>
             </div>
