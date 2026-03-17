@@ -361,26 +361,41 @@ export type Database = {
       event_price_options: {
         Row: {
           created_at: string
+          eligible_group: string
           event_id: string
           id: string
+          is_promotional: boolean
           name: string
+          original_price: number | null
           price: number
+          promo_end: string | null
+          promo_start: string | null
           sort_order: number
         }
         Insert: {
           created_at?: string
+          eligible_group?: string
           event_id: string
           id?: string
+          is_promotional?: boolean
           name: string
+          original_price?: number | null
           price?: number
+          promo_end?: string | null
+          promo_start?: string | null
           sort_order?: number
         }
         Update: {
           created_at?: string
+          eligible_group?: string
           event_id?: string
           id?: string
+          is_promotional?: boolean
           name?: string
+          original_price?: number | null
           price?: number
+          promo_end?: string | null
+          promo_start?: string | null
           sort_order?: number
         }
         Relationships: [
