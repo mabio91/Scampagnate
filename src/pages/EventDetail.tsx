@@ -67,6 +67,11 @@ const EventDetail = () => {
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
   const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
 
+  // Dynamic pricing eligibility
+  const rawPriceOptions = event?.price_options as PriceOption[] | null;
+  const { data: resolvedPriceOptions } = usePricingEligibility(rawPriceOptions);
+  const bestPrice = getBestUserPrice(resolvedPriceOptions, Number(event?.price || 0));
+
   // Fetch organizer profile for contact info
   const { data: organizerProfile } = useQuery({
     queryKey: ["organizer-profile", event?.organizer_id],
