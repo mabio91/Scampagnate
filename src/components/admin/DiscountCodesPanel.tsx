@@ -511,13 +511,11 @@ const DiscountCodesPanel = () => {
               </div>
 
               <div>
-                <Label className="text-sm">Assign to specific user (UUID)</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">Leave empty for public codes. Paste user ID for personalized codes.</p>
-                <Input
+                <Label className="text-sm">Assign to specific user</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">Leave empty for public codes. Search a user for personalized codes.</p>
+                <UserSearchInput
                   value={form.assigned_user_id}
-                  onChange={(e) => setForm((f) => ({ ...f, assigned_user_id: e.target.value.trim() }))}
-                  placeholder="e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                  className="font-mono text-xs"
+                  onChange={(userId) => setForm((f) => ({ ...f, assigned_user_id: userId }))}
                 />
               </div>
             </div>
