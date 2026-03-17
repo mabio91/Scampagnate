@@ -62,7 +62,9 @@ const EventDetail = () => {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
 
-  const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
+  const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
+  const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
+  const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
 
   // Fetch organizer profile for contact info
   const { data: organizerProfile } = useQuery({
