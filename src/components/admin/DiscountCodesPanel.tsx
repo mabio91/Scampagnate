@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,8 +11,134 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Percent, Hash, Ticket, Copy, Pencil, Loader2, User, Calendar } from "lucide-react";
+import { Plus, Percent, Hash, Ticket, Copy, Pencil, Loader2, User, Calendar, Search, X } from "lucide-react";
 import { format } from "date-fns";
+
+interface UserSearchResult {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+}
+
+const UserSearchInput = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (userId: string) => void;
+}) => {
+  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Load selected user info when value is set (e.g. editing)
+  useEffect(() => {
+    if (value && !selectedUser) {
+      supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .eq("id", value)
+        .single()
+        .then(({ data }) => {
+          if (data) setSelectedUser(data as UserSearchResult);
+        });
+    }
+    if (!value) setSelectedUser(null);
+  }, [value]);
+
+  const { data: results, isFetching } = useQuery({
+    queryKey: ["user-search", query],
+    queryFn: async () => {
+      if (query.length < 2) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(8);
+      if (error) throw error;
+      return data as UserSearchResult[];
+    },
+    enabled: query.length >= 2,
+    staleTime: 30_000,
+  });
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (selectedUser) {
+    return (
+      <div className="flex items-center gap-2 border rounded-md p-2 bg-muted/30">
+        <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium truncate">
+            {selectedUser.first_name} {selectedUser.last_name}
+          </p>
+          <p className="text-[10px] text-muted-foreground truncate">
+            {selectedUser.email || selectedUser.id.slice(0, 8) + "..."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setSelectedUser(null); onChange(""); setQuery(""); }}
+          className="text-muted-foreground hover:text-foreground shrink-0"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
+          onFocus={() => query.length >= 2 && setIsOpen(true)}
+          placeholder="Search by name or email..."
+          className="pl-8 text-xs"
+        />
+        {isFetching && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+      </div>
+      {isOpen && results && results.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 border rounded-md bg-popover shadow-md max-h-48 overflow-y-auto">
+          {results.map((u) => (
+            <button
+              key={u.id}
+              type="button"
+              className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
+              onClick={() => {
+                setSelectedUser(u);
+                onChange(u.id);
+                setIsOpen(false);
+                setQuery("");
+              }}
+            >
+              <p className="text-xs font-medium">{u.first_name} {u.last_name}</p>
+              <p className="text-[10px] text-muted-foreground">{u.email || u.id.slice(0, 8) + "..."}</p>
+            </button>
+          ))}
+        </div>
+      )}
+      {isOpen && query.length >= 2 && !isFetching && results?.length === 0 && (
+        <div className="absolute z-50 w-full mt-1 border rounded-md bg-popover shadow-md p-3">
+          <p className="text-xs text-muted-foreground text-center">No users found</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface DiscountCode {
   id: string;
