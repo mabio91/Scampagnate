@@ -224,7 +224,14 @@ const EventForm = () => {
         );
       }
 
-      // Load price options
+      // Load access rules
+      if ((event as any).access_rules) {
+        const ar = (event as any).access_rules as AccessRulesConfig;
+        setAccessRules(ar.rules || []);
+        setExclusivityLabel(ar.exclusivity_label || "");
+        setRestrictionMessage(ar.restriction_message || "");
+      }
+
       const { data: options } = await supabase
         .from("event_price_options")
         .select("*")
