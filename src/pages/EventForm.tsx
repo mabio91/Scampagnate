@@ -170,6 +170,11 @@ const EventForm = () => {
   interface PriceOptionInput {
     name: string;
     price: number;
+    eligible_group: string;
+    original_price: number | null;
+    is_promotional: boolean;
+    promo_start: string;
+    promo_end: string;
   }
   const [priceOptions, setPriceOptions] = useState<PriceOptionInput[]>([]);
 
