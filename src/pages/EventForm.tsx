@@ -776,7 +776,8 @@ const EventForm = () => {
                           <SelectContent>
                             <SelectItem value="all">Everyone</SelectItem>
                             <SelectItem value="members">Active Members</SelectItem>
-                            <SelectItem value="experienced">Experienced Users</SelectItem>
+                            <SelectItem value="experienced">Experienced Users (1+ events)</SelectItem>
+                            <SelectItem value="loyal">Loyal Participants (5+ events)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

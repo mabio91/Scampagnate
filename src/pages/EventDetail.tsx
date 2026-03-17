@@ -822,7 +822,9 @@ const EventDetail = () => {
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
             <p className="text-xs font-body text-muted-foreground">
-              {event.price_options && event.price_options.length > 0 ? "From" : (event.payment_type as string) === "deposit" ? "From" : "Price"}
+              {resolvedPriceOptions && resolvedPriceOptions.length > 0
+                ? (bestPrice.label ? "Your price" : "From")
+                : (event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
             {appliedDiscount && needsPayment ? (
               <div className="flex items-center gap-2">
@@ -834,18 +836,29 @@ const EventDetail = () => {
                 </p>
               </div>
             ) : (
-              <p className="text-xl font-display font-bold text-foreground">
-                {(() => {
-                  const hasPriceOptions = event.price_options && event.price_options.length > 0;
-                  if (hasPriceOptions) {
-                    const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
-                    return `€${minPrice.toFixed(2)}`;
-                  }
-                  if (Number(event.price) === 0 && (!profile || profile.membership_status === 'Active')) return "Free";
-                  if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
-                  return `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`;
-                })()}
-              </p>
+              <div>
+                {bestPrice.originalPrice && bestPrice.originalPrice > bestPrice.price && (
+                  <p className="text-xs font-display text-muted-foreground line-through">€{bestPrice.originalPrice.toFixed(2)}</p>
+                )}
+                <p className={`text-xl font-display font-bold ${bestPrice.originalPrice && bestPrice.originalPrice > bestPrice.price ? "text-green-500" : "text-foreground"}`}>
+                  {(() => {
+                    if (resolvedPriceOptions && resolvedPriceOptions.length > 0) {
+                      const eligible = resolvedPriceOptions.filter(o => o.isEligible && o.isPromoActive);
+                      if (eligible.length > 0) return `€${Math.min(...eligible.map(o => o.price)).toFixed(2)}`;
+                      const allGroup = resolvedPriceOptions.filter(o => o.eligible_group === "all" && o.isPromoActive);
+                      if (allGroup.length > 0) return `€${Math.min(...allGroup.map(o => o.price)).toFixed(2)}`;
+                    }
+                    const hasPriceOptions = event.price_options && event.price_options.length > 0;
+                    if (hasPriceOptions) {
+                      const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
+                      return `€${minPrice.toFixed(2)}`;
+                    }
+                    if (Number(event.price) === 0 && (!profile || profile.membership_status === 'Active')) return "Free";
+                    if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
+                    return `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`;
+                  })()}
+                </p>
+              </div>
             )}
             {profile?.membership_status !== 'Active' && !isRegistered && (
               <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
