@@ -963,8 +963,68 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* Price Options */}
-            {event.price_options && event.price_options.length > 0 && (
+            {/* Price Options with Dynamic Pricing */}
+            {resolvedPriceOptions && resolvedPriceOptions.length > 0 && (
+              <div>
+                <Label className="font-body text-sm font-semibold">Choose your option</Label>
+                <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="mt-2 space-y-2">
+                  {resolvedPriceOptions.map((opt: ResolvedPriceOption) => (
+                    <label
+                      key={opt.id}
+                      className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                        opt.isEligible && opt.isPromoActive
+                          ? "bg-muted/50 hover:bg-muted"
+                          : "bg-muted/20 opacity-60 cursor-not-allowed"
+                      }`}
+                      onClick={(e) => {
+                        if (!opt.isEligible || !opt.isPromoActive) e.preventDefault();
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value={opt.id} disabled={!opt.isEligible || !opt.isPromoActive} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
+                            {opt.eligible_group === "members" && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold">Members</span>
+                            )}
+                            {opt.eligible_group === "experienced" && (
+                              <span className="text-[10px] bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded-full font-body font-semibold">Experienced</span>
+                            )}
+                            {opt.eligible_group === "loyal" && (
+                              <span className="text-[10px] bg-gold/20 text-gold px-1.5 py-0.5 rounded-full font-body font-semibold">Loyal</span>
+                            )}
+                            {opt.is_promotional && opt.isPromoActive && (
+                              <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
+                                <Sparkles className="h-2.5 w-2.5" /> Promo
+                              </span>
+                            )}
+                          </div>
+                          {!opt.isEligible && opt.eligibilityReason && (
+                            <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1 mt-0.5">
+                              <Lock className="h-2.5 w-2.5" /> {opt.eligibilityReason}
+                            </p>
+                          )}
+                          {opt.is_promotional && !opt.isPromoActive && (
+                            <p className="text-[10px] text-muted-foreground font-body mt-0.5">Promozione scaduta</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {opt.original_price && opt.original_price > opt.price && (
+                          <span className="text-xs font-body text-muted-foreground line-through block">€{opt.original_price.toFixed(2)}</span>
+                        )}
+                        <span className={`text-sm font-display font-bold ${opt.isEligible && opt.original_price ? "text-green-500" : "text-foreground"}`}>
+                          €{Number(opt.price).toFixed(2)}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
+            {/* Fallback: show raw price options if eligibility not loaded yet */}
+            {!resolvedPriceOptions && event.price_options && event.price_options.length > 0 && (
               <div>
                 <Label className="font-body text-sm font-semibold">Choose your option</Label>
                 <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="mt-2 space-y-2">
