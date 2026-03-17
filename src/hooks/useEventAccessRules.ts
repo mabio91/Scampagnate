@@ -159,7 +159,7 @@ export const useCheckEventAccessRules = (
 
       return { hasAccess, failedRules, requiresApproval, restrictionMessage };
     },
-    enabled: !!(accessRules?.rules?.length || difficulty) && !!user,
+    enabled: !!(accessRules?.rules?.length || difficulty),
     staleTime: 60_000,
   });
 };
