@@ -29,6 +29,7 @@ export interface EventWithDetails {
   equipment_list: any;
   visibility: "public" | "private" | "hidden";
   gallery_images: { url: string; order: number }[] | null;
+  access_rules: any;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
   price_options?: { id: string; name: string; price: number; sort_order: number }[];
@@ -333,71 +334,8 @@ export const useCategories = () => {
   });
 };
 
-export const useCheckEventAccess = (difficulty: string | null) => {
-  const { user, profile } = useAuth();
-
-  return useQuery({
-    queryKey: ["check-access", difficulty, user?.id],
-    queryFn: async () => {
-      if (!user || !profile || !difficulty) return { hasAccess: true };
-      
-      const diffLevel = parseInt(difficulty);
-      if (isNaN(diffLevel) || diffLevel < 3) return { hasAccess: true };
-
-      // Helper to check base profile criteria
-      const checkProfileCriteria = () => {
-        const { trekking_experience, activity_frequency } = profile;
-        if (diffLevel === 3) { // Intermediate
-          // Requires: >= 1-2 physical activities/week AND >= 3 trekking experiences
-          const hasActivity = activity_frequency === "1-2/week" || activity_frequency === ">2/week";
-          const hasTrekking = trekking_experience === "3-5" || trekking_experience === "5+";
-          return hasActivity && hasTrekking;
-        }
-        if (diffLevel >= 4) { // Advanced
-          // Requires: > 2 physical activities/week AND >= 5 trekking experiences
-          return activity_frequency === ">2/week" && trekking_experience === "5+";
-        }
-        return false;
-      };
-
-      if (checkProfileCriteria()) {
-        return { hasAccess: true };
-      }
-
-      // If profile criteria fails, check past event completions
-      // For level 3: OR >= 3 easy-level events completed (difficulty 1 or 2)
-      // For level 4/5: OR >= 3 intermediate-level events completed (difficulty 3)
-      const { data: pastEvents, error } = await supabase
-        .from("event_registrations")
-        .select("*, events(difficulty, date)")
-        .eq("user_id", user.id)
-        .eq("checked_in", true)
-        .in("status", ["registered", "paid"]);
-
-      if (error || !pastEvents) {
-        return { hasAccess: false, reason: "Non hai i requisiti minimi di esperienza per questo evento." };
-      }
-
-      // Filter to past events (in a real app, you'd check if event.date < now)
-      // Since we just have the registrations, we count them based on linked event difficulty
-      const easyCount = pastEvents.filter(r => {
-        const d = parseInt((r.events as any)?.difficulty);
-        return !isNaN(d) && d <= 2;
-      }).length;
-
-      const interCount = pastEvents.filter(r => {
-        const d = parseInt((r.events as any)?.difficulty);
-        return !isNaN(d) && d >= 3;
-      }).length;
-
-      if (diffLevel === 3 && easyCount >= 3) return { hasAccess: true };
-      if (diffLevel >= 4 && interCount >= 3) return { hasAccess: true };
-
-      return { hasAccess: false, reason: "Non hai i requisiti minimi di esperienza per questo evento." };
-    },
-    enabled: !!user && !!profile && !!difficulty,
-  });
-};
+// Legacy: keep export name for backward compat, delegates to new hook
+export { useCheckEventAccessRules as useCheckEventAccess } from "./useEventAccessRules";
 
 export const useOrganizerProfile = (organizerId: string | undefined) => {
   return useQuery({

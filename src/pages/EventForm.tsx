@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useEvents";
+import type { AccessRule, AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import AppLayout from "@/components/layout/AppLayout";
@@ -15,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain, Route,
-  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload
+  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -129,6 +130,9 @@ const EventForm = () => {
   };
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
+  const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
+  const [exclusivityLabel, setExclusivityLabel] = useState("");
+  const [restrictionMessage, setRestrictionMessage] = useState("");
 
   interface PriceOptionInput {
     name: string;
@@ -220,7 +224,14 @@ const EventForm = () => {
         );
       }
 
-      // Load price options
+      // Load access rules
+      if ((event as any).access_rules) {
+        const ar = (event as any).access_rules as AccessRulesConfig;
+        setAccessRules(ar.rules || []);
+        setExclusivityLabel(ar.exclusivity_label || "");
+        setRestrictionMessage(ar.restriction_message || "");
+      }
+
       const { data: options } = await supabase
         .from("event_price_options")
         .select("*")
@@ -321,6 +332,11 @@ const EventForm = () => {
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: additionalFields.filter((f) => f.label.trim()) as any,
+        access_rules: accessRules.length > 0 ? {
+          rules: accessRules,
+          exclusivity_label: exclusivityLabel || undefined,
+          restriction_message: restrictionMessage || undefined,
+        } as any : null,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
       };
@@ -779,7 +795,102 @@ const EventForm = () => {
           </div>
         </Card>
 
-        {/* Meeting Points */}
+        {/* Access Rules */}
+        <Card className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              Access Rules
+            </h2>
+            <Button type="button" variant="outline" size="sm" onClick={() => setAccessRules(prev => [...prev, { type: "require_membership" }])} className="gap-1">
+              <Plus className="h-3.5 w-3.5" /> Add Rule
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground font-body">Define who can register for this event. Users who don't meet the rules will see a restriction message.</p>
+
+          {accessRules.map((rule, index) => (
+            <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-body font-semibold text-muted-foreground">Rule {index + 1}</span>
+                <button type="button" onClick={() => setAccessRules(prev => prev.filter((_, i) => i !== index))} className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <Select
+                value={rule.type}
+                onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, type: v as AccessRule["type"] } : r))}
+              >
+                <SelectTrigger><SelectValue placeholder="Select rule type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="require_membership">👑 Require Active Membership</SelectItem>
+                  <SelectItem value="min_trekking_events">🥾 Min. Trekking Events Completed</SelectItem>
+                  <SelectItem value="min_attended_events">📊 Min. Total Events Attended</SelectItem>
+                  <SelectItem value="min_activities">🏃 Min. Activities Completed</SelectItem>
+                  <SelectItem value="require_badge">🏅 Require Specific Badge</SelectItem>
+                  <SelectItem value="manual_approval">✋ Manual Approval Required</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(rule.type === "min_trekking_events" || rule.type === "min_attended_events" || rule.type === "min_activities") && (
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Minimum number required"
+                  value={rule.value as number || ""}
+                  onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(e.target.value) || 0 } : r))}
+                />
+              )}
+
+              {rule.type === "require_badge" && (
+                <Input
+                  placeholder="Badge name (e.g. Scampagnatore Ufficiale)"
+                  value={rule.badge_name || ""}
+                  onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_name: e.target.value } : r))}
+                />
+              )}
+
+              <Input
+                placeholder="Custom restriction message (optional)"
+                value={rule.message || ""}
+                onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, message: e.target.value } : r))}
+              />
+            </div>
+          ))}
+
+          {accessRules.length > 0 && (
+            <div className="space-y-3 pt-2 border-t border-border">
+              <div>
+                <Label>Exclusivity Label (shown on event card)</Label>
+                <Select value={exclusivityLabel} onValueChange={setExclusivityLabel}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Auto-detect from rules" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value=" ">Auto-detect</SelectItem>
+                    <SelectItem value="Exclusive Event">⭐ Exclusive Event</SelectItem>
+                    <SelectItem value="Members Only">👑 Members Only</SelectItem>
+                    <SelectItem value="Community Priority">🤝 Community Priority</SelectItem>
+                    <SelectItem value="Experience Required">🔒 Experience Required</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Global Restriction Message (optional)</Label>
+                <Input
+                  value={restrictionMessage}
+                  onChange={(e) => setRestrictionMessage(e.target.value)}
+                  placeholder="e.g. This event is reserved for experienced members"
+                  className="mt-1"
+                />
+                <p className="text-[10px] text-muted-foreground font-body mt-1">Shown when a user doesn't meet the access requirements. If empty, individual rule messages are used.</p>
+              </div>
+            </div>
+          )}
+
+          {accessRules.length === 0 && (
+            <p className="text-sm text-muted-foreground font-body text-center py-2">No access restrictions. Anyone can register.</p>
+          )}
+        </Card>
+
+
         <Card className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-bold text-foreground">Meeting Points</h2>

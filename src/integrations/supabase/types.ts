@@ -463,6 +463,7 @@ export type Database = {
       }
       events: {
         Row: {
+          access_rules: Json | null
           additional_fields: Json | null
           cancellation_policy: string | null
           category_id: string | null
@@ -494,6 +495,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["event_visibility"]
         }
         Insert: {
+          access_rules?: Json | null
           additional_fields?: Json | null
           cancellation_policy?: string | null
           category_id?: string | null
@@ -525,6 +527,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["event_visibility"]
         }
         Update: {
+          access_rules?: Json | null
           additional_fields?: Json | null
           cancellation_policy?: string | null
           category_id?: string | null

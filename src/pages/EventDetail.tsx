@@ -9,7 +9,8 @@ import {
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useCheckEventAccess } from "@/hooks/useEvents";
+import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
@@ -61,7 +62,9 @@ const EventDetail = () => {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
 
-  const { data: accessData, isLoading: accessLoading } = useCheckEventAccess(event?.difficulty || null);
+  const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
+  const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
+  const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
 
   // Fetch organizer profile for contact info
   const { data: organizerProfile } = useQuery({
@@ -399,6 +402,17 @@ const EventDetail = () => {
                 {event.category.name}
               </span>
             )}
+            {exclusivityIndicators.map((ind, idx) => (
+              <span key={idx} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold backdrop-blur-sm border border-white/10 shadow-sm ${
+                ind.variant === "members" ? "bg-primary/90 text-primary-foreground" :
+                ind.variant === "exclusive" ? "bg-gold/90 text-foreground" :
+                ind.variant === "restricted" ? "bg-warning/90 text-warning-foreground" :
+                "bg-secondary/90 text-secondary-foreground"
+              }`}>
+                {ind.variant === "members" ? "👑 " : ind.variant === "exclusive" ? "⭐ " : ind.variant === "restricted" ? "🔒 " : "✋ "}
+                {ind.label}
+              </span>
+            ))}
             {(isOrganizer || isAdmin) && event.visibility !== "public" && (
               <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
                 event.visibility === 'private' ? 'bg-amber-100/90 text-amber-800' : 'bg-slate-800/80 text-white'
@@ -1101,31 +1115,26 @@ const EventDetail = () => {
       <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Experience Requirement</DialogTitle>
+            <DialogTitle className="font-display">Requisiti di accesso</DialogTitle>
             <DialogDescription className="font-body text-sm mt-2 text-foreground">
-              This event requires a higher trekking experience level.
+              {accessData?.restrictionMessage || "Questo evento ha dei requisiti di partecipazione."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-3">
-              <p className="text-sm font-body text-muted-foreground leading-relaxed">
-                Based on your profile, you may not yet meet the recommended experience level for this activity. This helps ensure that all participants can safely complete the route.
-              </p>
-              <p className="text-sm font-body text-muted-foreground leading-relaxed">
-                You can still join this type of event in the future by completing easier or intermediate treks first.
-              </p>
-            </div>
+            {accessData?.failedRules && accessData.failedRules.length > 0 && (
+              <div className="p-4 rounded-xl bg-muted/50 space-y-2 border border-border/50">
+                <p className="text-xs font-body font-bold text-foreground">Requisiti non soddisfatti:</p>
+                <ul className="text-xs font-body text-muted-foreground space-y-1.5 ml-4 list-disc">
+                  {accessData.failedRules.map((fr: any, idx: number) => (
+                    <li key={idx}>{fr.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            <div className="p-4 rounded-xl bg-muted/50 space-y-2 border border-border/50">
-              <p className="text-xs font-body font-bold text-foreground">To join this event you usually need:</p>
-              <ul className="text-xs font-body text-muted-foreground space-y-1 ml-4 list-disc">
-                <li>At least {parseInt(event.difficulty || "0") >= 4 ? "5" : "3"} trekking experiences</li>
-                <li>{parseInt(event.difficulty || "0") >= 4 ? "Frequent" : "Regular"} physical activity</li>
-              </ul>
-              <p className="text-[10px] font-body text-muted-foreground pt-1 border-t border-border/50 italic">
-                OR at least 3 {parseInt(event.difficulty || "0") >= 4 ? "intermediate" : "easy"} trekking events completed on the platform.
-              </p>
-            </div>
+            <p className="text-sm font-body text-muted-foreground leading-relaxed">
+              Puoi comunque richiedere l'approvazione manuale dell'organizzatore oppure contattarlo direttamente per maggiori informazioni.
+            </p>
 
             <div className="flex flex-col gap-2 pt-2">
               {organizerProfile?.phone && (
@@ -1134,12 +1143,12 @@ const EventDetail = () => {
                   className="w-full font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none h-12"
                 >
                   <a
-                    href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}?text=${encodeURIComponent(`Hi! I’m interested in joining this event but the platform indicates I may not meet the experience requirements. Could you please review my participation? Event: ${event.title}`)}`}
+                    href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}?text=${encodeURIComponent(`Ciao! Sono interessato a partecipare a "${event.title}" ma la piattaforma indica che non soddisfo i requisiti. Potresti valutare la mia partecipazione?`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
-                    Contact Organizer
+                    Contatta l'organizzatore
                   </a>
                 </Button>
               )}
@@ -1153,7 +1162,7 @@ const EventDetail = () => {
                 variant="outline"
                 className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
               >
-                Request Manual Review
+                Richiedi approvazione manuale
               </Button>
 
               <Button
@@ -1161,7 +1170,7 @@ const EventDetail = () => {
                 className="w-full font-body text-muted-foreground text-xs h-10"
                 onClick={() => setShowAccessWarning(false)}
               >
-                Close
+                Chiudi
               </Button>
             </div>
           </div>
