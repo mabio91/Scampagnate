@@ -427,6 +427,11 @@ const EventForm = () => {
           name: o.name,
           price: o.price,
           sort_order: i,
+          eligible_group: o.eligible_group || 'all',
+          original_price: o.original_price || null,
+          is_promotional: o.is_promotional || false,
+          promo_start: o.promo_start || null,
+          promo_end: o.promo_end || null,
         }));
         const { error: poError } = await supabase.from("event_price_options").insert(optionsData);
         if (poError) throw poError;
