@@ -505,22 +505,7 @@ const EventForm = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="visibility">Visibility</Label>
-              <Select value={form.visibility} onValueChange={(v) => updateForm("visibility", v)}>
-                <SelectTrigger><SelectValue placeholder="Select visibility" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">🌍 Public (Visible to all)</SelectItem>
-                  <SelectItem value="private">链接 Private (Direct link only)</SelectItem>
-                  <SelectItem value="hidden">👁️ Hidden (Organizers & Admins only)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-muted-foreground font-body mt-1">
-                {form.visibility === "public" && "Visible to everyone on the platform."}
-                {form.visibility === "private" && "Only accessible via direct link. Not listed in discovery."}
-                {form.visibility === "hidden" && "Visible only to organizers and platform administrators."}
-              </p>
-            </div>
+            {/* Visibility moved to Access & Pricing Rules section */}
 
             {/* Gallery Images */}
             <div className="space-y-3">
@@ -730,106 +715,7 @@ const EventForm = () => {
               </>
             )}
 
-            {/* Price Options */}
-            {form.payment_type !== "free" && (
-              <div className="space-y-3 pt-2 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-semibold">Price Options</Label>
-                    <p className="text-[11px] text-muted-foreground font-body">Define multiple pricing tiers: standard, community, promotional, or group-specific.</p>
-                  </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0, eligible_group: "all", original_price: null, is_promotional: false, promo_start: "", promo_end: "" }])} className="gap-1">
-                    <Plus className="h-3.5 w-3.5" /> Add
-                  </Button>
-                </div>
-                {priceOptions.map((opt, index) => (
-                  <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Option name (e.g. Community price, Early bird)"
-                          value={opt.name}
-                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, name: e.target.value } : o))}
-                        />
-                      </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          placeholder="€ Price"
-                          value={opt.price || ""}
-                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, price: parseFloat(e.target.value) || 0 } : o))}
-                        />
-                      </div>
-                      <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label className="text-[11px] text-muted-foreground">Eligible Group</Label>
-                        <Select value={opt.eligible_group} onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, eligible_group: v } : o))}>
-                          <SelectTrigger className="h-8 text-xs mt-0.5">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Everyone</SelectItem>
-                            <SelectItem value="members">Active Members</SelectItem>
-                            <SelectItem value="experienced">Experienced Users (1+ events)</SelectItem>
-                            <SelectItem value="loyal">Loyal Participants (5+ events)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-[11px] text-muted-foreground">Original Price (strikethrough)</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          placeholder="€ (optional)"
-                          className="h-8 text-xs mt-0.5"
-                          value={opt.original_price ?? ""}
-                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, original_price: e.target.value ? parseFloat(e.target.value) : null } : o))}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={opt.is_promotional}
-                        onCheckedChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, is_promotional: v } : o))}
-                      />
-                      <Label className="text-xs">Time-limited promo</Label>
-                    </div>
-                    {opt.is_promotional && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label className="text-[11px] text-muted-foreground">Promo Start</Label>
-                          <Input
-                            type="date"
-                            className="h-8 text-xs mt-0.5"
-                            value={opt.promo_start}
-                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, promo_start: e.target.value } : o))}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-[11px] text-muted-foreground">Promo End</Label>
-                          <Input
-                            type="date"
-                            className="h-8 text-xs mt-0.5"
-                            value={opt.promo_end}
-                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, promo_end: e.target.value } : o))}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {priceOptions.length === 0 && (
-                  <p className="text-xs text-muted-foreground font-body text-center py-1">No price options. The base price will be used.</p>
-                )}
-              </div>
-            )}
+            {/* Price Options moved to Access & Pricing Rules section */}
 
             <div>
               <Label>Cancellation Policy</Label>
@@ -905,98 +791,246 @@ const EventForm = () => {
           </div>
         </Card>
 
-        {/* Access Rules */}
-        <Card className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
+        {/* Access & Pricing Rules — Unified Section */}
+        <Card className="p-4 space-y-5">
+          <div>
             <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
-              Access Rules
+              Access & Pricing Rules
             </h2>
-            <Button type="button" variant="outline" size="sm" onClick={() => setAccessRules(prev => [...prev, { type: "require_membership" }])} className="gap-1">
-              <Plus className="h-3.5 w-3.5" /> Add Rule
-            </Button>
+            <p className="text-xs text-muted-foreground font-body mt-1">
+              Configure who can see, access, and register for this event — and at which price.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground font-body">Define who can register for this event. Users who don't meet the rules will see a restriction message.</p>
 
-          {accessRules.map((rule, index) => (
-            <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-body font-semibold text-muted-foreground">Rule {index + 1}</span>
-                <button type="button" onClick={() => setAccessRules(prev => prev.filter((_, i) => i !== index))} className="text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              <Select
-                value={rule.type}
-                onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, type: v as AccessRule["type"] } : r))}
-              >
-                <SelectTrigger><SelectValue placeholder="Select rule type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="require_membership">👑 Require Active Membership</SelectItem>
-                  <SelectItem value="min_trekking_events">🥾 Min. Trekking Events Completed</SelectItem>
-                  <SelectItem value="min_attended_events">📊 Min. Total Events Attended</SelectItem>
-                  <SelectItem value="min_activities">🏃 Min. Activities Completed</SelectItem>
-                  <SelectItem value="require_badge">🏅 Require Specific Badge</SelectItem>
-                  <SelectItem value="manual_approval">✋ Manual Approval Required</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* 1. Visibility */}
+          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              👁️ Visibility
+            </Label>
+            <p className="text-[11px] text-muted-foreground font-body">Who can see this event in listings and search.</p>
+            <Select value={form.visibility} onValueChange={(v) => updateForm("visibility", v)}>
+              <SelectTrigger><SelectValue placeholder="Select visibility" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="public">🌍 Public — Visible to all users</SelectItem>
+                <SelectItem value="private">🔗 Private — Direct link only</SelectItem>
+                <SelectItem value="hidden">👁️ Hidden — Organizers & Admins only</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground font-body">
+              {form.visibility === "public" && "Everyone can find and view this event."}
+              {form.visibility === "private" && "Not listed in discovery. Only accessible via direct link or invitation."}
+              {form.visibility === "hidden" && "Invisible to regular users. Only organizers and platform administrators can see it."}
+            </p>
+          </div>
 
-              {(rule.type === "min_trekking_events" || rule.type === "min_attended_events" || rule.type === "min_activities") && (
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="Minimum number required"
-                  value={rule.value as number || ""}
-                  onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(e.target.value) || 0 } : r))}
-                />
-              )}
-
-              {rule.type === "require_badge" && (
-                <BadgeSelector
-                  value={rule.badge_id || ""}
-                  onChange={(badgeId, badgeName) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_id: badgeId, badge_name: badgeName, value: badgeId } : r))}
-                />
-              )}
-
-              <Input
-                placeholder="Custom restriction message (optional)"
-                value={rule.message || ""}
-                onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, message: e.target.value } : r))}
-              />
-            </div>
-          ))}
-
-          {accessRules.length > 0 && (
-            <div className="space-y-3 pt-2 border-t border-border">
+          {/* 2. Access Restrictions */}
+          <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="flex items-center justify-between">
               <div>
-                <Label>Exclusivity Label (shown on event card)</Label>
-                <Select value={exclusivityLabel} onValueChange={setExclusivityLabel}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Auto-detect from rules" /></SelectTrigger>
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  🔒 Registration Requirements
+                </Label>
+                <p className="text-[11px] text-muted-foreground font-body">Who can register. Users who don't meet these rules see a restriction message.</p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={() => setAccessRules(prev => [...prev, { type: "require_membership" }])} className="gap-1 shrink-0">
+                <Plus className="h-3.5 w-3.5" /> Add Rule
+              </Button>
+            </div>
+
+            {accessRules.map((rule, index) => (
+              <div key={index} className="p-3 bg-background rounded-lg space-y-2 border border-border/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-body font-semibold text-muted-foreground">Rule {index + 1}</span>
+                  <button type="button" onClick={() => setAccessRules(prev => prev.filter((_, i) => i !== index))} className="text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <Select
+                  value={rule.type}
+                  onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, type: v as AccessRule["type"] } : r))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select rule type" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value=" ">Auto-detect</SelectItem>
-                    <SelectItem value="Exclusive Event">⭐ Exclusive Event</SelectItem>
-                    <SelectItem value="Members Only">👑 Members Only</SelectItem>
-                    <SelectItem value="Community Priority">🤝 Community Priority</SelectItem>
-                    <SelectItem value="Experience Required">🔒 Experience Required</SelectItem>
+                    <SelectItem value="require_membership">👑 Require Active Membership</SelectItem>
+                    <SelectItem value="min_trekking_events">🥾 Min. Trekking Events Completed</SelectItem>
+                    <SelectItem value="min_attended_events">📊 Min. Total Events Attended</SelectItem>
+                    <SelectItem value="min_activities">🏃 Min. Activities Completed</SelectItem>
+                    <SelectItem value="require_badge">🏅 Require Specific Badge</SelectItem>
+                    <SelectItem value="manual_approval">✋ Manual Approval Required</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label>Global Restriction Message (optional)</Label>
+
+                {(rule.type === "min_trekking_events" || rule.type === "min_attended_events" || rule.type === "min_activities") && (
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Minimum number required"
+                    value={rule.value as number || ""}
+                    onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(e.target.value) || 0 } : r))}
+                  />
+                )}
+
+                {rule.type === "require_badge" && (
+                  <BadgeSelector
+                    value={rule.badge_id || ""}
+                    onChange={(badgeId, badgeName) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_id: badgeId, badge_name: badgeName, value: badgeId } : r))}
+                  />
+                )}
+
                 <Input
-                  value={restrictionMessage}
-                  onChange={(e) => setRestrictionMessage(e.target.value)}
-                  placeholder="e.g. This event is reserved for experienced members"
-                  className="mt-1"
+                  placeholder="Custom restriction message (optional)"
+                  value={rule.message || ""}
+                  onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, message: e.target.value } : r))}
                 />
-                <p className="text-[10px] text-muted-foreground font-body mt-1">Shown when a user doesn't meet the access requirements. If empty, individual rule messages are used.</p>
               </div>
+            ))}
+
+            {accessRules.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-border/50">
+                <div>
+                  <Label className="text-xs">Exclusivity Label (shown on event card)</Label>
+                  <Select value={exclusivityLabel} onValueChange={setExclusivityLabel}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Auto-detect from rules" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value=" ">Auto-detect</SelectItem>
+                      <SelectItem value="Exclusive Event">⭐ Exclusive Event</SelectItem>
+                      <SelectItem value="Members Only">👑 Members Only</SelectItem>
+                      <SelectItem value="Community Priority">🤝 Community Priority</SelectItem>
+                      <SelectItem value="Experience Required">🔒 Experience Required</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Global Restriction Message (optional)</Label>
+                  <Input
+                    value={restrictionMessage}
+                    onChange={(e) => setRestrictionMessage(e.target.value)}
+                    placeholder="e.g. This event is reserved for experienced members"
+                    className="mt-1"
+                  />
+                  <p className="text-[10px] text-muted-foreground font-body mt-1">Shown when a user doesn't meet requirements. If empty, individual rule messages are used.</p>
+                </div>
+              </div>
+            )}
+
+            {accessRules.length === 0 && (
+              <p className="text-xs text-muted-foreground font-body text-center py-2">No access restrictions. Anyone can register.</p>
+            )}
+          </div>
+
+          {/* 3. Pricing Variations */}
+          {form.payment_type !== "free" && (
+            <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                    💰 Pricing Tiers
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground font-body">Define who sees which price. Configure tiered, community, or promotional pricing.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0, eligible_group: "all", original_price: null, is_promotional: false, promo_start: "", promo_end: "" }])} className="gap-1 shrink-0">
+                  <Plus className="h-3.5 w-3.5" /> Add Tier
+                </Button>
+              </div>
+              {priceOptions.map((opt, index) => (
+                <div key={index} className="p-3 bg-background rounded-lg space-y-2 border border-border/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Tier name (e.g. Community price, Early bird)"
+                        value={opt.name}
+                        onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, name: e.target.value } : o))}
+                      />
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        placeholder="€ Price"
+                        value={opt.price || ""}
+                        onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, price: parseFloat(e.target.value) || 0 } : o))}
+                      />
+                    </div>
+                    <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">Who sees this price</Label>
+                      <Select value={opt.eligible_group} onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, eligible_group: v } : o))}>
+                        <SelectTrigger className="h-8 text-xs mt-0.5">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Everyone</SelectItem>
+                          <SelectItem value="members">Active Members</SelectItem>
+                          <SelectItem value="experienced">Experienced Users (1+ events)</SelectItem>
+                          <SelectItem value="loyal">Loyal Participants (5+ events)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">Original Price (strikethrough)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        placeholder="€ (optional)"
+                        className="h-8 text-xs mt-0.5"
+                        value={opt.original_price ?? ""}
+                        onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, original_price: e.target.value ? parseFloat(e.target.value) : null } : o))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={opt.is_promotional}
+                      onCheckedChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, is_promotional: v } : o))}
+                    />
+                    <Label className="text-xs">Time-limited promo</Label>
+                  </div>
+                  {opt.is_promotional && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Promo Start</Label>
+                        <Input
+                          type="date"
+                          className="h-8 text-xs mt-0.5"
+                          value={opt.promo_start}
+                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, promo_start: e.target.value } : o))}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Promo End</Label>
+                        <Input
+                          type="date"
+                          className="h-8 text-xs mt-0.5"
+                          value={opt.promo_end}
+                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, promo_end: e.target.value } : o))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {priceOptions.length === 0 && (
+                <p className="text-xs text-muted-foreground font-body text-center py-1">No pricing tiers. The base price (€{form.price}) applies to everyone.</p>
+              )}
             </div>
           )}
 
-          {accessRules.length === 0 && (
-            <p className="text-sm text-muted-foreground font-body text-center py-2">No access restrictions. Anyone can register.</p>
-          )}
+          {/* Summary hint */}
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+            <p className="text-[11px] text-muted-foreground font-body">
+              <strong className="text-foreground">Summary:</strong>{" "}
+              {form.visibility === "public" ? "Visible to all" : form.visibility === "private" ? "Direct link only" : "Hidden"} •{" "}
+              {accessRules.length === 0 ? "Open registration" : `${accessRules.length} access rule(s)`} •{" "}
+              {priceOptions.length === 0 ? "Single price" : `${priceOptions.length} pricing tier(s)`}
+            </p>
+          </div>
         </Card>
 
 
