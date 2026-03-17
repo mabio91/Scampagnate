@@ -1,7 +1,8 @@
 import { memo } from "react";
-import { CalendarDays, MapPin, Users, Ticket } from "lucide-react";
+import { CalendarDays, MapPin, Users, Ticket, Crown, Star, Lock, Hand } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
+import { getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { CapacityWarning } from "./CapacityWarning";
@@ -31,9 +32,18 @@ export interface EventDiscount {
   code: string;
 }
 
+const exclusivityIcons: Record<string, typeof Crown> = {
+  members: Crown,
+  exclusive: Star,
+  restricted: Lock,
+  community: Hand,
+};
+
 const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; index: number; discount?: EventDiscount | null }) => {
   const status = getEventStatusDisplay(event.status);
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
+  const indicators = getExclusivityIndicators(event.access_rules as AccessRulesConfig | null);
+  const spotsLeft = event.spots_total - event.spots_taken;
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
@@ -67,6 +77,32 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
               {status.label}
             </span>
           </div>
+
+          {/* Exclusivity & Scarcity Indicators */}
+          {(indicators.length > 0 || (spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full")) && (
+            <div className="flex flex-wrap items-center gap-1 mt-1">
+              {indicators.map((ind, idx) => {
+                const Icon = exclusivityIcons[ind.variant] || Star;
+                return (
+                  <span key={idx} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-body font-bold ${
+                    ind.variant === "members" ? "bg-primary/10 text-primary" :
+                    ind.variant === "exclusive" ? "bg-gold/10 text-gold" :
+                    ind.variant === "restricted" ? "bg-warning/10 text-warning" :
+                    "bg-secondary/10 text-secondary"
+                  }`}>
+                    <Icon className="h-2.5 w-2.5" />
+                    {ind.label}
+                  </span>
+                );
+              })}
+              {spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full" && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive text-[9px] font-body font-bold">
+                  🔥 {spotsLeft} spot{spotsLeft > 1 ? "s" : ""} left
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-3 mt-1.5 text-muted-foreground text-xs font-body">
             <span className="flex items-center gap-1">
               <CalendarDays className="h-3 w-3" />
