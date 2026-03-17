@@ -842,10 +842,9 @@ const EventForm = () => {
               )}
 
               {rule.type === "require_badge" && (
-                <Input
-                  placeholder="Badge name (e.g. Scampagnatore Ufficiale)"
-                  value={rule.badge_name || ""}
-                  onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_name: e.target.value } : r))}
+                <BadgeSelector
+                  value={rule.badge_id || ""}
+                  onChange={(badgeId, badgeName) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_id: badgeId, badge_name: badgeName, value: badgeId } : r))}
                 />
               )}
 
