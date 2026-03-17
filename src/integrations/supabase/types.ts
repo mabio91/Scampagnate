@@ -137,6 +137,7 @@ export type Database = {
       discount_codes: {
         Row: {
           applies_to_all: boolean
+          assigned_user_id: string | null
           code: string
           created_at: string
           created_by: string | null
@@ -147,12 +148,15 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          is_single_use: boolean
           max_uses: number | null
+          starts_at: string | null
           times_used: number
           updated_at: string
         }
         Insert: {
           applies_to_all?: boolean
+          assigned_user_id?: string | null
           code: string
           created_at?: string
           created_by?: string | null
@@ -163,12 +167,15 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_single_use?: boolean
           max_uses?: number | null
+          starts_at?: string | null
           times_used?: number
           updated_at?: string
         }
         Update: {
           applies_to_all?: boolean
+          assigned_user_id?: string | null
           code?: string
           created_at?: string
           created_by?: string | null
@@ -179,7 +186,9 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_single_use?: boolean
           max_uses?: number | null
+          starts_at?: string | null
           times_used?: number
           updated_at?: string
         }
