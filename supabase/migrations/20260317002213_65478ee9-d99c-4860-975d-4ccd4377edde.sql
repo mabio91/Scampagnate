@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN access_rules jsonb DEFAULT NULL;
