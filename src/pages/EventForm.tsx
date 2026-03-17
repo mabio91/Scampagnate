@@ -50,6 +50,39 @@ const useEquipmentTemplates = () => {
   });
 };
 
+const useBadges = () => {
+  return useQuery({
+    queryKey: ["badges-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("badges")
+        .select("id, name, icon, description")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
+const BadgeSelector = ({ value, onChange }: { value: string; onChange: (badgeId: string, badgeName: string) => void }) => {
+  const { data: badges } = useBadges();
+  return (
+    <Select value={value} onValueChange={(v) => {
+      const badge = badges?.find(b => b.id === v);
+      onChange(v, badge?.name || "");
+    }}>
+      <SelectTrigger><SelectValue placeholder="Select a badge..." /></SelectTrigger>
+      <SelectContent>
+        {badges?.map((b) => (
+          <SelectItem key={b.id} value={b.id}>
+            {b.icon} {b.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
+
 interface MeetingPointInput {
   name: string;
   location: string;
@@ -842,10 +875,9 @@ const EventForm = () => {
               )}
 
               {rule.type === "require_badge" && (
-                <Input
-                  placeholder="Badge name (e.g. Scampagnatore Ufficiale)"
-                  value={rule.badge_name || ""}
-                  onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_name: e.target.value } : r))}
+                <BadgeSelector
+                  value={rule.badge_id || ""}
+                  onChange={(badgeId, badgeName) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_id: badgeId, badge_name: badgeName, value: badgeId } : r))}
                 />
               )}
 
