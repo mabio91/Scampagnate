@@ -170,6 +170,11 @@ const EventForm = () => {
   interface PriceOptionInput {
     name: string;
     price: number;
+    eligible_group: string;
+    original_price: number | null;
+    is_promotional: boolean;
+    promo_start: string;
+    promo_end: string;
   }
   const [priceOptions, setPriceOptions] = useState<PriceOptionInput[]>([]);
 
@@ -271,7 +276,15 @@ const EventForm = () => {
         .eq("event_id", eventId)
         .order("sort_order");
       if (options && options.length > 0) {
-        setPriceOptions(options.map((o: any) => ({ name: o.name, price: Number(o.price) })));
+        setPriceOptions(options.map((o: any) => ({
+          name: o.name,
+          price: Number(o.price),
+          eligible_group: o.eligible_group || 'all',
+          original_price: o.original_price ? Number(o.original_price) : null,
+          is_promotional: o.is_promotional || false,
+          promo_start: o.promo_start ? o.promo_start.split('T')[0] : '',
+          promo_end: o.promo_end ? o.promo_end.split('T')[0] : '',
+        })));
       }
     }
     setLoadingEvent(false);
@@ -414,6 +427,11 @@ const EventForm = () => {
           name: o.name,
           price: o.price,
           sort_order: i,
+          eligible_group: o.eligible_group || 'all',
+          original_price: o.original_price || null,
+          is_promotional: o.is_promotional || false,
+          promo_start: o.promo_start || null,
+          promo_end: o.promo_end || null,
         }));
         const { error: poError } = await supabase.from("event_price_options").insert(optionsData);
         if (poError) throw poError;
@@ -718,34 +736,92 @@ const EventForm = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-sm font-semibold">Price Options</Label>
-                    <p className="text-[11px] text-muted-foreground font-body">Offer multiple participation packages (e.g. "Trekking only", "Trekking + lunch").</p>
+                    <p className="text-[11px] text-muted-foreground font-body">Define multiple pricing tiers: standard, community, promotional, or group-specific.</p>
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0 }])} className="gap-1">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0, eligible_group: "all", original_price: null, is_promotional: false, promo_start: "", promo_end: "" }])} className="gap-1">
                     <Plus className="h-3.5 w-3.5" /> Add
                   </Button>
                 </div>
                 {priceOptions.map((opt, index) => (
-                  <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Option name (e.g. Trekking + lunch)"
-                        value={opt.name}
-                        onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, name: e.target.value } : o))}
-                      />
+                  <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Option name (e.g. Community price, Early bird)"
+                          value={opt.name}
+                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, name: e.target.value } : o))}
+                        />
+                      </div>
+                      <div className="w-24">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          placeholder="€ Price"
+                          value={opt.price || ""}
+                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, price: parseFloat(e.target.value) || 0 } : o))}
+                        />
+                      </div>
+                      <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
-                    <div className="w-24">
-                      <Input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        placeholder="€"
-                        value={opt.price || ""}
-                        onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, price: parseFloat(e.target.value) || 0 } : o))}
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Eligible Group</Label>
+                        <Select value={opt.eligible_group} onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, eligible_group: v } : o))}>
+                          <SelectTrigger className="h-8 text-xs mt-0.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Everyone</SelectItem>
+                            <SelectItem value="members">Active Members</SelectItem>
+                            <SelectItem value="experienced">Experienced Users</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Original Price (strikethrough)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          placeholder="€ (optional)"
+                          className="h-8 text-xs mt-0.5"
+                          value={opt.original_price ?? ""}
+                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, original_price: e.target.value ? parseFloat(e.target.value) : null } : o))}
+                        />
+                      </div>
                     </div>
-                    <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={opt.is_promotional}
+                        onCheckedChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, is_promotional: v } : o))}
+                      />
+                      <Label className="text-xs">Time-limited promo</Label>
+                    </div>
+                    {opt.is_promotional && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[11px] text-muted-foreground">Promo Start</Label>
+                          <Input
+                            type="date"
+                            className="h-8 text-xs mt-0.5"
+                            value={opt.promo_start}
+                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, promo_start: e.target.value } : o))}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] text-muted-foreground">Promo End</Label>
+                          <Input
+                            type="date"
+                            className="h-8 text-xs mt-0.5"
+                            value={opt.promo_end}
+                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, promo_end: e.target.value } : o))}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {priceOptions.length === 0 && (
