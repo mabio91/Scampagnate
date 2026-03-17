@@ -332,6 +332,11 @@ const EventForm = () => {
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: additionalFields.filter((f) => f.label.trim()) as any,
+        access_rules: accessRules.length > 0 ? {
+          rules: accessRules,
+          exclusivity_label: exclusivityLabel || undefined,
+          restriction_message: restrictionMessage || undefined,
+        } as any : null,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
       };
