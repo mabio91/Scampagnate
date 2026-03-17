@@ -402,6 +402,17 @@ const EventDetail = () => {
                 {event.category.name}
               </span>
             )}
+            {exclusivityIndicators.map((ind, idx) => (
+              <span key={idx} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold backdrop-blur-sm border border-white/10 shadow-sm ${
+                ind.variant === "members" ? "bg-primary/90 text-primary-foreground" :
+                ind.variant === "exclusive" ? "bg-gold/90 text-foreground" :
+                ind.variant === "restricted" ? "bg-warning/90 text-warning-foreground" :
+                "bg-secondary/90 text-secondary-foreground"
+              }`}>
+                {ind.variant === "members" ? "👑 " : ind.variant === "exclusive" ? "⭐ " : ind.variant === "restricted" ? "🔒 " : "✋ "}
+                {ind.label}
+              </span>
+            ))}
             {(isOrganizer || isAdmin) && event.visibility !== "public" && (
               <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
                 event.visibility === 'private' ? 'bg-amber-100/90 text-amber-800' : 'bg-slate-800/80 text-white'
