@@ -505,22 +505,7 @@ const EventForm = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="visibility">Visibility</Label>
-              <Select value={form.visibility} onValueChange={(v) => updateForm("visibility", v)}>
-                <SelectTrigger><SelectValue placeholder="Select visibility" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">🌍 Public (Visible to all)</SelectItem>
-                  <SelectItem value="private">链接 Private (Direct link only)</SelectItem>
-                  <SelectItem value="hidden">👁️ Hidden (Organizers & Admins only)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-muted-foreground font-body mt-1">
-                {form.visibility === "public" && "Visible to everyone on the platform."}
-                {form.visibility === "private" && "Only accessible via direct link. Not listed in discovery."}
-                {form.visibility === "hidden" && "Visible only to organizers and platform administrators."}
-              </p>
-            </div>
+            {/* Visibility moved to Access & Pricing Rules section */}
 
             {/* Gallery Images */}
             <div className="space-y-3">
