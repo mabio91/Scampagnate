@@ -4,13 +4,14 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
 import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
+import { usePricingEligibility, getBestUserPrice, type PriceOption, type ResolvedPriceOption } from "@/hooks/usePricingEligibility";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import ShareSheet from "@/components/events/ShareSheet";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
@@ -65,6 +66,11 @@ const EventDetail = () => {
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
   const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
+
+  // Dynamic pricing eligibility
+  const rawPriceOptions = event?.price_options as PriceOption[] | null;
+  const { data: resolvedPriceOptions } = usePricingEligibility(rawPriceOptions);
+  const bestPrice = getBestUserPrice(resolvedPriceOptions, Number(event?.price || 0));
 
   // Fetch organizer profile for contact info
   const { data: organizerProfile } = useQuery({
@@ -816,7 +822,9 @@ const EventDetail = () => {
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
             <p className="text-xs font-body text-muted-foreground">
-              {event.price_options && event.price_options.length > 0 ? "From" : (event.payment_type as string) === "deposit" ? "From" : "Price"}
+              {resolvedPriceOptions && resolvedPriceOptions.length > 0
+                ? (bestPrice.label ? "Your price" : "From")
+                : (event.payment_type as string) === "deposit" ? "From" : "Price"}
             </p>
             {appliedDiscount && needsPayment ? (
               <div className="flex items-center gap-2">
@@ -828,18 +836,29 @@ const EventDetail = () => {
                 </p>
               </div>
             ) : (
-              <p className="text-xl font-display font-bold text-foreground">
-                {(() => {
-                  const hasPriceOptions = event.price_options && event.price_options.length > 0;
-                  if (hasPriceOptions) {
-                    const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
-                    return `€${minPrice.toFixed(2)}`;
-                  }
-                  if (Number(event.price) === 0 && (!profile || profile.membership_status === 'Active')) return "Free";
-                  if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
-                  return `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`;
-                })()}
-              </p>
+              <div>
+                {bestPrice.originalPrice && bestPrice.originalPrice > bestPrice.price && (
+                  <p className="text-xs font-display text-muted-foreground line-through">€{bestPrice.originalPrice.toFixed(2)}</p>
+                )}
+                <p className={`text-xl font-display font-bold ${bestPrice.originalPrice && bestPrice.originalPrice > bestPrice.price ? "text-green-500" : "text-foreground"}`}>
+                  {(() => {
+                    if (resolvedPriceOptions && resolvedPriceOptions.length > 0) {
+                      const eligible = resolvedPriceOptions.filter(o => o.isEligible && o.isPromoActive);
+                      if (eligible.length > 0) return `€${Math.min(...eligible.map(o => o.price)).toFixed(2)}`;
+                      const allGroup = resolvedPriceOptions.filter(o => o.eligible_group === "all" && o.isPromoActive);
+                      if (allGroup.length > 0) return `€${Math.min(...allGroup.map(o => o.price)).toFixed(2)}`;
+                    }
+                    const hasPriceOptions = event.price_options && event.price_options.length > 0;
+                    if (hasPriceOptions) {
+                      const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
+                      return `€${minPrice.toFixed(2)}`;
+                    }
+                    if (Number(event.price) === 0 && (!profile || profile.membership_status === 'Active')) return "Free";
+                    if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
+                    return `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`;
+                  })()}
+                </p>
+              </div>
             )}
             {profile?.membership_status !== 'Active' && !isRegistered && (
               <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
@@ -957,8 +976,68 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* Price Options */}
-            {event.price_options && event.price_options.length > 0 && (
+            {/* Price Options with Dynamic Pricing */}
+            {resolvedPriceOptions && resolvedPriceOptions.length > 0 && (
+              <div>
+                <Label className="font-body text-sm font-semibold">Choose your option</Label>
+                <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="mt-2 space-y-2">
+                  {resolvedPriceOptions.map((opt: ResolvedPriceOption) => (
+                    <label
+                      key={opt.id}
+                      className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                        opt.isEligible && opt.isPromoActive
+                          ? "bg-muted/50 hover:bg-muted"
+                          : "bg-muted/20 opacity-60 cursor-not-allowed"
+                      }`}
+                      onClick={(e) => {
+                        if (!opt.isEligible || !opt.isPromoActive) e.preventDefault();
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value={opt.id} disabled={!opt.isEligible || !opt.isPromoActive} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
+                            {opt.eligible_group === "members" && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold">Members</span>
+                            )}
+                            {opt.eligible_group === "experienced" && (
+                              <span className="text-[10px] bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded-full font-body font-semibold">Experienced</span>
+                            )}
+                            {opt.eligible_group === "loyal" && (
+                              <span className="text-[10px] bg-gold/20 text-gold px-1.5 py-0.5 rounded-full font-body font-semibold">Loyal</span>
+                            )}
+                            {opt.is_promotional && opt.isPromoActive && (
+                              <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
+                                <Sparkles className="h-2.5 w-2.5" /> Promo
+                              </span>
+                            )}
+                          </div>
+                          {!opt.isEligible && opt.eligibilityReason && (
+                            <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1 mt-0.5">
+                              <Lock className="h-2.5 w-2.5" /> {opt.eligibilityReason}
+                            </p>
+                          )}
+                          {opt.is_promotional && !opt.isPromoActive && (
+                            <p className="text-[10px] text-muted-foreground font-body mt-0.5">Promozione scaduta</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {opt.original_price && opt.original_price > opt.price && (
+                          <span className="text-xs font-body text-muted-foreground line-through block">€{opt.original_price.toFixed(2)}</span>
+                        )}
+                        <span className={`text-sm font-display font-bold ${opt.isEligible && opt.original_price ? "text-green-500" : "text-foreground"}`}>
+                          €{Number(opt.price).toFixed(2)}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
+            {/* Fallback: show raw price options if eligibility not loaded yet */}
+            {!resolvedPriceOptions && event.price_options && event.price_options.length > 0 && (
               <div>
                 <Label className="font-body text-sm font-semibold">Choose your option</Label>
                 <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="mt-2 space-y-2">
