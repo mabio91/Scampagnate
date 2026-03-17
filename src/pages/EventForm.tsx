@@ -3,7 +3,6 @@ import { useNavigate, useParams, Navigate, useSearchParams } from "react-router-
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useEvents";
 import type { AccessRule, AccessRulesConfig } from "@/hooks/useEventAccessRules";
-import { useCategories } from "@/hooks/useEvents";
 import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import AppLayout from "@/components/layout/AppLayout";
