@@ -1295,7 +1295,7 @@ const EventDetail = () => {
               ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  {isMembershipExpired(profile) ? 'Renew Membership & Register' : 'Pay Membership & Register'}
+                  {isMembershipExpired(profile) ? t("renewMembershipAndRegister") : t("payMembershipAndRegister")}
                 </>
               ) : event.status === "full" ? (
                 "Join Waitlist"
