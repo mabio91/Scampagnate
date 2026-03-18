@@ -118,8 +118,8 @@ const EventDetail = () => {
   if (!event) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center py-20">
-        <p className="text-muted-foreground font-body">Event not found</p>
-        <Link to="/" className="text-primary font-body mt-2">Back to Home</Link>
+        <p className="text-muted-foreground font-body">{t("noEventsFound")}</p>
+        <Link to="/" className="text-primary font-body mt-2">{t("returnToHome")}</Link>
       </div>
     );
   }
