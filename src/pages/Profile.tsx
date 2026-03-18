@@ -202,7 +202,7 @@ const Profile = () => {
             </h1>
             <p className="text-sm font-body text-muted-foreground">{user.email}</p>
             <p className="text-xs font-body text-secondary mt-0.5">
-              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} points
+              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} {t("points")}
             </p>
           </div>
           <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-colors">
