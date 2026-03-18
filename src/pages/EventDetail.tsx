@@ -963,7 +963,7 @@ const EventDetail = () => {
             {/* Auxiliary: Sport Level */}
             {isSportCategory && (
               <div>
-                <Label className="font-body text-sm font-semibold">Sport Level</Label>
+                <Label className="font-body text-sm font-semibold">{t("sportLevel")}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {["Beginner", "Intermediate", "Advanced"].map((level) => (
                     <button
