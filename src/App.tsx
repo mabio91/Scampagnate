@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SearchProvider } from "@/contexts/SearchContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { RestrictionBanner } from "@/components/RestrictionBanner";
 import Index from "./pages/Index";
 
