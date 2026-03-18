@@ -1030,7 +1030,7 @@ const EventDetail = () => {
                 <div className="p-3 rounded-xl bg-destructive/5 border border-destructive/15 space-y-2">
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
-                    <p className="text-xs font-body font-bold text-destructive">Mandatory Equipment Required</p>
+                    <p className="text-xs font-body font-bold text-destructive">{t("mandatoryEquipment")}</p>
                   </div>
                   <div className="space-y-1 ml-6">
                     {(event.equipment_list as any[]).filter((item: any) => item.is_mandatory).map((item: any, idx: number) => (
