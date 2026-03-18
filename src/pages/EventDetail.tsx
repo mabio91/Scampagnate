@@ -1212,7 +1212,7 @@ const EventDetail = () => {
                       <>
                         {/* Event price line */}
                         <div className="flex justify-between text-sm font-body">
-                          <span className="text-muted-foreground">{isDeposit ? `Deposit — ${displayLabel}` : displayLabel}</span>
+                          <span className="text-muted-foreground">{isDeposit ? `${t("deposit")} — ${displayLabel}` : displayLabel}</span>
                           <span className={`font-semibold ${appliedDiscount ? "line-through text-muted-foreground" : "text-foreground"}`}>
                             €{displayPrice.toFixed(2)}
                           </span>
