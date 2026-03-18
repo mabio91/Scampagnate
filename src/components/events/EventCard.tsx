@@ -6,31 +6,7 @@ import { getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEve
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { CapacityWarning } from "./CapacityWarning";
-
-const statusConfig: Record<string, { label: string; className: string }> = {
-  draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
-  published: { label: "Open", className: "bg-success/10 text-success" },
-  full: { label: "Full", className: "bg-warning/10 text-warning" },
-  closed: { label: "Closed", className: "bg-destructive/10 text-destructive" },
-  cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive" },
-  past: { label: "Past", className: "bg-muted text-muted-foreground" },
-};
-
-const fallbackStatus = statusConfig.published;
-
-const getEventStatusDisplay = (status: string | null | undefined) => {
-  if (!status || !Object.prototype.hasOwnProperty.call(statusConfig, status)) {
-    return fallbackStatus;
-  }
-
-  return statusConfig[status];
-};
-
-export interface EventDiscount {
-  discount_type: string;
-  discount_value: number;
-  code: string;
-}
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const exclusivityIcons: Record<string, typeof Crown> = {
   members: Crown,
@@ -39,8 +15,25 @@ const exclusivityIcons: Record<string, typeof Crown> = {
   community: Hand,
 };
 
+export interface EventDiscount {
+  discount_type: string;
+  discount_value: number;
+  code: string;
+}
+
 const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; index: number; discount?: EventDiscount | null }) => {
-  const status = getEventStatusDisplay(event.status);
+  const { t } = useLanguage();
+
+  const statusConfig: Record<string, { label: string; className: string }> = {
+    draft: { label: t("draft"), className: "bg-muted text-muted-foreground" },
+    published: { label: t("open"), className: "bg-success/10 text-success" },
+    full: { label: t("full"), className: "bg-warning/10 text-warning" },
+    closed: { label: t("closed"), className: "bg-destructive/10 text-destructive" },
+    cancelled: { label: t("cancelled"), className: "bg-destructive/10 text-destructive" },
+    past: { label: t("past"), className: "bg-muted text-muted-foreground" },
+  };
+
+  const status = statusConfig[event.status || "published"] || statusConfig.published;
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
   const indicators = getExclusivityIndicators(event.access_rules as AccessRulesConfig | null);
   const spotsLeft = event.spots_total - event.spots_taken;
@@ -78,7 +71,6 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
             </span>
           </div>
 
-          {/* Exclusivity & Scarcity Indicators */}
           {(indicators.length > 0 || (spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full")) && (
             <div className="flex flex-wrap items-center gap-1 mt-1">
               {indicators.map((ind, idx) => {
@@ -97,7 +89,7 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
               })}
               {spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full" && (
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive text-[9px] font-body font-bold">
-                  🔥 {spotsLeft} spot{spotsLeft > 1 ? "s" : ""} left
+                  🔥 {spotsLeft} {spotsLeft > 1 ? "spots" : "spot"} left
                 </span>
               )}
             </div>
@@ -125,7 +117,7 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
               </div>
             </div>
             <span className="font-body font-bold text-sm text-foreground">
-              {Number(event.price) === 0 ? "Free" : `€${event.price}`}
+              {Number(event.price) === 0 ? t("free") : `€${event.price}`}
             </span>
           </div>
           <CapacityWarning spotsTaken={event.spots_taken} spotsTotal={event.spots_total} className="mt-1.5" />
