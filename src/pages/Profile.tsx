@@ -497,6 +497,7 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
 };
 
 const PastEventCard = ({ registration }: { registration: any }) => {
+  const { language } = useLanguage();
   const event = registration.events;
   if (!event) return null;
 
