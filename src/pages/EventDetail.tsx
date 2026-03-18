@@ -895,16 +895,13 @@ const EventDetail = () => {
                     }
                     if (Number(event.price) === 0 && (!profile || isMembershipActive(profile))) return "Free";
                     if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
-                    return `€${Number(event.price) + (!isMembershipActive(profile) ? 10 : 0)}`;
+                    return `€${Number(event.price)}`;
                   })()}
                 </p>
               </div>
             )}
-            {!isMembershipActive(profile) && !isRegistered && (
-              <p className="text-[10px] font-body text-primary font-semibold">Includes €10 annual membership fee</p>
-            )}
             {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
-              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (!isMembershipActive(profile) ? 10 : 0)} total</p>
+              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price)} total</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
               <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
