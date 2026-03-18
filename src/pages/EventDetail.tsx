@@ -1159,7 +1159,7 @@ const EventDetail = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
                   <Label className="font-body text-sm font-semibold">
-                    {isMembershipExpired(profile) ? 'Membership Renewal Required' : 'Membership Required'}
+                    {isMembershipExpired(profile) ? t("membershipRenewalRequired") : t("membershipRequired")}
                   </Label>
                 </div>
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
