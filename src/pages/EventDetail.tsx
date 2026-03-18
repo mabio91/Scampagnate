@@ -901,7 +901,7 @@ const EventDetail = () => {
               </div>
             )}
             {!isMembershipActive(profile) && !isRegistered && (
-              <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
+              <p className="text-[10px] font-body text-primary font-semibold">Includes €10 annual membership fee</p>
             )}
             {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
               <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)} total</p>
