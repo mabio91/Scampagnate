@@ -25,16 +25,17 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    // Check if already an active member
+    // Check if already an active member FOR THE CURRENT YEAR
     const { data: profile } = await supabaseClient
       .from("profiles")
-      .select("membership_status")
+      .select("membership_status, membership_year")
       .eq("id", user.id)
       .single();
 
-    if (profile?.membership_status === "Active") {
+    const currentYear = new Date().getFullYear();
+    if (profile?.membership_status === "Active" && profile?.membership_year === currentYear) {
       return new Response(
-        JSON.stringify({ error: "Already an active member" }),
+        JSON.stringify({ error: "Already an active member for this year" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
