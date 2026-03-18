@@ -377,6 +377,24 @@ const translations = {
     invalidLink: "Link non valido.",
     backToLogin: "Torna al Login",
 
+    // Share
+    shareEvent: "Condividi Evento",
+    copyLink: "Copia Link",
+    linkCopied: "Link copiato negli appunti",
+    linkCopiedInstagram: "Link copiato! Incollalo nella tua storia Instagram",
+
+    // Capacity
+    onlySpotsLeft: "Solo {count} {count, plural, one {posto} other {posti}} rimasti",
+    almostFull: "Quasi pieno",
+
+    // Discount
+    codeApplied: "Codice applicato: {code}",
+    percentDiscount: "{value}% di sconto",
+    amountDiscount: "€{value} di sconto",
+    discountPlaceholder: "Codice sconto",
+    apply: "Applica",
+    validationError: "Errore durante la validazione",
+
     // Misc
     everyoneJoining: "Tutti i partecipanti a questo evento",
     meetingPointAssignments: "Assegnazioni punti di ritrovo:",
