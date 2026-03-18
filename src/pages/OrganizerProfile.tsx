@@ -8,6 +8,7 @@ import {
 import AppLayout from "@/components/layout/AppLayout";
 import { useOrganizerProfile } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
