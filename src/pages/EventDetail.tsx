@@ -540,7 +540,7 @@ const EventDetail = () => {
 
           return (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }} className="py-4 border-b border-border">
-              <h3 className="font-display text-lg font-bold text-foreground mb-3">Equipment</h3>
+              <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("equipment")}</h3>
 
               {/* Mandatory Equipment */}
               {hasMandatory && (
