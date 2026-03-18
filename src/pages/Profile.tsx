@@ -235,7 +235,7 @@ const Profile = () => {
             {/* Category Preferences - category names stay Italian */}
             {categories && categories.length > 0 && (
               <div>
-                <Label className="font-body text-xs">Category Preferences</Label>
+                <Label className="font-body text-xs">{t("categoryPreferences")}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {categories.map((cat: any) => (
                     <button
