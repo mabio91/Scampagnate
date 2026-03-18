@@ -457,7 +457,7 @@ const EventDetail = () => {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors">
                   <CalendarPlus className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Add to Calendar</span>
+                  <span className="truncate">{t("addToCalendar")}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
