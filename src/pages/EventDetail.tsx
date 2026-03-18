@@ -925,7 +925,7 @@ const EventDetail = () => {
                 onClick={() => setShowAccessWarning(true)}
                 className="text-[10px] font-body text-primary hover:underline"
               >
-                Request manual approval
+                {t("requestManualApproval")}
               </button>
             )}
           </div>
