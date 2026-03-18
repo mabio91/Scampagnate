@@ -224,7 +224,7 @@ const Profile = () => {
               </div>
             </div>
             <div>
-              <Label className="font-body text-xs">Phone</Label>
+              <Label className="font-body text-xs">{t("phone")}</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
             </div>
             <div>
