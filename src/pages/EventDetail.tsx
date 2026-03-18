@@ -1122,7 +1122,7 @@ const EventDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                  <Label className="font-body text-sm font-semibold">Choose your pricing option</Label>
+                  <Label className="font-body text-sm font-semibold">{t("choosePricingOption")}</Label>
                 </div>
                 <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
                   {event.price_options.map((opt: any) => (
