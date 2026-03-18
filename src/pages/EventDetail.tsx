@@ -276,8 +276,9 @@ const EventDetail = () => {
   };
 
   const handleRegister = async (requestApproval = false) => {
-    // If user is not an active member, redirect to membership checkout
-    if (!isMembershipActive(profile)) {
+    // For free/location events, non-members complete membership checkout first.
+    // For paid/deposit events, membership is charged together in event checkout.
+    if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
       await handleMembershipCheckout();
       return;
     }
