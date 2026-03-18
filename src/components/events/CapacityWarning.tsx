@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { Flame, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CapacityWarningProps {
   spotsTaken: number;
@@ -11,6 +12,7 @@ interface CapacityWarningProps {
 
 export const CapacityWarning = forwardRef<HTMLDivElement, CapacityWarningProps>(
   ({ spotsTaken, spotsTotal, className, variant = "small" }, ref) => {
+    const { t } = useLanguage();
     const spotsLeft = spotsTotal - spotsTaken;
     
     if (spotsLeft <= 0) return null;
@@ -23,7 +25,7 @@ export const CapacityWarning = forwardRef<HTMLDivElement, CapacityWarningProps>(
           className
         )}>
           <Info className={variant === "small" ? "h-3 w-3" : "h-4 w-4"} />
-          <span>Only {spotsLeft} spot{spotsLeft > 1 ? 's' : ''} left</span>
+          <span>{t("onlySpotsLeft", { count: spotsLeft })}</span>
         </div>
       );
     }
@@ -37,7 +39,7 @@ export const CapacityWarning = forwardRef<HTMLDivElement, CapacityWarningProps>(
           className
         )}>
           <Flame className={variant === "small" ? "h-3 w-3" : "h-4 w-4"} />
-          <span>Almost full</span>
+          <span>{t("almostFull")}</span>
         </div>
       );
     }

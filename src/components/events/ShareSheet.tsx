@@ -5,6 +5,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ShareSheetProps {
   open: boolean;
@@ -47,13 +48,14 @@ const InstagramIcon = ({ className }: { className?: string }) => (
 
 const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const shareText = text || title;
   const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(shareText);
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(url);
-    toast({ title: "Link copied to clipboard" });
+    toast({ title: t("linkCopied") });
     onOpenChange(false);
   };
 
@@ -91,7 +93,7 @@ const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) =
       icon: InstagramIcon,
       onClick: () => {
         navigator.clipboard.writeText(`${shareText} ${url}`);
-        toast({ title: "Link copied! Paste it in your Instagram story" });
+        toast({ title: t("linkCopiedInstagram") });
         window.open("https://www.instagram.com/", "_blank");
       },
       iconColor: "text-[#E4405F]",
@@ -103,7 +105,7 @@ const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) =
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-2.5rem)] max-w-[280px] !p-4 !gap-3 rounded-2xl overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="font-display text-base text-left">Share Event</DialogTitle>
+          <DialogTitle className="font-display text-base text-left">{t("shareEvent")}</DialogTitle>
         </DialogHeader>
 
         {/* Copy link */}
@@ -115,7 +117,7 @@ const ShareSheet = ({ open, onOpenChange, title, url, text }: ShareSheetProps) =
             <Link2 className="h-4 w-4 text-primary" />
           </div>
           <div className="text-left min-w-0 flex-1">
-            <p className="text-xs font-body font-semibold text-foreground">Copy Link</p>
+            <p className="text-xs font-body font-semibold text-foreground">{t("copyLink")}</p>
             <p className="text-[9px] font-body text-muted-foreground truncate">{url}</p>
           </div>
         </button>

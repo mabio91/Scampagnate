@@ -327,6 +327,74 @@ const translations = {
     attended: "Partecipato",
     noShow: "Non presentato",
 
+    // Payment/Membership Success
+    verifyingPayment: "Verifica pagamento...",
+    verifyingPaymentDesc: "Stiamo verificando il tuo pagamento.",
+    paymentConfirmedTitle: "Pagamento Confermato! 🎉",
+    paymentConfirmedDesc: "Il pagamento è stato registrato. Sei ufficialmente iscritto all'evento!",
+    backToEvent: "Torna all'evento",
+    goToHome: "Vai alla Home",
+    verificationError: "Errore di Verifica",
+    verificationErrorDesc: "Non siamo riusciti a verificare il pagamento. Se hai già pagato, contatta il supporto.",
+    paymentConfirmedToast: "Pagamento confermato!",
+    paymentConfirmedToastDesc: "Il tuo pagamento è stato registrato con successo.",
+    membershipActivatedTitle: "Tessera Attivata! 🎉",
+    membershipActivatedDesc: "La tua tessera associativa Scampagnate è ora attiva. Puoi partecipare a tutti gli eventi!",
+    membershipActivatedToast: "Tessera attivata!",
+    membershipActivatedToastDesc: "La tua tessera associativa è ora attiva.",
+    verifyingMembership: "Verifica in corso...",
+    verifyingMembershipDesc: "Stiamo verificando il tuo pagamento e attivando la tessera.",
+
+    // Profile Setup
+    completeYourProfile: "Completa il tuo Profilo",
+    fewMoreDetails: "Solo pochi dettagli prima di poter partecipare agli eventi.",
+    uploadProfilePhoto: "Carica una foto profilo (opzionale)",
+    phoneNumber: "Numero di Telefono *",
+    phoneDisclaimer: "Il tuo numero di telefono verrà utilizzato esclusivamente per scopi legati agli eventi, come coordinamento, aggiornamenti dell'ultimo minuto o comunicazioni di emergenza da parte degli organizzatori. Questa informazione non sarà visibile pubblicamente agli altri partecipanti.",
+    experienceAndActivity: "Esperienza e Attività",
+    experienceExplanation: "Per aiutarci a consigliare eventi adatti alla tua esperienza e garantire la sicurezza di tutti durante le attività all'aperto, ti chiediamo un paio di domande rapide sulla tua esperienza di trekking e le tue abitudini di attività fisica. Le tue risposte aiutano gli organizzatori a pianificare le attività in modo responsabile.",
+    trekkingQuestion: "Quante esperienze di trekking o escursioni hai completato finora?",
+    activityQuestion: "Con che frequenza pratichi attività fisica?",
+    moreThan2Week: "Più di 2 volte a settimana",
+    oneToTwoWeek: "1–2 volte a settimana",
+    rarely: "Raramente",
+    saving: "Salvataggio...",
+    completeSetup: "Completa Setup",
+    photoUpdated: "Foto aggiornata!",
+    phoneRequired: "Numero di telefono richiesto",
+    answerAllQuestions: "Per favore rispondi a tutte le domande",
+    profileSetupComplete: "Setup profilo completato!",
+    welcomeToScampagnate: "Benvenuto in Scampagnate.",
+
+    // Reset Password
+    newPassword: "Nuova Password",
+    newPasswordLabel: "Nuova password",
+    confirmPasswordLabel: "Conferma password",
+    updatePassword: "Aggiorna Password",
+    updating: "Aggiornamento...",
+    passwordUpdated: "Password aggiornata!",
+    passwordsNoMatch: "Le password non corrispondono.",
+    invalidLink: "Link non valido.",
+    backToLogin: "Torna al Login",
+
+    // Share
+    shareEvent: "Condividi Evento",
+    copyLink: "Copia Link",
+    linkCopied: "Link copiato negli appunti",
+    linkCopiedInstagram: "Link copiato! Incollalo nella tua storia Instagram",
+
+    // Capacity
+    onlySpotsLeft: "Solo {count} {count, plural, one {posto} other {posti}} rimasti",
+    almostFull: "Quasi pieno",
+
+    // Discount
+    codeApplied: "Codice applicato: {code}",
+    percentDiscount: "{value}% di sconto",
+    amountDiscount: "€{value} di sconto",
+    discountPlaceholder: "Codice sconto",
+    apply: "Applica",
+    validationError: "Errore durante la validazione",
+
     // Misc
     everyoneJoining: "Tutti i partecipanti a questo evento",
     meetingPointAssignments: "Assegnazioni punti di ritrovo:",
@@ -663,6 +731,74 @@ const translations = {
     participantAlreadyJoined: "participants already joined.",
     noParticipantsSignIn: "No participants yet.",
     promoExpired: "Promo expired",
+
+    // Share
+    shareEvent: "Share Event",
+    copyLink: "Copy Link",
+    linkCopied: "Link copied to clipboard",
+    linkCopiedInstagram: "Link copied! Paste it in your Instagram story",
+
+    // Capacity
+    onlySpotsLeft: "Only {count} spot{count, plural, one {} other {s}} left",
+    almostFull: "Almost full",
+
+    // Discount
+    codeApplied: "Code applied: {code}",
+    percentDiscount: "{value}% off",
+    amountDiscount: "€{value} off",
+    discountPlaceholder: "Discount code",
+    apply: "Apply",
+    validationError: "Error during validation",
+
+    // Payment/Membership Success
+    verifyingPayment: "Verifying payment...",
+    verifyingPaymentDesc: "We're verifying your payment.",
+    paymentConfirmedTitle: "Payment Confirmed! 🎉",
+    paymentConfirmedDesc: "Your payment has been registered. You're officially signed up for the event!",
+    backToEvent: "Back to event",
+    goToHome: "Go to Home",
+    verificationError: "Verification Error",
+    verificationErrorDesc: "We couldn't verify the payment. If you've already paid, please contact support.",
+    paymentConfirmedToast: "Payment confirmed!",
+    paymentConfirmedToastDesc: "Your payment has been registered successfully.",
+    membershipActivatedTitle: "Membership Activated! 🎉",
+    membershipActivatedDesc: "Your Scampagnate membership card is now active. You can join all events!",
+    membershipActivatedToast: "Membership activated!",
+    membershipActivatedToastDesc: "Your membership card is now active.",
+    verifyingMembership: "Verifying...",
+    verifyingMembershipDesc: "We're verifying your payment and activating your membership.",
+
+    // Profile Setup
+    completeYourProfile: "Complete Your Profile",
+    fewMoreDetails: "Just a few more details before you can join events.",
+    uploadProfilePhoto: "Upload a profile photo (optional)",
+    phoneNumber: "Phone Number *",
+    phoneDisclaimer: "Your phone number will only be used for event-related purposes such as coordination, last-minute updates, or emergency communication from the organizers. This information will not be publicly visible to other participants.",
+    experienceAndActivity: "Experience & Activity",
+    experienceExplanation: "To help us recommend events that match your experience and ensure everyone's safety during outdoor activities, we ask a couple of quick questions about your trekking experience and physical activity habits. Your answers help organizers plan activities responsibly.",
+    trekkingQuestion: "How many trekking or hiking experiences have you completed so far?",
+    activityQuestion: "How often do you usually practice physical activity?",
+    moreThan2Week: "More than 2 times per week",
+    oneToTwoWeek: "1–2 times per week",
+    rarely: "Rarely",
+    saving: "Saving...",
+    completeSetup: "Complete Setup",
+    photoUpdated: "Photo updated!",
+    phoneRequired: "Phone number required",
+    answerAllQuestions: "Please answer all experience questions",
+    profileSetupComplete: "Profile setup complete!",
+    welcomeToScampagnate: "Welcome to Scampagnate.",
+
+    // Reset Password
+    newPassword: "New Password",
+    newPasswordLabel: "New password",
+    confirmPasswordLabel: "Confirm password",
+    updatePassword: "Update Password",
+    updating: "Updating...",
+    passwordUpdated: "Password updated!",
+    passwordsNoMatch: "Passwords do not match.",
+    invalidLink: "Invalid link.",
+    backToLogin: "Back to Login",
   },
 } as const;
 
