@@ -1321,7 +1321,7 @@ const EventDetail = () => {
           <div className="space-y-4">
             {accessData?.failedRules && accessData.failedRules.length > 0 && (
               <div className="p-4 rounded-xl bg-muted/50 space-y-2 border border-border/50">
-                <p className="text-xs font-body font-bold text-foreground">Requisiti non soddisfatti:</p>
+                <p className="text-xs font-body font-bold text-foreground">{t("requirementsNotMet")}</p>
                 <ul className="text-xs font-body text-muted-foreground space-y-1.5 ml-4 list-disc">
                   {accessData.failedRules.map((fr: any, idx: number) => (
                     <li key={idx}>{fr.reason}</li>
