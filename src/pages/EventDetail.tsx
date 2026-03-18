@@ -904,7 +904,7 @@ const EventDetail = () => {
               </div>
             )}
             {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
-              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price)} total</p>
+              <p className="text-[10px] font-body text-muted-foreground">{t("deposit")} · €{Number(event.price)} {t("total")}</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
               <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
