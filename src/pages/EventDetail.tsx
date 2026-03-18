@@ -41,6 +41,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 const EventDetail = () => {
   const { id } = useParams();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { user, profile, isOrganizer, isAdmin } = useAuth();
   const { toast } = useToast();
