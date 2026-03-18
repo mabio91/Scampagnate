@@ -986,7 +986,7 @@ const EventDetail = () => {
                   className="mt-2"
                 />
                 <p className="text-[10px] text-muted-foreground font-body mt-1">
-                  Helps organizers balance teams and plan activities
+                  {t("helpsOrganizers")}
                 </p>
               </div>
             )}
