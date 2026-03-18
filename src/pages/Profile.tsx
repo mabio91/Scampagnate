@@ -228,7 +228,7 @@ const Profile = () => {
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label className="font-body text-xs">Bio</Label>
+              <Label className="font-body text-xs">{t("bio")}</Label>
               <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1" rows={2} />
             </div>
 
