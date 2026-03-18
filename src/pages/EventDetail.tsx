@@ -1222,7 +1222,7 @@ const EventDetail = () => {
                         {appliedDiscount && (
                           <div className="flex justify-between text-sm font-body">
                             <span className="text-success font-semibold flex items-center gap-1">
-                              <Tag className="h-3 w-3" /> Discount applied
+                              <Tag className="h-3 w-3" /> {t("discountApplied")}
                             </span>
                             <span className="font-bold text-success">€{discountedEventPrice.toFixed(2)}</span>
                           </div>
