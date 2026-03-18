@@ -351,7 +351,7 @@ const EventDetail = () => {
   const shareEvent = () => setShowShareSheet(true);
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
-  const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}`;
+  const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { day: "numeric", month: "short", year: "numeric" })}`;
 
   const openDirections = (location: string, app: "google" | "apple" | "waze") => {
     const encoded = encodeURIComponent(location);
