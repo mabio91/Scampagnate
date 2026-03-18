@@ -594,7 +594,7 @@ const EventDetail = () => {
 
         {event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
-            <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("meetingPoints")}</h3>
             <div className="space-y-3">
               {event.meeting_points.map((mp) => (
                 <div key={mp.id} className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-muted/50">
