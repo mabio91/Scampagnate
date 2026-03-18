@@ -1331,7 +1331,7 @@ const EventDetail = () => {
             )}
 
             <p className="text-sm font-body text-muted-foreground leading-relaxed">
-              Puoi comunque richiedere l'approvazione manuale dell'organizzatore oppure contattarlo direttamente per maggiori informazioni.
+              {t("accessWarningText")}
             </p>
 
             <div className="flex flex-col gap-2 pt-2">
