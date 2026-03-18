@@ -22,7 +22,7 @@ export interface EventDiscount {
 }
 
 const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; index: number; discount?: EventDiscount | null }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const statusConfig: Record<string, { label: string; className: string }> = {
     draft: { label: t("draft"), className: "bg-muted text-muted-foreground" },
@@ -89,7 +89,7 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
               })}
               {spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full" && (
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive text-[9px] font-body font-bold">
-                  🔥 {spotsLeft} {spotsLeft > 1 ? "spots" : "spot"} left
+                  🔥 {t("spotsLeft", { count: spotsLeft })}
                 </span>
               )}
             </div>
@@ -98,7 +98,7 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
           <div className="flex items-center gap-3 mt-1.5 text-muted-foreground text-xs font-body">
             <span className="flex items-center gap-1">
               <CalendarDays className="h-3 w-3" />
-              {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+              {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { day: "numeric", month: "short" })}
             </span>
             <span className="flex items-center gap-1 min-w-0">
               <MapPin className="h-3 w-3 shrink-0" />

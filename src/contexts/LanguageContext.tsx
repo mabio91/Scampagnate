@@ -395,6 +395,7 @@ const translations = {
     apply: "Applica",
     validationError: "Errore durante la validazione",
 
+    all: "Tutti",
     // Misc
     everyoneJoining: "Tutti i partecipanti a questo evento",
     meetingPointAssignments: "Assegnazioni punti di ritrovo:",
@@ -725,6 +726,7 @@ const translations = {
     attended: "Attended",
     noShow: "No-show",
 
+    all: "All",
     // Misc
     everyoneJoining: "Everyone joining this event",
     meetingPointAssignments: "Meeting point assignments:",

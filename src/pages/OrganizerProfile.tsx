@@ -8,6 +8,7 @@ import {
 import AppLayout from "@/components/layout/AppLayout";
 import { useOrganizerProfile } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -267,7 +268,7 @@ const EventRow = ({ event, index, navigate, past = false }: { event: any; index:
         </h3>
         <div className="flex items-center gap-2 text-muted-foreground text-[11px] font-body mt-0.5">
           <CalendarDays className="h-3 w-3 shrink-0" />
-          <span>{new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}</span>
+          <span>{new Date(event.date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</span>
           <span className="text-border">·</span>
           <MapPin className="h-3 w-3 shrink-0" />
           <span className="truncate">{event.location}</span>

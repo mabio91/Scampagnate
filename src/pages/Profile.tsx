@@ -202,7 +202,7 @@ const Profile = () => {
             </h1>
             <p className="text-sm font-body text-muted-foreground">{user.email}</p>
             <p className="text-xs font-body text-secondary mt-0.5">
-              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} points
+              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} {t("points")}
             </p>
           </div>
           <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-colors">
@@ -215,27 +215,27 @@ const Profile = () => {
           <div className="space-y-3 mb-6 p-4 rounded-xl bg-card">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="font-body text-xs">First Name</Label>
+                <Label className="font-body text-xs">{t("firstName")}</Label>
                 <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label className="font-body text-xs">Last Name</Label>
+                <Label className="font-body text-xs">{t("lastName")}</Label>
                 <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1" />
               </div>
             </div>
             <div>
-              <Label className="font-body text-xs">Phone</Label>
+              <Label className="font-body text-xs">{t("phone")}</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label className="font-body text-xs">Bio</Label>
+              <Label className="font-body text-xs">{t("bio")}</Label>
               <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1" rows={2} />
             </div>
 
             {/* Category Preferences - category names stay Italian */}
             {categories && categories.length > 0 && (
               <div>
-                <Label className="font-body text-xs">Category Preferences</Label>
+                <Label className="font-body text-xs">{t("categoryPreferences")}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {categories.map((cat: any) => (
                     <button
@@ -470,6 +470,7 @@ const PROGRESSION_BADGES = [
 ];
 
 const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: number; earnedBadges: any[] }) => {
+  const { t } = useLanguage();
   const earnedNames = new Set(earnedBadges.map((ub: any) => ub.badges?.name));
   const nextBadge = PROGRESSION_BADGES.find((b) => !earnedNames.has(b.name));
 
@@ -482,7 +483,7 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
     <div className="p-3 rounded-xl bg-muted/50 flex items-center gap-3">
       <BadgeIcon icon={nextBadge.icon} className="h-6 w-6 text-muted-foreground/40" />
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-body text-muted-foreground">Next badge</p>
+        <p className="text-xs font-body text-muted-foreground">{t("nextBadge")}</p>
         <p className="text-sm font-body font-semibold text-foreground">{nextBadge.name}</p>
         <div className="flex items-center gap-2 mt-1">
           <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
@@ -496,6 +497,7 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
 };
 
 const PastEventCard = ({ registration }: { registration: any }) => {
+  const { language } = useLanguage();
   const event = registration.events;
   if (!event) return null;
 
@@ -507,7 +509,7 @@ const PastEventCard = ({ registration }: { registration: any }) => {
           <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground text-xs font-body">
             <CalendarDays className="h-3 w-3" />
-            {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}
+            {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { day: "numeric", month: "short", year: "numeric" })}
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
             <MapPin className="h-3 w-3" />
