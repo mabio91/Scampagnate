@@ -56,6 +56,7 @@ serve(async (req) => {
 
     const registrationId = session.metadata?.registration_id;
     const eventId = session.metadata?.event_id;
+    const membershipIncluded = session.metadata?.membership_included === "true";
 
     if (!registrationId) throw new Error("Registration ID not found in session");
 
@@ -72,6 +73,17 @@ serve(async (req) => {
     if (updateError) {
       console.error("Registration update error:", updateError);
       throw new Error("Failed to update registration");
+    }
+
+    if (membershipIncluded) {
+      const { error: membershipError } = await supabaseAdmin.rpc("activate_membership", {
+        user_id_param: user.id,
+      });
+
+      if (membershipError) {
+        console.error("Membership activation error:", membershipError);
+        throw new Error("Payment verified but failed to activate membership");
+      }
     }
 
     return new Response(
