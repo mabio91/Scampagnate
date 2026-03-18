@@ -583,7 +583,7 @@ const EventDetail = () => {
                 <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
                   <p className="text-xs font-body text-warning-foreground leading-relaxed">
-                    <strong>Safety notice:</strong> Participants who arrive without the required mandatory equipment may not be allowed to join the activity for safety reasons.
+                    <strong>{t("safetyNotice")}</strong> {t("safetyNoticeText")}
                   </p>
                 </div>
               )}
