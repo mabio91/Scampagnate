@@ -772,7 +772,7 @@ const EventDetail = () => {
             </div>
           )}
           {!user && (
-            <p className="text-xs font-body text-muted-foreground mt-2">Sign in to contact the organizer</p>
+            <p className="text-xs font-body text-muted-foreground mt-2">{t("signInToContact")}</p>
           )}
         </motion.div>
 
