@@ -482,7 +482,7 @@ const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: numb
     <div className="p-3 rounded-xl bg-muted/50 flex items-center gap-3">
       <BadgeIcon icon={nextBadge.icon} className="h-6 w-6 text-muted-foreground/40" />
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-body text-muted-foreground">Next badge</p>
+        <p className="text-xs font-body text-muted-foreground">{t("nextBadge")}</p>
         <p className="text-sm font-body font-semibold text-foreground">{nextBadge.name}</p>
         <div className="flex items-center gap-2 mt-1">
           <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
