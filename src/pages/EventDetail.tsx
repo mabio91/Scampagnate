@@ -545,7 +545,7 @@ const EventDetail = () => {
               {/* Mandatory Equipment */}
               {hasMandatory && (
                 <div className="mb-4">
-                  <p className="text-xs font-body font-bold text-destructive uppercase tracking-wider mb-2">Mandatory Equipment</p>
+                  <p className="text-xs font-body font-bold text-destructive uppercase tracking-wider mb-2">{t("mandatoryEquipment")}</p>
                   <div className="space-y-2 p-3 rounded-xl bg-destructive/5 border border-destructive/15">
                     {mandatoryItems.map((item: any, idx: number) => (
                       <div key={idx} className="flex items-start gap-2 text-sm font-body">
