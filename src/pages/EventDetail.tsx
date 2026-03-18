@@ -496,7 +496,7 @@ const EventDetail = () => {
             <div className="text-center">
               <Users className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.spots_taken}/{event.spots_total}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Spots</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("spots")}</p>
             </div>
           </motion.div>
         )}
