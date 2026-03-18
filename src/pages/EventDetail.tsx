@@ -686,7 +686,7 @@ const EventDetail = () => {
           )}
 
           {canViewParticipants && (!participants || participants.length === 0) && (
-            <p className="text-sm font-body text-muted-foreground">No participants yet</p>
+            <p className="text-sm font-body text-muted-foreground">{t("noParticipantsYet")}</p>
           )}
         </motion.div>
 
