@@ -732,6 +732,24 @@ const translations = {
     noParticipantsSignIn: "No participants yet.",
     promoExpired: "Promo expired",
 
+    // Share
+    shareEvent: "Share Event",
+    copyLink: "Copy Link",
+    linkCopied: "Link copied to clipboard",
+    linkCopiedInstagram: "Link copied! Paste it in your Instagram story",
+
+    // Capacity
+    onlySpotsLeft: "Only {count} spot{count, plural, one {} other {s}} left",
+    almostFull: "Almost full",
+
+    // Discount
+    codeApplied: "Code applied: {code}",
+    percentDiscount: "{value}% off",
+    amountDiscount: "€{value} off",
+    discountPlaceholder: "Discount code",
+    apply: "Apply",
+    validationError: "Error during validation",
+
     // Payment/Membership Success
     verifyingPayment: "Verifying payment...",
     verifyingPaymentDesc: "We're verifying your payment.",
