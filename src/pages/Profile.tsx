@@ -368,7 +368,7 @@ const Profile = () => {
               </div>
             ) : (
               <p className="text-xs font-body text-muted-foreground mt-3">
-                Join your first event to activate your annual membership and receive your unique ID!
+                {t("joinFirstEvent")}
               </p>
             )}
           </div>
