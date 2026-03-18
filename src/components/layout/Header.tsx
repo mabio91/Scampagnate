@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
+import flagIt from "@/assets/flag-it.png";
+import flagEn from "@/assets/flag-en.png";
 import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/contexts/SearchContext";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useTheme } from "next-themes";
+import { useLanguage } from "@/contexts/LanguageContext";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 const Header = () => {
@@ -17,6 +20,7 @@ const Header = () => {
   const notifRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => setMounted(true), []);
 
@@ -34,6 +38,10 @@ const Header = () => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
+  const toggleLanguage = () => {
+    setLanguage(language === "it" ? "en" : "it");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-safe">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
@@ -42,11 +50,24 @@ const Header = () => {
           <span className="font-display text-lg font-bold text-foreground">Scampagnate</span>
         </Link>
         <div className="flex items-center gap-0.5">
+          {/* Language Switcher */}
+          <button
+            className="p-2 rounded-xl hover:bg-muted transition-colors touch-target flex items-center justify-center"
+            onClick={toggleLanguage}
+            aria-label={language === "it" ? "Switch to English" : "Passa all'italiano"}
+          >
+            <img
+              src={language === "it" ? flagEn : flagIt}
+              alt={language === "it" ? "English" : "Italiano"}
+              className="h-5 w-5 rounded-sm object-cover"
+            />
+          </button>
+
           {mounted && (
             <button
               className="p-2.5 rounded-xl hover:bg-muted transition-colors touch-target flex items-center justify-center"
               onClick={toggleTheme}
-              aria-label="Toggle theme"
+              aria-label={t("toggleTheme")}
             >
               {resolvedTheme === "dark" ? (
                 <Sun className="h-5 w-5 text-muted-foreground" />
@@ -58,7 +79,7 @@ const Header = () => {
           <button
             className="p-2.5 rounded-xl hover:bg-muted transition-colors touch-target flex items-center justify-center"
             onClick={() => { navigate("/"); toggleSearch(); }}
-            aria-label="Search"
+            aria-label={t("search")}
           >
             <Search className="h-5 w-5 text-muted-foreground" />
           </button>
@@ -67,7 +88,7 @@ const Header = () => {
               <div className="relative" ref={notifRef}>
                 <button
                   className="p-2.5 rounded-xl hover:bg-muted transition-colors relative touch-target flex items-center justify-center"
-                  aria-label="Notifications"
+                  aria-label={t("notifications")}
                   onClick={() => setShowNotifications((v) => !v)}
                 >
                   <Bell className="h-5 w-5 text-muted-foreground" />
@@ -98,7 +119,7 @@ const Header = () => {
             <Link
               to="/auth"
               className="p-2.5 rounded-xl bg-primary text-primary-foreground touch-target flex items-center justify-center"
-              aria-label="Sign in"
+              aria-label={t("signIn")}
             >
               <LogIn className="h-5 w-5" />
             </Link>
