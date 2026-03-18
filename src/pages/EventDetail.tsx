@@ -486,7 +486,7 @@ const EventDetail = () => {
             <div className="text-center">
               <Mountain className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.elevation}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Elevation</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("elevation")}</p>
             </div>
             <div className="text-center">
               <Clock className="h-5 w-5 mx-auto text-secondary mb-1" />
