@@ -22,6 +22,7 @@ import { ActivityHistory } from "@/components/profile/ActivityHistory";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
