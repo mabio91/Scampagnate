@@ -276,8 +276,9 @@ const EventDetail = () => {
   };
 
   const handleRegister = async (requestApproval = false) => {
-    // If user is not an active member, redirect to membership checkout
-    if (!isMembershipActive(profile)) {
+    // For free/location events, non-members complete membership checkout first.
+    // For paid/deposit events, membership is charged together in event checkout.
+    if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
       await handleMembershipCheckout();
       return;
     }
@@ -1267,7 +1268,7 @@ const EventDetail = () => {
                         {/* Payment method note */}
                         <p className="text-[10px] font-body text-muted-foreground pt-1">
                           {needsMembership
-                            ? "Membership payment will be processed first via Stripe, then you can complete the event payment."
+                            ? "Membership fee is included in this Stripe checkout."
                             : (event.payment_type === "paid" || selectedOpt)
                               ? "Full payment will be charged online via Stripe."
                               : isDeposit

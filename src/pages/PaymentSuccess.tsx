@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -9,6 +10,7 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refreshProfile } = useAuth();
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [eventId, setEventId] = useState<string | null>(null);
 
@@ -32,6 +34,7 @@ const PaymentSuccess = () => {
           throw new Error(data?.error || error?.message || "Verification failed");
         }
 
+        await refreshProfile();
         setStatus("success");
         toast({ title: "Pagamento confermato!", description: "Il tuo pagamento è stato registrato con successo." });
       } catch (err: any) {
@@ -42,7 +45,7 @@ const PaymentSuccess = () => {
     };
 
     verify();
-  }, [searchParams, toast]);
+  }, [searchParams, refreshProfile, toast]);
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background flex items-center justify-center px-4">

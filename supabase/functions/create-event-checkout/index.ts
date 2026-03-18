@@ -37,6 +37,28 @@ serve(async (req) => {
 
     if (eventError || !event) throw new Error("Event not found");
 
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("membership_status, membership_registration_date")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) throw new Error("Unable to verify membership status");
+
+    const hasActiveMembership = (() => {
+      if (profile?.membership_status !== "Active") return false;
+      if (!profile?.membership_registration_date) return true;
+
+      const regDate = new Date(profile.membership_registration_date);
+      if (Number.isNaN(regDate.getTime())) return true;
+
+      const expiry = new Date(regDate);
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      return new Date() < expiry;
+    })();
+
+    const membershipFeeCents = hasActiveMembership ? 0 : 1000;
+
     // Check if registration has a price option
     let priceOptionName = "";
     let effectivePriceOptionId = priceOptionId;
@@ -54,7 +76,6 @@ serve(async (req) => {
     }
 
     // Determine base amount
-    let amountCents: number;
     let description: string;
     let originalPrice: number;
 
@@ -145,9 +166,11 @@ serve(async (req) => {
       description += ` (Discount: ${discount.code})`;
     }
 
-    amountCents = Math.round(finalPrice * 100);
-    if (amountCents <= 0) {
-      // Free after discount — mark as paid directly
+    const eventAmountCents = Math.round(finalPrice * 100);
+    const totalAmountCents = eventAmountCents + membershipFeeCents;
+
+    if (totalAmountCents <= 0) {
+      // Free after discount and no membership fee — mark as paid directly
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -176,22 +199,40 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://scampagnate.app";
 
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+
+    if (eventAmountCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: event.title,
+            description,
+          },
+          unit_amount: eventAmountCents,
+        },
+        quantity: 1,
+      });
+    }
+
+    if (membershipFeeCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: "Annual Membership",
+            description: "Scampagnate membership fee",
+          },
+          unit_amount: membershipFeeCents,
+        },
+        quantity: 1,
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: event.title,
-              description,
-            },
-            unit_amount: amountCents,
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode: "payment",
       success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId}&registration_id=${registrationId}`,
       cancel_url: `${origin}/event/${eventId}`,
@@ -201,6 +242,7 @@ serve(async (req) => {
         registration_id: registrationId,
         payment_type: event.payment_type,
         discount_code_id: discountCodeId || "",
+        membership_included: String(membershipFeeCents > 0),
       },
     });
 
