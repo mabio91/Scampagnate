@@ -1125,6 +1125,36 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Mandatory Equipment Confirmation */}
+            {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-destructive/5 border border-destructive/15 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
+                    <p className="text-xs font-body font-bold text-destructive">Mandatory Equipment Required</p>
+                  </div>
+                  <div className="space-y-1 ml-6">
+                    {(event.equipment_list as any[]).filter((item: any) => item.is_mandatory).map((item: any, idx: number) => (
+                      <p key={idx} className="text-xs font-body text-foreground">• {item.name}</p>
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-body text-muted-foreground ml-6">
+                    Participants who arrive without the required equipment may not be allowed to join the activity for safety reasons.
+                  </p>
+                </div>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <Checkbox
+                    checked={equipmentConfirmed}
+                    onCheckedChange={(v) => setEquipmentConfirmed(!!v)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs font-body text-foreground leading-relaxed group-hover:text-foreground/80 transition-colors">
+                    I confirm that I have read the mandatory equipment requirements and will attend the event with the appropriate gear.
+                  </span>
+                </label>
+              </div>
+            )}
+
             {/* Discount Code */}
             {event.payment_type !== "free" && event.payment_type !== "location" && user && (
               <DiscountCodeInput
