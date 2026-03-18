@@ -45,7 +45,8 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
   const displayDesc = language === "it" && product.description_it ? product.description_it : product.description;
   const displayBadge = language === "it" && product.badge_it ? product.badge_it : product.badge;
 
-  const whatsappUrl = `${WHATSAPP_BASE}?text=${encodeURIComponent(
+  const productNumber = product.whatsapp_number?.replace(/\D/g, '') || WHATSAPP_NUMBER;
+  const whatsappUrl = `https://wa.me/${productNumber}?text=${encodeURIComponent(
     `Ciao! Vorrei acquistare: ${displayName} (€${product.price})`
   )}`;
 
