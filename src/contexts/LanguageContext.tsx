@@ -726,6 +726,7 @@ const translations = {
     attended: "Attended",
     noShow: "No-show",
 
+    all: "All",
     // Misc
     everyoneJoining: "Everyone joining this event",
     meetingPointAssignments: "Meeting point assignments:",
