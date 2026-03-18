@@ -730,7 +730,7 @@ const EventDetail = () => {
 
         {/* Organizer & Contact */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-3">Organizer</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("organizer")}</h3>
           <Link to={`/organizer/${event.organizer_id}`} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
             {organizerProfile?.avatar_url ? (
               <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all" />
