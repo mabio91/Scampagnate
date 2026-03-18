@@ -34,6 +34,7 @@ const PaymentSuccess = () => {
           throw new Error(data?.error || error?.message || "Verification failed");
         }
 
+        await refreshProfile();
         setStatus("success");
         toast({ title: "Pagamento confermato!", description: "Il tuo pagamento è stato registrato con successo." });
       } catch (err: any) {
