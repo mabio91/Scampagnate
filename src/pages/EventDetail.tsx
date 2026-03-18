@@ -481,7 +481,7 @@ const EventDetail = () => {
             <div className="text-center">
               <Route className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.distance}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Distance</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("distance")}</p>
             </div>
             <div className="text-center">
               <Mountain className="h-5 w-5 mx-auto text-secondary mb-1" />
