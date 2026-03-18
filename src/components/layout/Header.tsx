@@ -45,11 +45,11 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-safe">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src={logo} alt="Scampagnate" className="h-9 w-9 rounded-full" />
-          <span className="font-display text-lg font-bold text-foreground">Scampagnate</span>
+        <Link to="/" className="flex items-center gap-2 min-w-0 shrink-0">
+          <img src={logo} alt="Scampagnate" className="h-9 w-9 rounded-full shrink-0" />
+          <span className="font-display text-lg font-bold text-foreground truncate">Scampagnate</span>
         </Link>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0 shrink-0">
           {/* Language Switcher */}
           <button
             className="p-2 rounded-xl hover:bg-muted transition-colors touch-target flex items-center justify-center"
