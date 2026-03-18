@@ -1195,7 +1195,7 @@ const EventDetail = () => {
                     const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
                     const depositAmount = isDeposit ? Number(event.deposit) : 0;
                     const displayPrice = isDeposit ? depositAmount : basePrice;
-                    const needsMembership = profile?.membership_status !== 'Active';
+                    const needsMembership = !isMembershipActive(profile);
                     const membershipFee = needsMembership ? 10 : 0;
 
                     // Calculate final event price after discount
