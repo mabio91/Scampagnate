@@ -418,7 +418,7 @@ const Profile = () => {
         {/* Past Events */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-secondary" /> Past Events
+            <CalendarDays className="h-5 w-5 text-secondary" /> {t("pastEvents")}
           </h2>
           {pastEvents && pastEvents.length > 0 ? (
             <div className="space-y-2">
