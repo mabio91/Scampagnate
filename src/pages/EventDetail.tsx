@@ -1143,7 +1143,7 @@ const EventDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                  <Label className="font-body text-sm font-semibold">Discount Code <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Label className="font-body text-sm font-semibold">{t("discountCode")} <span className="text-muted-foreground font-normal">({t("optional")})</span></Label>
                 </div>
                 <DiscountCodeInput
                   eventId={event.id}
