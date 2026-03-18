@@ -285,7 +285,7 @@ const Profile = () => {
           }`}>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Status</p>
+                <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">{t("status")}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full ${
                     isMembershipActive(profile) ? 'bg-success animate-pulse' : isMembershipExpired(profile) ? 'bg-warning' : 'bg-muted-foreground'
