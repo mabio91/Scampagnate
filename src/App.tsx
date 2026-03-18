@@ -50,6 +50,7 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <LanguageProvider>
         <SearchProvider>
         <TooltipProvider>
           <Toaster />
