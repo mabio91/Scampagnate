@@ -323,6 +323,10 @@ const translations = {
     discountCoveredAmount: "Lo sconto ha coperto l'intero importo!",
     uploadError: "Errore di caricamento",
 
+    paid: "Pagato",
+    attended: "Partecipato",
+    noShow: "Non presentato",
+
     // Misc
     everyoneJoining: "Tutti i partecipanti a questo evento",
     meetingPointAssignments: "Assegnazioni punti di ritrovo:",
