@@ -491,7 +491,7 @@ const EventDetail = () => {
             <div className="text-center">
               <Clock className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.duration}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Duration</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("duration")}</p>
             </div>
             <div className="text-center">
               <Users className="h-5 w-5 mx-auto text-secondary mb-1" />
