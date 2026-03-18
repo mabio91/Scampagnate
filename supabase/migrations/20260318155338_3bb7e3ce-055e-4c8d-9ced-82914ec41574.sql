@@ -1,0 +1,5 @@
+INSERT INTO merch_products (name, name_it, description, description_it, price, badge, badge_it, sort_order) VALUES
+('T-Shirt Scampagnate', 'T-Shirt Scampagnate', '100% organic cotton, forest green with embroidered mountain logo. Unisex fit.', 'Cotone 100% organico, verde foresta con logo montagna ricamato. Vestibilità unisex.', 25, 'Bestseller', 'Più venduto', 1),
+('Hoodie Scampagnate', 'Hoodie Scampagnate', 'Heavyweight hoodie in cream with mountain & sun logo. Warm and cozy for outdoor adventures.', 'Felpa pesante color crema con logo montagna e sole. Calda e comoda per le avventure outdoor.', 55, 'New', 'Nuovo', 2),
+('Cap Scampagnate', 'Cappellino Scampagnate', 'Adjustable baseball cap in dark green with embroidered logo. One size fits all.', 'Cappellino regolabile verde scuro con logo ricamato. Taglia unica.', 18, NULL, NULL, 3),
+('Water Bottle Scampagnate', 'Borraccia Scampagnate', '750ml stainless steel water bottle with carabiner clip. Keeps drinks cold for 24h.', 'Borraccia in acciaio inox da 750ml con moschettone. Mantiene le bevande fresche per 24h.', 22, NULL, NULL, 4);
