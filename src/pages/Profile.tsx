@@ -377,7 +377,7 @@ const Profile = () => {
         {/* Badges */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <Award className="h-5 w-5 text-secondary" /> Badges
+            <Award className="h-5 w-5 text-secondary" /> {t("badges")}
           </h2>
 
           {/* Scampagnatore Ufficiale highlight */}
