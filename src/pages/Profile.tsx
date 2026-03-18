@@ -147,7 +147,7 @@ const Profile = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       await refreshProfile();
-      toast({ title: "Profile updated!" });
+      toast({ title: t("profileUpdated") });
       setEditing(false);
     }
     setSaving(false);
