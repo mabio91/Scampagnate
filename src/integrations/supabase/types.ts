@@ -663,6 +663,7 @@ export type Database = {
           price: number
           sort_order: number
           updated_at: string
+          whatsapp_number: string | null
         }
         Insert: {
           badge?: string | null
@@ -678,6 +679,7 @@ export type Database = {
           price?: number
           sort_order?: number
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Update: {
           badge?: string | null
@@ -693,6 +695,7 @@ export type Database = {
           price?: number
           sort_order?: number
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
