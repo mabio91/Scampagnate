@@ -1165,7 +1165,7 @@ const EventDetail = () => {
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-body font-bold text-primary">Tessera Associativa Scampagnate</p>
+                    <p className="text-xs font-body font-bold text-primary">{t("membershipCardTitle")}</p>
                   </div>
                   <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
                     {isMembershipExpired(profile) ? (
