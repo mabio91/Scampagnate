@@ -65,7 +65,7 @@ const Profile = () => {
       if (updateError) throw updateError;
 
       await refreshProfile();
-      toast({ title: "Profile photo updated!" });
+      toast({ title: t("profilePhotoUpdated") });
     } catch (err: any) {
       toast({ title: "Upload error", description: err.message, variant: "destructive" });
     } finally {
