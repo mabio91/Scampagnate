@@ -45,7 +45,7 @@ const PaymentSuccess = () => {
     };
 
     verify();
-  }, [searchParams, toast]);
+  }, [searchParams, refreshProfile, toast]);
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background flex items-center justify-center px-4">
