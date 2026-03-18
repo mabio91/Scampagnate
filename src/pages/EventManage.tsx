@@ -1205,8 +1205,8 @@ const EventManage = () => {
                           {b.channel === "whatsapp" ? "WhatsApp" : "In-App"}
                         </span>
                         <span className="text-muted-foreground text-[10px]">
-                          {new Date(b.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}{" "}
-                          {new Date(b.created_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(b.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}{" "}
+                          {new Date(b.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
                       <p className="text-muted-foreground line-clamp-2">{b.message}</p>
