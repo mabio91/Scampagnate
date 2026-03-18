@@ -793,7 +793,7 @@ const EventDetail = () => {
                 {event.payment_type === "deposit" && event.deposit && (
                   <>
                     <div className="flex justify-between text-sm font-body">
-                      <span className="text-muted-foreground">Deposit (online via Stripe)</span>
+                      <span className="text-muted-foreground">{t("depositOnlineStripe")}</span>
                       <span className="font-semibold text-foreground">€{Number(event.deposit).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
