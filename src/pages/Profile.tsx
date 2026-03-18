@@ -304,7 +304,7 @@ const Profile = () => {
               </div>
               {profile?.membership_id && (
                 <div className="text-right">
-                  <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Member ID</p>
+                  <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">{t("memberId")}</p>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(String(profile.membership_id));
