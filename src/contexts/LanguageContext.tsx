@@ -653,6 +653,10 @@ const translations = {
     discountCoveredAmount: "The discount covered the full amount!",
     uploadError: "Upload error",
 
+    paid: "Paid",
+    attended: "Attended",
+    noShow: "No-show",
+
     // Misc
     everyoneJoining: "Everyone joining this event",
     meetingPointAssignments: "Meeting point assignments:",
