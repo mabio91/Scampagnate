@@ -741,7 +741,7 @@ const EventDetail = () => {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{event.organizer_name}</p>
-              <p className="text-xs font-body text-muted-foreground">View Profile <ChevronRight className="inline-block h-3 w-3" /></p>
+              <p className="text-xs font-body text-muted-foreground">{t("viewProfile")} <ChevronRight className="inline-block h-3 w-3" /></p>
             </div>
           </Link>
 
