@@ -219,7 +219,7 @@ const Profile = () => {
                 <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label className="font-body text-xs">Last Name</Label>
+                <Label className="font-body text-xs">{t("lastName")}</Label>
                 <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1" />
               </div>
             </div>
