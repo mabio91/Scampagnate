@@ -277,7 +277,7 @@ const EventDetail = () => {
 
   const handleRegister = async (requestApproval = false) => {
     // If user is not an active member, redirect to membership checkout
-    if (profile?.membership_status !== 'Active') {
+    if (!isMembershipActive(profile)) {
       await handleMembershipCheckout();
       return;
     }
