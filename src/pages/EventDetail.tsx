@@ -1170,21 +1170,13 @@ const EventDetail = () => {
                   <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
                     {isMembershipExpired(profile) ? (
                       <>
-                        <p>
-                          La tua tessera associativa è scaduta. Per continuare a partecipare alle attività è necessario rinnovare la tessera.
-                        </p>
-                        <p>
-                          Il tuo numero di tessera <strong>#{profile?.membership_id}</strong> verrà mantenuto.
-                        </p>
+                        <p>{t("membershipExpiredText")}</p>
+                        <p>{t("membershipKeepId")} <strong>#{profile?.membership_id}</strong></p>
                       </>
                     ) : (
                       <>
-                        <p>
-                          Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
-                        </p>
-                        <p>
-                          Dopo il pagamento riceverai il tuo numero di tessera personale. La tessera fisica verrà consegnata durante il tuo primo evento.
-                        </p>
+                        <p>{t("membershipNewText")}</p>
+                        <p>{t("membershipAfterPayment")}</p>
                       </>
                     )}
                     <p>
