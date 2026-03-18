@@ -1,30 +1,42 @@
 /**
- * Membership is annual — a user is considered an active member only if
- * their membership_status is 'Active' AND membership_year matches the current year.
+ * Membership is annual — valid for exactly one year from the registration date.
+ * A user is active if membership_status is 'Active' AND
+ * their membership_registration_date + 1 year > today.
  */
 
 interface MembershipProfile {
   membership_status?: string | null;
   membership_year?: number | null;
+  membership_registration_date?: string | null;
+}
+
+export function getMembershipExpiryDate(profile: MembershipProfile | null | undefined): Date | null {
+  if (!profile?.membership_registration_date) return null;
+  const regDate = new Date(profile.membership_registration_date);
+  if (isNaN(regDate.getTime())) return null;
+  const expiry = new Date(regDate);
+  expiry.setFullYear(expiry.getFullYear() + 1);
+  return expiry;
 }
 
 export function isMembershipActive(profile: MembershipProfile | null | undefined): boolean {
   if (!profile) return false;
   if (profile.membership_status !== 'Active') return false;
-  const currentYear = new Date().getFullYear();
-  return profile.membership_year === currentYear;
+  const expiry = getMembershipExpiryDate(profile);
+  if (!expiry) return false;
+  return new Date() < expiry;
 }
 
 export function isMembershipExpired(profile: MembershipProfile | null | undefined): boolean {
   if (!profile) return false;
-  return (
-    profile.membership_status === 'Active' &&
-    !!profile.membership_year &&
-    profile.membership_year < new Date().getFullYear()
-  );
+  if (profile.membership_status !== 'Active') return false;
+  const expiry = getMembershipExpiryDate(profile);
+  if (!expiry) return false;
+  return new Date() >= expiry;
 }
 
 export function getMembershipExpiryYear(profile: MembershipProfile | null | undefined): number | null {
-  if (!profile?.membership_year) return null;
-  return profile.membership_year;
+  const expiry = getMembershipExpiryDate(profile);
+  if (!expiry) return null;
+  return expiry.getFullYear();
 }

@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
+import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -291,7 +291,7 @@ const Profile = () => {
                   <span className={`text-sm font-display font-bold ${
                     isMembershipActive(profile) ? 'text-success' : isMembershipExpired(profile) ? 'text-warning' : 'text-muted-foreground'
                   }`}>
-                    {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired (${profile?.membership_year})` : 'Inactive Member'}
+                    {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired` : 'Inactive Member'}
                   </span>
                 </div>
               </div>
@@ -328,13 +328,18 @@ const Profile = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Valid Until</p>
-                  <p className="text-sm font-body font-semibold text-foreground">Dec 31, {profile.membership_year || new Date().getFullYear()}</p>
+                  <p className="text-sm font-body font-semibold text-foreground">
+                    {(() => {
+                      const expiry = getMembershipExpiryDate(profile);
+                      return expiry ? expiry.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A';
+                    })()}
+                  </p>
                 </div>
               </div>
             ) : isMembershipExpired(profile) ? (
               <div className="mt-3 space-y-2">
                 <p className="text-xs font-body text-warning font-semibold">
-                  Your {profile?.membership_year} membership has expired. Renew to join events in {new Date().getFullYear()}.
+                  Your membership has expired. Renew to continue joining events.
                 </p>
                 <div className="grid grid-cols-2 gap-4 pt-2 border-t border-warning/10">
                   <div>
