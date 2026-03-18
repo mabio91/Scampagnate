@@ -361,7 +361,7 @@ const Profile = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member ID</p>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberId")}</p>
                     <p className="text-sm font-body font-semibold text-foreground">#{profile?.membership_id}</p>
                   </div>
                 </div>
