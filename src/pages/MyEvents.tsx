@@ -22,13 +22,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
-} from "@/components/ui/dialog";
-import { parseEventDateTime } from "@/lib/timezone";
+
+
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   registered: { label: "Registered", className: "bg-success/10 text-success" },
