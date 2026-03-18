@@ -114,7 +114,7 @@ function buildReminderEmailHtml(
         <!-- Footer -->
         <tr><td style="padding:20px 32px;background:#f9f7f3;border-top:1px solid #ebe7df;text-align:center;">
           <p style="margin:0;color:#9a9287;font-size:12px;line-height:1.5;">
-            Scampagnate &mdash; noreply@scampagnate.techyfux.com
+            Scampagnate &mdash; noreply@scampagnate.com
           </p>
           <p style="margin:4px 0 0;color:#b5afa6;font-size:11px;">
             Ricevi questa email perch&eacute; sei iscritto a un evento.
