@@ -291,7 +291,7 @@ const Profile = () => {
                   <span className={`text-sm font-display font-bold ${
                     isMembershipActive(profile) ? 'text-success' : isMembershipExpired(profile) ? 'text-warning' : 'text-muted-foreground'
                   }`}>
-                    {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired (${profile?.membership_year})` : 'Inactive Member'}
+                    {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired` : 'Inactive Member'}
                   </span>
                 </div>
               </div>
