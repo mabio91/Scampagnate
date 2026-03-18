@@ -395,6 +395,7 @@ const translations = {
     apply: "Applica",
     validationError: "Errore durante la validazione",
 
+    all: "Tutti",
     // Misc
     everyoneJoining: "Tutti i partecipanti a questo evento",
     meetingPointAssignments: "Assegnazioni punti di ritrovo:",
