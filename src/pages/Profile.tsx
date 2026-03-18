@@ -509,7 +509,7 @@ const PastEventCard = ({ registration }: { registration: any }) => {
           <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground text-xs font-body">
             <CalendarDays className="h-3 w-3" />
-            {new Date(event.date).toLocaleDateString(t("home") === "Home" ? "en-US" : "it-IT", { day: "numeric", month: "short", year: "numeric" })}
+            {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { day: "numeric", month: "short", year: "numeric" })}
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
             <MapPin className="h-3 w-3" />
