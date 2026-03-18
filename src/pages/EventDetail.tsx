@@ -1303,7 +1303,7 @@ const EventDetail = () => {
               ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Pay Membership & Register
+                  {isMembershipExpired(profile) ? 'Renew Membership & Register' : 'Pay Membership & Register'}
                 </>
               ) : event.status === "full" ? (
                 "Join Waitlist"

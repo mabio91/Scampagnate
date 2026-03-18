@@ -274,21 +274,23 @@ const Profile = () => {
             <CreditCard className="h-5 w-5 text-secondary" /> Membership
           </h2>
           <div className={`p-4 rounded-2xl border ${
-            profile?.membership_status === 'Active' 
+            isMembershipActive(profile) 
               ? 'bg-primary/5 border-primary/20' 
-              : 'bg-muted/50 border-border/50'
+              : isMembershipExpired(profile)
+                ? 'bg-warning/5 border-warning/20'
+                : 'bg-muted/50 border-border/50'
           }`}>
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Status</p>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full ${
-                    profile?.membership_status === 'Active' ? 'bg-success animate-pulse' : 'bg-muted-foreground'
+                    isMembershipActive(profile) ? 'bg-success animate-pulse' : isMembershipExpired(profile) ? 'bg-warning' : 'bg-muted-foreground'
                   }`} />
                   <span className={`text-sm font-display font-bold ${
-                    profile?.membership_status === 'Active' ? 'text-success' : 'text-muted-foreground'
+                    isMembershipActive(profile) ? 'text-success' : isMembershipExpired(profile) ? 'text-warning' : 'text-muted-foreground'
                   }`}>
-                    {profile?.membership_status === 'Active' ? 'Active Member' : 'Inactive Member'}
+                    {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired (${profile?.membership_year})` : 'Inactive Member'}
                   </span>
                 </div>
               </div>
@@ -310,7 +312,7 @@ const Profile = () => {
               )}
             </div>
 
-            {profile?.membership_status === 'Active' ? (
+            {isMembershipActive(profile) ? (
               <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-primary/10">
                 <div>
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member Since</p>
@@ -324,13 +326,36 @@ const Profile = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Valid Year</p>
-                  <p className="text-sm font-body font-semibold text-foreground">{profile.membership_year || new Date().getFullYear()}</p>
+                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Valid Until</p>
+                  <p className="text-sm font-body font-semibold text-foreground">Dec 31, {profile.membership_year || new Date().getFullYear()}</p>
+                </div>
+              </div>
+            ) : isMembershipExpired(profile) ? (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs font-body text-warning font-semibold">
+                  Your {profile?.membership_year} membership has expired. Renew to join events in {new Date().getFullYear()}.
+                </p>
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-warning/10">
+                  <div>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member Since</p>
+                    <p className="text-sm font-body font-semibold text-foreground">
+                      {(() => {
+                        const dateStr = profile?.membership_registration_date || (profile as any)?.created_at;
+                        return dateStr 
+                          ? new Date(dateStr).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) 
+                          : 'N/A';
+                      })()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member ID</p>
+                    <p className="text-sm font-body font-semibold text-foreground">#{profile?.membership_id}</p>
+                  </div>
                 </div>
               </div>
             ) : (
               <p className="text-xs font-body text-muted-foreground mt-3">
-                Join your first event to activate your membership and receive your unique ID!
+                Join your first event to activate your annual membership and receive your unique ID!
               </p>
             )}
           </div>
