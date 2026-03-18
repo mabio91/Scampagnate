@@ -6,7 +6,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   const getCountdown = (dateStr: string) => {
     const diff = new Date(dateStr).getTime() - Date.now();
