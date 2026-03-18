@@ -896,7 +896,7 @@ const EventDetail = () => {
                       const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
                       return `€${minPrice.toFixed(2)}`;
                     }
-                    if (Number(event.price) === 0 && (!profile || isMembershipActive(profile))) return "Free";
+                    if (Number(event.price) === 0 && (!profile || isMembershipActive(profile))) return t("free");
                     if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
                     return `€${Number(event.price)}`;
                   })()}
