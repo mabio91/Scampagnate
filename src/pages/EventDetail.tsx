@@ -1360,7 +1360,7 @@ const EventDetail = () => {
                 variant="outline"
                 className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
               >
-                Richiedi approvazione manuale
+                {t("requestManualApprovalBtn")}
               </Button>
 
               <Button
