@@ -1313,9 +1313,9 @@ const EventDetail = () => {
       <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Requisiti di accesso</DialogTitle>
+            <DialogTitle className="font-display">{t("accessRequirements")}</DialogTitle>
             <DialogDescription className="font-body text-sm mt-2 text-foreground">
-              {accessData?.restrictionMessage || "Questo evento ha dei requisiti di partecipazione."}
+              {accessData?.restrictionMessage || t("accessWarningDefault")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
