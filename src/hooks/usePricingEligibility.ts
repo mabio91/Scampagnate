@@ -40,7 +40,7 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
       let isMember = false;
 
       if (user && profile) {
-        isMember = profile.membership_status === "Active";
+        isMember = isMembershipActiveFn(profile);
 
         // Count attended events
         const { count } = await supabase

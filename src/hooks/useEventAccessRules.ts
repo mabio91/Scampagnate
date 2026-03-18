@@ -56,7 +56,7 @@ export const useCheckEventAccessRules = (
       for (const rule of accessRules.rules) {
         switch (rule.type) {
           case "require_membership": {
-            if (profile.membership_status !== "Active") {
+            if (!isMembershipActiveFn(profile)) {
               failedRules.push({
                 rule,
                 reason: rule.message || "Questa esperienza è riservata ai membri attivi della community.",

@@ -218,7 +218,7 @@ export const useRegisterForEvent = () => {
       if (error) throw error;
 
       // Handle Membership Activation if not active
-      if (profile && profile.membership_status !== "Active") {
+      if (profile && !isMembershipActiveFn(profile)) {
         const { error: profileError } = await supabase.rpc('activate_membership' as any, { 
           user_id_param: user.id 
         });
