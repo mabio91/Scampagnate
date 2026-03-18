@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import ShareSheet from "@/components/events/ShareSheet";
 import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -22,31 +23,31 @@ import {
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  registered: { label: "Registered", className: "bg-success/10 text-success" },
-  paid: { label: "Paid", className: "bg-success/10 text-success" },
-  waitlist: { label: "Waitlist", className: "bg-warning/10 text-warning" },
-  cancelled: { label: "Cancelled", className: "bg-destructive/10 text-destructive" },
-  attended: { label: "Attended", className: "bg-primary/10 text-primary" },
-  no_show: { label: "No-show", className: "bg-destructive/10 text-destructive" },
-  past: { label: "Past", className: "bg-muted text-muted-foreground" },
-  pending_approval: { label: "Pending", className: "bg-warning/10 text-warning" },
+const statusStyles: Record<string, string> = {
+  registered: "bg-success/10 text-success",
+  paid: "bg-success/10 text-success",
+  waitlist: "bg-warning/10 text-warning",
+  cancelled: "bg-destructive/10 text-destructive",
+  attended: "bg-primary/10 text-primary",
+  no_show: "bg-destructive/10 text-destructive",
+  past: "bg-muted text-muted-foreground",
+  pending_approval: "bg-warning/10 text-warning",
 };
 
-const fallbackRegistrationStatus = statusConfig.registered;
-
-const getRegistrationStatusDisplay = (status: string | null | undefined) => {
-  if (!status || !Object.prototype.hasOwnProperty.call(statusConfig, status)) {
-    return fallbackRegistrationStatus;
-  }
-
-  return statusConfig[status];
+const statusLabelKeys: Record<string, string> = {
+  registered: "registered",
+  paid: "statusPaid",
+  waitlist: "onWaitlist",
+  cancelled: "cancelled",
+  attended: "attended",
+  no_show: "noShow",
+  past: "past",
+  pending_approval: "approvalPending",
 };
 
 const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {
-  // Parse start time explicitly in Europe/Rome, ensuring UTC string aligns correctly
   const startDate = parseEventDateTime(event.date, event.time);
-  const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000); // default 3h
+  const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
 
   const title = encodeURIComponent(event.title);
   const location = encodeURIComponent(event.location);
@@ -64,7 +65,6 @@ const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") =
     return `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&location=${location}&body=${details}`;
   }
 
-  // Apple / ICS download
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -88,15 +88,16 @@ const MyEvents = () => {
   const navigate = useNavigate();
   const { data: registrations, isLoading } = useMyEvents();
   const { data: savedEvents, isLoading: savedLoading } = useSavedEvents();
+  const { t, language } = useLanguage();
 
   if (!user) {
     return (
       <AppLayout>
         <div className="px-4 py-12 text-center">
           <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">My Events</h1>
-          <p className="text-muted-foreground font-body text-sm mb-4">Sign in to see your events.</p>
-          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Sign In</Button>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">{t("myEvents")}</h1>
+          <p className="text-muted-foreground font-body text-sm mb-4">{t("signInToViewProfile")}</p>
+          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">{t("signIn")}</Button>
         </div>
       </AppLayout>
     );
@@ -111,13 +112,13 @@ const MyEvents = () => {
   return (
     <AppLayout>
       <div className="px-4 py-4">
-        <h1 className="font-display text-2xl font-bold text-foreground mb-4">My Events</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground mb-4">{t("myEvents")}</h1>
         <Tabs defaultValue="upcoming">
           <TabsList className="w-full">
-            <TabsTrigger value="upcoming" className="flex-1 font-body">Upcoming ({upcoming.length})</TabsTrigger>
-            <TabsTrigger value="past" className="flex-1 font-body">Past ({past.length})</TabsTrigger>
+            <TabsTrigger value="upcoming" className="flex-1 font-body">{t("upcoming")} ({upcoming.length})</TabsTrigger>
+            <TabsTrigger value="past" className="flex-1 font-body">{t("past")} ({past.length})</TabsTrigger>
             <TabsTrigger value="saved" className="flex-1 font-body">
-              <Bookmark className="h-3 w-3 mr-1" /> Saved ({savedEvents?.length || 0})
+              <Bookmark className="h-3 w-3 mr-1" /> {t("saved")} ({savedEvents?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -126,8 +127,8 @@ const MyEvents = () => {
               <div className="space-y-3 mt-4">{[1, 2].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
             ) : upcoming.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground font-body text-sm">No upcoming events.</p>
-                <Button variant="outline" className="mt-3 font-body" onClick={() => navigate("/")}>Browse Events</Button>
+                <p className="text-muted-foreground font-body text-sm">{t("noUpcomingEvents")}</p>
+                <Button variant="outline" className="mt-3 font-body" onClick={() => navigate("/")}>{t("browseEvents")}</Button>
               </div>
             ) : (
               <div className="space-y-3 mt-4">
@@ -138,7 +139,7 @@ const MyEvents = () => {
             )}
             {cancelled.length > 0 && (
               <div className="mt-6">
-                <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Cancelled ({cancelled.length})</p>
+                <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("cancelled")} ({cancelled.length})</p>
                 <div className="space-y-2">
                   {cancelled.map((r: any) => (
                     <EventRegistrationCard key={r.id} registration={r} />
@@ -150,7 +151,7 @@ const MyEvents = () => {
 
           <TabsContent value="past">
             {past.length === 0 ? (
-              <p className="text-center text-muted-foreground font-body py-8 text-sm">No past events.</p>
+              <p className="text-center text-muted-foreground font-body py-8 text-sm">{t("noPastEvents")}</p>
             ) : (
               <div className="space-y-3 mt-4">
                 {past.map((r: any) => (
@@ -166,8 +167,8 @@ const MyEvents = () => {
             ) : !savedEvents || savedEvents.length === 0 ? (
               <div className="text-center py-8">
                 <Bookmark className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground font-body text-sm">No saved events yet.</p>
-                <p className="text-muted-foreground font-body text-xs mt-1">Tap the bookmark icon on any event to save it for later.</p>
+                <p className="text-muted-foreground font-body text-sm">{t("noSavedEvents")}</p>
+                <p className="text-muted-foreground font-body text-xs mt-1">{t("tapBookmark")}</p>
               </div>
             ) : (
               <div className="space-y-3 mt-4">
@@ -186,29 +187,30 @@ const MyEvents = () => {
 const EventRegistrationCard = ({ registration, showActions, isPast }: { registration: any; showActions?: boolean; isPast?: boolean }) => {
   const event = registration.events;
   const { toast } = useToast();
+  const { t, language } = useLanguage();
   const cancelMutation = useCancelRegistration();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
 
   if (!event) return null;
-  // image handled by OptimizedImage component
 
   const displayStatus = isPast ? "past" : registration.status;
-  const status = getRegistrationStatusDisplay(displayStatus);
+  const statusStyle = statusStyles[displayStatus] || statusStyles.registered;
+  const statusLabel = t(statusLabelKeys[displayStatus] as any) || displayStatus;
   const meetingPoint = registration.meeting_point;
   const canCancel = showActions && registration.status !== "cancelled" && registration.status !== "waitlist";
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
-  const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString("it-IT")}`;
+  const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US")}`;
   const shareEvent = () => setShowShareSheet(true);
 
   const handleCancel = async () => {
     try {
       await cancelMutation.mutateAsync(event.id);
       setShowCancelDialog(false);
-      toast({ title: "Registration cancelled", description: "Your registration has been cancelled." });
+      toast({ title: t("registrationCancelled"), description: t("registrationCancelledDesc") });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -233,13 +235,13 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
-              <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold ${status.className}`}>
-                {status.label}
+              <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold ${statusStyle}`}>
+                {statusLabel}
               </span>
             </div>
             <div className="flex items-center gap-2 mt-1 text-muted-foreground text-xs font-body">
               <CalendarDays className="h-3 w-3" />
-              {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}
+              {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { day: "numeric", month: "short", year: "numeric" })}
               <span>· {event.time?.slice(0, 5)}</span>
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
@@ -259,12 +261,12 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         {(showActions || isPast) && registration.status !== "cancelled" && (
           <div className="flex items-center gap-2 px-3 pb-3 pt-1">
             <button onClick={shareEvent} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all">
-              <Share2 className="h-3.5 w-3.5" /> Share
+              <Share2 className="h-3.5 w-3.5" /> {t("share")}
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all">
-                  <CalendarPlus className="h-3.5 w-3.5" /> Calendar
+                  <CalendarPlus className="h-3.5 w-3.5" /> {t("calendar")}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -284,7 +286,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
                 onClick={() => setShowCancelDialog(true)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-body font-medium hover:bg-destructive/20 active:scale-95 transition-all ml-auto"
               >
-                <X className="h-3.5 w-3.5" /> Cancel
+                <X className="h-3.5 w-3.5" /> {t("cancel")}
               </button>
             )}
           </div>
@@ -295,9 +297,9 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle className="font-display">Cancel Registration?</DialogTitle>
+            <DialogTitle className="font-display">{t("cancelRegistrationTitle")}</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              Are you sure you want to cancel your registration for {event.title}?
+              {t("cancelRegistrationText", { title: event.title })}
               {event.cancellation_policy && (() => {
                 const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
                 if (!policyType) return null;
@@ -310,7 +312,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
           </DialogHeader>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 font-body" onClick={() => setShowCancelDialog(false)}>
-              Keep
+              {t("keep")}
             </Button>
             <Button
               variant="destructive"
@@ -318,7 +320,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               onClick={handleCancel}
               disabled={cancelMutation.isPending}
             >
-              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("cancelling")}...</> : t("cancelRegistration")}
             </Button>
           </div>
         </DialogContent>
@@ -339,9 +341,9 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
   const event = savedEvent.events;
   const toggleSave = useToggleSaveEvent();
   const { toast } = useToast();
+  const { t, language } = useLanguage();
 
   if (!event) return null;
-  // image handled by OptimizedImage component
   const isPast = new Date(event.date) < new Date();
 
   const handleUnsave = async (e: React.MouseEvent) => {
@@ -349,9 +351,9 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
     e.stopPropagation();
     try {
       await toggleSave.mutateAsync({ eventId: event.id, isSaved: true });
-      toast({ title: "Removed from saved events" });
+      toast({ title: t("removedFromSaved") });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -368,8 +370,8 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
           </div>
           <div className="flex items-center gap-2 mt-1 text-muted-foreground text-xs font-body">
             <CalendarDays className="h-3 w-3" />
-            {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}
-            {isPast && <span className="text-destructive text-[10px]">(past)</span>}
+            {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { day: "numeric", month: "short", year: "numeric" })}
+            {isPast && <span className="text-destructive text-[10px]">({t("past")})</span>}
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
             <MapPin className="h-3 w-3" />
@@ -377,7 +379,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
           </div>
           <div className="mt-1.5">
             <span className="font-body font-bold text-xs text-foreground">
-              {Number(event.price) === 0 ? "Free" : `€${event.price}`}
+              {Number(event.price) === 0 ? t("free") : `€${event.price}`}
             </span>
           </div>
         </div>
