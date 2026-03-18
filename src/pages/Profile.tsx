@@ -407,7 +407,7 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground mt-2">
-              Join events to earn badges!
+              {t("joinEventsToEarnBadges")}
             </p>
           )}
         </div>
