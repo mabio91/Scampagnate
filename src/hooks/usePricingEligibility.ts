@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 
 export interface PriceOption {
   id: string;

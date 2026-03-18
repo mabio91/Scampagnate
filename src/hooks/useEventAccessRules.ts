@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 
 export interface AccessRule {
   type: "min_trekking_events" | "min_activities" | "require_badge" | "require_membership" | "manual_approval" | "min_attended_events";
