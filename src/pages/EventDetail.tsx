@@ -827,7 +827,7 @@ const EventDetail = () => {
               <div className={`p-4 rounded-xl mb-4 border ${policy.bgClass} ${policy.borderClass}`}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <PolicyIcon className={`h-4 w-4 ${policy.colorClass}`} />
-                  <p className={`text-sm font-body font-bold ${policy.colorClass}`}>{policy.label} Cancellation Policy</p>
+                  <p className={`text-sm font-body font-bold ${policy.colorClass}`}>{policy.label} {t("cancellationPolicy")}</p>
                 </div>
                 <p className="text-xs font-body text-muted-foreground leading-relaxed">
                   {policyType === "custom" ? customText : policy.description}
