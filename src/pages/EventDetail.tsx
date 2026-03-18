@@ -694,8 +694,8 @@ const EventDetail = () => {
         <Dialog open={showAllParticipants} onOpenChange={setShowAllParticipants}>
           <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-display">Participants ({participants?.length || 0})</DialogTitle>
-              <DialogDescription className="font-body text-sm">Everyone joining this event</DialogDescription>
+              <DialogTitle className="font-display">{t("participants")} ({participants?.length || 0})</DialogTitle>
+              <DialogDescription className="font-body text-sm">{t("everyoneJoining")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
               {participants?.map((p: any) => (
