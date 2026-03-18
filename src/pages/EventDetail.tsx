@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -276,7 +277,7 @@ const EventDetail = () => {
 
   const handleRegister = async (requestApproval = false) => {
     // If user is not an active member, redirect to membership checkout
-    if (profile?.membership_status !== 'Active') {
+    if (!isMembershipActive(profile)) {
       await handleMembershipCheckout();
       return;
     }
@@ -892,18 +893,18 @@ const EventDetail = () => {
                       const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
                       return `€${minPrice.toFixed(2)}`;
                     }
-                    if (Number(event.price) === 0 && (!profile || profile.membership_status === 'Active')) return "Free";
+                    if (Number(event.price) === 0 && (!profile || isMembershipActive(profile))) return "Free";
                     if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
-                    return `€${Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)}`;
+                    return `€${Number(event.price) + (!isMembershipActive(profile) ? 10 : 0)}`;
                   })()}
                 </p>
               </div>
             )}
-            {profile?.membership_status !== 'Active' && !isRegistered && (
-              <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
+            {!isMembershipActive(profile) && !isRegistered && (
+              <p className="text-[10px] font-body text-primary font-semibold">Includes €10 annual membership fee</p>
             )}
             {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
-              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)} total</p>
+              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (!isMembershipActive(profile) ? 10 : 0)} total</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
               <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
@@ -1153,11 +1154,13 @@ const EventDetail = () => {
             )}
 
             {/* ── STEP 3: Membership Verification ── */}
-            {profile?.membership_status !== 'Active' && (
+            {!isMembershipActive(profile) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                  <Label className="font-body text-sm font-semibold">Membership Required</Label>
+                  <Label className="font-body text-sm font-semibold">
+                    {isMembershipExpired(profile) ? 'Membership Renewal Required' : 'Membership Required'}
+                  </Label>
                 </div>
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
                   <div className="flex items-center gap-2">
@@ -1165,14 +1168,27 @@ const EventDetail = () => {
                     <p className="text-xs font-body font-bold text-primary">Tessera Associativa Scampagnate</p>
                   </div>
                   <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
+                    {isMembershipExpired(profile) ? (
+                      <>
+                        <p>
+                          La tua tessera associativa <strong>{profile?.membership_year}</strong> è scaduta. Per continuare a partecipare alle attività è necessario rinnovare la tessera per l'anno in corso.
+                        </p>
+                        <p>
+                          Il tuo numero di tessera <strong>#{profile?.membership_id}</strong> verrà mantenuto.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
+                        </p>
+                        <p>
+                          Dopo il pagamento riceverai il tuo numero di tessera personale. La tessera fisica verrà consegnata durante il tuo primo evento.
+                        </p>
+                      </>
+                    )}
                     <p>
-                      Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
-                    </p>
-                    <p>
-                      La quota associativa è di <strong>€10 (una tantum)</strong> e viene richiesta solo al momento della prima iscrizione a un evento.
-                    </p>
-                    <p>
-                      Dopo il pagamento riceverai il tuo numero di tessera personale. La tessera fisica verrà consegnata durante il tuo primo evento.
+                      La quota associativa è di <strong>€10/anno</strong> e copre l'intero anno solare {new Date().getFullYear()}.
                     </p>
                   </div>
                 </div>
@@ -1183,7 +1199,7 @@ const EventDetail = () => {
             {event.payment_type !== "free" && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">{profile?.membership_status !== 'Active' ? '4' : '3'}</span>
+                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">{!isMembershipActive(profile) ? '4' : '3'}</span>
                   <Label className="font-body text-sm font-semibold">Order Summary</Label>
                 </div>
                 <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1.5">
@@ -1194,7 +1210,7 @@ const EventDetail = () => {
                     const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
                     const depositAmount = isDeposit ? Number(event.deposit) : 0;
                     const displayPrice = isDeposit ? depositAmount : basePrice;
-                    const needsMembership = profile?.membership_status !== 'Active';
+                    const needsMembership = !isMembershipActive(profile);
                     const membershipFee = needsMembership ? 10 : 0;
 
                     // Calculate final event price after discount
@@ -1284,10 +1300,10 @@ const EventDetail = () => {
             >
               {(registerMutation.isPending || membershipLoading) ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? "Redirecting to payment..." : isRequestingOverride ? "Submitting..." : "Registering..."}</>
-              ) : profile?.membership_status !== 'Active' ? (
+              ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Pay Membership & Register
+                  {isMembershipExpired(profile) ? 'Renew Membership & Register' : 'Pay Membership & Register'}
                 </>
               ) : event.status === "full" ? (
                 "Join Waitlist"

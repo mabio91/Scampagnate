@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 
 export interface EventWithDetails {
   id: string;
@@ -194,9 +195,9 @@ export const useRegisterForEvent = () => {
 
       // Determine payment_status based on payment type
       let paymentStatus = "pending";
-      if ((!paymentType || paymentType === "free") && profile?.membership_status === "Active") {
+      if ((!paymentType || paymentType === "free") && isMembershipActiveFn(profile)) {
         paymentStatus = "not_required";
-      } else if (paymentType === "location" && profile?.membership_status === "Active") {
+      } else if (paymentType === "location" && isMembershipActiveFn(profile)) {
         paymentStatus = "pay_on_location";
       }
       // If membership is not active, always default to "pending" for stripe payment
@@ -218,7 +219,7 @@ export const useRegisterForEvent = () => {
       if (error) throw error;
 
       // Handle Membership Activation if not active
-      if (profile && profile.membership_status !== "Active") {
+      if (profile && !isMembershipActiveFn(profile)) {
         const { error: profileError } = await supabase.rpc('activate_membership' as any, { 
           user_id_param: user.id 
         });

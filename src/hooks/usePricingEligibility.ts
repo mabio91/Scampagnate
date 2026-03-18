@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 
 export interface PriceOption {
   id: string;
@@ -40,7 +41,7 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
       let isMember = false;
 
       if (user && profile) {
-        isMember = profile.membership_status === "Active";
+        isMember = isMembershipActiveFn(profile);
 
         // Count attended events
         const { count } = await supabase
