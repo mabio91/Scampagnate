@@ -166,9 +166,11 @@ serve(async (req) => {
       description += ` (Discount: ${discount.code})`;
     }
 
-    amountCents = Math.round(finalPrice * 100);
-    if (amountCents <= 0) {
-      // Free after discount — mark as paid directly
+    const eventAmountCents = Math.round(finalPrice * 100);
+    const totalAmountCents = eventAmountCents + membershipFeeCents;
+
+    if (totalAmountCents <= 0) {
+      // Free after discount and no membership fee — mark as paid directly
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
