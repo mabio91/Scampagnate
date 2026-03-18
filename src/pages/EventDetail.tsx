@@ -936,9 +936,9 @@ const EventDetail = () => {
       <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Register for {event.title}</DialogTitle>
+            <DialogTitle className="font-display">{t("registerFor", { title: event.title })}</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              Complete your registration by selecting the required options.
+              {t("completeRegistration")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
