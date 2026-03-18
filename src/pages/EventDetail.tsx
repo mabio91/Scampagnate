@@ -807,7 +807,7 @@ const EventDetail = () => {
                 )}
                 {(event.payment_type as string) === "paid" && (
                   <p className="text-xs font-body text-muted-foreground">
-                    Full amount will be charged online via Stripe during registration.
+                    {t("fullAmountStripe")}
                   </p>
                 )}
                 {(event.payment_type as string) === "location" && (
