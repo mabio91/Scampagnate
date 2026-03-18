@@ -866,8 +866,8 @@ const EventDetail = () => {
           <div>
             <p className="text-xs font-body text-muted-foreground">
               {resolvedPriceOptions && resolvedPriceOptions.length > 0
-                ? (bestPrice.label ? "Your price" : "From")
-                : (event.payment_type as string) === "deposit" ? "From" : "Price"}
+                ? (bestPrice.label ? t("yourPrice") : t("from"))
+                : (event.payment_type as string) === "deposit" ? t("from") : t("price")}
             </p>
             {appliedDiscount && needsPayment ? (
               <div className="flex items-center gap-2">
