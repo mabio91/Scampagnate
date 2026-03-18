@@ -787,7 +787,7 @@ const EventDetail = () => {
               </p>
               <div className="space-y-1">
                 <div className="flex justify-between text-sm font-body">
-                  <span className="text-muted-foreground">Total price</span>
+                  <span className="text-muted-foreground">{t("totalPrice")}</span>
                   <span className="font-semibold text-foreground">€{Number(event.price).toFixed(2)}</span>
                 </div>
                 {event.payment_type === "deposit" && event.deposit && (
