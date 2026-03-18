@@ -1285,7 +1285,7 @@ const EventDetail = () => {
             >
               {(registerMutation.isPending || membershipLoading) ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? "Redirecting to payment..." : isRequestingOverride ? "Submitting..." : "Registering..."}</>
-              ) : profile?.membership_status !== 'Active' ? (
+              ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
                   Pay Membership & Register
