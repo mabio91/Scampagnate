@@ -1154,7 +1154,7 @@ const EventDetail = () => {
             )}
 
             {/* ── STEP 3: Membership Verification ── */}
-            {profile?.membership_status !== 'Active' && (
+            {!isMembershipActive(profile) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
