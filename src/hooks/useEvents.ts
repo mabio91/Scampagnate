@@ -194,9 +194,9 @@ export const useRegisterForEvent = () => {
 
       // Determine payment_status based on payment type
       let paymentStatus = "pending";
-      if ((!paymentType || paymentType === "free") && profile?.membership_status === "Active") {
+      if ((!paymentType || paymentType === "free") && isMembershipActiveFn(profile)) {
         paymentStatus = "not_required";
-      } else if (paymentType === "location" && profile?.membership_status === "Active") {
+      } else if (paymentType === "location" && isMembershipActiveFn(profile)) {
         paymentStatus = "pay_on_location";
       }
       // If membership is not active, always default to "pending" for stripe payment
