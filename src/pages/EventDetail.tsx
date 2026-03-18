@@ -767,7 +767,7 @@ const EventDetail = () => {
                 </>
               )}
               {!organizerProfile?.phone && (
-                <p className="text-xs font-body text-muted-foreground">Contact info not available</p>
+                <p className="text-xs font-body text-muted-foreground">{t("contactInfoNotAvailable")}</p>
               )}
             </div>
           )}
