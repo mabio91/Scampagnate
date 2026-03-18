@@ -435,7 +435,7 @@ const Profile = () => {
 
         {/* Help & Information */}
         <div className="mb-6 space-y-3">
-          <h2 className="font-display text-lg font-bold text-foreground">Help & Information</h2>
+          <h2 className="font-display text-lg font-bold text-foreground">{t("helpAndInfo")}</h2>
           <Button 
             variant="outline" 
             onClick={() => setShowDifficultyGuide(true)} 
