@@ -945,7 +945,7 @@ const EventDetail = () => {
             {/* Auxiliary: Meeting Point */}
             {event.meeting_points && event.meeting_points.length > 0 && (
               <div>
-                <Label className="font-body text-sm font-semibold">Meeting Point</Label>
+                <Label className="font-body text-sm font-semibold">{t("meetingPoint")}</Label>
                 <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className="mt-2 space-y-2">
                   {event.meeting_points.map((mp) => (
                     <label key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
