@@ -16,6 +16,7 @@ import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "@/contexts/SearchContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import ProposalSuggestionCard from "@/components/ProposalSuggestionCard";
 
 type PriceFilter = "all" | "free" | "paid";
@@ -28,13 +29,12 @@ const Index = () => {
   const [showFilters, setShowFilters] = useState(false);
   const { searchOpen } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useLanguage();
 
-  // Sync search bar visibility with header search icon
   useEffect(() => {
     if (searchOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     } else {
-      // Reset filters when closing
       setSearchQuery("");
       setDateFilter(undefined);
       setPriceFilter("all");
@@ -76,7 +76,6 @@ const Index = () => {
       });
   }, [events, searchQuery, dateFilter, priceFilter]);
 
-  // Featured: prefer manually marked, fallback to nearest upcoming
   const featured = useMemo(() => {
     if (!events) return null;
     const now = new Date();
@@ -84,7 +83,6 @@ const Index = () => {
     const upcoming = events.filter((e) => new Date(e.date) >= now && e.status !== "draft" && e.status !== "past" && e.status !== "cancelled");
     const manual = upcoming.find((e) => e.featured);
     if (manual) return manual;
-    // Auto-select nearest upcoming event
     return upcoming.length > 0 ? upcoming[0] : null;
   }, [events]);
 
@@ -110,7 +108,6 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {/* Search Bar & Filters - only visible when toggled via header icon */}
             <AnimatePresence>
               {searchOpen && (
                 <motion.div
@@ -125,7 +122,7 @@ const Index = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           ref={searchInputRef}
-                          placeholder="Search events..."
+                          placeholder={t("searchEvents")}
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="pl-9 pr-8 rounded-full bg-muted border-none font-body focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -150,7 +147,6 @@ const Index = () => {
                     </div>
                   </div>
 
-                  {/* Advanced Filters */}
                   <AnimatePresence>
                     {showFilters && (
                       <motion.div
@@ -170,7 +166,7 @@ const Index = () => {
                                   dateFilter && "bg-primary text-primary-foreground border-primary"
                                 )}
                               >
-                                {dateFilter ? format(dateFilter, "d MMM", { locale: it }) : "Date"}
+                                {dateFilter ? format(dateFilter, "d MMM", { locale: it }) : t("date")}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -184,7 +180,7 @@ const Index = () => {
                               {dateFilter && (
                                 <div className="px-3 pb-3">
                                   <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setDateFilter(undefined)}>
-                                    Clear date
+                                    {t("clearFilters")}
                                   </Button>
                                 </div>
                               )}
@@ -202,13 +198,13 @@ const Index = () => {
                               )}
                               onClick={() => setPriceFilter(p)}
                             >
-                              {p === "all" ? "All prices" : p === "free" ? "Free" : "Paid"}
+                              {p === "all" ? t("allPrices") : p === "free" ? t("free") : t("paid")}
                             </Button>
                           ))}
 
                           {hasActiveFilters && (
                             <Button variant="ghost" size="sm" className="rounded-full text-xs text-destructive" onClick={clearFilters}>
-                              <X className="h-3 w-3 mr-1" /> Clear all
+                              <X className="h-3 w-3 mr-1" /> {t("clearAll")}
                             </Button>
                           )}
                         </div>
@@ -219,27 +215,23 @@ const Index = () => {
               )}
             </AnimatePresence>
 
-            {/* Featured Event - hide during active search */}
             {!hasActiveFilters && featured && <FeaturedEvent event={featured} />}
 
-            {/* Category Filter */}
             <CategoryFilter
               categories={categories || []}
               selected={selectedCategory}
               onSelect={setSelectedCategory}
             />
 
-            {/* Activity Suggestion Card - show occasionally */}
             {!hasActiveFilters && upcomingEvents.length > 2 && (
               <div className="mb-4">
                 <ProposalSuggestionCard />
               </div>
             )}
 
-            {/* Event List */}
             <div className="px-4">
               <h2 className="font-display text-xl font-bold text-foreground mb-3">
-                {hasActiveFilters ? "Search Results" : "Upcoming Events"}
+                {hasActiveFilters ? t("searchResults") : t("upcomingEvents")}
                 {hasActiveFilters && (
                   <span className="text-sm font-body font-normal text-muted-foreground ml-2">
                     ({upcomingEvents.length})
@@ -260,11 +252,11 @@ const Index = () => {
                     <Search className="h-7 w-7 text-muted-foreground/40" />
                   </div>
                   <p className="text-muted-foreground font-body font-medium">
-                    No events found
+                    {t("noEventsFound")}
                   </p>
                   {hasActiveFilters && (
                     <Button variant="link" className="mt-2 text-primary font-body" onClick={clearFilters}>
-                      Clear filters
+                      {t("clearFilters")}
                     </Button>
                   )}
                 </div>

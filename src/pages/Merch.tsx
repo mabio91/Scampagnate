@@ -3,6 +3,7 @@ import { MessageCircle, ShoppingBag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/contexts/LanguageContext";
 import merchTshirt from "@/assets/merch-tshirt.jpg";
 import merchHoodie from "@/assets/merch-hoodie.jpg";
 import merchCap from "@/assets/merch-cap.jpg";
@@ -54,6 +55,7 @@ const products: Product[] = [
 ];
 
 const ProductCard = ({ product }: { product: Product }) => {
+  const { t } = useLanguage();
   const whatsappUrl = `${WHATSAPP_BASE}?text=${encodeURIComponent(
     `Ciao! Vorrei acquistare: ${product.name} (€${product.price})`
   )}`;
@@ -89,7 +91,7 @@ const ProductCard = ({ product }: { product: Product }) => {
           onClick={() => window.open(whatsappUrl, "_blank")}
         >
           <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          <span className="truncate">WhatsApp</span>
+          <span className="truncate">{t("whatsapp")}</span>
         </Button>
       </CardContent>
     </Card>
@@ -97,36 +99,35 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 const Merch = () => {
+  const { t } = useLanguage();
+
   return (
     <AppLayout>
       <div className="px-4 py-6 space-y-6">
-        {/* Header */}
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-primary" />
             <h1 className="font-display text-xl font-bold text-foreground">
-              Merchandise
+              {t("merchandise")}
             </h1>
           </div>
           <p className="text-sm font-body text-muted-foreground">
-            Official Scampagnate branded products. Contact us via WhatsApp to purchase.
+            {t("merchDescription")}
           </p>
         </div>
 
-        {/* Product Grid */}
         <div className="grid grid-cols-2 gap-3">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
 
-        {/* Info footer */}
         <div className="rounded-xl bg-muted p-4 text-center space-y-1">
           <p className="text-xs font-body text-muted-foreground">
-            All orders are managed manually via WhatsApp.
+            {t("merchOrderInfo")}
           </p>
           <p className="text-xs font-body text-muted-foreground">
-            Delivery details and payment will be arranged directly with the team.
+            {t("merchDeliveryInfo")}
           </p>
         </div>
       </div>
