@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +22,7 @@ import { ActivityHistory } from "@/components/profile/ActivityHistory";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
@@ -63,7 +65,7 @@ const Profile = () => {
       if (updateError) throw updateError;
 
       await refreshProfile();
-      toast({ title: "Profile photo updated!" });
+      toast({ title: t("profilePhotoUpdated") });
     } catch (err: any) {
       toast({ title: "Upload error", description: err.message, variant: "destructive" });
     } finally {
@@ -106,9 +108,9 @@ const Profile = () => {
       <AppLayout>
         <div className="px-4 py-12 text-center">
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Profile</h1>
-          <p className="text-muted-foreground font-body text-sm mb-4">Sign in to view your profile.</p>
-          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Sign In</Button>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">{t("profile")}</h1>
+          <p className="text-muted-foreground font-body text-sm mb-4">{t("signInToViewProfile")}</p>
+          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">{t("signIn")}</Button>
         </div>
       </AppLayout>
     );
@@ -145,7 +147,7 @@ const Profile = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       await refreshProfile();
-      toast({ title: "Profile updated!" });
+      toast({ title: t("profileUpdated") });
       setEditing(false);
     }
     setSaving(false);
@@ -258,7 +260,7 @@ const Profile = () => {
         {/* Preferences display (when not editing) */}
         {!editing && currentPreferences.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-display text-lg font-bold text-foreground mb-2">Preferences</h2>
+            <h2 className="font-display text-lg font-bold text-foreground mb-2">{t("preferences")}</h2>
             <div className="flex flex-wrap gap-2">
               {currentPreferences.map((pref: string) => (
                 <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
@@ -272,7 +274,7 @@ const Profile = () => {
         {/* Membership Status Card */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-secondary" /> Membership
+            <CreditCard className="h-5 w-5 text-secondary" /> {t("membership")}
           </h2>
           <div className={`p-4 rounded-2xl border ${
             isMembershipActive(profile) 
@@ -283,7 +285,7 @@ const Profile = () => {
           }`}>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Status</p>
+                <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">{t("status")}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full ${
                     isMembershipActive(profile) ? 'bg-success animate-pulse' : isMembershipExpired(profile) ? 'bg-warning' : 'bg-muted-foreground'
@@ -291,22 +293,22 @@ const Profile = () => {
                   <span className={`text-sm font-display font-bold ${
                     isMembershipActive(profile) ? 'text-success' : isMembershipExpired(profile) ? 'text-warning' : 'text-muted-foreground'
                   }`}>
-                    {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired` : 'Inactive Member'}
+                    {isMembershipActive(profile) ? t("activeMember") : isMembershipExpired(profile) ? t("expiredMember") : t("inactiveMember")}
                   </span>
                   {(profile as any)?.is_founding_member && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">
-                      <Crown className="h-3 w-3" /> Founding Member
+                      <Crown className="h-3 w-3" /> {t("foundingMember")}
                     </span>
                   )}
                 </div>
               </div>
               {profile?.membership_id && (
                 <div className="text-right">
-                  <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Member ID</p>
+                  <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">{t("memberId")}</p>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(String(profile.membership_id));
-                      toast({ title: "Copied!", description: `Member ID #${profile.membership_id} copied to clipboard.` });
+                      toast({ title: t("copied"), description: t("memberIdCopied", { id: String(profile.membership_id) }) });
                     }}
                     className="flex items-center gap-1.5 mt-0.5 group cursor-pointer"
                     title="Copy Member ID"
@@ -321,7 +323,7 @@ const Profile = () => {
             {isMembershipActive(profile) ? (
               <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-primary/10">
                 <div>
-                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member Since</p>
+                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberSince")}</p>
                   <p className="text-sm font-body font-semibold text-foreground">
                     {(() => {
                       const dateStr = profile.membership_registration_date || (profile as any).created_at;
@@ -332,7 +334,7 @@ const Profile = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Valid Until</p>
+                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("validUntil")}</p>
                   <p className="text-sm font-body font-semibold text-foreground">
                     {(() => {
                       const expiry = getMembershipExpiryDate(profile);
@@ -344,11 +346,11 @@ const Profile = () => {
             ) : isMembershipExpired(profile) ? (
               <div className="mt-3 space-y-2">
                 <p className="text-xs font-body text-warning font-semibold">
-                  Your membership has expired. Renew to continue joining events.
+                  {t("membershipExpiredRenew")}
                 </p>
                 <div className="grid grid-cols-2 gap-4 pt-2 border-t border-warning/10">
                   <div>
-                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member Since</p>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberSince")}</p>
                     <p className="text-sm font-body font-semibold text-foreground">
                       {(() => {
                         const dateStr = profile?.membership_registration_date || (profile as any)?.created_at;
@@ -359,14 +361,14 @@ const Profile = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member ID</p>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberId")}</p>
                     <p className="text-sm font-body font-semibold text-foreground">#{profile?.membership_id}</p>
                   </div>
                 </div>
               </div>
             ) : (
               <p className="text-xs font-body text-muted-foreground mt-3">
-                Join your first event to activate your annual membership and receive your unique ID!
+                {t("joinFirstEvent")}
               </p>
             )}
           </div>
@@ -375,7 +377,7 @@ const Profile = () => {
         {/* Badges */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <Award className="h-5 w-5 text-secondary" /> Badges
+            <Award className="h-5 w-5 text-secondary" /> {t("badges")}
           </h2>
 
           {/* Scampagnatore Ufficiale highlight */}
@@ -384,7 +386,7 @@ const Profile = () => {
               <BadgeIcon icon="🏅" className="h-7 w-7 text-primary" />
               <div>
                 <p className="text-sm font-display font-bold text-primary">Scampagnatore Ufficiale</p>
-                <p className="text-[10px] font-body text-muted-foreground">Membro ufficiale della community</p>
+                <p className="text-[10px] font-body text-muted-foreground">{t("officialMember")}</p>
               </div>
             </div>
           )}
@@ -405,7 +407,7 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground mt-2">
-              Join events to earn badges!
+              {t("joinEventsToEarnBadges")}
             </p>
           )}
         </div>
@@ -416,7 +418,7 @@ const Profile = () => {
         {/* Past Events */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-secondary" /> Past Events
+            <CalendarDays className="h-5 w-5 text-secondary" /> {t("pastEvents")}
           </h2>
           {pastEvents && pastEvents.length > 0 ? (
             <div className="space-y-2">
@@ -426,28 +428,28 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground">
-              No past events yet. Join your first event!
+              {t("noPastEventsJoinFirst")}
             </p>
           )}
         </div>
 
         {/* Help & Information */}
         <div className="mb-6 space-y-3">
-          <h2 className="font-display text-lg font-bold text-foreground">Help & Information</h2>
+          <h2 className="font-display text-lg font-bold text-foreground">{t("helpAndInfo")}</h2>
           <Button 
             variant="outline" 
             onClick={() => setShowDifficultyGuide(true)} 
             className="w-full justify-start font-body font-semibold h-12"
           >
             <Info className="h-5 w-5 mr-3 text-secondary" />
-            Trekking Difficulty Guide
+            {t("trekkingDifficultyGuide")}
           </Button>
           <ReportIssueDialog />
         </div>
 
         {/* Sign out */}
         <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 font-body mb-8">
-          <LogOut className="h-4 w-4 mr-2" /> Sign Out
+          <LogOut className="h-4 w-4 mr-2" /> {t("signOut")}
         </Button>
       </div>
       <DifficultyGuideDialog 

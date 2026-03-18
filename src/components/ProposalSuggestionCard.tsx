@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lightbulb } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import ActivityProposalForm from "./ActivityProposalForm";
 
 const ProposalSuggestionCard = () => {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <>
@@ -16,10 +18,10 @@ const ProposalSuggestionCard = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-display text-sm font-bold text-foreground">
-              Hai un'idea per una nuova attività?
+              {t("haveIdea")}
             </h3>
             <p className="text-xs font-body text-muted-foreground mt-0.5">
-              Proponila alla community!
+              {t("proposeIt")}
             </p>
             <Button
               size="sm"
@@ -27,7 +29,7 @@ const ProposalSuggestionCard = () => {
               className="mt-2 text-xs"
               onClick={() => setOpen(true)}
             >
-              Proponi Attività
+              {t("proposeActivity")}
             </Button>
           </div>
         </div>

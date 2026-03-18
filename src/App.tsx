@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SearchProvider } from "@/contexts/SearchContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { RestrictionBanner } from "@/components/RestrictionBanner";
 import Index from "./pages/Index";
 
@@ -49,6 +50,7 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <LanguageProvider>
         <SearchProvider>
         <TooltipProvider>
           <Toaster />
@@ -80,6 +82,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
         </SearchProvider>
+        </LanguageProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ThemeProvider>

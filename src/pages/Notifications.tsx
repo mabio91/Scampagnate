@@ -3,11 +3,13 @@ import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from 
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
-import { it } from "date-fns/locale";
+import { it as itLocale } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AppLayout from "@/components/layout/AppLayout";
 import { useMemo } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const typeIcons: Record<string, React.ReactNode> = {
   registration: <CalendarDays className="h-5 w-5 text-primary" />,
@@ -25,6 +27,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 const NotificationRow = ({ notification }: { notification: Notification }) => {
   const navigate = useNavigate();
   const markAsRead = useMarkAsRead();
+  const { language, t } = useLanguage();
 
   const handleClick = () => {
     if (!notification.read) {
@@ -34,6 +37,8 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
       navigate(`/event/${notification.event_id}`);
     }
   };
+
+  const locale = language === "it" ? itLocale : enUS;
 
   return (
     <button
@@ -49,11 +54,9 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
         <p className={`text-sm leading-tight ${!notification.read ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>
           {notification.title}
         </p>
-        {/* Render reminder messages with structured content */}
         {(notification.type === 'event_reminder_24h' || notification.type === 'event_reminder_3h') ? (
           <div className="mt-1 space-y-1">
             {notification.message.split('\n').map((line, i) => {
-              // Detect navigation link
               const mapsMatch = line.match(/🗺️.*?(https:\/\/\S+)/);
               if (mapsMatch) {
                 return (
@@ -66,11 +69,10 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
                     className="flex items-center gap-1.5 text-xs font-body font-semibold text-primary hover:underline mt-1"
                   >
                     <Navigation className="h-3.5 w-3.5" />
-                    Apri Navigazione
+                    {t("openNavigation")}
                   </a>
                 );
               }
-              // Detect meeting point line
               if (line.includes('📍')) {
                 return (
                   <p key={i} className="flex items-start gap-1 text-xs text-foreground font-body font-medium">
@@ -91,7 +93,7 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
           </p>
         )}
         <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-medium">
-          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: it })}
+          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale })}
         </p>
       </div>
       {!notification.read && (
@@ -101,19 +103,21 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
   );
 };
 
-const getDateGroup = (dateStr: string) => {
-  const date = new Date(dateStr);
-  if (isToday(date)) return "Oggi";
-  if (isYesterday(date)) return "Ieri";
-  return format(date, "d MMMM", { locale: it });
-};
-
 const Notifications = () => {
   const { data: notifications, isLoading } = useNotifications();
   const markAllAsRead = useMarkAllAsRead();
   const hasUnread = notifications?.some((n) => !n.read);
   const navigate = useNavigate();
   const { isSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
+  const { language, t } = useLanguage();
+  const locale = language === "it" ? itLocale : enUS;
+
+  const getDateGroup = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (isToday(date)) return language === "it" ? "Oggi" : "Today";
+    if (isYesterday(date)) return language === "it" ? "Ieri" : "Yesterday";
+    return format(date, "d MMMM", { locale });
+  };
 
   const grouped = useMemo(() => {
     if (!notifications) return [];
@@ -129,18 +133,18 @@ const Notifications = () => {
       }
     }
     return groups;
-  }, [notifications]);
+  }, [notifications, language]);
 
   const handlePushToggle = async () => {
     if (isSubscribed) {
       await unsubscribe();
-      toast.success("Notifiche push disattivate");
+      toast.success(language === "it" ? "Notifiche push disattivate" : "Push notifications disabled");
     } else {
       const success = await subscribe();
       if (success) {
-        toast.success("Notifiche push attivate!");
+        toast.success(language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!");
       } else {
-        toast.error("Non è stato possibile attivare le notifiche push");
+        toast.error(language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications");
       }
     }
   };
@@ -153,7 +157,7 @@ const Notifications = () => {
             <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-muted transition-colors press-scale">
               <ArrowLeft className="h-5 w-5 text-foreground" />
             </button>
-            <h1 className="font-display text-xl font-bold text-foreground">Notifiche</h1>
+            <h1 className="font-display text-xl font-bold text-foreground">{t("notifications")}</h1>
           </div>
           <div className="flex items-center gap-1">
             {isSupported && (
@@ -165,7 +169,7 @@ const Notifications = () => {
                 disabled={pushLoading}
               >
                 <BellRing className="h-3.5 w-3.5" />
-                {isSubscribed ? "Push ON" : "Push"}
+                {isSubscribed ? t("pushOn") : t("push")}
               </Button>
             )}
             {hasUnread && (
@@ -176,7 +180,7 @@ const Notifications = () => {
                 onClick={() => markAllAsRead.mutate()}
               >
                 <CheckCheck className="h-3.5 w-3.5" />
-                Segna tutte
+                {t("markAll")}
               </Button>
             )}
           </div>
@@ -192,8 +196,8 @@ const Notifications = () => {
           <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
             <Bell className="h-7 w-7 text-muted-foreground/40" />
           </div>
-          <p className="text-sm font-body font-medium text-muted-foreground">Nessuna notifica</p>
-          <p className="text-xs font-body text-muted-foreground/60 mt-1">Le notifiche appariranno qui</p>
+          <p className="text-sm font-body font-medium text-muted-foreground">{t("noNotifications")}</p>
+          <p className="text-xs font-body text-muted-foreground/60 mt-1">{t("notificationsWillAppear")}</p>
         </div>
       ) : (
         <div className="stagger-children">

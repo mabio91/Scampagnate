@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -40,6 +41,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 const EventDetail = () => {
   const { id } = useParams();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { user, profile, isOrganizer, isAdmin } = useAuth();
   const { toast } = useToast();
@@ -116,8 +118,8 @@ const EventDetail = () => {
   if (!event) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center py-20">
-        <p className="text-muted-foreground font-body">Event not found</p>
-        <Link to="/" className="text-primary font-body mt-2">Back to Home</Link>
+        <p className="text-muted-foreground font-body">{t("noEventsFound")}</p>
+        <Link to="/" className="text-primary font-body mt-2">{t("returnToHome")}</Link>
       </div>
     );
   }
@@ -324,15 +326,15 @@ const EventDetail = () => {
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Event Closed";
-    if (!user) return "Sign in to Join";
-    if (isPendingApproval) return "Approval Pending";
-    if (isOnWaitlist) return "On Waitlist";
-    if (needsPayment) return "Pay Now";
-    if (isRegistered) return "Registered ✔";
-    if (event.status === "full") return "Join Waitlist";
-    if (accessData && !accessData.hasAccess) return "View Requirements";
-    return "Join Event";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return t("eventClosed");
+    if (!user) return t("signInToJoin");
+    if (isPendingApproval) return t("approvalPending");
+    if (isOnWaitlist) return t("onWaitlist");
+    if (needsPayment) return t("payNow");
+    if (isRegistered) return t("registered");
+    if (event.status === "full") return t("joinWaitlist");
+    if (accessData && !accessData.hasAccess) return t("viewRequirements");
+    return t("joinEvent");
   };
 
   const getCTAClass = () => {
@@ -366,7 +368,7 @@ const EventDetail = () => {
       <DropdownMenuTrigger asChild>
         <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
           <Navigation className="h-4 w-4 shrink-0" />
-          <span className="truncate">Directions</span>
+          <span className="truncate">{t("directions")}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
@@ -455,7 +457,7 @@ const EventDetail = () => {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors">
                   <CalendarPlus className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Add to Calendar</span>
+                  <span className="truncate">{t("addToCalendar")}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -479,22 +481,22 @@ const EventDetail = () => {
             <div className="text-center">
               <Route className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.distance}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Distance</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("distance")}</p>
             </div>
             <div className="text-center">
               <Mountain className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.elevation}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Elevation</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("elevation")}</p>
             </div>
             <div className="text-center">
               <Clock className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.duration}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Duration</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("duration")}</p>
             </div>
             <div className="text-center">
               <Users className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.spots_taken}/{event.spots_total}</p>
-              <p className="text-[10px] text-muted-foreground font-body">Spots</p>
+              <p className="text-[10px] text-muted-foreground font-body">{t("spots")}</p>
             </div>
           </motion.div>
         )}
@@ -504,14 +506,14 @@ const EventDetail = () => {
 
         {/* Description */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-2">Description</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">{t("description")}</h3>
           <p className="text-sm font-body text-muted-foreground leading-relaxed">{event.description}</p>
         </motion.div>
 
         {/* Gallery */}
         {event.gallery_images && event.gallery_images.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="py-4 border-b border-border">
-            <h3 className="font-display text-lg font-bold text-foreground mb-3">Gallery</h3>
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("gallery")}</h3>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 auto-cols-[180px] grid-flow-col grid">
               {event.gallery_images.sort((a,b) => a.order - b.order).map((img, idx) => (
                 <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer shadow-md active:scale-95 transition-all">
@@ -538,12 +540,12 @@ const EventDetail = () => {
 
           return (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }} className="py-4 border-b border-border">
-              <h3 className="font-display text-lg font-bold text-foreground mb-3">Equipment</h3>
+              <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("equipment")}</h3>
 
               {/* Mandatory Equipment */}
               {hasMandatory && (
                 <div className="mb-4">
-                  <p className="text-xs font-body font-bold text-destructive uppercase tracking-wider mb-2">Mandatory Equipment</p>
+                  <p className="text-xs font-body font-bold text-destructive uppercase tracking-wider mb-2">{t("mandatoryEquipment")}</p>
                   <div className="space-y-2 p-3 rounded-xl bg-destructive/5 border border-destructive/15">
                     {mandatoryItems.map((item: any, idx: number) => (
                       <div key={idx} className="flex items-start gap-2 text-sm font-body">
@@ -561,7 +563,7 @@ const EventDetail = () => {
               {/* Recommended Equipment */}
               {recommendedItems.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">Recommended Equipment</p>
+                  <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("recommendedEquipment")}</p>
                   <div className="space-y-2">
                     {recommendedItems.map((item: any, idx: number) => (
                       <div key={idx} className="flex items-start gap-2 text-sm font-body">
@@ -581,7 +583,7 @@ const EventDetail = () => {
                 <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
                   <p className="text-xs font-body text-warning-foreground leading-relaxed">
-                    <strong>Safety notice:</strong> Participants who arrive without the required mandatory equipment may not be allowed to join the activity for safety reasons.
+                    <strong>{t("safetyNotice")}</strong> {t("safetyNoticeText")}
                   </p>
                 </div>
               )}
@@ -592,7 +594,7 @@ const EventDetail = () => {
 
         {event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
-            <h3 className="font-display text-lg font-bold text-foreground mb-3">Meeting Points</h3>
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("meetingPoints")}</h3>
             <div className="space-y-3">
               {event.meeting_points.map((mp) => (
                 <div key={mp.id} className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-muted/50">
@@ -615,8 +617,8 @@ const EventDetail = () => {
         {/* Participants */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display text-lg font-bold text-foreground">Participants</h3>
-            <span className="text-sm font-body font-semibold text-secondary">{event.spots_taken} Joined</span>
+            <h3 className="font-display text-lg font-bold text-foreground">{t("participants")}</h3>
+            <span className="text-sm font-body font-semibold text-secondary">{event.spots_taken} {t("joined")}</span>
           </div>
 
           {/* Avatar circles row - only for logged-in users */}
@@ -658,8 +660,8 @@ const EventDetail = () => {
           {!canViewParticipants && (
             <p className="text-sm font-body text-muted-foreground">
               {event.spots_taken > 0
-                ? `${event.spots_taken} participant${event.spots_taken > 1 ? "s" : ""} already joined. ${!user ? 'Sign in and join' : 'Join'} to see who's going.`
-                : `No participants yet. ${!user ? 'Sign in and be' : 'Be'} the first to join.`}
+                ? `${event.spots_taken} ${t("participantAlreadyJoined")} ${!user ? t("signInAndJoin") : t("joinToSee")}`
+                : `${t("noParticipantsSignIn")} ${!user ? t("signInAndBe") : t("beFirstToJoin")}`}
             </p>
           )}
 
@@ -669,7 +671,7 @@ const EventDetail = () => {
               {/* Organizer-only: meeting point assignments */}
               {(user?.id === event.organizer_id) && event.meeting_points && event.meeting_points.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Meeting point assignments:</p>
+                  <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("meetingPointAssignments")}</p>
                   <div className="space-y-1">
                     {participants.map((p: any) => (
                       <div key={p.id} className="flex items-center justify-between text-xs font-body px-2 py-1.5 rounded-lg bg-muted/30">
@@ -684,7 +686,7 @@ const EventDetail = () => {
           )}
 
           {canViewParticipants && (!participants || participants.length === 0) && (
-            <p className="text-sm font-body text-muted-foreground">No participants yet</p>
+            <p className="text-sm font-body text-muted-foreground">{t("noParticipantsYet")}</p>
           )}
         </motion.div>
 
@@ -692,8 +694,8 @@ const EventDetail = () => {
         <Dialog open={showAllParticipants} onOpenChange={setShowAllParticipants}>
           <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-display">Participants ({participants?.length || 0})</DialogTitle>
-              <DialogDescription className="font-body text-sm">Everyone joining this event</DialogDescription>
+              <DialogTitle className="font-display">{t("participants")} ({participants?.length || 0})</DialogTitle>
+              <DialogDescription className="font-body text-sm">{t("everyoneJoining")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
               {participants?.map((p: any) => (
@@ -728,7 +730,7 @@ const EventDetail = () => {
 
         {/* Organizer & Contact */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-3">Organizer</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("organizer")}</h3>
           <Link to={`/organizer/${event.organizer_id}`} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
             {organizerProfile?.avatar_url ? (
               <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all" />
@@ -739,7 +741,7 @@ const EventDetail = () => {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{event.organizer_name}</p>
-              <p className="text-xs font-body text-muted-foreground">View Profile <ChevronRight className="inline-block h-3 w-3" /></p>
+              <p className="text-xs font-body text-muted-foreground">{t("viewProfile")} <ChevronRight className="inline-block h-3 w-3" /></p>
             </div>
           </Link>
 
@@ -765,12 +767,12 @@ const EventDetail = () => {
                 </>
               )}
               {!organizerProfile?.phone && (
-                <p className="text-xs font-body text-muted-foreground">Contact info not available</p>
+                <p className="text-xs font-body text-muted-foreground">{t("contactInfoNotAvailable")}</p>
               )}
             </div>
           )}
           {!user && (
-            <p className="text-xs font-body text-muted-foreground mt-2">Sign in to contact the organizer</p>
+            <p className="text-xs font-body text-muted-foreground mt-2">{t("signInToContact")}</p>
           )}
         </motion.div>
 
@@ -779,38 +781,38 @@ const EventDetail = () => {
           {event.payment_type !== "free" && (
             <div className="p-4 rounded-xl bg-gold/10 border border-gold/20 mb-4 space-y-2">
               <p className="text-sm font-body font-bold text-foreground">
-                {(event.payment_type as string) === "paid" && "Full Payment Online"}
-                {(event.payment_type as string) === "location" && "Payment on Location"}
-                {(event.payment_type as string) === "deposit" && "Split Payment"}
+                {(event.payment_type as string) === "paid" && t("fullPaymentOnline")}
+                {(event.payment_type as string) === "location" && t("paymentOnLocationTitle")}
+                {(event.payment_type as string) === "deposit" && t("splitPayment")}
               </p>
               <div className="space-y-1">
                 <div className="flex justify-between text-sm font-body">
-                  <span className="text-muted-foreground">Total price</span>
+                  <span className="text-muted-foreground">{t("totalPrice")}</span>
                   <span className="font-semibold text-foreground">€{Number(event.price).toFixed(2)}</span>
                 </div>
                 {event.payment_type === "deposit" && event.deposit && (
                   <>
                     <div className="flex justify-between text-sm font-body">
-                      <span className="text-muted-foreground">Deposit (online via Stripe)</span>
+                      <span className="text-muted-foreground">{t("depositOnlineStripe")}</span>
                       <span className="font-semibold text-foreground">€{Number(event.deposit).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
-                      <span className="text-muted-foreground">Remaining balance</span>
+                      <span className="text-muted-foreground">{t("remainingBalance")}</span>
                       <span className="font-semibold text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
                     </div>
                     <p className="text-xs font-body text-muted-foreground mt-1">
-                      Remaining balance can be paid before the event or on location.
+                      {t("remainingBalanceText")}
                     </p>
                   </>
                 )}
                 {(event.payment_type as string) === "paid" && (
                   <p className="text-xs font-body text-muted-foreground">
-                    Full amount will be charged online via Stripe during registration.
+                    {t("fullAmountStripe")}
                   </p>
                 )}
                 {(event.payment_type as string) === "location" && (
                   <p className="text-xs font-body text-muted-foreground">
-                    Payment will be collected on location at the event.
+                    {t("paymentCollectedOnLocation")}
                   </p>
                 )}
               </div>
@@ -825,14 +827,14 @@ const EventDetail = () => {
               <div className={`p-4 rounded-xl mb-4 border ${policy.bgClass} ${policy.borderClass}`}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <PolicyIcon className={`h-4 w-4 ${policy.colorClass}`} />
-                  <p className={`text-sm font-body font-bold ${policy.colorClass}`}>{policy.label} Cancellation Policy</p>
+                  <p className={`text-sm font-body font-bold ${policy.colorClass}`}>{policy.label} {t("cancellationPolicy")}</p>
                 </div>
                 <p className="text-xs font-body text-muted-foreground leading-relaxed">
                   {policyType === "custom" ? customText : policy.description}
                 </p>
                 {event.payment_type === "deposit" && (
                   <p className="text-[11px] font-body text-muted-foreground mt-1.5 italic border-t border-current/10 pt-1.5">
-                    Deposit refund is subject to this policy.
+                    {t("depositRefundPolicy")}
                   </p>
                 )}
               </div>
@@ -852,7 +854,7 @@ const EventDetail = () => {
 
           {isRegistered && (
             <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
-              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cancelling...</> : "Cancel Registration"}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("cancelling")}</> : t("cancelRegistration")}
             </Button>
           )}
         </motion.div>
@@ -864,8 +866,8 @@ const EventDetail = () => {
           <div>
             <p className="text-xs font-body text-muted-foreground">
               {resolvedPriceOptions && resolvedPriceOptions.length > 0
-                ? (bestPrice.label ? "Your price" : "From")
-                : (event.payment_type as string) === "deposit" ? "From" : "Price"}
+                ? (bestPrice.label ? t("yourPrice") : t("from"))
+                : (event.payment_type as string) === "deposit" ? t("from") : t("price")}
             </p>
             {appliedDiscount && needsPayment ? (
               <div className="flex items-center gap-2">
@@ -894,7 +896,7 @@ const EventDetail = () => {
                       const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
                       return `€${minPrice.toFixed(2)}`;
                     }
-                    if (Number(event.price) === 0 && (!profile || isMembershipActive(profile))) return "Free";
+                    if (Number(event.price) === 0 && (!profile || isMembershipActive(profile))) return t("free");
                     if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
                     return `€${Number(event.price)}`;
                   })()}
@@ -902,10 +904,10 @@ const EventDetail = () => {
               </div>
             )}
             {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
-              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price)} total</p>
+              <p className="text-[10px] font-body text-muted-foreground">{t("deposit")} · €{Number(event.price)} {t("total")}</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
-              <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
+              <p className="text-[10px] font-body text-muted-foreground">{t("payOnLocation")}</p>
             )}
           </div>
           <div className="flex flex-col items-center gap-2">
@@ -923,7 +925,7 @@ const EventDetail = () => {
                 onClick={() => setShowAccessWarning(true)}
                 className="text-[10px] font-body text-primary hover:underline"
               >
-                Request manual approval
+                {t("requestManualApproval")}
               </button>
             )}
           </div>
@@ -934,16 +936,16 @@ const EventDetail = () => {
       <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Register for {event.title}</DialogTitle>
+            <DialogTitle className="font-display">{t("registerFor", { title: event.title })}</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              Complete your registration by selecting the required options.
+              {t("completeRegistration")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             {/* Auxiliary: Meeting Point */}
             {event.meeting_points && event.meeting_points.length > 0 && (
               <div>
-                <Label className="font-body text-sm font-semibold">Meeting Point</Label>
+                <Label className="font-body text-sm font-semibold">{t("meetingPoint")}</Label>
                 <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className="mt-2 space-y-2">
                   {event.meeting_points.map((mp) => (
                     <label key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
@@ -961,30 +963,30 @@ const EventDetail = () => {
             {/* Auxiliary: Sport Level */}
             {isSportCategory && (
               <div>
-                <Label className="font-body text-sm font-semibold">Sport Level</Label>
+                <Label className="font-body text-sm font-semibold">{t("sportLevel")}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {["Beginner", "Intermediate", "Advanced"].map((level) => (
+                  {[{ key: "Beginner", label: t("beginner") }, { key: "Intermediate", label: t("intermediate") }, { key: "Advanced", label: t("advanced") }].map(({ key, label }) => (
                     <button
-                      key={level}
+                      key={key}
                       type="button"
-                      onClick={() => setSportLevel(sportLevel === level ? "" : level)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${sportLevel === level
+                      onClick={() => setSportLevel(sportLevel === key ? "" : key)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${sportLevel === key
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
                         }`}
                     >
-                      {level}
+                      {label}
                     </button>
                   ))}
                 </div>
                 <Input
                   value={!["Beginner", "Intermediate", "Advanced"].includes(sportLevel) ? sportLevel : ""}
                   onChange={(e) => setSportLevel(e.target.value)}
-                  placeholder="Or enter custom level (e.g. 3.5 for padel)"
+                  placeholder={t("orEnterCustomLevel")}
                   className="mt-2"
                 />
                 <p className="text-[10px] text-muted-foreground font-body mt-1">
-                  Helps organizers balance teams and plan activities
+                  {t("helpsOrganizers")}
                 </p>
               </div>
             )}
@@ -1028,7 +1030,7 @@ const EventDetail = () => {
                 <div className="p-3 rounded-xl bg-destructive/5 border border-destructive/15 space-y-2">
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
-                    <p className="text-xs font-body font-bold text-destructive">Mandatory Equipment Required</p>
+                    <p className="text-xs font-body font-bold text-destructive">{t("mandatoryEquipment")}</p>
                   </div>
                   <div className="space-y-1 ml-6">
                     {(event.equipment_list as any[]).filter((item: any) => item.is_mandatory).map((item: any, idx: number) => (
@@ -1036,7 +1038,7 @@ const EventDetail = () => {
                     ))}
                   </div>
                   <p className="text-[10px] font-body text-muted-foreground ml-6">
-                    Participants who arrive without the required equipment may not be allowed to join the activity for safety reasons.
+                    {t("safetyNoticeText")}
                   </p>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer group">
@@ -1046,7 +1048,7 @@ const EventDetail = () => {
                     className="mt-0.5"
                   />
                   <span className="text-xs font-body text-foreground leading-relaxed group-hover:text-foreground/80 transition-colors">
-                    I confirm that I have read the mandatory equipment requirements and will attend the event with the appropriate gear.
+                    {t("equipmentConfirmation")}
                   </span>
                 </label>
               </div>
@@ -1057,7 +1059,7 @@ const EventDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                  <Label className="font-body text-sm font-semibold">Choose your pricing option</Label>
+                  <Label className="font-body text-sm font-semibold">{t("choosePricingOption")}</Label>
                 </div>
                 <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
                   {resolvedPriceOptions.map((opt: ResolvedPriceOption) => (
@@ -1098,7 +1100,7 @@ const EventDetail = () => {
                             </p>
                           )}
                           {opt.is_promotional && !opt.isPromoActive && (
-                            <p className="text-[10px] text-muted-foreground font-body mt-0.5">Promozione scaduta</p>
+                            <p className="text-[10px] text-muted-foreground font-body mt-0.5">{t("promoExpired")}</p>
                           )}
                         </div>
                       </div>
@@ -1120,7 +1122,7 @@ const EventDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                  <Label className="font-body text-sm font-semibold">Choose your pricing option</Label>
+                  <Label className="font-body text-sm font-semibold">{t("choosePricingOption")}</Label>
                 </div>
                 <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
                   {event.price_options.map((opt: any) => (
@@ -1141,7 +1143,7 @@ const EventDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                  <Label className="font-body text-sm font-semibold">Discount Code <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Label className="font-body text-sm font-semibold">{t("discountCode")} <span className="text-muted-foreground font-normal">({t("optional")})</span></Label>
                 </div>
                 <DiscountCodeInput
                   eventId={event.id}
@@ -1157,36 +1159,28 @@ const EventDetail = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
                   <Label className="font-body text-sm font-semibold">
-                    {isMembershipExpired(profile) ? 'Membership Renewal Required' : 'Membership Required'}
+                    {isMembershipExpired(profile) ? t("membershipRenewalRequired") : t("membershipRequired")}
                   </Label>
                 </div>
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-body font-bold text-primary">Tessera Associativa Scampagnate</p>
+                    <p className="text-xs font-body font-bold text-primary">{t("membershipCardTitle")}</p>
                   </div>
                   <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
                     {isMembershipExpired(profile) ? (
                       <>
-                        <p>
-                          La tua tessera associativa è scaduta. Per continuare a partecipare alle attività è necessario rinnovare la tessera.
-                        </p>
-                        <p>
-                          Il tuo numero di tessera <strong>#{profile?.membership_id}</strong> verrà mantenuto.
-                        </p>
+                        <p>{t("membershipExpiredText")}</p>
+                        <p>{t("membershipKeepId")} <strong>#{profile?.membership_id}</strong></p>
                       </>
                     ) : (
                       <>
-                        <p>
-                          Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
-                        </p>
-                        <p>
-                          Dopo il pagamento riceverai il tuo numero di tessera personale. La tessera fisica verrà consegnata durante il tuo primo evento.
-                        </p>
+                        <p>{t("membershipNewText")}</p>
+                        <p>{t("membershipAfterPayment")}</p>
                       </>
                     )}
                     <p>
-                      La quota associativa è di <strong>€10/anno</strong> e copre l'intero anno solare {new Date().getFullYear()}.
+                      {t("membershipFeePerYear", { year: String(new Date().getFullYear()) })}
                     </p>
                   </div>
                 </div>
@@ -1198,13 +1192,13 @@ const EventDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">{!isMembershipActive(profile) ? '4' : '3'}</span>
-                  <Label className="font-body text-sm font-semibold">Order Summary</Label>
+                  <Label className="font-body text-sm font-semibold">{t("orderSummary")}</Label>
                 </div>
                 <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1.5">
                   {(() => {
                     const selectedOpt = event.price_options?.find((o: any) => o.id === selectedPriceOption);
                     const basePrice = selectedOpt ? Number(selectedOpt.price) : Number(event.price);
-                    const displayLabel = selectedOpt ? selectedOpt.name : "Event";
+                    const displayLabel = selectedOpt ? selectedOpt.name : t("event");
                     const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
                     const depositAmount = isDeposit ? Number(event.deposit) : 0;
                     const displayPrice = isDeposit ? depositAmount : basePrice;
@@ -1218,7 +1212,7 @@ const EventDetail = () => {
                       <>
                         {/* Event price line */}
                         <div className="flex justify-between text-sm font-body">
-                          <span className="text-muted-foreground">{isDeposit ? `Deposit — ${displayLabel}` : displayLabel}</span>
+                          <span className="text-muted-foreground">{isDeposit ? `${t("deposit")} — ${displayLabel}` : displayLabel}</span>
                           <span className={`font-semibold ${appliedDiscount ? "line-through text-muted-foreground" : "text-foreground"}`}>
                             €{displayPrice.toFixed(2)}
                           </span>
@@ -1228,7 +1222,7 @@ const EventDetail = () => {
                         {appliedDiscount && (
                           <div className="flex justify-between text-sm font-body">
                             <span className="text-success font-semibold flex items-center gap-1">
-                              <Tag className="h-3 w-3" /> Discount applied
+                              <Tag className="h-3 w-3" /> {t("discountApplied")}
                             </span>
                             <span className="font-bold text-success">€{discountedEventPrice.toFixed(2)}</span>
                           </div>
@@ -1237,21 +1231,21 @@ const EventDetail = () => {
                         {/* Remaining balance for deposits */}
                         {isDeposit && (
                           <div className="flex justify-between text-sm font-body">
-                            <span className="text-muted-foreground">Remaining (pay later)</span>
+                            <span className="text-muted-foreground">{t("remainingPayLater")}</span>
                             <span className="text-muted-foreground">€{(Number(event.price) - depositAmount).toFixed(2)}</span>
                           </div>
                         )}
 
                         {/* Location payment note */}
                         {(event.payment_type as string) === "location" && (
-                          <p className="text-xs font-body text-muted-foreground">Payment on location — no charge during registration.</p>
+                          <p className="text-xs font-body text-muted-foreground">{t("paymentOnLocation")}</p>
                         )}
 
                         {/* Membership fee line */}
                         {needsMembership && (
                           <div className="flex justify-between text-sm font-body">
                             <span className="text-primary font-semibold flex items-center gap-1">
-                              <CreditCard className="h-3 w-3" /> Membership fee
+                              <CreditCard className="h-3 w-3" /> {t("membershipFee")}
                             </span>
                             <span className="font-semibold text-primary">€{membershipFee.toFixed(2)}</span>
                           </div>
@@ -1259,7 +1253,7 @@ const EventDetail = () => {
 
                         {/* Divider + Total */}
                         <div className="flex justify-between text-sm font-body pt-1.5 mt-1 border-t border-gold/20">
-                          <span className="font-bold text-foreground">Total due today</span>
+                          <span className="font-bold text-foreground">{t("totalDueToday")}</span>
                           <span className="font-bold text-foreground text-base">
                             €{(discountedEventPrice + membershipFee).toFixed(2)}
                           </span>
@@ -1268,11 +1262,11 @@ const EventDetail = () => {
                         {/* Payment method note */}
                         <p className="text-[10px] font-body text-muted-foreground pt-1">
                           {needsMembership
-                            ? "Membership fee is included in this Stripe checkout."
+                            ? t("membershipIncludedInCheckout")
                             : (event.payment_type === "paid" || selectedOpt)
-                              ? "Full payment will be charged online via Stripe."
+                              ? t("fullPaymentViaStripe")
                               : isDeposit
-                                ? "Deposit will be charged online via Stripe."
+                                ? t("depositViaStripe")
                                 : (event.payment_type as string) === "location"
                                   ? ""
                                   : ""
@@ -1297,18 +1291,18 @@ const EventDetail = () => {
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
               {(registerMutation.isPending || membershipLoading) ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? "Redirecting to payment..." : isRequestingOverride ? "Submitting..." : "Registering..."}</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? t("redirectingToPayment") : isRequestingOverride ? t("submitting") : t("registering")}</>
               ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  {isMembershipExpired(profile) ? 'Renew Membership & Register' : 'Pay Membership & Register'}
+                  {isMembershipExpired(profile) ? t("renewMembershipAndRegister") : t("payMembershipAndRegister")}
                 </>
               ) : event.status === "full" ? (
-                "Join Waitlist"
+                t("joinWaitlist")
               ) : isRequestingOverride ? (
-                "Submit Request"
+                t("submitRequest")
               ) : (
-                "Confirm Registration"
+                t("confirmRegistration")
               )}
             </Button>
           </div>
@@ -1319,15 +1313,15 @@ const EventDetail = () => {
       <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Requisiti di accesso</DialogTitle>
+            <DialogTitle className="font-display">{t("accessRequirements")}</DialogTitle>
             <DialogDescription className="font-body text-sm mt-2 text-foreground">
-              {accessData?.restrictionMessage || "Questo evento ha dei requisiti di partecipazione."}
+              {accessData?.restrictionMessage || t("accessWarningDefault")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {accessData?.failedRules && accessData.failedRules.length > 0 && (
               <div className="p-4 rounded-xl bg-muted/50 space-y-2 border border-border/50">
-                <p className="text-xs font-body font-bold text-foreground">Requisiti non soddisfatti:</p>
+                <p className="text-xs font-body font-bold text-foreground">{t("requirementsNotMet")}</p>
                 <ul className="text-xs font-body text-muted-foreground space-y-1.5 ml-4 list-disc">
                   {accessData.failedRules.map((fr: any, idx: number) => (
                     <li key={idx}>{fr.reason}</li>
@@ -1337,7 +1331,7 @@ const EventDetail = () => {
             )}
 
             <p className="text-sm font-body text-muted-foreground leading-relaxed">
-              Puoi comunque richiedere l'approvazione manuale dell'organizzatore oppure contattarlo direttamente per maggiori informazioni.
+              {t("accessWarningText")}
             </p>
 
             <div className="flex flex-col gap-2 pt-2">
@@ -1352,7 +1346,7 @@ const EventDetail = () => {
                     rel="noopener noreferrer"
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
-                    Contatta l'organizzatore
+                    {t("contactOrganizer")}
                   </a>
                 </Button>
               )}
@@ -1366,7 +1360,7 @@ const EventDetail = () => {
                 variant="outline"
                 className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
               >
-                Richiedi approvazione manuale
+                {t("requestManualApprovalBtn")}
               </Button>
 
               <Button
@@ -1374,7 +1368,7 @@ const EventDetail = () => {
                 className="w-full font-body text-muted-foreground text-xs h-10"
                 onClick={() => setShowAccessWarning(false)}
               >
-                Chiudi
+                {t("close")}
               </Button>
             </div>
           </div>

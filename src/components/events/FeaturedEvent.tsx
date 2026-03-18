@@ -3,19 +3,22 @@ import { CalendarDays, MapPin, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
-
-const getCountdown = (dateStr: string) => {
-  const diff = new Date(dateStr).getTime() - Date.now();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  if (days === 0) return "Today!";
-  if (days === 1) return "Tomorrow";
-  if (days < 0) return "Past";
-  return `In ${days} days`;
-};
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
+  const { t } = useLanguage();
+  
+  const getCountdown = (dateStr: string) => {
+    const diff = new Date(dateStr).getTime() - Date.now();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    if (days === 0) return t("today");
+    if (days === 1) return t("tomorrow");
+    if (days < 0) return t("past");
+    return t("inDays", { days });
+  };
+
   const countdown = getCountdown(event.date);
-  const isUrgent = countdown === "Today!" || countdown === "Tomorrow";
+  const isUrgent = countdown === t("today") || countdown === t("tomorrow");
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
@@ -39,7 +42,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           </span>
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
-          <span className="text-[10px] font-body font-semibold text-primary-foreground/60 uppercase tracking-widest">Featured Event</span>
+          <span className="text-[10px] font-body font-semibold text-primary-foreground/60 uppercase tracking-widest">{t("featuredEvent")}</span>
           <h2 className="font-display text-2xl font-bold text-primary-foreground mt-1.5 leading-tight">{event.title}</h2>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-primary-foreground/80 text-xs sm:text-sm font-body">
             <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5 shrink-0" />{new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</span>
@@ -48,10 +51,10 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           </div>
           <div className="flex items-center justify-between mt-4">
             <span className="text-primary-foreground font-display font-bold text-xl">
-              {Number(event.price) === 0 ? "Free" : `€${event.price}`}
+              {Number(event.price) === 0 ? t("free") : `€${event.price}`}
             </span>
             <span className="flex items-center gap-1.5 text-accent text-sm font-body font-bold group-hover:gap-2.5 transition-all duration-200">
-              Discover <ArrowRight className="h-4 w-4" />
+              {t("discover")} <ArrowRight className="h-4 w-4" />
             </span>
           </div>
         </div>

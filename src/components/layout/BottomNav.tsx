@@ -1,17 +1,19 @@
 import { Home, CalendarDays, ShoppingBag, User, ClipboardList } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const BottomNav = () => {
   const location = useLocation();
   const { isOrganizer } = useAuth();
+  const { t } = useLanguage();
 
   const navItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: CalendarDays, label: "My Events", path: "/my-events" },
-    ...(isOrganizer ? [{ icon: ClipboardList, label: "Organize", path: "/organizer" }] : []),
-    { icon: ShoppingBag, label: "Merch", path: "/merch" },
-    { icon: User, label: "Profile", path: "/profile" },
+    { icon: Home, label: t("home"), path: "/" },
+    { icon: CalendarDays, label: t("myEvents"), path: "/my-events" },
+    ...(isOrganizer ? [{ icon: ClipboardList, label: t("organize"), path: "/organizer" }] : []),
+    { icon: ShoppingBag, label: t("merch"), path: "/merch" },
+    { icon: User, label: t("profile"), path: "/profile" },
   ];
 
   const isActive = (path: string) => {

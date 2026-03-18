@@ -9,10 +9,12 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ReportIssueDialog = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -22,11 +24,11 @@ const ReportIssueDialog = () => {
   const handleSubmit = async () => {
     if (!user) return;
     if (!title.trim() || !description.trim()) {
-      toast({ title: "Please fill in all fields", variant: "destructive" });
+      toast({ title: t("pleaseFillFields"), variant: "destructive" });
       return;
     }
     if (title.trim().length > 200 || description.trim().length > 2000) {
-      toast({ title: "Input too long", description: "Title max 200 chars, description max 2000 chars.", variant: "destructive" });
+      toast({ title: t("inputTooLong"), description: t("titleMax200"), variant: "destructive" });
       return;
     }
 
@@ -42,12 +44,9 @@ const ReportIssueDialog = () => {
     });
 
     if (error) {
-      toast({ title: "Error submitting issue", description: error.message, variant: "destructive" });
+      toast({ title: t("error"), description: error.message, variant: "destructive" });
     } else {
-      toast({
-        title: "Thank you for reporting!",
-        description: "We've received your report and will look into it soon.",
-      });
+      toast({ title: t("thankYouReporting"), description: t("reportReceived") });
       setTitle("");
       setDescription("");
       setPriority("medium");
@@ -62,50 +61,35 @@ const ReportIssueDialog = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
-          <AlertTriangle className="h-4 w-4" /> Report an Issue
+          <AlertTriangle className="h-4 w-4" /> {t("reportIssue")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display text-lg">Report an Issue</DialogTitle>
+          <DialogTitle className="font-display text-lg">{t("reportIssue")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div>
-            <Label className="font-body text-sm">Title</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Brief summary of the issue"
-              maxLength={200}
-              className="mt-1"
-            />
+            <Label className="font-body text-sm">{t("title")}</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("briefSummary")} maxLength={200} className="mt-1" />
           </div>
           <div>
-            <Label className="font-body text-sm">Description</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the issue in detail..."
-              maxLength={2000}
-              rows={4}
-              className="mt-1"
-            />
+            <Label className="font-body text-sm">{t("descriptionLabel")}</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("describeIssue")} maxLength={2000} rows={4} className="mt-1" />
           </div>
           <div>
-            <Label className="font-body text-sm">Priority</Label>
+            <Label className="font-body text-sm">{t("priority")}</Label>
             <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="low">{t("low")}</SelectItem>
+                <SelectItem value="medium">{t("medium")}</SelectItem>
+                <SelectItem value="high">{t("high")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Button onClick={handleSubmit} disabled={submitting} className="w-full">
-            {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting...</> : "Submit Report"}
+            {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("submitting")}</> : t("submitReport")}
           </Button>
         </div>
       </DialogContent>
