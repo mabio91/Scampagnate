@@ -35,7 +35,7 @@ function buildCancellationEmailHtml(eventTitle: string, eventDate: string, event
     </p>
   </td></tr>
   <tr><td style="padding:0 24px 24px;text-align:center">
-    <a href="https://scampagnate.techyfux.com" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600">
+    <a href="https://scampagnate.com" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600">
       Scopri altri eventi
     </a>
   </td></tr>
