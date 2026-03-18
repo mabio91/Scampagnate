@@ -1268,7 +1268,7 @@ const EventDetail = () => {
                         {/* Payment method note */}
                         <p className="text-[10px] font-body text-muted-foreground pt-1">
                           {needsMembership
-                            ? "Membership payment will be processed first via Stripe, then you can complete the event payment."
+                            ? "Membership fee is included in this Stripe checkout."
                             : (event.payment_type === "paid" || selectedOpt)
                               ? "Full payment will be charged online via Stripe."
                               : isDeposit
