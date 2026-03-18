@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { refreshProfile } = useAuth();
+  const { t } = useLanguage();
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [eventId, setEventId] = useState<string | null>(null);
 
@@ -36,11 +38,11 @@ const PaymentSuccess = () => {
 
         await refreshProfile();
         setStatus("success");
-        toast({ title: "Pagamento confermato!", description: "Il tuo pagamento è stato registrato con successo." });
+        toast({ title: t("paymentConfirmedToast"), description: t("paymentConfirmedToastDesc") });
       } catch (err: any) {
         console.error("Payment verification error:", err);
         setStatus("error");
-        toast({ title: "Errore", description: err.message, variant: "destructive" });
+        toast({ title: t("error"), description: err.message, variant: "destructive" });
       }
     };
 
@@ -53,27 +55,23 @@ const PaymentSuccess = () => {
         {status === "verifying" && (
           <>
             <Loader2 className="h-16 w-16 mx-auto text-primary animate-spin" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Verifica pagamento...</h1>
-            <p className="text-sm font-body text-muted-foreground">
-              Stiamo verificando il tuo pagamento.
-            </p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{t("verifyingPayment")}</h1>
+            <p className="text-sm font-body text-muted-foreground">{t("verifyingPaymentDesc")}</p>
           </>
         )}
 
         {status === "success" && (
           <>
             <CheckCircle className="h-16 w-16 mx-auto text-success" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Pagamento Confermato! 🎉</h1>
-            <p className="text-sm font-body text-muted-foreground">
-              Il pagamento è stato registrato. Sei ufficialmente iscritto all'evento!
-            </p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{t("paymentConfirmedTitle")}</h1>
+            <p className="text-sm font-body text-muted-foreground">{t("paymentConfirmedDesc")}</p>
             <div className="space-y-3 pt-4">
               {eventId && (
                 <Button
                   onClick={() => navigate(`/event/${eventId}`)}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
-                  Torna all'evento
+                  {t("backToEvent")}
                 </Button>
               )}
               <Button
@@ -81,7 +79,7 @@ const PaymentSuccess = () => {
                 variant="outline"
                 className="w-full font-body"
               >
-                I miei eventi
+                {t("myEvents")}
               </Button>
             </div>
           </>
@@ -90,17 +88,15 @@ const PaymentSuccess = () => {
         {status === "error" && (
           <>
             <XCircle className="h-16 w-16 mx-auto text-destructive" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Errore di Verifica</h1>
-            <p className="text-sm font-body text-muted-foreground">
-              Non siamo riusciti a verificare il pagamento. Se hai già pagato, contatta il supporto.
-            </p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{t("verificationError")}</h1>
+            <p className="text-sm font-body text-muted-foreground">{t("verificationErrorDesc")}</p>
             <div className="space-y-3 pt-4">
               {eventId && (
                 <Button
                   onClick={() => navigate(`/event/${eventId}`)}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
-                  Torna all'evento
+                  {t("backToEvent")}
                 </Button>
               )}
               <Button
@@ -108,7 +104,7 @@ const PaymentSuccess = () => {
                 variant="outline"
                 className="w-full font-body"
               >
-                Vai alla Home
+                {t("goToHome")}
               </Button>
             </div>
           </>

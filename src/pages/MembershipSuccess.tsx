@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,7 @@ const MembershipSuccess = () => {
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [eventId, setEventId] = useState<string | null>(null);
 
@@ -36,11 +38,11 @@ const MembershipSuccess = () => {
 
         await refreshProfile();
         setStatus("success");
-        toast({ title: "Tessera attivata!", description: "La tua tessera associativa è ora attiva." });
+        toast({ title: t("membershipActivatedToast"), description: t("membershipActivatedToastDesc") });
       } catch (err: any) {
         console.error("Verification error:", err);
         setStatus("error");
-        toast({ title: "Errore", description: err.message, variant: "destructive" });
+        toast({ title: t("error"), description: err.message, variant: "destructive" });
       }
     };
 
@@ -53,27 +55,23 @@ const MembershipSuccess = () => {
         {status === "verifying" && (
           <>
             <Loader2 className="h-16 w-16 mx-auto text-primary animate-spin" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Verifica in corso...</h1>
-            <p className="text-sm font-body text-muted-foreground">
-              Stiamo verificando il tuo pagamento e attivando la tessera.
-            </p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{t("verifyingMembership")}</h1>
+            <p className="text-sm font-body text-muted-foreground">{t("verifyingMembershipDesc")}</p>
           </>
         )}
 
         {status === "success" && (
           <>
             <CheckCircle className="h-16 w-16 mx-auto text-success" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Tessera Attivata! 🎉</h1>
-            <p className="text-sm font-body text-muted-foreground">
-              La tua tessera associativa Scampagnate è ora attiva. Puoi partecipare a tutti gli eventi!
-            </p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{t("membershipActivatedTitle")}</h1>
+            <p className="text-sm font-body text-muted-foreground">{t("membershipActivatedDesc")}</p>
             <div className="space-y-3 pt-4">
               {eventId && (
                 <Button
                   onClick={() => navigate(`/event/${eventId}`)}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
-                  Torna all'evento
+                  {t("backToEvent")}
                 </Button>
               )}
               <Button
@@ -81,7 +79,7 @@ const MembershipSuccess = () => {
                 variant="outline"
                 className="w-full font-body"
               >
-                Vai alla Home
+                {t("goToHome")}
               </Button>
             </div>
           </>
@@ -90,15 +88,13 @@ const MembershipSuccess = () => {
         {status === "error" && (
           <>
             <XCircle className="h-16 w-16 mx-auto text-destructive" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Errore di Verifica</h1>
-            <p className="text-sm font-body text-muted-foreground">
-              Non siamo riusciti a verificare il pagamento. Se hai già pagato, contatta il supporto.
-            </p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{t("verificationError")}</h1>
+            <p className="text-sm font-body text-muted-foreground">{t("verificationErrorDesc")}</p>
             <Button
               onClick={() => navigate("/")}
               className="w-full bg-primary text-primary-foreground font-body font-semibold"
             >
-              Vai alla Home
+              {t("goToHome")}
             </Button>
           </>
         )}
