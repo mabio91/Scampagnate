@@ -470,6 +470,7 @@ const PROGRESSION_BADGES = [
 ];
 
 const BadgeProgression = ({ attendedCount, earnedBadges }: { attendedCount: number; earnedBadges: any[] }) => {
+  const { t } = useLanguage();
   const earnedNames = new Set(earnedBadges.map((ub: any) => ub.badges?.name));
   const nextBadge = PROGRESSION_BADGES.find((b) => !earnedNames.has(b.name));
 
