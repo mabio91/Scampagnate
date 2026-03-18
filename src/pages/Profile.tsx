@@ -260,7 +260,7 @@ const Profile = () => {
         {/* Preferences display (when not editing) */}
         {!editing && currentPreferences.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-display text-lg font-bold text-foreground mb-2">Preferences</h2>
+            <h2 className="font-display text-lg font-bold text-foreground mb-2">{t("preferences")}</h2>
             <div className="flex flex-wrap gap-2">
               {currentPreferences.map((pref: string) => (
                 <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
