@@ -967,15 +967,15 @@ const EventDetail = () => {
                 <div className="flex flex-wrap gap-2 mt-2">
                   {[{ key: "Beginner", label: t("beginner") }, { key: "Intermediate", label: t("intermediate") }, { key: "Advanced", label: t("advanced") }].map(({ key, label }) => (
                     <button
-                      key={level}
+                      key={key}
                       type="button"
-                      onClick={() => setSportLevel(sportLevel === level ? "" : level)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${sportLevel === level
+                      onClick={() => setSportLevel(sportLevel === key ? "" : key)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${sportLevel === key
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
                         }`}
                     >
-                      {level}
+                      {label}
                     </button>
                   ))}
                 </div>
