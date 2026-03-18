@@ -563,7 +563,7 @@ const EventDetail = () => {
               {/* Recommended Equipment */}
               {recommendedItems.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">Recommended Equipment</p>
+                  <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("recommendedEquipment")}</p>
                   <div className="space-y-2">
                     {recommendedItems.map((item: any, idx: number) => (
                       <div key={idx} className="flex items-start gap-2 text-sm font-body">
