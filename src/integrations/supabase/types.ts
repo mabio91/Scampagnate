@@ -700,6 +700,7 @@ export type Database = {
           experience_grade: number | null
           first_name: string
           id: string
+          is_founding_member: boolean
           last_name: string
           membership_id: number | null
           membership_registration_date: string | null
@@ -721,6 +722,7 @@ export type Database = {
           experience_grade?: number | null
           first_name?: string
           id: string
+          is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
           membership_registration_date?: string | null
@@ -742,6 +744,7 @@ export type Database = {
           experience_grade?: number | null
           first_name?: string
           id?: string
+          is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
           membership_registration_date?: string | null

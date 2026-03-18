@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star, CreditCard, Copy } from "lucide-react";
+import { User, LogOut, Award, Edit3, Check, Camera, CalendarDays, MapPin, Star, CreditCard, Copy, Crown } from "lucide-react";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { useQuery } from "@tanstack/react-query";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -293,6 +293,11 @@ const Profile = () => {
                   }`}>
                     {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired` : 'Inactive Member'}
                   </span>
+                  {(profile as any)?.is_founding_member && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">
+                      <Crown className="h-3 w-3" /> Founding Member
+                    </span>
+                  )}
                 </div>
               </div>
               {profile?.membership_id && (
