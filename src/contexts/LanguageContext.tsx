@@ -657,6 +657,7 @@ const translations = {
     whatsapp: "WhatsApp",
     merchOrderInfo: "All orders are managed manually via WhatsApp.",
     merchDeliveryInfo: "Delivery details and payment will be arranged directly with the team.",
+    noProducts: "No products available at the moment.",
 
     // Notifications
     notifications: "Notifications",
