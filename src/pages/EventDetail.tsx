@@ -1346,7 +1346,7 @@ const EventDetail = () => {
                     rel="noopener noreferrer"
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
-                    Contatta l'organizzatore
+                    {t("contactOrganizer")}
                   </a>
                 </Button>
               )}
