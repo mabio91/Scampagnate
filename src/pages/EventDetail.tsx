@@ -660,8 +660,8 @@ const EventDetail = () => {
           {!canViewParticipants && (
             <p className="text-sm font-body text-muted-foreground">
               {event.spots_taken > 0
-                ? `${event.spots_taken} participant${event.spots_taken > 1 ? "s" : ""} already joined. ${!user ? 'Sign in and join' : 'Join'} to see who's going.`
-                : `No participants yet. ${!user ? 'Sign in and be' : 'Be'} the first to join.`}
+                ? `${event.spots_taken} ${t("participantAlreadyJoined")} ${!user ? t("signInAndJoin") : t("joinToSee")}`
+                : `${t("noParticipantsSignIn")} ${!user ? t("signInAndBe") : t("beFirstToJoin")}`}
             </p>
           )}
 
