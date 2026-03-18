@@ -1158,7 +1158,9 @@ const EventDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                  <Label className="font-body text-sm font-semibold">Membership Required</Label>
+                  <Label className="font-body text-sm font-semibold">
+                    {isMembershipExpired(profile) ? 'Membership Renewal Required' : 'Membership Required'}
+                  </Label>
                 </div>
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
                   <div className="flex items-center gap-2">
@@ -1166,14 +1168,27 @@ const EventDetail = () => {
                     <p className="text-xs font-body font-bold text-primary">Tessera Associativa Scampagnate</p>
                   </div>
                   <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
+                    {isMembershipExpired(profile) ? (
+                      <>
+                        <p>
+                          La tua tessera associativa <strong>{profile?.membership_year}</strong> è scaduta. Per continuare a partecipare alle attività è necessario rinnovare la tessera per l'anno in corso.
+                        </p>
+                        <p>
+                          Il tuo numero di tessera <strong>#{profile?.membership_id}</strong> verrà mantenuto.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
+                        </p>
+                        <p>
+                          Dopo il pagamento riceverai il tuo numero di tessera personale. La tessera fisica verrà consegnata durante il tuo primo evento.
+                        </p>
+                      </>
+                    )}
                     <p>
-                      Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.
-                    </p>
-                    <p>
-                      La quota associativa è di <strong>€10 (una tantum)</strong> e viene richiesta solo al momento della prima iscrizione a un evento.
-                    </p>
-                    <p>
-                      Dopo il pagamento riceverai il tuo numero di tessera personale. La tessera fisica verrà consegnata durante il tuo primo evento.
+                      La quota associativa è di <strong>€10/anno</strong> e copre l'intero anno solare {new Date().getFullYear()}.
                     </p>
                   </div>
                 </div>
