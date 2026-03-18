@@ -257,6 +257,7 @@ const translations = {
     whatsapp: "WhatsApp",
     merchOrderInfo: "Tutti gli ordini sono gestiti manualmente via WhatsApp.",
     merchDeliveryInfo: "I dettagli di consegna e pagamento saranno concordati direttamente con il team.",
+    noProducts: "Nessun prodotto disponibile al momento.",
 
     // Notifications
     notifications: "Notifiche",
