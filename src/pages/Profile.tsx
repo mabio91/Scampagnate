@@ -108,9 +108,9 @@ const Profile = () => {
       <AppLayout>
         <div className="px-4 py-12 text-center">
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Profile</h1>
-          <p className="text-muted-foreground font-body text-sm mb-4">Sign in to view your profile.</p>
-          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Sign In</Button>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">{t("profile")}</h1>
+          <p className="text-muted-foreground font-body text-sm mb-4">{t("signInToViewProfile")}</p>
+          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">{t("signIn")}</Button>
         </div>
       </AppLayout>
     );
