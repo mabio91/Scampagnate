@@ -428,7 +428,7 @@ const Profile = () => {
             </div>
           ) : (
             <p className="text-sm font-body text-muted-foreground">
-              No past events yet. Join your first event!
+              {t("noPastEventsJoinFirst")}
             </p>
           )}
         </div>
