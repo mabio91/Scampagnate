@@ -12,7 +12,7 @@ Deno.test("send-email: sends a test email successfully", async () => {
       "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
     },
     body: JSON.stringify({
-      to: "noreply@scampagnate.techyfux.com",
+      to: "noreply@scampagnate.com",
       subject: "🧪 Test Scampagnate - Email funzionante!",
       html: `
         <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">

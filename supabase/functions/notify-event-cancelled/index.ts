@@ -133,7 +133,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Scampagnate <noreply@scampagnate.techyfux.com>',
+            from: 'Scampagnate <noreply@scampagnate.com>',
             to: [email],
             subject: `❌ Evento cancellato: ${event.title}`,
             html: emailHtml,
