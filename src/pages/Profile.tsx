@@ -308,7 +308,7 @@ const Profile = () => {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(String(profile.membership_id));
-                      toast({ title: "Copied!", description: `Member ID #${profile.membership_id} copied to clipboard.` });
+                      toast({ title: t("copied"), description: t("memberIdCopied", { id: String(profile.membership_id) }) });
                     }}
                     className="flex items-center gap-1.5 mt-0.5 group cursor-pointer"
                     title="Copy Member ID"
