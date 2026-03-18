@@ -781,9 +781,9 @@ const EventDetail = () => {
           {event.payment_type !== "free" && (
             <div className="p-4 rounded-xl bg-gold/10 border border-gold/20 mb-4 space-y-2">
               <p className="text-sm font-body font-bold text-foreground">
-                {(event.payment_type as string) === "paid" && "Full Payment Online"}
-                {(event.payment_type as string) === "location" && "Payment on Location"}
-                {(event.payment_type as string) === "deposit" && "Split Payment"}
+                {(event.payment_type as string) === "paid" && t("fullPaymentOnline")}
+                {(event.payment_type as string) === "location" && t("paymentOnLocationTitle")}
+                {(event.payment_type as string) === "deposit" && t("splitPayment")}
               </p>
               <div className="space-y-1">
                 <div className="flex justify-between text-sm font-body">
