@@ -386,7 +386,7 @@ const Profile = () => {
               <BadgeIcon icon="🏅" className="h-7 w-7 text-primary" />
               <div>
                 <p className="text-sm font-display font-bold text-primary">Scampagnatore Ufficiale</p>
-                <p className="text-[10px] font-body text-muted-foreground">Membro ufficiale della community</p>
+                <p className="text-[10px] font-body text-muted-foreground">{t("officialMember")}</p>
               </div>
             </div>
           )}
