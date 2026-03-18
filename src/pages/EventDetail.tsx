@@ -801,7 +801,7 @@ const EventDetail = () => {
                       <span className="font-semibold text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
                     </div>
                     <p className="text-xs font-body text-muted-foreground mt-1">
-                      Remaining balance can be paid before the event or on location.
+                      {t("remainingBalanceText")}
                     </p>
                   </>
                 )}
