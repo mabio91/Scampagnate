@@ -14,6 +14,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ActivityProposalFormProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface ActivityProposalFormProps {
 const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -49,7 +51,7 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !activityTitle.trim()) {
-      toast({ title: "Please fill in the required fields", variant: "destructive" });
+      toast({ title: t("pleaseFillFields"), variant: "destructive" });
       return;
     }
 
@@ -68,7 +70,7 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
       if (error) throw error;
       setSubmitted(true);
     } catch (error: any) {
-      toast({ title: "Error submitting proposal", description: error.message, variant: "destructive" });
+      toast({ title: t("error"), description: error.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -88,12 +90,12 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
               <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
             <h3 className="font-display text-xl font-bold text-foreground">
-              Grazie per la tua proposta!
+              {t("thankYouProposal")}
             </h3>
             <p className="text-sm font-body text-muted-foreground">
-              Il team di Scampagnate la valuterà e potrebbe contattarti per organizzare l'attività.
+              {t("proposalReview")}
             </p>
-            <Button onClick={handleClose} className="w-full">Chiudi</Button>
+            <Button onClick={handleClose} className="w-full">{t("close")}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -104,97 +106,56 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">Proponi un'Attività</DialogTitle>
+          <DialogTitle className="font-display text-xl">{t("proposeActivityTitle")}</DialogTitle>
           <DialogDescription className="font-body text-sm">
-            Suggerisci una nuova attività alla community. Il team valuterà la tua proposta.
+            {t("proposeActivityDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div>
             <Label className="font-body text-sm font-semibold">
-              Il tuo nome <span className="text-destructive">*</span>
+              {t("yourName")} <span className="text-destructive">*</span>
             </Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nome e cognome"
-              required
-              disabled={!!user}
-              className="mt-1"
-            />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("firstName")} required disabled={!!user} className="mt-1" />
           </div>
 
           <div>
             <Label className="font-body text-sm font-semibold">
-              Titolo attività <span className="text-destructive">*</span>
+              {t("activityTitle")} <span className="text-destructive">*</span>
             </Label>
-            <Input
-              value={activityTitle}
-              onChange={(e) => setActivityTitle(e.target.value)}
-              placeholder="Di cosa si tratta?"
-              required
-              className="mt-1"
-            />
+            <Input value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} placeholder={t("whatIsIt")} required className="mt-1" />
           </div>
 
           <div>
-            <Label className="font-body text-sm font-semibold">Luogo</Label>
-            <Input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Città, luogo specifico o link Google Maps"
-              className="mt-1"
-            />
+            <Label className="font-body text-sm font-semibold">{t("location")}</Label>
+            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("locationPlaceholder")} className="mt-1" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="font-body text-sm font-semibold">Data suggerita</Label>
-              <Input
-                type="date"
-                value={suggestedDate}
-                onChange={(e) => setSuggestedDate(e.target.value)}
-                className="mt-1"
-              />
+              <Label className="font-body text-sm font-semibold">{t("suggestedDate")}</Label>
+              <Input type="date" value={suggestedDate} onChange={(e) => setSuggestedDate(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label className="font-body text-sm font-semibold">Orario</Label>
-              <Input
-                type="time"
-                value={suggestedTime}
-                onChange={(e) => setSuggestedTime(e.target.value)}
-                className="mt-1"
-              />
+              <Label className="font-body text-sm font-semibold">{t("time")}</Label>
+              <Input type="time" value={suggestedTime} onChange={(e) => setSuggestedTime(e.target.value)} className="mt-1" />
             </div>
           </div>
 
           <div>
-            <Label className="font-body text-sm font-semibold">Descrizione</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Come funziona, cosa aspettarsi, link utili (Instagram, siti web...)"
-              rows={4}
-              className="mt-1"
-            />
+            <Label className="font-body text-sm font-semibold">{t("description")}</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("describeIssue")} rows={4} className="mt-1" />
           </div>
 
           <div>
-            <Label className="font-body text-sm font-semibold">Numero massimo partecipanti</Label>
-            <Input
-              type="number"
-              value={maxParticipants}
-              onChange={(e) => setMaxParticipants(e.target.value)}
-              placeholder="Es. 20"
-              min={1}
-              className="mt-1"
-            />
+            <Label className="font-body text-sm font-semibold">{t("maxParticipants")}</Label>
+            <Input type="number" value={maxParticipants} onChange={(e) => setMaxParticipants(e.target.value)} placeholder="Es. 20" min={1} className="mt-1" />
           </div>
 
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Invia Proposta
+            {t("submitProposal")}
           </Button>
         </form>
       </DialogContent>
