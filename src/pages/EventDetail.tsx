@@ -443,7 +443,7 @@ const EventDetail = () => {
           <div className="flex flex-wrap gap-4 mb-3">
             <div className="flex items-center gap-2 text-sm font-body text-foreground">
               <CalendarDays className="h-4 w-4 text-secondary" />
-              {new Date(event.date).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+              {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { weekday: "long", day: "numeric", month: "long" })}
               <span className="text-muted-foreground">· {event.time?.slice(0, 5)}</span>
             </div>
             <div className="flex items-center gap-2 text-sm font-body text-foreground">
