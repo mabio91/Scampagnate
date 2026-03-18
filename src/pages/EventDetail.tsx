@@ -1231,7 +1231,7 @@ const EventDetail = () => {
                         {/* Remaining balance for deposits */}
                         {isDeposit && (
                           <div className="flex justify-between text-sm font-body">
-                            <span className="text-muted-foreground">Remaining (pay later)</span>
+                            <span className="text-muted-foreground">{t("remainingPayLater")}</span>
                             <span className="text-muted-foreground">€{(Number(event.price) - depositAmount).toFixed(2)}</span>
                           </div>
                         )}
