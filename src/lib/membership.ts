@@ -22,8 +22,9 @@ export function getMembershipExpiryDate(profile: MembershipProfile | null | unde
 export function isMembershipActive(profile: MembershipProfile | null | undefined): boolean {
   if (!profile) return false;
   if (profile.membership_status !== 'Active') return false;
+  // If no registration date is set yet, fall back to status-only check
   const expiry = getMembershipExpiryDate(profile);
-  if (!expiry) return false;
+  if (!expiry) return true;
   return new Date() < expiry;
 }
 
