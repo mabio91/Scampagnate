@@ -1180,7 +1180,7 @@ const EventDetail = () => {
                       </>
                     )}
                     <p>
-                      La quota associativa è di <strong>€10/anno</strong> e copre l'intero anno solare {new Date().getFullYear()}.
+                      {t("membershipFeePerYear", { year: String(new Date().getFullYear()) })}
                     </p>
                   </div>
                 </div>
