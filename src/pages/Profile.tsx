@@ -350,7 +350,7 @@ const Profile = () => {
                 </p>
                 <div className="grid grid-cols-2 gap-4 pt-2 border-t border-warning/10">
                   <div>
-                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Member Since</p>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberSince")}</p>
                     <p className="text-sm font-body font-semibold text-foreground">
                       {(() => {
                         const dateStr = profile?.membership_registration_date || (profile as any)?.created_at;
