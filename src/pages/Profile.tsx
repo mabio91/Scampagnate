@@ -297,7 +297,7 @@ const Profile = () => {
                   </span>
                   {(profile as any)?.is_founding_member && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">
-                      <Crown className="h-3 w-3" /> Founding Member
+                      <Crown className="h-3 w-3" /> {t("foundingMember")}
                     </span>
                   )}
                 </div>
