@@ -1038,7 +1038,7 @@ const EventDetail = () => {
                     ))}
                   </div>
                   <p className="text-[10px] font-body text-muted-foreground ml-6">
-                    Participants who arrive without the required equipment may not be allowed to join the activity for safety reasons.
+                    {t("safetyNoticeText")}
                   </p>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer group">
