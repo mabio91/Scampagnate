@@ -28,6 +28,7 @@ const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
 const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
 const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +77,7 @@ const App = () => (
                 <Route path="/organizer/events/:id/edit" element={<EventForm />} />
                 <Route path="/membership-success" element={<MembershipSuccess />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="/privacy" element={<Privacy />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
