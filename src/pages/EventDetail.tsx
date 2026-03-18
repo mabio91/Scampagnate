@@ -1266,7 +1266,7 @@ const EventDetail = () => {
                             : (event.payment_type === "paid" || selectedOpt)
                               ? t("fullPaymentViaStripe")
                               : isDeposit
-                                ? "Deposit will be charged online via Stripe."
+                                ? t("depositViaStripe")
                                 : (event.payment_type as string) === "location"
                                   ? ""
                                   : ""
