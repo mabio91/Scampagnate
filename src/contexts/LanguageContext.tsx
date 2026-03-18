@@ -653,7 +653,7 @@ const translations = {
     discountCoveredAmount: "The discount covered the full amount!",
     uploadError: "Upload error",
 
-    paid: "Paid",
+    statusPaid: "Paid",
     attended: "Attended",
     noShow: "No-show",
 
