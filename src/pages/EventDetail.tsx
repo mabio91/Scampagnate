@@ -1291,7 +1291,7 @@ const EventDetail = () => {
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
               {(registerMutation.isPending || membershipLoading) ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? "Redirecting to payment..." : isRequestingOverride ? "Submitting..." : "Registering..."}</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? t("redirectingToPayment") : isRequestingOverride ? t("submitting") : t("registering")}</>
               ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
