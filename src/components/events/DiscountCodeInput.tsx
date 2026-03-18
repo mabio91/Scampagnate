@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Ticket, Check, X, Loader2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DiscountResult {
   valid: boolean;
@@ -25,6 +26,7 @@ const DiscountCodeInput = ({ eventId, userId, onDiscountApplied }: DiscountCodeI
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DiscountResult | null>(null);
+  const { t } = useLanguage();
 
   const validateCode = async () => {
     if (!code.trim()) return;
@@ -40,7 +42,7 @@ const DiscountCodeInput = ({ eventId, userId, onDiscountApplied }: DiscountCodeI
       setResult(res);
       onDiscountApplied(res.valid ? res : null);
     } catch {
-      setResult({ valid: false, error: "Errore durante la validazione" });
+      setResult({ valid: false, error: t("validationError") });
       onDiscountApplied(null);
     } finally {
       setLoading(false);
@@ -59,7 +61,7 @@ const DiscountCodeInput = ({ eventId, userId, onDiscountApplied }: DiscountCodeI
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 text-success" />
-            <span className="text-xs font-body font-bold text-success">Codice applicato: {code.toUpperCase()}</span>
+            <span className="text-xs font-body font-bold text-success">{t("codeApplied", { code: code.toUpperCase() })}</span>
           </div>
           <button onClick={clearDiscount} className="text-muted-foreground hover:text-foreground">
             <X className="h-3.5 w-3.5" />
@@ -67,7 +69,7 @@ const DiscountCodeInput = ({ eventId, userId, onDiscountApplied }: DiscountCodeI
         </div>
         <div className="flex justify-between text-xs font-body">
           <span className="text-muted-foreground">
-            {result.discount_type === "percentage" ? `${result.discount_value}% di sconto` : `€${result.discount_value} di sconto`}
+            {result.discount_type === "percentage" ? t("percentDiscount", { value: result.discount_value || 0 }) : t("amountDiscount", { value: result.discount_value || 0 })}
           </span>
           <div className="text-right">
             <span className="line-through text-muted-foreground mr-2">€{Number(result.original_price).toFixed(2)}</span>
@@ -89,7 +91,7 @@ const DiscountCodeInput = ({ eventId, userId, onDiscountApplied }: DiscountCodeI
               setCode(e.target.value.toUpperCase());
               if (result) setResult(null);
             }}
-            placeholder="Codice sconto"
+            placeholder={t("discountPlaceholder")}
             className="pl-9 font-mono text-sm h-9"
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), validateCode())}
           />
@@ -102,7 +104,7 @@ const DiscountCodeInput = ({ eventId, userId, onDiscountApplied }: DiscountCodeI
           disabled={!code.trim() || loading}
           className="h-9 px-3"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Applica"}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("apply")}
         </Button>
       </div>
       {result && !result.valid && (
