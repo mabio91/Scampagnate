@@ -1198,7 +1198,7 @@ const EventDetail = () => {
                   {(() => {
                     const selectedOpt = event.price_options?.find((o: any) => o.id === selectedPriceOption);
                     const basePrice = selectedOpt ? Number(selectedOpt.price) : Number(event.price);
-                    const displayLabel = selectedOpt ? selectedOpt.name : "Event";
+                    const displayLabel = selectedOpt ? selectedOpt.name : t("event");
                     const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
                     const depositAmount = isDeposit ? Number(event.deposit) : 0;
                     const displayPrice = isDeposit ? depositAmount : basePrice;
