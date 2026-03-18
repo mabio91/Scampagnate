@@ -982,7 +982,7 @@ const EventDetail = () => {
                 <Input
                   value={!["Beginner", "Intermediate", "Advanced"].includes(sportLevel) ? sportLevel : ""}
                   onChange={(e) => setSportLevel(e.target.value)}
-                  placeholder="Or enter custom level (e.g. 3.5 for padel)"
+                  placeholder={t("orEnterCustomLevel")}
                   className="mt-2"
                 />
                 <p className="text-[10px] text-muted-foreground font-body mt-1">
