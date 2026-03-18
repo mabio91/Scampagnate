@@ -187,7 +187,7 @@ export const useMyRegistration = (eventId: string) => {
 
 export const useRegisterForEvent = () => {
   const queryClient = useQueryClient();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile } = useAuth();
   
   return useMutation({
     mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType, priceOptionId }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string; priceOptionId?: string }) => {
@@ -200,7 +200,7 @@ export const useRegisterForEvent = () => {
       } else if (paymentType === "location" && isMembershipActiveFn(profile)) {
         paymentStatus = "pay_on_location";
       }
-      // If membership is not active, always default to "pending" for stripe payment
+      // If membership is not active, payment remains pending and is handled at checkout.
 
       type RegistrationStatus = "registered" | "waitlist" | "pending_approval";
       let status: RegistrationStatus = "registered";
@@ -217,19 +217,6 @@ export const useRegisterForEvent = () => {
         price_option_id: priceOptionId || null,
       } as any);
       if (error) throw error;
-
-      // Handle Membership Activation if not active
-      if (profile && !isMembershipActiveFn(profile)) {
-        const { error: profileError } = await supabase.rpc('activate_membership' as any, { 
-          user_id_param: user.id 
-        });
-        
-        if (profileError) {
-          console.error("RPC activate_membership failed", profileError);
-          throw profileError;
-        }
-        await refreshProfile();
-      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["event", vars.eventId] });
