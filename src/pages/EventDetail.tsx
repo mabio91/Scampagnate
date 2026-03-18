@@ -1171,7 +1171,7 @@ const EventDetail = () => {
                     {isMembershipExpired(profile) ? (
                       <>
                         <p>
-                          La tua tessera associativa <strong>{profile?.membership_year}</strong> è scaduta. Per continuare a partecipare alle attività è necessario rinnovare la tessera per l'anno in corso.
+                          La tua tessera associativa è scaduta. Per continuare a partecipare alle attività è necessario rinnovare la tessera.
                         </p>
                         <p>
                           Il tuo numero di tessera <strong>#{profile?.membership_id}</strong> verrà mantenuto.

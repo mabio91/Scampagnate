@@ -28,16 +28,21 @@ serve(async (req) => {
     // Check if already an active member FOR THE CURRENT YEAR
     const { data: profile } = await supabaseClient
       .from("profiles")
-      .select("membership_status, membership_year")
+      .select("membership_status, membership_registration_date")
       .eq("id", user.id)
       .single();
 
-    const currentYear = new Date().getFullYear();
-    if (profile?.membership_status === "Active" && profile?.membership_year === currentYear) {
-      return new Response(
-        JSON.stringify({ error: "Already an active member for this year" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
+    // Check if membership is still active (registration_date + 1 year > now)
+    if (profile?.membership_status === "Active" && profile?.membership_registration_date) {
+      const regDate = new Date(profile.membership_registration_date);
+      const expiry = new Date(regDate);
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      if (new Date() < expiry) {
+        return new Response(
+          JSON.stringify({ error: "Your membership is still active" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
     }
 
     const { eventId } = await req.json();

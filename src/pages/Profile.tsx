@@ -339,7 +339,7 @@ const Profile = () => {
             ) : isMembershipExpired(profile) ? (
               <div className="mt-3 space-y-2">
                 <p className="text-xs font-body text-warning font-semibold">
-                  Your {profile?.membership_year} membership has expired. Renew to join events in {new Date().getFullYear()}.
+                  Your membership has expired. Renew to continue joining events.
                 </p>
                 <div className="grid grid-cols-2 gap-4 pt-2 border-t border-warning/10">
                   <div>
