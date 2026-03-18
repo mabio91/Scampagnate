@@ -22,6 +22,7 @@ interface MerchProduct {
   badge: string | null;
   badge_it: string | null;
   sort_order: number;
+  whatsapp_number: string | null;
 }
 
 const useProducts = () =>
