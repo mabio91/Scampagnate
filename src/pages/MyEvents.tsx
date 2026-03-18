@@ -36,7 +36,7 @@ const statusStyles: Record<string, string> = {
 
 const statusLabelKeys: Record<string, string> = {
   registered: "registered",
-  paid: "paid",
+  paid: "statusPaid",
   waitlist: "onWaitlist",
   cancelled: "cancelled",
   attended: "attended",
