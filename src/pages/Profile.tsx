@@ -293,6 +293,11 @@ const Profile = () => {
                   }`}>
                     {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired` : 'Inactive Member'}
                   </span>
+                  {(profile as any)?.is_founding_member && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">
+                      <Crown className="h-3 w-3" /> Founding Member
+                    </span>
+                  )}
                 </div>
               </div>
               {profile?.membership_id && (
