@@ -1253,7 +1253,7 @@ const EventDetail = () => {
 
                         {/* Divider + Total */}
                         <div className="flex justify-between text-sm font-body pt-1.5 mt-1 border-t border-gold/20">
-                          <span className="font-bold text-foreground">Total due today</span>
+                          <span className="font-bold text-foreground">{t("totalDueToday")}</span>
                           <span className="font-bold text-foreground text-base">
                             €{(discountedEventPrice + membershipFee).toFixed(2)}
                           </span>
