@@ -1368,7 +1368,7 @@ const EventDetail = () => {
                 className="w-full font-body text-muted-foreground text-xs h-10"
                 onClick={() => setShowAccessWarning(false)}
               >
-                Chiudi
+                {t("close")}
               </Button>
             </div>
           </div>
