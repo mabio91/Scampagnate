@@ -44,7 +44,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-safe">
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 max-w-lg mx-auto overflow-hidden">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 max-w-lg mx-auto">
         <Link to="/" className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
           <img src={logo} alt="Scampagnate" className="h-8 sm:h-9 w-8 sm:w-9 rounded-full shrink-0" />
           <span className="font-display text-sm sm:text-base font-bold text-foreground truncate">Scampagnate</span>
