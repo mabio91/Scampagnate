@@ -37,6 +37,28 @@ serve(async (req) => {
 
     if (eventError || !event) throw new Error("Event not found");
 
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("membership_status, membership_registration_date")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) throw new Error("Unable to verify membership status");
+
+    const hasActiveMembership = (() => {
+      if (profile?.membership_status !== "Active") return false;
+      if (!profile?.membership_registration_date) return true;
+
+      const regDate = new Date(profile.membership_registration_date);
+      if (Number.isNaN(regDate.getTime())) return true;
+
+      const expiry = new Date(regDate);
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      return new Date() < expiry;
+    })();
+
+    const membershipFeeCents = hasActiveMembership ? 0 : 1000;
+
     // Check if registration has a price option
     let priceOptionName = "";
     let effectivePriceOptionId = priceOptionId;
