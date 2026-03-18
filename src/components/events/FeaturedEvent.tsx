@@ -45,7 +45,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           <span className="text-[10px] font-body font-semibold text-primary-foreground/60 uppercase tracking-widest">{t("featuredEvent")}</span>
           <h2 className="font-display text-2xl font-bold text-primary-foreground mt-1.5 leading-tight">{event.title}</h2>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-primary-foreground/80 text-xs sm:text-sm font-body">
-            <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5 shrink-0" />{new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</span>
+            <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5 shrink-0" />{new Date(event.date).toLocaleDateString(t("home") === "Home" ? "en-US" : "it-IT", { day: "numeric", month: "short" })}</span>
             <span className="flex items-center gap-1 min-w-0"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{event.location}</span></span>
             <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5 shrink-0" />{event.spots_taken}/{event.spots_total}</span>
           </div>

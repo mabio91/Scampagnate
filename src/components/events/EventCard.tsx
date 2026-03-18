@@ -98,7 +98,7 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
           <div className="flex items-center gap-3 mt-1.5 text-muted-foreground text-xs font-body">
             <span className="flex items-center gap-1">
               <CalendarDays className="h-3 w-3" />
-              {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+              {new Date(event.date).toLocaleDateString(t("home") === "Home" ? "en-US" : "it-IT", { day: "numeric", month: "short" })}
             </span>
             <span className="flex items-center gap-1 min-w-0">
               <MapPin className="h-3 w-3 shrink-0" />
