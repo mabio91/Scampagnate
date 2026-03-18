@@ -274,7 +274,7 @@ const Profile = () => {
         {/* Membership Status Card */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-secondary" /> Membership
+            <CreditCard className="h-5 w-5 text-secondary" /> {t("membership")}
           </h2>
           <div className={`p-4 rounded-2xl border ${
             isMembershipActive(profile) 
