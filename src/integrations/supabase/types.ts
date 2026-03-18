@@ -648,6 +648,54 @@ export type Database = {
           },
         ]
       }
+      merch_products: {
+        Row: {
+          badge: string | null
+          badge_it: string | null
+          created_at: string
+          description: string
+          description_it: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          name_it: string | null
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          badge_it?: string | null
+          created_at?: string
+          description?: string
+          description_it?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          name_it?: string | null
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          badge_it?: string | null
+          created_at?: string
+          description?: string
+          description_it?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          name_it?: string | null
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
