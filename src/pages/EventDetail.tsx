@@ -1184,7 +1184,7 @@ const EventDetail = () => {
             {event.payment_type !== "free" && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">{profile?.membership_status !== 'Active' ? '4' : '3'}</span>
+                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">{!isMembershipActive(profile) ? '4' : '3'}</span>
                   <Label className="font-body text-sm font-semibold">Order Summary</Label>
                 </div>
                 <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1.5">
