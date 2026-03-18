@@ -1245,7 +1245,7 @@ const EventDetail = () => {
                         {needsMembership && (
                           <div className="flex justify-between text-sm font-body">
                             <span className="text-primary font-semibold flex items-center gap-1">
-                              <CreditCard className="h-3 w-3" /> Membership fee
+                              <CreditCard className="h-3 w-3" /> {t("membershipFee")}
                             </span>
                             <span className="font-semibold text-primary">€{membershipFee.toFixed(2)}</span>
                           </div>
