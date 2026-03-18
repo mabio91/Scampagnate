@@ -671,7 +671,7 @@ const EventDetail = () => {
               {/* Organizer-only: meeting point assignments */}
               {(user?.id === event.organizer_id) && event.meeting_points && event.meeting_points.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Meeting point assignments:</p>
+                  <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("meetingPointAssignments")}</p>
                   <div className="space-y-1">
                     {participants.map((p: any) => (
                       <div key={p.id} className="flex items-center justify-between text-xs font-body px-2 py-1.5 rounded-lg bg-muted/30">
