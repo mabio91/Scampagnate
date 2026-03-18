@@ -900,7 +900,7 @@ const EventDetail = () => {
                 </p>
               </div>
             )}
-            {profile?.membership_status !== 'Active' && !isRegistered && (
+            {!isMembershipActive(profile) && !isRegistered && (
               <p className="text-[10px] font-body text-primary font-semibold">Includes €10 membership fee</p>
             )}
             {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
