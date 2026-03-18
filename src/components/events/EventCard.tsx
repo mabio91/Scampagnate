@@ -89,7 +89,7 @@ const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; i
               })}
               {spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full" && (
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive text-[9px] font-body font-bold">
-                  🔥 {spotsLeft} {spotsLeft > 1 ? "spots" : "spot"} left
+                  🔥 {t("spotsLeft", { count: spotsLeft })}
                 </span>
               )}
             </div>
