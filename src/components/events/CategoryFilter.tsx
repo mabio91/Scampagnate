@@ -36,7 +36,7 @@ const CategoryFilter = ({ categories, selected, onSelect }: CategoryFilterProps)
               : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
-          {t("allPrices").split(" ")[0] === "Tutti" ? "Tutti" : "All"}
+          {t("all")}
         </button>
         {categories.map((cat) => (
           <button
