@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import ShareSheet from "@/components/events/ShareSheet";
 import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -14,6 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@/components/ui/dialog";
+import { parseEventDateTime } from "@/lib/timezone";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
