@@ -1100,7 +1100,7 @@ const EventDetail = () => {
                             </p>
                           )}
                           {opt.is_promotional && !opt.isPromoActive && (
-                            <p className="text-[10px] text-muted-foreground font-body mt-0.5">Promozione scaduta</p>
+                            <p className="text-[10px] text-muted-foreground font-body mt-0.5">{t("promoExpired")}</p>
                           )}
                         </div>
                       </div>
