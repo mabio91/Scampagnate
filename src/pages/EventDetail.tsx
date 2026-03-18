@@ -513,7 +513,7 @@ const EventDetail = () => {
         {/* Gallery */}
         {event.gallery_images && event.gallery_images.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="py-4 border-b border-border">
-            <h3 className="font-display text-lg font-bold text-foreground mb-3">Gallery</h3>
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("gallery")}</h3>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 auto-cols-[180px] grid-flow-col grid">
               {event.gallery_images.sort((a,b) => a.order - b.order).map((img, idx) => (
                 <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer shadow-md active:scale-95 transition-all">
