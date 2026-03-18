@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
@@ -35,6 +35,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import DiscountCodeInput from "@/components/events/DiscountCodeInput";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -62,6 +63,7 @@ const EventDetail = () => {
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
+  const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
@@ -526,27 +528,64 @@ const EventDetail = () => {
         )}
 
         {/* Equipment List */}
-        {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }} className="py-4 border-b border-border">
-            <h3 className="font-display text-lg font-bold text-foreground mb-3">Recommended Equipment</h3>
-            <div className="space-y-2">
-              {(event.equipment_list as any[]).map((item: any, idx: number) => (
-                <div key={idx} className="flex items-start gap-2 text-sm font-body">
-                  <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${item.is_mandatory ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
-                    {item.is_mandatory ? '!' : '·'}
-                  </span>
-                  <div>
-                    <span className={`${item.is_mandatory ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                      {item.name}
-                    </span>
-                    {item.is_mandatory && <span className="text-[10px] text-destructive ml-1">(mandatory)</span>}
-                    {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
+        {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).length > 0 && (() => {
+          const allItems = event.equipment_list as any[];
+          const mandatoryItems = allItems.filter((item: any) => item.is_mandatory);
+          const recommendedItems = allItems.filter((item: any) => !item.is_mandatory);
+          const hasMandatory = mandatoryItems.length > 0;
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }} className="py-4 border-b border-border">
+              <h3 className="font-display text-lg font-bold text-foreground mb-3">Equipment</h3>
+
+              {/* Mandatory Equipment */}
+              {hasMandatory && (
+                <div className="mb-4">
+                  <p className="text-xs font-body font-bold text-destructive uppercase tracking-wider mb-2">Mandatory Equipment</p>
+                  <div className="space-y-2 p-3 rounded-xl bg-destructive/5 border border-destructive/15">
+                    {mandatoryItems.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm font-body">
+                        <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-destructive/10 text-destructive flex items-center justify-center text-[10px] font-bold">!</span>
+                        <div>
+                          <span className="font-semibold text-foreground">{item.name}</span>
+                          {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+              )}
+
+              {/* Recommended Equipment */}
+              {recommendedItems.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">Recommended Equipment</p>
+                  <div className="space-y-2">
+                    {recommendedItems.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm font-body">
+                        <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">·</span>
+                        <div>
+                          <span className="text-muted-foreground">{item.name}</span>
+                          {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Safety Warning */}
+              {hasMandatory && (
+                <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <p className="text-xs font-body text-warning-foreground leading-relaxed">
+                    <strong>Safety notice:</strong> Participants who arrive without the required mandatory equipment may not be allowed to join the activity for safety reasons.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          );
+        })()}
 
 
         {event.meeting_points && event.meeting_points.length > 0 && (
@@ -1087,6 +1126,36 @@ const EventDetail = () => {
               </div>
             )}
 
+            {/* Mandatory Equipment Confirmation */}
+            {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-destructive/5 border border-destructive/15 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
+                    <p className="text-xs font-body font-bold text-destructive">Mandatory Equipment Required</p>
+                  </div>
+                  <div className="space-y-1 ml-6">
+                    {(event.equipment_list as any[]).filter((item: any) => item.is_mandatory).map((item: any, idx: number) => (
+                      <p key={idx} className="text-xs font-body text-foreground">• {item.name}</p>
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-body text-muted-foreground ml-6">
+                    Participants who arrive without the required equipment may not be allowed to join the activity for safety reasons.
+                  </p>
+                </div>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <Checkbox
+                    checked={equipmentConfirmed}
+                    onCheckedChange={(v) => setEquipmentConfirmed(!!v)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs font-body text-foreground leading-relaxed group-hover:text-foreground/80 transition-colors">
+                    I confirm that I have read the mandatory equipment requirements and will attend the event with the appropriate gear.
+                  </span>
+                </label>
+              </div>
+            )}
+
             {/* Discount Code */}
             {event.payment_type !== "free" && event.payment_type !== "location" && user && (
               <DiscountCodeInput
@@ -1167,7 +1236,8 @@ const EventDetail = () => {
                 registerMutation.isPending || membershipLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
                 (event.price_options && event.price_options.length > 0 && !selectedPriceOption) ||
-                (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim()))
+                (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim())) ||
+                (event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && !equipmentConfirmed)
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
