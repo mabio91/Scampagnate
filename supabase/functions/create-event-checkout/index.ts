@@ -199,22 +199,40 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://scampagnate.app";
 
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+
+    if (eventAmountCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: event.title,
+            description,
+          },
+          unit_amount: eventAmountCents,
+        },
+        quantity: 1,
+      });
+    }
+
+    if (membershipFeeCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: "Annual Membership",
+            description: "Scampagnate membership fee",
+          },
+          unit_amount: membershipFeeCents,
+        },
+        quantity: 1,
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: event.title,
-              description,
-            },
-            unit_amount: amountCents,
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode: "payment",
       success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId}&registration_id=${registrationId}`,
       cancel_url: `${origin}/event/${eventId}`,
@@ -224,6 +242,7 @@ serve(async (req) => {
         registration_id: registrationId,
         payment_type: event.payment_type,
         discount_code_id: discountCodeId || "",
+        membership_included: String(membershipFeeCents > 0),
       },
     });
 
