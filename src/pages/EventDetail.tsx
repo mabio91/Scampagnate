@@ -1238,7 +1238,7 @@ const EventDetail = () => {
 
                         {/* Location payment note */}
                         {(event.payment_type as string) === "location" && (
-                          <p className="text-xs font-body text-muted-foreground">Payment on location — no charge during registration.</p>
+                          <p className="text-xs font-body text-muted-foreground">{t("paymentOnLocation")}</p>
                         )}
 
                         {/* Membership fee line */}
