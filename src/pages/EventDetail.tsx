@@ -834,7 +834,7 @@ const EventDetail = () => {
                 </p>
                 {event.payment_type === "deposit" && (
                   <p className="text-[11px] font-body text-muted-foreground mt-1.5 italic border-t border-current/10 pt-1.5">
-                    Deposit refund is subject to this policy.
+                    {t("depositRefundPolicy")}
                   </p>
                 )}
               </div>
