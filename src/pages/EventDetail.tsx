@@ -506,7 +506,7 @@ const EventDetail = () => {
 
         {/* Description */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-2">Description</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">{t("description")}</h3>
           <p className="text-sm font-body text-muted-foreground leading-relaxed">{event.description}</p>
         </motion.div>
 
