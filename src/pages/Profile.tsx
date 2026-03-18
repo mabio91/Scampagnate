@@ -293,7 +293,7 @@ const Profile = () => {
                   <span className={`text-sm font-display font-bold ${
                     isMembershipActive(profile) ? 'text-success' : isMembershipExpired(profile) ? 'text-warning' : 'text-muted-foreground'
                   }`}>
-                    {isMembershipActive(profile) ? 'Active Member' : isMembershipExpired(profile) ? `Expired` : 'Inactive Member'}
+                    {isMembershipActive(profile) ? t("activeMember") : isMembershipExpired(profile) ? t("expiredMember") : t("inactiveMember")}
                   </span>
                   {(profile as any)?.is_founding_member && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">
