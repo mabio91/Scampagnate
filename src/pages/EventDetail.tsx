@@ -1298,11 +1298,11 @@ const EventDetail = () => {
                   {isMembershipExpired(profile) ? t("renewMembershipAndRegister") : t("payMembershipAndRegister")}
                 </>
               ) : event.status === "full" ? (
-                "Join Waitlist"
+                t("joinWaitlist")
               ) : isRequestingOverride ? (
-                "Submit Request"
+                t("submitRequest")
               ) : (
-                "Confirm Registration"
+                t("confirmRegistration")
               )}
             </Button>
           </div>
