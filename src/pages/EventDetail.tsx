@@ -617,8 +617,8 @@ const EventDetail = () => {
         {/* Participants */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display text-lg font-bold text-foreground">Participants</h3>
-            <span className="text-sm font-body font-semibold text-secondary">{event.spots_taken} Joined</span>
+            <h3 className="font-display text-lg font-bold text-foreground">{t("participants")}</h3>
+            <span className="text-sm font-body font-semibold text-secondary">{event.spots_taken} {t("joined")}</span>
           </div>
 
           {/* Avatar circles row - only for logged-in users */}
