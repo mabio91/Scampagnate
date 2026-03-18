@@ -328,7 +328,12 @@ const Profile = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Valid Until</p>
-                  <p className="text-sm font-body font-semibold text-foreground">Dec 31, {profile.membership_year || new Date().getFullYear()}</p>
+                  <p className="text-sm font-body font-semibold text-foreground">
+                    {(() => {
+                      const expiry = getMembershipExpiryDate(profile);
+                      return expiry ? expiry.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A';
+                    })()}
+                  </p>
                 </div>
               </div>
             ) : isMembershipExpired(profile) ? (
