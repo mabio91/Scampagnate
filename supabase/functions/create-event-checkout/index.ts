@@ -54,7 +54,6 @@ serve(async (req) => {
     }
 
     // Determine base amount
-    let amountCents: number;
     let description: string;
     let originalPrice: number;
 
