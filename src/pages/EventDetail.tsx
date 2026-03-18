@@ -326,15 +326,15 @@ const EventDetail = () => {
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   const getCTALabel = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Event Closed";
-    if (!user) return "Sign in to Join";
-    if (isPendingApproval) return "Approval Pending";
-    if (isOnWaitlist) return "On Waitlist";
-    if (needsPayment) return "Pay Now";
-    if (isRegistered) return "Registered ✔";
-    if (event.status === "full") return "Join Waitlist";
-    if (accessData && !accessData.hasAccess) return "View Requirements";
-    return "Join Event";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return t("eventClosed");
+    if (!user) return t("signInToJoin");
+    if (isPendingApproval) return t("approvalPending");
+    if (isOnWaitlist) return t("onWaitlist");
+    if (needsPayment) return t("payNow");
+    if (isRegistered) return t("registered");
+    if (event.status === "full") return t("joinWaitlist");
+    if (accessData && !accessData.hasAccess) return t("viewRequirements");
+    return t("joinEvent");
   };
 
   const getCTAClass = () => {
