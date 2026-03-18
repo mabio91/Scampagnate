@@ -1048,7 +1048,7 @@ const EventDetail = () => {
                     className="mt-0.5"
                   />
                   <span className="text-xs font-body text-foreground leading-relaxed group-hover:text-foreground/80 transition-colors">
-                    I confirm that I have read the mandatory equipment requirements and will attend the event with the appropriate gear.
+                    {t("equipmentConfirmation")}
                   </span>
                 </label>
               </div>
