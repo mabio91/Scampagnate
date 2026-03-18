@@ -22,7 +22,7 @@ export interface EventDiscount {
 }
 
 const EventCard = memo(({ event, index, discount }: { event: EventWithDetails; index: number; discount?: EventDiscount | null }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const statusConfig: Record<string, { label: string; className: string }> = {
     draft: { label: t("draft"), className: "bg-muted text-muted-foreground" },
