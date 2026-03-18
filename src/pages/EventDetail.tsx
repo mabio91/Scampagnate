@@ -812,7 +812,7 @@ const EventDetail = () => {
                 )}
                 {(event.payment_type as string) === "location" && (
                   <p className="text-xs font-body text-muted-foreground">
-                    Payment will be collected on location at the event.
+                    {t("paymentCollectedOnLocation")}
                   </p>
                 )}
               </div>
