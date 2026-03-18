@@ -904,7 +904,7 @@ const EventDetail = () => {
               <p className="text-[10px] font-body text-primary font-semibold">Includes €10 annual membership fee</p>
             )}
             {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
-              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (profile?.membership_status !== 'Active' ? 10 : 0)} total</p>
+              <p className="text-[10px] font-body text-muted-foreground">deposit · €{Number(event.price) + (!isMembershipActive(profile) ? 10 : 0)} total</p>
             )}
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
               <p className="text-[10px] font-body text-muted-foreground">pay on location</p>
