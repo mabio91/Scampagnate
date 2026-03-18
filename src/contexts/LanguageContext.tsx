@@ -323,7 +323,7 @@ const translations = {
     discountCoveredAmount: "Lo sconto ha coperto l'intero importo!",
     uploadError: "Errore di caricamento",
 
-    paid: "Pagato",
+    statusPaid: "Pagato",
     attended: "Partecipato",
     noShow: "Non presentato",
 
