@@ -11,7 +11,9 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!loading && user && profile) {
-      const needsOnboarding = !profile.onboarding_completed;
+      // Users who completed old onboarding (have phone+experience) are grandfathered in
+      const oldOnboardingDone = !!profile.phone && !!profile.trekking_experience && !!profile.activity_frequency;
+      const needsOnboarding = !profile.onboarding_completed && !oldOnboardingDone;
       if (needsOnboarding && location.pathname !== "/profile-setup") {
         navigate("/profile-setup", { replace: true });
       }
