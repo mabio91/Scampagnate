@@ -50,12 +50,24 @@ const Index = () => {
 
   const hasActiveFilters = searchQuery || dateFilter || priceFilter !== "all";
 
+  // Map user interests to category keywords for matching
+  const interestCategoryMap: Record<string, string[]> = {
+    "Trekking e camminate": ["trekking", "outdoor", "escursion"],
+    "Aperitivi e tramonti": ["aperitiv", "tramont", "social"],
+    "Cene e momenti conviviali": ["cena", "convivial", "social"],
+    "Eventi social": ["social", "evento"],
+    "Esperienze outdoor particolari": ["outdoor", "esperien", "special"],
+    "Sport e movimento": ["sport", "movimento", "fitness"],
+    "Eventi serali": ["seral", "nott", "sera"],
+    "Avventura e sfida": ["avventur", "sfida", "outdoor", "trekking"],
+  };
+
   const upcomingEvents = useMemo(() => {
     if (!events) return [];
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    return events
+    const filtered = events
       .filter((e) => new Date(e.date) >= now)
       .filter((e) => e.status !== "draft" && e.status !== "past" && e.status !== "cancelled")
       .filter((e) => {
@@ -76,7 +88,38 @@ const Index = () => {
         if (priceFilter === "free") return Number(e.price) === 0;
         return Number(e.price) > 0;
       });
-  }, [events, searchQuery, dateFilter, priceFilter]);
+
+    // Interest-based boosting: events matching user interests appear first (within same date)
+    const userInterests = profile?.interests as string[] | null;
+    if (!userInterests || userInterests.length === 0 || hasActiveFilters) return filtered;
+
+    const getRelevanceScore = (event: any) => {
+      let score = 0;
+      const catName = ((event as any).category?.name || "").toLowerCase();
+      const title = event.title.toLowerCase();
+      const desc = event.description.toLowerCase();
+      const searchText = `${catName} ${title} ${desc}`;
+
+      for (const interest of userInterests) {
+        const keywords = interestCategoryMap[interest] || [];
+        for (const kw of keywords) {
+          if (searchText.includes(kw)) {
+            score += 1;
+            break;
+          }
+        }
+      }
+      return score;
+    };
+
+    return [...filtered].sort((a, b) => {
+      const scoreA = getRelevanceScore(a);
+      const scoreB = getRelevanceScore(b);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      // Same relevance → sort by date
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+  }, [events, searchQuery, dateFilter, priceFilter, profile?.interests, hasActiveFilters]);
 
   const featured = useMemo(() => {
     if (!events) return null;
