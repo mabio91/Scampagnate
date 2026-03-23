@@ -11,8 +11,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!loading && user && profile) {
-      // If missing onboarding fields, force redirect to profile setup
-      const needsOnboarding = !profile.phone || !profile.trekking_experience || !profile.activity_frequency;
+      const needsOnboarding = !profile.onboarding_completed;
       if (needsOnboarding && location.pathname !== "/profile-setup") {
         navigate("/profile-setup", { replace: true });
       }

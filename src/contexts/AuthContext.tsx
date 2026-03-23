@@ -18,6 +18,11 @@ interface Profile {
   membership_registration_date?: string;
   membership_year?: number;
   account_status?: 'Active' | 'Suspended' | 'Banned';
+  self_level?: string;
+  has_car?: string;
+  interests?: string[];
+  onboarding_completed?: boolean;
+  event_motivation?: string;
 }
 
 type AppRole = "admin" | "organizer" | "user";
