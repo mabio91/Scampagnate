@@ -510,6 +510,47 @@ const EventDetail = () => {
           <p className="text-sm font-body text-muted-foreground leading-relaxed">{event.description}</p>
         </motion.div>
 
+        {/* Safety Warning for demanding events */}
+        {user && profile && event.difficulty && parseInt(event.difficulty) >= 3 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="py-3">
+            {(() => {
+              const diffLevel = parseInt(event.difficulty);
+              const selfLevel = profile.self_level;
+              const trekkingExp = (profile as any).trekking_experience;
+              const activityFreq = (profile as any).activity_frequency;
+              
+              // Determine if user's profile suggests they may be underprepared
+              const isUnderprepared = (() => {
+                if (diffLevel >= 4) {
+                  return selfLevel !== "advanced" || (trekkingExp !== "5_plus" && trekkingExp !== "5+") || (activityFreq !== "high" && activityFreq !== ">2/week");
+                }
+                if (diffLevel === 3) {
+                  return selfLevel === "beginner" || activityFreq === "low" || activityFreq === "rarely";
+                }
+                return false;
+              })();
+
+              if (!isUnderprepared) return null;
+
+              return (
+                <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-2.5">
+                  <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-body font-semibold text-foreground mb-0.5">
+                      {diffLevel >= 4 ? "Evento impegnativo" : "Evento di media difficoltà"}
+                    </p>
+                    <p className="text-xs font-body text-muted-foreground leading-relaxed">
+                      {diffLevel >= 4
+                        ? "Questo evento richiede esperienza avanzata e ottima preparazione fisica. Valuta il tuo livello prima di iscriverti."
+                        : "Questo evento richiede una preparazione fisica di base e un po' di esperienza. Controlla i dettagli prima di iscriverti."}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+          </motion.div>
+        )}
+
         {/* Gallery */}
         {event.gallery_images && event.gallery_images.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="py-4 border-b border-border">

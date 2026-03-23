@@ -165,7 +165,7 @@ export const useCheckEventAccessRules = (
   });
 };
 
-// Legacy difficulty-based check
+// Difficulty-based safety check using onboarding data
 async function checkDifficultyAccess(
   difficulty: string,
   userId: string | null,
@@ -176,23 +176,36 @@ async function checkDifficultyAccess(
     return { hasAccess: true, failedRules: [], requiresApproval: false, restrictionMessage: null };
   }
 
-  const checkProfileCriteria = () => {
-    const { trekking_experience, activity_frequency } = profile;
+  // Use onboarding fields for safety assessment
+  const selfLevel = profile.self_level; // beginner, intermediate, advanced
+  const trekkingExp = profile.trekking_experience; // 0_2, 3_5, 5_plus
+  const activityFreq = profile.activity_frequency; // low, medium, high
+  const experienceGrade = profile.experience_grade || 0;
+
+  const checkProfileSuitability = () => {
     if (diffLevel === 3) {
-      const hasActivity = activity_frequency === "1-2/week" || activity_frequency === ">2/week";
-      const hasTrekking = trekking_experience === "3-5" || trekking_experience === "5+";
-      return hasActivity && hasTrekking;
+      // Intermediate events: need at least intermediate level OR some experience
+      const levelOk = selfLevel === "intermediate" || selfLevel === "advanced";
+      const expOk = trekkingExp === "3_5" || trekkingExp === "5_plus" || trekkingExp === "5+";
+      const fitnessOk = activityFreq === "medium" || activityFreq === "high" || activityFreq === "1-2/week" || activityFreq === ">2/week";
+      return (levelOk || expOk) && fitnessOk;
     }
     if (diffLevel >= 4) {
-      return activity_frequency === ">2/week" && trekking_experience === "5+";
+      // Advanced events: need advanced level AND high experience
+      const levelOk = selfLevel === "advanced";
+      const expOk = trekkingExp === "5_plus" || trekkingExp === "5+";
+      const fitnessOk = activityFreq === "high" || activityFreq === ">2/week";
+      return levelOk && expOk && fitnessOk;
     }
     return false;
   };
 
-  if (checkProfileCriteria()) {
+  // Also check experience grade (calculated during onboarding)
+  if (experienceGrade >= diffLevel * 2 || checkProfileSuitability()) {
     return { hasAccess: true, failedRules: [], requiresApproval: false, restrictionMessage: null };
   }
 
+  // Fallback: check actual event history
   const { data: pastEvents } = await supabase
     .from("event_registrations")
     .select("*, events(difficulty)")
@@ -217,10 +230,14 @@ async function checkDifficultyAccess(
     hasAccess: false,
     failedRules: [{
       rule: { type: "min_trekking_events", value: 3 },
-      reason: "Non hai i requisiti minimi di esperienza per questo evento."
+      reason: diffLevel >= 4
+        ? "Questo evento è riservato a escursionisti esperti con livello avanzato e buona preparazione fisica."
+        : "Per questo evento è consigliata esperienza intermedia e attività fisica regolare."
     }],
     requiresApproval: false,
-    restrictionMessage: "Non hai i requisiti minimi di esperienza per questo evento.",
+    restrictionMessage: diffLevel >= 4
+      ? "Questo evento è riservato a escursionisti esperti con livello avanzato e buona preparazione fisica."
+      : "Per questo evento è consigliata esperienza intermedia e attività fisica regolare.",
   };
 }
 
