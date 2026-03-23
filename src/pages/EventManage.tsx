@@ -526,6 +526,33 @@ const EventManage = () => {
                               </span>
                             )}
                           </p>
+                          {/* Suitability indicators for organizers */}
+                          {!isManual && (reg.profiles as any)?.self_level && (
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-body font-semibold ${
+                                (reg.profiles as any).self_level === "advanced" ? "bg-success/10 text-success" :
+                                (reg.profiles as any).self_level === "intermediate" ? "bg-primary/10 text-primary" :
+                                "bg-warning/10 text-warning"
+                              }`}>
+                                {(reg.profiles as any).self_level === "advanced" ? "💪" : (reg.profiles as any).self_level === "intermediate" ? "🥾" : "🌱"} {(reg.profiles as any).self_level}
+                              </span>
+                              {(reg.profiles as any).trekking_experience && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
+                                  🏔️ {(reg.profiles as any).trekking_experience === "5_plus" || (reg.profiles as any).trekking_experience === "5+" ? "5+" : (reg.profiles as any).trekking_experience} trek
+                                </span>
+                              )}
+                              {(reg.profiles as any).activity_frequency && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
+                                  {(reg.profiles as any).activity_frequency === "high" || (reg.profiles as any).activity_frequency === ">2/week" ? "⚡" : "🙂"} {(reg.profiles as any).activity_frequency}
+                                </span>
+                              )}
+                              {(reg.profiles as any).experience_grade != null && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary/10 text-[9px] font-body text-secondary font-semibold">
+                                  Grade: {(reg.profiles as any).experience_grade}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-1">
                           <Badge variant={reg.checked_in ? "default" : "outline"} className="text-[10px]">

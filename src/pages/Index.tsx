@@ -31,6 +31,7 @@ const Index = () => {
   const { searchOpen } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
+  const { profile } = useAuth();
 
   useEffect(() => {
     if (searchOpen) {
