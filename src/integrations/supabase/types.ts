@@ -748,17 +748,22 @@ export type Database = {
           bio: string | null
           created_at: string
           email: string | null
+          event_motivation: string | null
           experience_grade: number | null
           first_name: string
+          has_car: string | null
           id: string
+          interests: string[] | null
           is_founding_member: boolean
           last_name: string
           membership_id: number | null
           membership_registration_date: string | null
           membership_status: string | null
           membership_year: number | null
+          onboarding_completed: boolean | null
           phone: string
           preferences: Json | null
+          self_level: string | null
           total_points: number
           trekking_experience: string | null
           updated_at: string
@@ -770,17 +775,22 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string | null
+          event_motivation?: string | null
           experience_grade?: number | null
           first_name?: string
+          has_car?: string | null
           id: string
+          interests?: string[] | null
           is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
           membership_registration_date?: string | null
           membership_status?: string | null
           membership_year?: number | null
+          onboarding_completed?: boolean | null
           phone?: string
           preferences?: Json | null
+          self_level?: string | null
           total_points?: number
           trekking_experience?: string | null
           updated_at?: string
@@ -792,17 +802,22 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string | null
+          event_motivation?: string | null
           experience_grade?: number | null
           first_name?: string
+          has_car?: string | null
           id?: string
+          interests?: string[] | null
           is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
           membership_registration_date?: string | null
           membership_status?: string | null
           membership_year?: number | null
+          onboarding_completed?: boolean | null
           phone?: string
           preferences?: Json | null
+          self_level?: string | null
           total_points?: number
           trekking_experience?: string | null
           updated_at?: string
