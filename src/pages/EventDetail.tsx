@@ -1435,7 +1435,7 @@ const EventDetail = () => {
               ) : (event.payment_type === "paid" || event.payment_type === "deposit") ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  {t("proceedToPayment") || "Procedi al pagamento"}
+                  {t("payNow")}
                 </>
               ) : event.status === "full" ? (
                 t("joinWaitlist")
