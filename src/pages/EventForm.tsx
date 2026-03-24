@@ -19,6 +19,10 @@ import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain, Route,
   Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield, Car
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
