@@ -1052,37 +1052,80 @@ const EventDetail = () => {
             )}
 
             {/* Additional Registration Fields */}
-            {event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).length > 0 && (
-              <div className="space-y-3">
-                {(event.additional_fields as any[]).map((field: any, idx: number) => (
-                  <div key={idx}>
-                    <Label className="font-body text-sm font-semibold">
-                      {field.label} {field.required && <span className="text-destructive">*</span>}
-                    </Label>
-                    {field.type === "select" && field.options ? (
-                      <Select
-                        value={additionalResponses[field.label] || ""}
-                        onValueChange={(v) => setAdditionalResponses(prev => ({ ...prev, [field.label]: v }))}
-                      >
-                        <SelectTrigger className="mt-1"><SelectValue placeholder={`Select ${field.label.toLowerCase()}`} /></SelectTrigger>
-                        <SelectContent>
-                          {field.options.split(",").map((opt: string) => (
-                            <SelectItem key={opt.trim()} value={opt.trim()}>{opt.trim()}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        value={additionalResponses[field.label] || ""}
-                        onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
-                        placeholder={`Enter ${field.label.toLowerCase()}`}
-                        className="mt-1"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            {(() => {
+              const af = event.additional_fields as any;
+              const fields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []);
+              const askCar = af && af.ask_car_availability === true;
+              return (
+                <>
+                  {fields.length > 0 && (
+                    <div className="space-y-3">
+                      {fields.map((field: any, idx: number) => (
+                        <div key={idx}>
+                          <Label className="font-body text-sm font-semibold">
+                            {field.label} {field.required && <span className="text-destructive">*</span>}
+                          </Label>
+                          {field.type === "select" && field.options ? (
+                            <Select
+                              value={additionalResponses[field.label] || ""}
+                              onValueChange={(v) => setAdditionalResponses(prev => ({ ...prev, [field.label]: v }))}
+                            >
+                              <SelectTrigger className="mt-1"><SelectValue placeholder={`Select ${field.label.toLowerCase()}`} /></SelectTrigger>
+                              <SelectContent>
+                                {field.options.split(",").map((opt: string) => (
+                                  <SelectItem key={opt.trim()} value={opt.trim()}>{opt.trim()}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              value={additionalResponses[field.label] || ""}
+                              onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
+                              placeholder={`Enter ${field.label.toLowerCase()}`}
+                              className="mt-1"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Car Availability Question */}
+                  {askCar && (
+                    <div>
+                      <Label className="font-body text-sm font-semibold flex items-center gap-2">
+                        <Car className="h-4 w-4 text-primary" />
+                        Saresti disposto a prendere la macchina?
+                      </Label>
+                      <div className="grid gap-2 mt-2">
+                        {[
+                          { value: "yes", label: "Sì", icon: "✅" },
+                          { value: "prefer_not", label: "Preferirei di no", icon: "🤷" },
+                          { value: "no_car", label: "Non sono automunito", icon: "🚶" },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setCarAvailability(carAvailability === opt.value ? "" : opt.value)}
+                            className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                              carAvailability === opt.value
+                                ? "bg-primary/10 border-2 border-primary ring-1 ring-primary/20"
+                                : "bg-muted/50 border-2 border-transparent hover:bg-muted"
+                            }`}
+                          >
+                            <span className="text-base">{opt.icon}</span>
+                            <span className="text-sm font-body font-semibold text-foreground">{opt.label}</span>
+                            {carAvailability === opt.value && (
+                              <span className="ml-auto text-primary">✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {/* Mandatory Equipment Confirmation */}
             {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && (
