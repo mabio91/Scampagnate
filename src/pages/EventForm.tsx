@@ -114,7 +114,9 @@ const EventForm = () => {
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
   const [validationPopupOpen, setValidationPopupOpen] = useState(false);
   const [validationPopupFields, setValidationPopupFields] = useState<string[]>([]);
-
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryUploadProgress, setGalleryUploadProgress] = useState(0);
+  const [galleryUploadTotal, setGalleryUploadTotal] = useState(0);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -672,7 +674,11 @@ const EventForm = () => {
                         
                         if (filesToUpload.length === 0) return;
 
-                        // Upload all files in parallel and collect results
+                        setGalleryUploading(true);
+                        setGalleryUploadProgress(0);
+                        setGalleryUploadTotal(filesToUpload.length);
+
+                        let completed = 0;
                         const uploadPromises = filesToUpload.map(async (file) => {
                           const fileExt = file.name.split('.').pop();
                           const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -681,6 +687,9 @@ const EventForm = () => {
                           const { data, error } = await supabase.storage
                             .from('event-images')
                             .upload(filePath, file);
+
+                          completed++;
+                          setGalleryUploadProgress(completed);
 
                           if (error) {
                             toast({ title: "Upload Error", description: error.message, variant: "destructive" });
@@ -706,15 +715,30 @@ const EventForm = () => {
                           toast({ title: `${successfulUrls.length} immagini caricate`, description: "Gallery aggiornata con successo" });
                         }
 
-                        // Reset input so same files can be re-selected
+                        setGalleryUploading(false);
                         e.target.value = '';
                       }}
                     />
-                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <Plus className="h-6 w-6 text-muted-foreground mb-2" />
-                      <p className="text-xs font-body font-semibold text-foreground">Add Gallery Images</p>
-                      <p className="text-[10px] text-muted-foreground font-body">PNG, JPG up to 5MB</p>
-                    </div>
+                    {galleryUploading ? (
+                      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-primary/50 rounded-xl bg-primary/5">
+                        <Loader2 className="h-6 w-6 text-primary animate-spin mb-2" />
+                        <p className="text-xs font-body font-semibold text-foreground">
+                          Caricamento {galleryUploadProgress}/{galleryUploadTotal}...
+                        </p>
+                        <div className="w-full mt-2 bg-muted rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-primary h-full rounded-full transition-all duration-300"
+                            style={{ width: `${galleryUploadTotal > 0 ? (galleryUploadProgress / galleryUploadTotal) * 100 : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                        <Plus className="h-6 w-6 text-muted-foreground mb-2" />
+                        <p className="text-xs font-body font-semibold text-foreground">Add Gallery Images</p>
+                        <p className="text-[10px] text-muted-foreground font-body">PNG, JPG up to 5MB</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
