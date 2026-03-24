@@ -282,6 +282,8 @@ export const useCheckEventAccessRules = (
 function getEffectiveEnforcement(rule: AccessRule): "hard" | "soft" {
   // manual_approval is always its own category
   if (rule.type === "manual_approval") return "hard";
+  // interests are always soft
+  if (rule.type === "interests") return "soft";
   // If explicitly set, use it
   if (rule.enforcement) return rule.enforcement;
   // Default: hard for all rule types
