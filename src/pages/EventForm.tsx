@@ -512,7 +512,8 @@ const EventForm = () => {
           <div className="space-y-3">
             <div>
               <Label htmlFor="title">Title *</Label>
-              <Input id="title" value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Event title" />
+              <Input id="title" value={form.title} onChange={(e) => { updateForm("title", e.target.value); setValidationErrors(prev => ({ ...prev, title: false })); }} placeholder="Event title" className={validationErrors.title ? "border-destructive ring-destructive/20 ring-2" : ""} />
+              {validationErrors.title && <p className="text-xs text-destructive mt-1">Title is required</p>}
             </div>
             <div>
               <Label htmlFor="description">Description</Label>
