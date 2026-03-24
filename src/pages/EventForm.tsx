@@ -1098,7 +1098,11 @@ const EventForm = () => {
                 </button>
               </div>
               <Input placeholder="Name" value={point.name} onChange={(e) => updateMeetingPoint(index, "name", e.target.value)} />
-              <Input placeholder="Location/Address" value={point.location} onChange={(e) => updateMeetingPoint(index, "location", e.target.value)} />
+              <LocationAutocomplete
+                value={point.location}
+                onChange={(val) => updateMeetingPoint(index, "location", val)}
+                placeholder="Location/Address"
+              />
               <div className="grid grid-cols-2 gap-2">
                 <Input type="time" value={point.time} onChange={(e) => updateMeetingPoint(index, "time", e.target.value)} />
                 <Input placeholder="Notes" value={point.notes} onChange={(e) => updateMeetingPoint(index, "notes", e.target.value)} />
