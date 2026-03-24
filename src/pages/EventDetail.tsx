@@ -499,13 +499,7 @@ const EventDetail = () => {
     if (!event.cancellation_policy) return null;
     const { policyType } = parseCancellationPolicy(event.cancellation_policy);
     if (!policyType) return null;
-    const labels: Record<string, string> = {
-      flexible: "Flessibile",
-      moderate: "Moderata",
-      strict: "Rigida",
-      custom: "Personalizzata",
-    };
-    return labels[policyType] || null;
+    return CANCELLATION_POLICIES[policyType]?.labelIt || null;
   };
 
   // Get what's included bullets

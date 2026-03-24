@@ -304,7 +304,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
                 const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
                 if (!policyType) return null;
                 const pol = CANCELLATION_POLICIES[policyType];
-                const label = policyType === "custom" ? customText || event.cancellation_policy : `${pol.label} — ${pol.description.split(".")[0]}.`;
+                const label = `${pol.labelIt} — ${pol.descriptionIt.split(".")[0]}.`;
                 return <span className="block mt-2 text-xs font-semibold text-muted-foreground italic">{label}</span>;
               })()}
             </DialogDescription>
