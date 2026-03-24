@@ -1462,42 +1462,39 @@ const EventDetail = () => {
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">{t("accessRequirements")}</DialogTitle>
-            <DialogDescription className="font-body text-sm mt-2 text-foreground">
-              {accessData?.restrictionMessage || t("accessWarningDefault")}
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {accessData?.failedRules && accessData.failedRules.length > 0 && (
-              <div className="p-4 rounded-xl bg-destructive/10 space-y-2 border border-destructive/30">
-                <p className="text-xs font-body font-bold text-destructive flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5" /> Requisiti obbligatori non soddisfatti
+              <div className="p-4 rounded-xl bg-destructive/10 space-y-3 border border-destructive/30">
+                <p className="text-sm font-body font-bold text-destructive flex items-center gap-1.5">
+                  <Lock className="h-4 w-4" /> Non soddisfi i requisiti minimi per partecipare a questo evento.
                 </p>
-                <ul className="text-xs font-body text-muted-foreground space-y-1.5 ml-4 list-disc">
+                <ul className="text-xs font-body text-foreground space-y-2 ml-1">
                   {accessData.failedRules.map((fr: any, idx: number) => (
-                    <li key={idx}>{fr.reason}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <ShieldAlert className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+                      <span>{fr.reason}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {accessData?.softWarnings && accessData.softWarnings.length > 0 && (
-              <div className="p-4 rounded-xl bg-warning/10 space-y-2 border border-warning/30">
-                <p className="text-xs font-body font-bold text-warning flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" /> Avvisi (non bloccanti)
+              <div className="p-4 rounded-xl bg-warning/10 space-y-3 border border-warning/30">
+                <p className="text-sm font-body font-bold text-warning flex items-center gap-1.5">
+                  <AlertCircle className="h-4 w-4" /> Questo evento potrebbe non essere perfettamente in linea con il tuo profilo.
                 </p>
-                <ul className="text-xs font-body text-muted-foreground space-y-1.5 ml-4 list-disc">
+                <ul className="text-xs font-body text-foreground space-y-2 ml-1">
                   {accessData.softWarnings.map((sw: any, idx: number) => (
-                    <li key={idx}>{sw.reason}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <AlertCircle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+                      <span>{sw.reason}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
-
-            <p className="text-sm font-body text-muted-foreground leading-relaxed">
-              {accessData?.failedRules && accessData.failedRules.length > 0
-                ? t("accessWarningText")
-                : "Puoi comunque registrarti, ma tieni conto degli avvisi sopra."}
-            </p>
 
             <div className="flex flex-col gap-2 pt-2">
               {/* If only soft warnings, allow direct registration */}
