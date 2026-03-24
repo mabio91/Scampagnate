@@ -4,25 +4,79 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 
 export interface AccessRule {
-  type: "min_trekking_events" | "min_activities" | "require_badge" | "require_membership" | "manual_approval" | "min_attended_events";
+  type:
+    | "min_trekking_events"
+    | "min_activities"
+    | "require_badge"
+    | "require_membership"
+    | "manual_approval"
+    | "min_attended_events"
+    | "min_level"
+    | "min_experience"
+    | "min_activity_frequency";
   value?: number | string;
   badge_id?: string;
   badge_name?: string;
   message?: string;
+  enforcement?: "hard" | "soft"; // hard = blocking, soft = advisory only
 }
 
 export interface AccessRulesConfig {
   rules: AccessRule[];
   restriction_message?: string;
-  exclusivity_label?: string; // e.g. "Exclusive Event", "Members Only", "Community Priority"
+  exclusivity_label?: string;
 }
 
 export interface AccessCheckResult {
   hasAccess: boolean;
   failedRules: { rule: AccessRule; reason: string }[];
+  softWarnings: { rule: AccessRule; reason: string }[];
   requiresApproval: boolean;
   restrictionMessage: string | null;
 }
+
+// Self-level numeric mapping
+const LEVEL_MAP: Record<string, number> = {
+  beginner: 1,
+  intermediate: 2,
+  advanced: 3,
+};
+
+// Experience numeric mapping
+const EXPERIENCE_MAP: Record<string, number> = {
+  "0_2": 1,
+  "3_5": 2,
+  "5_plus": 3,
+  "5+": 3,
+};
+
+// Activity frequency numeric mapping
+const FREQUENCY_MAP: Record<string, number> = {
+  low: 1,
+  "0-1/week": 1,
+  medium: 2,
+  "1-2/week": 2,
+  high: 3,
+  ">2/week": 3,
+};
+
+const LEVEL_LABELS: Record<string, string> = {
+  "1": "Principiante",
+  "2": "Intermedio",
+  "3": "Avanzato",
+};
+
+const EXPERIENCE_LABELS: Record<string, string> = {
+  "1": "0-2 escursioni",
+  "2": "3-5 escursioni",
+  "3": "5+ escursioni",
+};
+
+const FREQUENCY_LABELS: Record<string, string> = {
+  "1": "Bassa (0-1/settimana)",
+  "2": "Media (1-2/settimana)",
+  "3": "Alta (>2/settimana)",
+};
 
 export const useCheckEventAccessRules = (
   accessRules: AccessRulesConfig | null | undefined,
@@ -39,26 +93,33 @@ export const useCheckEventAccessRules = (
         if (difficulty) {
           return checkDifficultyAccess(difficulty, user?.id || null, profile);
         }
-        return { hasAccess: true, failedRules: [], requiresApproval: false, restrictionMessage: null };
+        return { hasAccess: true, failedRules: [], softWarnings: [], requiresApproval: false, restrictionMessage: null };
       }
 
       if (!user || !profile) {
         return {
           hasAccess: false,
-          failedRules: accessRules.rules.map(r => ({ rule: r, reason: "Devi effettuare il login" })),
+          failedRules: accessRules.rules
+            .filter(r => getEffectiveEnforcement(r) === "hard")
+            .map(r => ({ rule: r, reason: "Devi effettuare il login" })),
+          softWarnings: [],
           requiresApproval: false,
           restrictionMessage: accessRules.restriction_message || "Devi effettuare il login per verificare i requisiti di accesso.",
         };
       }
 
       const failedRules: { rule: AccessRule; reason: string }[] = [];
+      const softWarnings: { rule: AccessRule; reason: string }[] = [];
       let requiresApproval = false;
 
       for (const rule of accessRules.rules) {
+        const enforcement = getEffectiveEnforcement(rule);
+        const target = enforcement === "soft" ? softWarnings : failedRules;
+
         switch (rule.type) {
           case "require_membership": {
             if (!isMembershipActiveFn(profile)) {
-              failedRules.push({
+              target.push({
                 rule,
                 reason: rule.message || "Questa esperienza è riservata ai membri attivi della community.",
               });
@@ -81,7 +142,7 @@ export const useCheckEventAccessRules = (
             }).length;
 
             if (trekkingCount < minCount) {
-              failedRules.push({
+              target.push({
                 rule,
                 reason: rule.message || `Questo evento è riservato a chi ha già partecipato ad almeno ${minCount} attività di trekking.`,
               });
@@ -99,7 +160,7 @@ export const useCheckEventAccessRules = (
               .in("status", ["registered", "paid"]);
 
             if ((count || 0) < minCount) {
-              failedRules.push({
+              target.push({
                 rule,
                 reason: rule.message || `Questo evento è riservato a chi ha già partecipato ad almeno ${minCount} attività.`,
               });
@@ -118,7 +179,7 @@ export const useCheckEventAccessRules = (
                 .maybeSingle();
 
               if (!userBadge) {
-                failedRules.push({
+                target.push({
                   rule,
                   reason: rule.message || `Per accedere a questo evento è necessario il badge "${rule.badge_name || "richiesto"}".`,
                 });
@@ -133,7 +194,6 @@ export const useCheckEventAccessRules = (
           }
 
           case "min_activities": {
-            // Alias for min_attended_events
             const minCount = Number(rule.value) || 1;
             const { count } = await supabase
               .from("event_registrations")
@@ -143,9 +203,45 @@ export const useCheckEventAccessRules = (
               .in("status", ["registered", "paid"]);
 
             if ((count || 0) < minCount) {
-              failedRules.push({
+              target.push({
                 rule,
                 reason: rule.message || `L'accesso a questo evento è limitato ai partecipanti con esperienza precedente (minimo ${minCount} attività).`,
+              });
+            }
+            break;
+          }
+
+          case "min_level": {
+            const requiredLevel = Number(rule.value) || 1;
+            const userLevel = LEVEL_MAP[profile.self_level || ""] || 0;
+            if (userLevel < requiredLevel) {
+              target.push({
+                rule,
+                reason: rule.message || `Livello minimo richiesto: ${LEVEL_LABELS[String(requiredLevel)] || requiredLevel}. Il tuo livello attuale non è sufficiente.`,
+              });
+            }
+            break;
+          }
+
+          case "min_experience": {
+            const requiredExp = Number(rule.value) || 1;
+            const userExp = EXPERIENCE_MAP[profile.trekking_experience || ""] || 0;
+            if (userExp < requiredExp) {
+              target.push({
+                rule,
+                reason: rule.message || `Esperienza minima richiesta: ${EXPERIENCE_LABELS[String(requiredExp)] || requiredExp}. La tua esperienza attuale non è sufficiente.`,
+              });
+            }
+            break;
+          }
+
+          case "min_activity_frequency": {
+            const requiredFreq = Number(rule.value) || 1;
+            const userFreq = FREQUENCY_MAP[profile.activity_frequency || ""] || 0;
+            if (userFreq < requiredFreq) {
+              target.push({
+                rule,
+                reason: rule.message || `Frequenza di attività minima richiesta: ${FREQUENCY_LABELS[String(requiredFreq)] || requiredFreq}. La tua frequenza attuale non è sufficiente.`,
               });
             }
             break;
@@ -158,12 +254,21 @@ export const useCheckEventAccessRules = (
         ? null
         : accessRules.restriction_message || failedRules[0]?.reason || "Non hai i requisiti per accedere a questo evento.";
 
-      return { hasAccess, failedRules, requiresApproval, restrictionMessage };
+      return { hasAccess, failedRules, softWarnings, requiresApproval, restrictionMessage };
     },
     enabled: !!(accessRules?.rules?.length || difficulty),
     staleTime: 60_000,
   });
 };
+
+function getEffectiveEnforcement(rule: AccessRule): "hard" | "soft" {
+  // manual_approval is always its own category
+  if (rule.type === "manual_approval") return "hard";
+  // If explicitly set, use it
+  if (rule.enforcement) return rule.enforcement;
+  // Default: hard for all rule types
+  return "hard";
+}
 
 // Difficulty-based safety check using onboarding data
 async function checkDifficultyAccess(
@@ -173,25 +278,22 @@ async function checkDifficultyAccess(
 ): Promise<AccessCheckResult> {
   const diffLevel = parseInt(difficulty);
   if (isNaN(diffLevel) || diffLevel < 3 || !userId || !profile) {
-    return { hasAccess: true, failedRules: [], requiresApproval: false, restrictionMessage: null };
+    return { hasAccess: true, failedRules: [], softWarnings: [], requiresApproval: false, restrictionMessage: null };
   }
 
-  // Use onboarding fields for safety assessment
-  const selfLevel = profile.self_level; // beginner, intermediate, advanced
-  const trekkingExp = profile.trekking_experience; // 0_2, 3_5, 5_plus
-  const activityFreq = profile.activity_frequency; // low, medium, high
+  const selfLevel = profile.self_level;
+  const trekkingExp = profile.trekking_experience;
+  const activityFreq = profile.activity_frequency;
   const experienceGrade = profile.experience_grade || 0;
 
   const checkProfileSuitability = () => {
     if (diffLevel === 3) {
-      // Intermediate events: need at least intermediate level OR some experience
       const levelOk = selfLevel === "intermediate" || selfLevel === "advanced";
       const expOk = trekkingExp === "3_5" || trekkingExp === "5_plus" || trekkingExp === "5+";
       const fitnessOk = activityFreq === "medium" || activityFreq === "high" || activityFreq === "1-2/week" || activityFreq === ">2/week";
       return (levelOk || expOk) && fitnessOk;
     }
     if (diffLevel >= 4) {
-      // Advanced events: need advanced level AND high experience
       const levelOk = selfLevel === "advanced";
       const expOk = trekkingExp === "5_plus" || trekkingExp === "5+";
       const fitnessOk = activityFreq === "high" || activityFreq === ">2/week";
@@ -200,12 +302,10 @@ async function checkDifficultyAccess(
     return false;
   };
 
-  // Also check experience grade (calculated during onboarding)
   if (experienceGrade >= diffLevel * 2 || checkProfileSuitability()) {
-    return { hasAccess: true, failedRules: [], requiresApproval: false, restrictionMessage: null };
+    return { hasAccess: true, failedRules: [], softWarnings: [], requiresApproval: false, restrictionMessage: null };
   }
 
-  // Fallback: check actual event history
   const { data: pastEvents } = await supabase
     .from("event_registrations")
     .select("*, events(difficulty)")
@@ -223,21 +323,21 @@ async function checkDifficultyAccess(
     return !isNaN(d) && d >= 3;
   }).length;
 
-  if (diffLevel === 3 && easyCount >= 3) return { hasAccess: true, failedRules: [], requiresApproval: false, restrictionMessage: null };
-  if (diffLevel >= 4 && interCount >= 3) return { hasAccess: true, failedRules: [], requiresApproval: false, restrictionMessage: null };
+  if (diffLevel === 3 && easyCount >= 3) return { hasAccess: true, failedRules: [], softWarnings: [], requiresApproval: false, restrictionMessage: null };
+  if (diffLevel >= 4 && interCount >= 3) return { hasAccess: true, failedRules: [], softWarnings: [], requiresApproval: false, restrictionMessage: null };
 
+  // Difficulty-based checks are soft warnings (advisory), not hard blocks
   return {
-    hasAccess: false,
-    failedRules: [{
-      rule: { type: "min_trekking_events", value: 3 },
+    hasAccess: true,
+    failedRules: [],
+    softWarnings: [{
+      rule: { type: "min_trekking_events", value: 3, enforcement: "soft" },
       reason: diffLevel >= 4
         ? "Questo evento è riservato a escursionisti esperti con livello avanzato e buona preparazione fisica."
         : "Per questo evento è consigliata esperienza intermedia e attività fisica regolare."
     }],
     requiresApproval: false,
-    restrictionMessage: diffLevel >= 4
-      ? "Questo evento è riservato a escursionisti esperti con livello avanzato e buona preparazione fisica."
-      : "Per questo evento è consigliata esperienza intermedia e attività fisica regolare.",
+    restrictionMessage: null,
   };
 }
 
@@ -260,6 +360,9 @@ export const getExclusivityIndicators = (accessRules: AccessRulesConfig | null |
     indicators.push({ label: "Exclusive Event", variant: "exclusive" });
   }
   if (ruleTypes.includes("min_trekking_events") || ruleTypes.includes("min_attended_events") || ruleTypes.includes("min_activities")) {
+    indicators.push({ label: "Experience Required", variant: "restricted" });
+  }
+  if (ruleTypes.includes("min_level") || ruleTypes.includes("min_experience") || ruleTypes.includes("min_activity_frequency")) {
     indicators.push({ label: "Experience Required", variant: "restricted" });
   }
   if (ruleTypes.includes("manual_approval")) {
