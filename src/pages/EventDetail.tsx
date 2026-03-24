@@ -538,40 +538,88 @@ const EventDetail = () => {
         </div>
 
       <div className="max-w-lg mx-auto px-4">
-        {/* Quick Info */}
+        {/* Date & Time */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-4 border-b border-border">
-          <div className="flex flex-wrap gap-4 mb-3">
-            <div className="flex items-center gap-2 text-sm font-body text-foreground">
-              <CalendarDays className="h-4 w-4 text-secondary" />
-              {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { weekday: "long", day: "numeric", month: "long" })}
-              <span className="text-muted-foreground">· {event.time?.slice(0, 5)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm font-body text-foreground">
-              <MapPin className="h-4 w-4 text-secondary" />
-              {event.location}
+          <div className="flex items-start gap-3 mb-3">
+            <CalendarDays className="h-5 w-5 text-secondary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-body font-semibold text-foreground capitalize">
+                {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              </p>
+              <p className="text-xs font-body text-muted-foreground">{event.time?.slice(0, 5)} GMT+1</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <DirectionsButton location={event.location} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors">
-                  <CalendarPlus className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{t("addToCalendar")}</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuItem onClick={() => handleAddToCalendar("google")} className="font-body cursor-pointer">
-                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" /> Google Calendar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAddToCalendar("apple")} className="font-body cursor-pointer">
-                  <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" /> Apple Calendar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAddToCalendar("outlook")} className="font-body cursor-pointer">
-                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" /> Outlook Calendar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex items-start gap-3">
+            <MapPin className="h-5 w-5 text-secondary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-body font-semibold text-foreground">{event.location.split(',')[0]}</p>
+              <p className="text-xs font-body text-muted-foreground truncate">{event.location}</p>
+            </div>
+            <button
+              onClick={() => openDirections(event.location, "google")}
+              className="shrink-0 p-2 rounded-full hover:bg-muted transition-colors"
+            >
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Organizer + Participants Row (WeMeet style) */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="py-4 border-b border-border">
+          <div className="flex items-start justify-between gap-4">
+            {/* Organizer */}
+            <div className="flex-shrink-0">
+              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("organizer")}</p>
+              <Link to={`/organizer/${event.organizer_id}`} className="flex items-center gap-2 group">
+                {organizerProfile?.avatar_url ? (
+                  <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold text-sm">
+                    {event.organizer_name?.[0] || "O"}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{organizerProfile?.first_name || event.organizer_name}</p>
+                  <p className="text-xs font-body text-primary">Contatta</p>
+                </div>
+              </Link>
+            </div>
+
+            {/* Participants preview */}
+            <div className="flex-shrink-0">
+              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
+              <button
+                onClick={() => canViewParticipants && setShowAllParticipants(true)}
+                className="flex items-center"
+              >
+                {canViewParticipants && participants && participants.length > 0 ? (
+                  <div className="flex items-center">
+                    <div className="flex -space-x-2.5">
+                      {participants.slice(0, 3).map((p: any, idx: number) => (
+                        <div key={p.id} className="relative" style={{ zIndex: 3 - idx }}>
+                          {p.profiles?.avatar_url ? (
+                            <img src={p.profiles.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-background" />
+                          ) : (
+                            <span className="w-9 h-9 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-semibold text-primary">
+                              {p.profiles?.first_name?.[0] || "?"}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {participants.length > 3 && (
+                      <span className="w-9 h-9 -ml-2.5 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-body font-bold text-muted-foreground z-0">
+                        +{participants.length - 3}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-xs font-body text-muted-foreground">
+                    {event.spots_taken > 0 ? `${event.spots_taken} iscritti` : "Nessun iscritto"}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </motion.div>
 
