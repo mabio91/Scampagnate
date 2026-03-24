@@ -961,71 +961,8 @@ const EventDetail = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Payment & Pricing Info */}
+        {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="py-4">
-          {event.payment_type !== "free" && (
-            <div className="p-4 rounded-xl bg-gold/10 border border-gold/20 mb-4 space-y-2">
-              <p className="text-sm font-body font-bold text-foreground">
-                {(event.payment_type as string) === "paid" && t("fullPaymentOnline")}
-                {(event.payment_type as string) === "location" && t("paymentOnLocationTitle")}
-                {(event.payment_type as string) === "deposit" && t("splitPayment")}
-              </p>
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm font-body">
-                  <span className="text-muted-foreground">{t("totalPrice")}</span>
-                  <span className="font-semibold text-foreground">€{Number(event.price).toFixed(2)}</span>
-                </div>
-                {event.payment_type === "deposit" && event.deposit && (
-                  <>
-                    <div className="flex justify-between text-sm font-body">
-                      <span className="text-muted-foreground">{t("depositOnlineStripe")}</span>
-                      <span className="font-semibold text-foreground">€{Number(event.deposit).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-body pt-1 border-t border-gold/20">
-                      <span className="text-muted-foreground">{t("remainingBalance")}</span>
-                      <span className="font-semibold text-foreground">€{(Number(event.price) - Number(event.deposit)).toFixed(2)}</span>
-                    </div>
-                    <p className="text-xs font-body text-muted-foreground mt-1">
-                      {t("remainingBalanceText")}
-                    </p>
-                  </>
-                )}
-                {(event.payment_type as string) === "paid" && (
-                  <p className="text-xs font-body text-muted-foreground">
-                    {t("fullAmountStripe")}
-                  </p>
-                )}
-                {(event.payment_type as string) === "location" && (
-                  <p className="text-xs font-body text-muted-foreground">
-                    {t("paymentCollectedOnLocation")}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-          {event.cancellation_policy && (() => {
-            const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
-            if (!policyType) return null;
-            const policy = CANCELLATION_POLICIES[policyType];
-            const PolicyIcon = policy.icon;
-            return (
-              <div className={`p-4 rounded-xl mb-4 border ${policy.bgClass} ${policy.borderClass}`}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <PolicyIcon className={`h-4 w-4 ${policy.colorClass}`} />
-                  <p className={`text-sm font-body font-bold ${policy.colorClass}`}>{policy.label} {t("cancellationPolicy")}</p>
-                </div>
-                <p className="text-xs font-body text-muted-foreground leading-relaxed">
-                  {policyType === "custom" ? customText : policy.description}
-                </p>
-                {event.payment_type === "deposit" && (
-                  <p className="text-[11px] font-body text-muted-foreground mt-1.5 italic border-t border-current/10 pt-1.5">
-                    {t("depositRefundPolicy")}
-                  </p>
-                )}
-              </div>
-            );
-          })()}
-
           {/* Discount code for Pay Now state */}
           {needsPayment && user && (
             <div className="mb-4">
