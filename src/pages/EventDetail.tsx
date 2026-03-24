@@ -64,7 +64,6 @@ const EventDetail = () => {
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
   const [membershipLoading, setMembershipLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
   const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
@@ -590,7 +589,7 @@ const EventDetail = () => {
             <div className="flex-shrink-0">
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
               <button
-                onClick={() => canViewParticipants && setShowAllParticipants(true)}
+                onClick={() => canViewParticipants && navigate(`/event/${event.id}/participants`)}
                 className="flex items-center"
               >
                 {canViewParticipants && participants && participants.length > 0 ? (
@@ -902,64 +901,6 @@ const EventDetail = () => {
           </motion.div>
         )}
 
-        {/* Participants Full-Page Dialog (WeMeet style) */}
-        <Dialog open={showAllParticipants} onOpenChange={setShowAllParticipants}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
-            <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
-              <button onClick={() => setShowAllParticipants(false)} className="p-1">
-                <ArrowLeft className="h-5 w-5 text-foreground" />
-              </button>
-              <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
-            </div>
-            <div className="px-4 py-4">
-              <div className="mb-6">
-                <p className="text-sm font-body font-semibold text-muted-foreground mb-3">{t("organizer")}</p>
-                <Link
-                  to={`/organizer/${event.organizer_id}`}
-                  onClick={() => setShowAllParticipants(false)}
-                  className="flex items-center gap-3"
-                >
-                  {organizerProfile?.avatar_url ? (
-                    <img src={organizerProfile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
-                      {event.organizer_name?.[0] || "O"}
-                    </div>
-                  )}
-                  <p className="text-sm font-body font-semibold text-foreground">{event.organizer_name}</p>
-                </Link>
-              </div>
-              {participants && participants.length > 0 && (
-                <div>
-                  <p className="text-sm font-body font-semibold text-muted-foreground mb-3">Chi c'è?</p>
-                  <div className="space-y-1">
-                    {participants.map((p: any) => (
-                      <div key={p.id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
-                        {p.profiles?.avatar_url ? (
-                          <img src={p.profiles.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
-                        ) : (
-                          <span className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                            {p.profiles?.first_name?.[0] || "?"}
-                          </span>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-body font-semibold text-foreground">
-                            {p.profiles?.first_name}{p.profiles?.last_name_initial ? ` ${p.profiles.last_name_initial}` : ''}
-                          </p>
-                          {p.badges && p.badges.length > 0 && (
-                            <p className="text-xs font-body text-muted-foreground">
-                              {p.badges.length} badge
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="py-4">
