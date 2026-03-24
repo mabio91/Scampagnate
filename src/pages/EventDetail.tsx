@@ -590,7 +590,7 @@ const EventDetail = () => {
             <div className="flex-shrink-0">
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
               <button
-                onClick={() => canViewParticipants && setShowAllParticipants(true)}
+                onClick={() => canViewParticipants && navigate(`/event/${event.id}/participants`)}
                 className="flex items-center"
               >
                 {canViewParticipants && participants && participants.length > 0 ? (
