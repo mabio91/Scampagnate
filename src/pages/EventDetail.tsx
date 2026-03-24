@@ -1446,6 +1446,12 @@ const EventDetail = () => {
         url={eventUrl}
         text={shareText}
       />
+
+      <PhoneVerificationDialog
+        open={showPhoneVerification}
+        onOpenChange={setShowPhoneVerification}
+        onVerified={handlePhoneVerified}
+      />
     </div>
   );
 };
