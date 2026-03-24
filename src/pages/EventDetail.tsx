@@ -1460,8 +1460,10 @@ const EventDetail = () => {
           </DialogHeader>
           <div className="space-y-4">
             {accessData?.failedRules && accessData.failedRules.length > 0 && (
-              <div className="p-4 rounded-xl bg-muted/50 space-y-2 border border-border/50">
-                <p className="text-xs font-body font-bold text-foreground">{t("requirementsNotMet")}</p>
+              <div className="p-4 rounded-xl bg-destructive/10 space-y-2 border border-destructive/30">
+                <p className="text-xs font-body font-bold text-destructive flex items-center gap-1.5">
+                  <Lock className="h-3.5 w-3.5" /> Requisiti obbligatori non soddisfatti
+                </p>
                 <ul className="text-xs font-body text-muted-foreground space-y-1.5 ml-4 list-disc">
                   {accessData.failedRules.map((fr: any, idx: number) => (
                     <li key={idx}>{fr.reason}</li>
@@ -1470,12 +1472,40 @@ const EventDetail = () => {
               </div>
             )}
 
+            {accessData?.softWarnings && accessData.softWarnings.length > 0 && (
+              <div className="p-4 rounded-xl bg-warning/10 space-y-2 border border-warning/30">
+                <p className="text-xs font-body font-bold text-warning flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" /> Avvisi (non bloccanti)
+                </p>
+                <ul className="text-xs font-body text-muted-foreground space-y-1.5 ml-4 list-disc">
+                  {accessData.softWarnings.map((sw: any, idx: number) => (
+                    <li key={idx}>{sw.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <p className="text-sm font-body text-muted-foreground leading-relaxed">
-              {t("accessWarningText")}
+              {accessData?.failedRules && accessData.failedRules.length > 0
+                ? t("accessWarningText")
+                : "Puoi comunque registrarti, ma tieni conto degli avvisi sopra."}
             </p>
 
             <div className="flex flex-col gap-2 pt-2">
-              {organizerProfile?.phone && (
+              {/* If only soft warnings, allow direct registration */}
+              {(!accessData?.failedRules || accessData.failedRules.length === 0) && (
+                <Button
+                  onClick={() => {
+                    setShowAccessWarning(false);
+                    setShowRegisterDialog(true);
+                  }}
+                  className="w-full font-body h-12"
+                >
+                  Procedi con la registrazione
+                </Button>
+              )}
+
+              {organizerProfile?.phone && accessData?.failedRules && accessData.failedRules.length > 0 && (
                 <Button
                   asChild
                   className="w-full font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none h-12"
@@ -1491,17 +1521,19 @@ const EventDetail = () => {
                 </Button>
               )}
 
-              <Button
-                onClick={() => {
-                  setShowAccessWarning(false);
-                  setIsRequestingOverride(true);
-                  setShowRegisterDialog(true);
-                }}
-                variant="outline"
-                className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
-              >
-                {t("requestManualApprovalBtn")}
-              </Button>
+              {accessData?.failedRules && accessData.failedRules.length > 0 && (
+                <Button
+                  onClick={() => {
+                    setShowAccessWarning(false);
+                    setIsRequestingOverride(true);
+                    setShowRegisterDialog(true);
+                  }}
+                  variant="outline"
+                  className="w-full font-body h-12 border-warning/30 text-warning hover:bg-warning/5 hover:text-warning"
+                >
+                  {t("requestManualApprovalBtn")}
+                </Button>
+              )}
 
               <Button
                 variant="ghost"
