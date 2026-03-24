@@ -1,0 +1,1 @@
+ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS stripe_payment_intent_id text DEFAULT NULL;

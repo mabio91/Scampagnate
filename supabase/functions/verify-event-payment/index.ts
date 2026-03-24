@@ -60,12 +60,18 @@ serve(async (req) => {
 
     if (!registrationId) throw new Error("Registration ID not found in session");
 
+    // Store the Stripe payment intent ID for potential refunds
+    const stripePaymentIntentId = typeof session.payment_intent === 'string' 
+      ? session.payment_intent 
+      : session.payment_intent?.id || null;
+
     // Update registration payment status to paid using service role (bypasses RLS)
     const { error: updateError } = await supabaseAdmin
       .from("event_registrations")
       .update({ 
         payment_status: "paid",
-        status: "paid"
+        status: "paid",
+        stripe_payment_intent_id: stripePaymentIntentId,
       })
       .eq("id", registrationId)
       .eq("user_id", user.id);
