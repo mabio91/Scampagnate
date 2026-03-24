@@ -670,7 +670,10 @@ const EventForm = () => {
                         const remaining = 5 - form.gallery_images.length;
                         const filesToUpload = files.slice(0, remaining);
                         
-                        for (const file of filesToUpload) {
+                        if (filesToUpload.length === 0) return;
+
+                        // Upload all files in parallel and collect results
+                        const uploadPromises = filesToUpload.map(async (file) => {
                           const fileExt = file.name.split('.').pop();
                           const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
                           const filePath = `${fileName}`;
@@ -681,16 +684,30 @@ const EventForm = () => {
 
                           if (error) {
                             toast({ title: "Upload Error", description: error.message, variant: "destructive" });
-                            continue;
+                            return null;
                           }
 
                           const { data: { publicUrl } } = supabase.storage
                             .from('event-images')
                             .getPublicUrl(filePath);
 
-                          const updatedGallery = [...form.gallery_images, { url: publicUrl, order: form.gallery_images.length }];
-                          updateForm("gallery_images", updatedGallery);
+                          return publicUrl;
+                        });
+
+                        const results = await Promise.all(uploadPromises);
+                        const successfulUrls = results.filter((url): url is string => url !== null);
+
+                        if (successfulUrls.length > 0) {
+                          const newImages = successfulUrls.map((url, i) => ({
+                            url,
+                            order: form.gallery_images.length + i,
+                          }));
+                          updateForm("gallery_images", [...form.gallery_images, ...newImages]);
+                          toast({ title: `${successfulUrls.length} immagini caricate`, description: "Gallery aggiornata con successo" });
                         }
+
+                        // Reset input so same files can be re-selected
+                        e.target.value = '';
                       }}
                     />
                     <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
