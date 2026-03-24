@@ -5,11 +5,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "next-themes";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SearchProvider } from "@/contexts/SearchContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { RestrictionBanner } from "@/components/RestrictionBanner";
+import PageTransition from "@/components/PageTransition";
 import Index from "./pages/Index";
 
 // Lazy-loaded routes for code splitting
@@ -47,6 +49,36 @@ const PageFallback = () => (
   </div>
 );
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <PageTransition key={location.pathname}>
+        <Routes location={location}>
+          <Route path="/" element={<Index />} />
+          <Route path="/event/:id" element={<EventDetail />} />
+          <Route path="/my-events" element={<MyEvents />} />
+          <Route path="/merch" element={<Merch />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile-setup" element={<ProfileSetup />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/organizer" element={<OrganizerDashboard />} />
+          <Route path="/organizer/:id" element={<OrganizerProfile />} />
+          <Route path="/organizer/events/new" element={<EventForm />} />
+          <Route path="/organizer/events/:id" element={<EventManage />} />
+          <Route path="/organizer/events/:id/edit" element={<EventForm />} />
+          <Route path="/membership-success" element={<MembershipSuccess />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </PageTransition>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
     <QueryClientProvider client={queryClient}>
@@ -60,26 +92,7 @@ const App = () => (
           <RestrictionBanner />
           <BrowserRouter>
             <Suspense fallback={<PageFallback />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/event/:id" element={<EventDetail />} />
-                <Route path="/my-events" element={<MyEvents />} />
-                <Route path="/merch" element={<Merch />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile-setup" element={<ProfileSetup />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/organizer" element={<OrganizerDashboard />} />
-                <Route path="/organizer/:id" element={<OrganizerProfile />} />
-                <Route path="/organizer/events/new" element={<EventForm />} />
-                <Route path="/organizer/events/:id" element={<EventManage />} />
-                <Route path="/organizer/events/:id/edit" element={<EventForm />} />
-                <Route path="/membership-success" element={<MembershipSuccess />} />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AnimatedRoutes />
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>
