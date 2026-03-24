@@ -1388,7 +1388,7 @@ const EventDetail = () => {
                 registerMutation.isPending || membershipLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
                 (event.price_options && event.price_options.length > 0 && !selectedPriceOption) ||
-                (event.additional_fields && Array.isArray(event.additional_fields) && (event.additional_fields as any[]).some((f: any) => f.required && !additionalResponses[f.label]?.trim())) ||
+                (() => { const af = event.additional_fields as any; const fields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []); return fields.some((f: any) => f.required && !additionalResponses[f.label]?.trim()); })() ||
                 (event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && !equipmentConfirmed)
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
