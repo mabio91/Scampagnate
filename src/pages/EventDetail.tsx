@@ -231,6 +231,12 @@ const EventDetail = () => {
       return;
     }
 
+    // Show soft warnings dialog if any, but don't block
+    if (accessData && accessData.softWarnings && accessData.softWarnings.length > 0) {
+      setShowAccessWarning(true);
+      return;
+    }
+
     setShowRegisterDialog(true);
   };
 
