@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
