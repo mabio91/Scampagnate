@@ -312,8 +312,14 @@ const ProfileSetup = () => {
                   <Input
                     id="phone"
                     type="tel"
+                    inputMode="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      // Prevent letters
+                      const val = e.target.value;
+                      if (/[a-zA-Z]/.test(val)) return;
+                      setPhone(val);
+                    }}
                     placeholder="+39 333 1234567"
                   />
                   <div className="flex items-start gap-1.5 mt-2 text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
