@@ -1032,6 +1032,7 @@ const EventDetail = () => {
             {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
               <p className="text-[10px] font-body text-muted-foreground">{t("payOnLocation")}</p>
             )}
+            <p className="text-[10px] font-body text-muted-foreground">{event.spots_total - event.spots_taken} posti disponibili</p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <Button
