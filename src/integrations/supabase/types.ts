@@ -740,6 +740,45 @@ export type Database = {
           },
         ]
       }
+      phone_otps: {
+        Row: {
+          attempts: number
+          channel: string
+          created_at: string
+          expires_at: string
+          id: string
+          max_attempts: number
+          otp_hash: string
+          phone_number: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          max_attempts?: number
+          otp_hash: string
+          phone_number: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_attempts?: number
+          otp_hash?: string
+          phone_number?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: Database["public"]["Enums"]["account_status"] | null
@@ -762,6 +801,9 @@ export type Database = {
           membership_year: number | null
           onboarding_completed: boolean | null
           phone: string
+          phone_verification_method: string | null
+          phone_verified: boolean | null
+          phone_verified_at: string | null
           preferences: Json | null
           self_level: string | null
           total_points: number
@@ -789,6 +831,9 @@ export type Database = {
           membership_year?: number | null
           onboarding_completed?: boolean | null
           phone?: string
+          phone_verification_method?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           preferences?: Json | null
           self_level?: string | null
           total_points?: number
@@ -816,6 +861,9 @@ export type Database = {
           membership_year?: number | null
           onboarding_completed?: boolean | null
           phone?: string
+          phone_verification_method?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           preferences?: Json | null
           self_level?: string | null
           total_points?: number
