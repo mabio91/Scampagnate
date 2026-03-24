@@ -219,12 +219,28 @@ const EventDetail = () => {
 
     if (isRegistered) return;
 
+    // Phone verification gate — must verify before joining
+    if (!profile?.phone_verified) {
+      setShowPhoneVerification(true);
+      return;
+    }
+
     if (accessData && !accessData.hasAccess) {
       setShowAccessWarning(true);
       return;
     }
 
     setShowRegisterDialog(true);
+  };
+
+  const handlePhoneVerified = () => {
+    setShowPhoneVerification(false);
+    // After verification, continue to registration
+    if (accessData && !accessData.hasAccess) {
+      setShowAccessWarning(true);
+    } else {
+      setShowRegisterDialog(true);
+    }
   };
 
   const handleMembershipCheckout = async () => {
