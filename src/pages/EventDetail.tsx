@@ -825,167 +825,141 @@ const EventDetail = () => {
           </motion.div>
         )}
 
-        {/* Participants */}
+        {/* Buono a sapersi / Info sections */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display text-lg font-bold text-foreground">{t("participants")}</h3>
-            <span className="text-sm font-body font-semibold text-secondary">{event.spots_taken} {t("joined")}</span>
-          </div>
-
-          {/* Avatar circles row - only for logged-in users */}
-          {canViewParticipants && participants && participants.length > 0 && (
-            <div className="flex items-center mb-3">
-              <div className="flex -space-x-3">
-                {participants.slice(0, 4).map((p: any, idx: number) => (
-                  <div key={p.id} className="relative" style={{ zIndex: 4 - idx }}>
-                    {p.profiles?.avatar_url ? (
-                      <img src={p.profiles.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-background" />
-                    ) : (
-                      <span className="w-10 h-10 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-sm font-semibold text-primary">
-                        {p.profiles?.first_name?.[0] || "?"}
-                      </span>
-                    )}
+          <h3 className="font-display text-lg font-bold text-foreground mb-3">Buono a sapersi</h3>
+          <div className="space-y-4">
+            {event.cancellation_policy && (() => {
+              const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
+              if (!policyType) return null;
+              const policy = CANCELLATION_POLICIES[policyType];
+              const PolicyIcon = policy.icon;
+              return (
+                <div className="flex items-start gap-3">
+                  <PolicyIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-body font-semibold text-foreground">Termini di cancellazione</p>
+                    <p className="text-xs font-body text-muted-foreground">{policyType === "custom" ? customText : policy.description}</p>
                   </div>
-                ))}
+                </div>
+              );
+            })()}
+            {event.payment_type !== "free" && (
+              <div className="flex items-start gap-3">
+                <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-body font-semibold text-foreground">Pagamenti e rimborsi</p>
+                  <p className="text-xs font-body text-muted-foreground">
+                    {(event.payment_type as string) === "paid" && `€${Number(event.price).toFixed(0)} da pagare online`}
+                    {(event.payment_type as string) === "location" && `€${Number(event.price).toFixed(0)} da saldare in contanti all'arrivo`}
+                    {(event.payment_type as string) === "deposit" && `€${Number(event.deposit).toFixed(0)} online + €${(Number(event.price) - Number(event.deposit)).toFixed(0)} in loco`}
+                  </p>
+                </div>
               </div>
-              {participants.length > 4 && (
-                <button
-                  onClick={() => setShowAllParticipants(true)}
-                  className="w-10 h-10 -ml-3 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-body font-semibold text-muted-foreground hover:bg-muted/80 transition-colors z-0"
-                >
-                  +{participants.length - 4}
-                </button>
-              )}
+            )}
+            <div className="flex items-start gap-3">
+              <Navigation className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-body font-semibold text-foreground">Come arrivare</p>
+                <DirectionsButton location={event.location} />
+              </div>
             </div>
-          )}
-
-          {/* Capacity bar */}
-          <div className="w-full h-2 rounded-full bg-muted mb-3">
-            <div className="h-full rounded-full bg-secondary transition-all" style={{ width: `${Math.min(100, (event.spots_taken / event.spots_total) * 100)}%` }} />
+            <div className="flex items-start gap-3">
+              <CalendarPlus className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-body font-semibold text-foreground">Aggiungi al calendario</p>
+                <div className="flex gap-2 mt-1">
+                  <button onClick={() => handleAddToCalendar("google")} className="text-xs font-body text-primary hover:underline">Google</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button onClick={() => handleAddToCalendar("apple")} className="text-xs font-body text-primary hover:underline">Apple</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button onClick={() => handleAddToCalendar("outlook")} className="text-xs font-body text-primary hover:underline">Outlook</button>
+                </div>
+              </div>
+            </div>
           </div>
-          {event.status !== "full" && (
-            <CapacityWarning spotsTaken={event.spots_taken} spotsTotal={event.spots_total} variant="large" className="mb-2" />
-          )}
+        </motion.div>
 
-          {/* Guest view */}
-          {!canViewParticipants && (
-            <p className="text-sm font-body text-muted-foreground">
-              {event.spots_taken > 0
-                ? `${event.spots_taken} ${t("participantAlreadyJoined")} ${!user ? t("signInAndJoin") : t("joinToSee")}`
-                : `${t("noParticipantsSignIn")} ${!user ? t("signInAndBe") : t("beFirstToJoin")}`}
-            </p>
-          )}
+        {/* Contact organizer */}
+        {user && organizerProfile?.phone && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
+            <div className="flex gap-2">
+              <a
+                href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-[#25D366]/10 text-[#25D366] text-sm font-body font-semibold hover:bg-[#25D366]/20 transition-colors"
+              >
+                <MessageCircle className="h-4 w-4" /> WhatsApp
+              </a>
+              <a
+                href={`tel:${organizerProfile.phone}`}
+                className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-body font-semibold hover:bg-primary/20 transition-colors"
+              >
+                <Phone className="h-4 w-4" /> Chiama
+              </a>
+            </div>
+          </motion.div>
+        )}
 
-          {/* Category / organizer badges under circles */}
-          {canViewParticipants && participants && participants.length > 0 && (
-            <>
-              {/* Organizer-only: meeting point assignments */}
-              {(user?.id === event.organizer_id) && event.meeting_points && event.meeting_points.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("meetingPointAssignments")}</p>
+        {/* Participants Full-Page Dialog (WeMeet style) */}
+        <Dialog open={showAllParticipants} onOpenChange={setShowAllParticipants}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+            <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
+              <button onClick={() => setShowAllParticipants(false)} className="p-1">
+                <ArrowLeft className="h-5 w-5 text-foreground" />
+              </button>
+              <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
+            </div>
+            <div className="px-4 py-4">
+              <div className="mb-6">
+                <p className="text-sm font-body font-semibold text-muted-foreground mb-3">{t("organizer")}</p>
+                <Link
+                  to={`/organizer/${event.organizer_id}`}
+                  onClick={() => setShowAllParticipants(false)}
+                  className="flex items-center gap-3"
+                >
+                  {organizerProfile?.avatar_url ? (
+                    <img src={organizerProfile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
+                      {event.organizer_name?.[0] || "O"}
+                    </div>
+                  )}
+                  <p className="text-sm font-body font-semibold text-foreground">{event.organizer_name}</p>
+                </Link>
+              </div>
+              {participants && participants.length > 0 && (
+                <div>
+                  <p className="text-sm font-body font-semibold text-muted-foreground mb-3">Chi c'è?</p>
                   <div className="space-y-1">
                     {participants.map((p: any) => (
-                      <div key={p.id} className="flex items-center justify-between text-xs font-body px-2 py-1.5 rounded-lg bg-muted/30">
-                        <span className="text-foreground font-medium">{p.profiles?.first_name}</span>
-                        <span className="text-muted-foreground">{p.meeting_point?.name || "—"}</span>
+                      <div key={p.id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+                        {p.profiles?.avatar_url ? (
+                          <img src={p.profiles.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <span className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
+                            {p.profiles?.first_name?.[0] || "?"}
+                          </span>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-body font-semibold text-foreground">
+                            {p.profiles?.first_name}{p.profiles?.last_name_initial ? ` ${p.profiles.last_name_initial}` : ''}
+                          </p>
+                          {p.badges && p.badges.length > 0 && (
+                            <p className="text-xs font-body text-muted-foreground">
+                              {p.badges.length} badge
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-            </>
-          )}
-
-          {canViewParticipants && (!participants || participants.length === 0) && (
-            <p className="text-sm font-body text-muted-foreground">{t("noParticipantsYet")}</p>
-          )}
-        </motion.div>
-
-        {/* Expanded Participants Dialog */}
-        <Dialog open={showAllParticipants} onOpenChange={setShowAllParticipants}>
-          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-display">{t("participants")} ({participants?.length || 0})</DialogTitle>
-              <DialogDescription className="font-body text-sm">{t("everyoneJoining")}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 mt-2">
-              {participants?.map((p: any) => (
-                <div key={p.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors">
-                  {p.profiles?.avatar_url ? (
-                    <img src={p.profiles.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-                  ) : (
-                    <span className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                      {p.profiles?.first_name?.[0] || "?"}
-                    </span>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-body font-semibold text-foreground truncate">
-                      {p.profiles?.first_name}{p.profiles?.last_name_initial ? ` ${p.profiles.last_name_initial}` : ''}
-                    </p>
-                    {p.badges && p.badges.length > 0 && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        {p.badges.slice(0, 3).map((b: any, i: number) => (
-                          <span key={i} className="inline-flex items-center gap-0.5 text-[10px] font-body text-muted-foreground">
-                            <BadgeIconComp icon={b.icon} className="h-3 w-3 text-primary" />
-                            {b.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* Organizer & Contact */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("organizer")}</h3>
-          <Link to={`/organizer/${event.organizer_id}`} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
-            {organizerProfile?.avatar_url ? (
-              <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold group-hover:bg-primary group-hover:text-white transition-all">
-                {event.organizer_name?.[0] || "O"}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{event.organizer_name}</p>
-              <p className="text-xs font-body text-muted-foreground">{t("viewProfile")} <ChevronRight className="inline-block h-3 w-3" /></p>
-            </div>
-          </Link>
-
-          {/* Contact options */}
-          {user && (
-            <div className="flex gap-2 mt-3">
-              {organizerProfile?.phone && (
-                <>
-                  <a
-                    href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-[#25D366]/10 text-[#25D366] text-sm font-body font-semibold hover:bg-[#25D366]/20 transition-colors"
-                  >
-                    <MessageCircle className="h-4 w-4" /> WhatsApp
-                  </a>
-                  <a
-                    href={`tel:${organizerProfile.phone}`}
-                    className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-body font-semibold hover:bg-primary/20 transition-colors"
-                  >
-                    <Phone className="h-4 w-4" /> Call
-                  </a>
-                </>
-              )}
-              {!organizerProfile?.phone && (
-                <p className="text-xs font-body text-muted-foreground">{t("contactInfoNotAvailable")}</p>
-              )}
-            </div>
-          )}
-          {!user && (
-            <p className="text-xs font-body text-muted-foreground mt-2">{t("signInToContact")}</p>
-          )}
-        </motion.div>
 
         {/* Payment & Pricing Info */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="py-4">
