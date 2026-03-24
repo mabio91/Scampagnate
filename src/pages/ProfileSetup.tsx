@@ -199,7 +199,13 @@ const ProfileSetup = () => {
     }
   };
 
-  const step1Valid = phone.trim().length >= 5;
+  const isValidPhone = (p: string) => {
+    const cleaned = p.trim();
+    if (cleaned.length < 5) return false;
+    if (/[a-zA-Z]/.test(cleaned)) return false;
+    return /^\+?[\d\s\-().]{5,20}$/.test(cleaned);
+  };
+  const step1Valid = isValidPhone(phone);
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
   const step3Valid = !!hasCar && interests.length >= 1;
 
