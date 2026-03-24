@@ -23,6 +23,9 @@ interface Profile {
   interests?: string[];
   onboarding_completed?: boolean;
   event_motivation?: string;
+  phone_verified?: boolean;
+  phone_verified_at?: string;
+  phone_verification_method?: string;
 }
 
 type AppRole = "admin" | "organizer" | "user";

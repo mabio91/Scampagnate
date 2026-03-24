@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { Checkbox } from "@/components/ui/checkbox";
+import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -67,6 +68,7 @@ const EventDetail = () => {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
   const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
@@ -217,12 +219,28 @@ const EventDetail = () => {
 
     if (isRegistered) return;
 
+    // Phone verification gate — must verify before joining
+    if (!profile?.phone_verified) {
+      setShowPhoneVerification(true);
+      return;
+    }
+
     if (accessData && !accessData.hasAccess) {
       setShowAccessWarning(true);
       return;
     }
 
     setShowRegisterDialog(true);
+  };
+
+  const handlePhoneVerified = () => {
+    setShowPhoneVerification(false);
+    // After verification, continue to registration
+    if (accessData && !accessData.hasAccess) {
+      setShowAccessWarning(true);
+    } else {
+      setShowRegisterDialog(true);
+    }
   };
 
   const handleMembershipCheckout = async () => {
@@ -1427,6 +1445,12 @@ const EventDetail = () => {
         title={event?.title || ""}
         url={eventUrl}
         text={shareText}
+      />
+
+      <PhoneVerificationDialog
+        open={showPhoneVerification}
+        onOpenChange={setShowPhoneVerification}
+        onVerified={handlePhoneVerified}
       />
     </div>
   );
