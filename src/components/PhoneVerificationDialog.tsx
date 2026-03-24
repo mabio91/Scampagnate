@@ -69,6 +69,7 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
     setSending(true);
     setError("");
     setChannel(selectedChannel);
+    trackVerificationEvent("method_selected", { channel: selectedChannel });
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("send-otp", {
