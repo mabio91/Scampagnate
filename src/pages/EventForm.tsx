@@ -121,6 +121,7 @@ const EnforcementToggle = ({ rule, onChange }: { rule: AccessRule; onChange: (v:
   </Select>
 );
 
+const EventForm = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const duplicateId = searchParams.get("duplicate");
