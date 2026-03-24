@@ -67,12 +67,10 @@ const Auth = () => {
       const { error, session } = await signUp(email, password, { first_name: firstName, last_name: lastName, phone: "" });
       if (error) {
         toast({ title: t("error"), description: error.message, variant: "destructive" });
-      } else if (session) {
+      } else {
+        // No email verification required - user can access immediately
         toast({ title: t("welcomeBack"), description: t("accountCreated") });
         navigate("/");
-      } else {
-        toast({ title: t("registrationConfirmed"), description: t("registrationComplete") });
-        setIsLogin(true);
       }
     }
     setLoading(false);

@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.verify-event-payment]
 verify_jwt = false
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
