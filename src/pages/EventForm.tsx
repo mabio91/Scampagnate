@@ -395,7 +395,10 @@ const EventForm = () => {
         visibility: form.visibility,
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
-        additional_fields: additionalFields.filter((f) => f.label.trim()) as any,
+        additional_fields: {
+          fields: additionalFields.filter((f) => f.label.trim()),
+          ask_car_availability: askCarAvailability,
+        } as any,
         access_rules: accessRules.length > 0 ? {
           rules: accessRules,
           exclusivity_label: exclusivityLabel || undefined,
