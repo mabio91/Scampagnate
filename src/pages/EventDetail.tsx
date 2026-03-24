@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { Checkbox } from "@/components/ui/checkbox";
+import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 
 const EventDetail = () => {
   const { id } = useParams();
