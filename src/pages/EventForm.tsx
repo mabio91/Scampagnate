@@ -968,7 +968,7 @@ const EventForm = () => {
                 </div>
                 <Select
                   value={rule.type}
-                  onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, type: v as AccessRule["type"] } : r))}
+                  onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, type: v as AccessRule["type"], value: undefined, badge_id: undefined, badge_name: undefined } : r))}
                 >
                   <SelectTrigger><SelectValue placeholder="Select rule type" /></SelectTrigger>
                   <SelectContent>
@@ -976,6 +976,9 @@ const EventForm = () => {
                     <SelectItem value="min_trekking_events">🥾 Min. Trekking Events Completed</SelectItem>
                     <SelectItem value="min_attended_events">📊 Min. Total Events Attended</SelectItem>
                     <SelectItem value="min_activities">🏃 Min. Activities Completed</SelectItem>
+                    <SelectItem value="min_level">📏 Min. Self-Assessed Level</SelectItem>
+                    <SelectItem value="min_experience">🧗 Min. Trekking Experience</SelectItem>
+                    <SelectItem value="min_activity_frequency">⚡ Min. Activity Frequency</SelectItem>
                     <SelectItem value="require_badge">🏅 Require Specific Badge</SelectItem>
                     <SelectItem value="manual_approval">✋ Manual Approval Required</SelectItem>
                   </SelectContent>
@@ -991,11 +994,74 @@ const EventForm = () => {
                   />
                 )}
 
+                {rule.type === "min_level" && (
+                  <Select
+                    value={String(rule.value || "")}
+                    onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(v) } : r))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select minimum level" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 — Principiante</SelectItem>
+                      <SelectItem value="2">2 — Intermedio</SelectItem>
+                      <SelectItem value="3">3 — Avanzato</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {rule.type === "min_experience" && (
+                  <Select
+                    value={String(rule.value || "")}
+                    onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(v) } : r))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select minimum experience" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">0-2 escursioni</SelectItem>
+                      <SelectItem value="2">3-5 escursioni</SelectItem>
+                      <SelectItem value="3">5+ escursioni</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {rule.type === "min_activity_frequency" && (
+                  <Select
+                    value={String(rule.value || "")}
+                    onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(v) } : r))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select minimum frequency" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Bassa (0-1/settimana)</SelectItem>
+                      <SelectItem value="2">Media (1-2/settimana)</SelectItem>
+                      <SelectItem value="3">Alta (&gt;2/settimana)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
                 {rule.type === "require_badge" && (
                   <BadgeSelector
                     value={rule.badge_id || ""}
                     onChange={(badgeId, badgeName) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_id: badgeId, badge_name: badgeName, value: badgeId } : r))}
                   />
+                )}
+
+                {rule.type !== "manual_approval" && (
+                  <div className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                    <div>
+                      <p className="text-[11px] font-body font-semibold text-foreground">Enforcement</p>
+                      <p className="text-[10px] text-muted-foreground font-body">
+                        {(rule.enforcement || "hard") === "hard" ? "🔒 Hard — Blocks registration" : "💡 Soft — Advisory only, user can still register"}
+                      </p>
+                    </div>
+                    <Select
+                      value={rule.enforcement || "hard"}
+                      onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, enforcement: v as "hard" | "soft" } : r))}
+                    >
+                      <SelectTrigger className="w-24 h-7 text-[11px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hard">🔒 Hard</SelectItem>
+                        <SelectItem value="soft">💡 Soft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
 
                 <Input
