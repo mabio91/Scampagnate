@@ -306,7 +306,7 @@ const EventDetail = () => {
 
     const isWaitlist = event.status === "full";
     try {
-      await registerMutation.mutateAsync({
+      const result = await registerMutation.mutateAsync({
         eventId: event.id,
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
@@ -318,6 +318,38 @@ const EventDetail = () => {
       setShowRegisterDialog(false);
       setShowAccessWarning(false);
       setIsRequestingOverride(false);
+
+      // For paid/deposit events, immediately redirect to Stripe checkout
+      const requiresPayment = !isWaitlist && !requestApproval && (event.payment_type === "paid" || event.payment_type === "deposit");
+      if (requiresPayment && result?.registrationId) {
+        setPaymentLoading(true);
+        try {
+          const body: any = { eventId: event.id, registrationId: result.registrationId };
+          if (appliedDiscount?.discount_code_id) {
+            body.discountCodeId = appliedDiscount.discount_code_id;
+          }
+          if (selectedPriceOption) {
+            body.priceOptionId = selectedPriceOption;
+          }
+          const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+          if (error) throw error;
+          if (data?.free) {
+            toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
+            setPaymentLoading(false);
+            window.location.reload();
+            return;
+          }
+          if (data?.url) {
+            window.location.href = data.url;
+          } else {
+            throw new Error("No checkout URL returned");
+          }
+        } catch (err: any) {
+          toast({ title: "Errore pagamento", description: err.message, variant: "destructive" });
+          setPaymentLoading(false);
+        }
+        return;
+      }
 
       if (requestApproval) {
         toast({ title: "Request sent", description: "Your manual approval request has been sent to the organizer.", duration: 5000 });
