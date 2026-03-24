@@ -443,9 +443,33 @@ const EventForm = () => {
         eventId = data.id;
       }
 
-      // Handle meeting points
+      // Handle meeting points - delete old ones first, then insert new
       if (isEditing) {
-        await supabase.from("event_meeting_points").delete().eq("event_id", eventId!);
+        // First, get existing meeting point IDs for this event
+        const { data: existingPoints } = await supabase
+          .from("event_meeting_points")
+          .select("id")
+          .eq("event_id", eventId!);
+        
+        if (existingPoints && existingPoints.length > 0) {
+          const existingIds = existingPoints.map(p => p.id);
+          
+          // Nullify any registration references to these meeting points
+          await supabase
+            .from("event_registrations")
+            .update({ meeting_point_id: null })
+            .in("meeting_point_id", existingIds);
+          
+          // Now delete old meeting points
+          const { error: deleteError } = await supabase
+            .from("event_meeting_points")
+            .delete()
+            .eq("event_id", eventId!);
+          if (deleteError) {
+            console.error("Failed to delete old meeting points:", deleteError);
+            throw deleteError;
+          }
+        }
       }
 
       if (meetingPoints.length > 0) {
