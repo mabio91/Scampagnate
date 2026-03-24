@@ -1104,8 +1104,8 @@ const EventDetail = () => {
                             >
                               <SelectTrigger className="mt-1"><SelectValue placeholder={`Select ${field.label.toLowerCase()}`} /></SelectTrigger>
                               <SelectContent>
-                                {field.options.split(",").map((opt: string) => (
-                                  <SelectItem key={opt.trim()} value={opt.trim()}>{opt.trim()}</SelectItem>
+                                {(Array.isArray(field.options) ? field.options : field.options.split(",").map((o: string) => o.trim())).map((opt: string) => (
+                                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
