@@ -1000,6 +1000,7 @@ const EventDetail = () => {
           )}
         </motion.div>
       </div>
+      </div> {/* end rounded top container */}
 
       {/* Fixed CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border p-4 pb-safe z-50">
