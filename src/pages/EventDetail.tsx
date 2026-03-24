@@ -68,6 +68,7 @@ const EventDetail = () => {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
   const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
