@@ -1423,7 +1423,7 @@ const EventDetail = () => {
             )}
 
             <Button
-              onClick={() => handleRegister(isRequestingOverride)}
+              onClick={() => handleRegister(isRequestingOverride || (accessData?.requiresApproval ?? false))}
               disabled={
                 registerMutation.isPending || membershipLoading || paymentLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
