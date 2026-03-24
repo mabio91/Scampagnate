@@ -1,38 +1,37 @@
 import { FC } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DIFFICULTY_LEVELS } from "./DifficultyBadge";
-import { Circle } from "lucide-react";
 
 interface DifficultyGuideDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const LEVEL_DETAILS: Record<string, { environments: string; params: string; extra: string[] }> = {
+const LEVEL_DETAILS: Record<string, { characteristics: string[]; environments: string; params: string[] }> = {
   "1": {
-    environments: "parks, wide trails, nature walks",
-    params: "Elevation gain: up to 150–200 m, Duration: 1–2 hours",
-    extra: ["simple walking routes", "very low elevation gain", "relaxed pace", "easy terrain"],
+    characteristics: ["percorsi semplici", "dislivello molto basso", "ritmo rilassato", "terreno facile"],
+    environments: "parchi, sentieri larghi, passeggiate nella natura",
+    params: ["Dislivello: fino a 150–200 m", "Durata: 1–2 ore"],
   },
   "2": {
-    environments: "first real hiking experiences, panoramic trails",
-    params: "Elevation gain: 200–400 m, Duration: 2–3 hours",
-    extra: ["simple trails", "moderate elevation gain", "relaxed pace"],
+    characteristics: ["sentieri semplici", "dislivello moderato", "ritmo rilassato"],
+    environments: "prime esperienze in montagna, sentieri panoramici",
+    params: ["Dislivello: 200–400 m", "Durata: 2–3 ore"],
   },
   "3": {
-    environments: "classic day hikes, longer excursions",
-    params: "Elevation gain: 400–700 m, Duration: 3–5 hours",
-    extra: ["longer climbs", "mountain trails", "sustained pace"],
+    characteristics: ["salite più lunghe", "sentieri di montagna", "ritmo sostenuto"],
+    environments: "escursioni classiche, trekking di giornata",
+    params: ["Dislivello: 400–700 m", "Durata: 3–5 ore"],
   },
   "4": {
-    environments: "demanding mountain treks, long day excursions",
-    params: "Elevation gain: 700–1100 m, Duration: 5–7 hours",
-    extra: ["significant elevation gain", "more technical terrain", "higher physical effort"],
+    characteristics: ["dislivello importante", "terreno più tecnico", "maggiore sforzo fisico"],
+    environments: "trekking impegnativi, escursioni lunghe",
+    params: ["Dislivello: 700–1100 m", "Durata: 5–7 ore"],
   },
   "5": {
-    environments: "",
-    params: "Elevation gain: over 1100 m, Duration: 7+ hours",
-    extra: ["very high elevation gain", "long distances", "sustained pace", "potentially technical terrain"],
+    characteristics: ["dislivello molto elevato", "lunghe distanze", "ritmo sostenuto", "possibile terreno tecnico"],
+    environments: "alta montagna, percorsi lunghi e impegnativi, sentieri alpini",
+    params: ["Dislivello: oltre 1100 m", "Durata: 7+ ore"],
   },
 };
 
@@ -41,37 +40,54 @@ export const DifficultyGuideDialog: FC<DifficultyGuideDialogProps> = ({ open, on
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl text-center">Trekking Difficulty Guide</DialogTitle>
+          <DialogTitle className="font-display text-xl text-center">
+            Guida ai livelli di difficoltà trekking
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <p className="text-sm font-body text-muted-foreground">
-            This guide ensures transparency and helps you choose activities that perfectly match your experience and fitness level.
+            Questa guida ti aiuta a scegliere attività adatte al tuo livello di esperienza e alla tua condizione fisica.
           </p>
 
-          <div className="space-y-5">
+          <div className="space-y-6">
             {DIFFICULTY_LEVELS.map((level) => {
               const details = LEVEL_DETAILS[level.level];
+              const Icon = level.icon;
               return (
-                <div key={level.level} className="space-y-1">
+                <div key={level.level} className="space-y-2">
                   <h4 className="font-display font-bold text-base flex items-center gap-2">
-                    <Circle className={`h-4 w-4 fill-current ${level.color}`} />
-                    Level {level.level} — {level.name}
+                    <Icon className={`h-5 w-5 ${level.color}`} />
+                    Livello {level.level} — {level.name}
                   </h4>
-                  <p className="text-sm font-body text-foreground">{level.description.split(".")[0]}.</p>
+                  <p className="text-sm font-body text-foreground">
+                    {level.description.split(".")[0]}.
+                  </p>
                   {details && (
                     <>
-                      <ul className="text-xs font-body text-muted-foreground list-disc pl-5 mt-1 space-y-0.5">
-                        {details.extra.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                      <div className="text-xs font-body mt-2 bg-muted/50 p-2 rounded-lg">
-                        {details.environments && (
-                          <>
-                            <span className="font-semibold block text-foreground">Typical environments:</span> {details.environments}<br />
-                          </>
-                        )}
-                        <span className="font-semibold block text-foreground mt-1">Example parameters:</span> {details.params}
+                      <div>
+                        <p className="text-xs font-body font-semibold text-foreground mb-1">Caratteristiche:</p>
+                        <ul className="text-xs font-body text-muted-foreground list-disc pl-5 space-y-0.5">
+                          {details.characteristics.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="text-xs font-body bg-muted/50 p-2.5 rounded-lg space-y-1">
+                        <div>
+                          <span className="font-semibold text-foreground">Ambienti tipici:</span>
+                          <br />
+                          <span className="text-muted-foreground">{details.environments}</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-foreground">Parametri indicativi:</span>
+                          <br />
+                          {details.params.map((p, i) => (
+                            <span key={i} className="text-muted-foreground">
+                              {p}
+                              {i < details.params.length - 1 && <br />}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </>
                   )}
@@ -79,6 +95,10 @@ export const DifficultyGuideDialog: FC<DifficultyGuideDialogProps> = ({ open, on
               );
             })}
           </div>
+
+          <p className="text-xs font-body text-muted-foreground italic border-t pt-4">
+            I livelli di difficoltà (1–5) sono indipendenti dal livello dell'utente. Vengono utilizzati insieme ai dati del profilo (livello, esperienza, attività) per controlli di sicurezza e raccomandazioni eventi.
+          </p>
         </div>
       </DialogContent>
     </Dialog>
