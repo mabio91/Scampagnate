@@ -284,7 +284,7 @@ const EventForm = () => {
               label: f.label || "",
               type: f.type || "text",
               required: f.required || false,
-              options: f.options || "",
+              options: Array.isArray(f.options) ? f.options : (typeof f.options === 'string' && f.options ? f.options.split(',').map((o: string) => o.trim()) : []),
             }))
           );
         }
