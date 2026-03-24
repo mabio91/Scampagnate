@@ -1150,6 +1150,29 @@ const EventForm = () => {
           )}
         </Card>
 
+        {/* Car Availability Toggle */}
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+                <Car className="h-4 w-4" /> Car Availability
+              </h2>
+              <p className="text-xs text-muted-foreground font-body">
+                Ask participants if they can drive to the event location.
+              </p>
+            </div>
+            <Switch checked={askCarAvailability} onCheckedChange={setAskCarAvailability} />
+          </div>
+          {askCarAvailability && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs font-body text-muted-foreground">
+                During registration, participants will see: <strong>"Saresti disposto a prendere la macchina?"</strong>
+              </p>
+              <p className="text-[10px] font-body text-muted-foreground mt-1">Options: Sì · Preferirei di no · Non sono automunito</p>
+            </div>
+          )}
+        </Card>
+
         {/* Additional Registration Fields */}
         <Card className="p-4 space-y-4">
           <div className="flex items-center justify-between">
