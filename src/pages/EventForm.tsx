@@ -95,7 +95,32 @@ interface MeetingPointInput {
   notes: string;
 }
 
-const EventForm = () => {
+// Helper components for grouped access rules UI
+const RuleToggleRow = ({ label, isActive, onToggle, children }: {
+  label: string;
+  isActive: boolean;
+  onToggle: (active: boolean) => void;
+  children?: React.ReactNode;
+}) => (
+  <div className="p-2.5 bg-background rounded-lg border border-border/50 space-y-2">
+    <div className="flex items-center justify-between">
+      <span className="text-xs font-body text-foreground">{label}</span>
+      <Switch checked={isActive} onCheckedChange={onToggle} />
+    </div>
+    {isActive && children}
+  </div>
+);
+
+const EnforcementToggle = ({ rule, onChange }: { rule: AccessRule; onChange: (v: "hard" | "soft") => void }) => (
+  <Select value={rule.enforcement || "hard"} onValueChange={(v) => onChange(v as "hard" | "soft")}>
+    <SelectTrigger className="w-20 h-8 text-[10px]"><SelectValue /></SelectTrigger>
+    <SelectContent>
+      <SelectItem value="hard">🔒 Hard</SelectItem>
+      <SelectItem value="soft">💡 Soft</SelectItem>
+    </SelectContent>
+  </Select>
+);
+
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const duplicateId = searchParams.get("duplicate");
@@ -944,158 +969,258 @@ const EventForm = () => {
             </p>
           </div>
 
-          {/* 2. Access Restrictions */}
+          {/* 2. Access Restrictions - Grouped */}
           <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-semibold flex items-center gap-1.5">
-                  🔒 Registration Requirements
-                </Label>
-                <p className="text-[11px] text-muted-foreground font-body">Who can register. Users who don't meet these rules see a restriction message.</p>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={() => setAccessRules(prev => [...prev, { type: "require_membership" }])} className="gap-1 shrink-0">
-                <Plus className="h-3.5 w-3.5" /> Add Rule
-              </Button>
+            <div>
+              <Label className="text-sm font-semibold flex items-center gap-1.5">
+                🔒 Requisiti di Registrazione
+              </Label>
+              <p className="text-[11px] text-muted-foreground font-body">Chi può registrarsi. Gli utenti che non soddisfano i requisiti vedranno un messaggio di restrizione.</p>
             </div>
 
-            {accessRules.map((rule, index) => (
-              <div key={index} className="p-3 bg-background rounded-lg space-y-2 border border-border/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-body font-semibold text-muted-foreground">Rule {index + 1}</span>
-                  <button type="button" onClick={() => setAccessRules(prev => prev.filter((_, i) => i !== index))} className="text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-                <Select
-                  value={rule.type}
-                  onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, type: v as AccessRule["type"], value: undefined, badge_id: undefined, badge_name: undefined } : r))}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select rule type" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="require_membership">👑 Require Active Membership</SelectItem>
-                    <SelectItem value="min_trekking_events">🥾 Min. Trekking Events Completed</SelectItem>
-                    <SelectItem value="min_attended_events">📊 Min. Total Events Attended</SelectItem>
-                    <SelectItem value="min_activities">🏃 Min. Activities Completed</SelectItem>
-                    <SelectItem value="min_level">📏 Min. Self-Assessed Level</SelectItem>
-                    <SelectItem value="min_experience">🧗 Min. Trekking Experience</SelectItem>
-                    <SelectItem value="min_activity_frequency">⚡ Min. Activity Frequency</SelectItem>
-                    <SelectItem value="require_badge">🏅 Require Specific Badge</SelectItem>
-                    <SelectItem value="manual_approval">✋ Manual Approval Required</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* GROUP 1: 🧠 Profilo partecipante */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">🧠 Profilo partecipante</p>
 
-                {(rule.type === "min_trekking_events" || rule.type === "min_attended_events" || rule.type === "min_activities") && (
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="Minimum number required"
-                    value={rule.value as number || ""}
-                    onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(e.target.value) || 0 } : r))}
-                  />
-                )}
-
-                {rule.type === "min_level" && (
-                  <Select
-                    value={String(rule.value || "")}
-                    onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(v) } : r))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select minimum level" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 — Principiante</SelectItem>
-                      <SelectItem value="2">2 — Intermedio</SelectItem>
-                      <SelectItem value="3">3 — Avanzato</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {rule.type === "min_experience" && (
-                  <Select
-                    value={String(rule.value || "")}
-                    onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(v) } : r))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select minimum experience" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">0-2 escursioni</SelectItem>
-                      <SelectItem value="2">3-5 escursioni</SelectItem>
-                      <SelectItem value="3">5+ escursioni</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {rule.type === "min_activity_frequency" && (
-                  <Select
-                    value={String(rule.value || "")}
-                    onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, value: parseInt(v) } : r))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select minimum frequency" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Bassa (0-1/settimana)</SelectItem>
-                      <SelectItem value="2">Media (1-2/settimana)</SelectItem>
-                      <SelectItem value="3">Alta (&gt;2/settimana)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {rule.type === "require_badge" && (
-                  <BadgeSelector
-                    value={rule.badge_id || ""}
-                    onChange={(badgeId, badgeName) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, badge_id: badgeId, badge_name: badgeName, value: badgeId } : r))}
-                  />
-                )}
-
-                {rule.type !== "manual_approval" && (
-                  <div className="flex items-center justify-between p-2 rounded-md bg-muted/30">
-                    <div>
-                      <p className="text-[11px] font-body font-semibold text-foreground">Enforcement</p>
-                      <p className="text-[10px] text-muted-foreground font-body">
-                        {(rule.enforcement || "hard") === "hard" ? "🔒 Hard — Blocks registration" : "💡 Soft — Advisory only, user can still register"}
-                      </p>
-                    </div>
+              {/* Livello minimo */}
+              <RuleToggleRow
+                label="Livello minimo richiesto"
+                isActive={accessRules.some(r => r.type === "min_level")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "min_level", value: 1, enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "min_level"));
+                }}
+              >
+                {accessRules.find(r => r.type === "min_level") && (
+                  <div className="flex gap-2 items-center">
                     <Select
-                      value={rule.enforcement || "hard"}
-                      onValueChange={(v) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, enforcement: v as "hard" | "soft" } : r))}
+                      value={String(accessRules.find(r => r.type === "min_level")?.value || "1")}
+                      onValueChange={(v) => setAccessRules(prev => prev.map(r => r.type === "min_level" ? { ...r, value: parseInt(v) } : r))}
                     >
-                      <SelectTrigger className="w-24 h-7 text-[11px]"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="hard">🔒 Hard</SelectItem>
-                        <SelectItem value="soft">💡 Soft</SelectItem>
+                        <SelectItem value="1">Principiante</SelectItem>
+                        <SelectItem value="2">Intermedio</SelectItem>
+                        <SelectItem value="3">Avanzato</SelectItem>
                       </SelectContent>
                     </Select>
+                    <EnforcementToggle rule={accessRules.find(r => r.type === "min_level")!} onChange={(enforcement) => setAccessRules(prev => prev.map(r => r.type === "min_level" ? { ...r, enforcement } : r))} />
                   </div>
                 )}
+              </RuleToggleRow>
 
-                <Input
-                  placeholder="Custom restriction message (optional)"
-                  value={rule.message || ""}
-                  onChange={(e) => setAccessRules(prev => prev.map((r, i) => i === index ? { ...r, message: e.target.value } : r))}
-                />
-              </div>
-            ))}
+              {/* Esperienze minime */}
+              <RuleToggleRow
+                label="Numero minimo di esperienze"
+                isActive={accessRules.some(r => r.type === "min_experience")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "min_experience", value: 1, enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "min_experience"));
+                }}
+              >
+                {accessRules.find(r => r.type === "min_experience") && (
+                  <div className="flex gap-2 items-center">
+                    <Select
+                      value={String(accessRules.find(r => r.type === "min_experience")?.value || "1")}
+                      onValueChange={(v) => setAccessRules(prev => prev.map(r => r.type === "min_experience" ? { ...r, value: parseInt(v) } : r))}
+                    >
+                      <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">0–2 escursioni</SelectItem>
+                        <SelectItem value="2">3–5 escursioni</SelectItem>
+                        <SelectItem value="3">5+ escursioni</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <EnforcementToggle rule={accessRules.find(r => r.type === "min_experience")!} onChange={(enforcement) => setAccessRules(prev => prev.map(r => r.type === "min_experience" ? { ...r, enforcement } : r))} />
+                  </div>
+                )}
+              </RuleToggleRow>
+
+              {/* Frequenza attività */}
+              <RuleToggleRow
+                label="Frequenza attività fisica minima"
+                isActive={accessRules.some(r => r.type === "min_activity_frequency")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "min_activity_frequency", value: 1, enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "min_activity_frequency"));
+                }}
+              >
+                {accessRules.find(r => r.type === "min_activity_frequency") && (
+                  <div className="flex gap-2 items-center">
+                    <Select
+                      value={String(accessRules.find(r => r.type === "min_activity_frequency")?.value || "1")}
+                      onValueChange={(v) => setAccessRules(prev => prev.map(r => r.type === "min_activity_frequency" ? { ...r, value: parseInt(v) } : r))}
+                    >
+                      <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Raramente</SelectItem>
+                        <SelectItem value="2">1–2 volte a settimana</SelectItem>
+                        <SelectItem value="3">Più di 2 volte a settimana</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <EnforcementToggle rule={accessRules.find(r => r.type === "min_activity_frequency")!} onChange={(enforcement) => setAccessRules(prev => prev.map(r => r.type === "min_activity_frequency" ? { ...r, enforcement } : r))} />
+                  </div>
+                )}
+              </RuleToggleRow>
+
+              {/* Interessi consigliati (always soft) */}
+              <RuleToggleRow
+                label="Interessi consigliati"
+                isActive={accessRules.some(r => r.type === "interests")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "interests", interests: [], enforcement: "soft" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "interests"));
+                }}
+              >
+                {accessRules.find(r => r.type === "interests") && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground">💡 Sempre soft — non blocca la registrazione</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["Trekking", "Cultura", "Fotografia", "Natura", "Sport", "Gastronomia", "Avventura", "Relax"].map(interest => {
+                        const currentInterests = accessRules.find(r => r.type === "interests")?.interests || [];
+                        const isSelected = currentInterests.includes(interest);
+                        return (
+                          <button
+                            key={interest}
+                            type="button"
+                            onClick={() => {
+                              setAccessRules(prev => prev.map(r => {
+                                if (r.type !== "interests") return r;
+                                const curr = r.interests || [];
+                                const next = isSelected ? curr.filter(i => i !== interest) : curr.length < 3 ? [...curr, interest] : curr;
+                                return { ...r, interests: next };
+                              }));
+                            }}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-body border transition-colors ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                            }`}
+                          >
+                            {interest}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Max 3 interessi</p>
+                  </div>
+                )}
+              </RuleToggleRow>
+            </div>
+
+            {/* GROUP 2: 📊 Storico attività */}
+            <div className="space-y-2 pt-2 border-t border-border/30">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">📊 Storico attività</p>
+
+              {/* Min trekking events */}
+              <RuleToggleRow
+                label="Min. eventi trekking completati"
+                isActive={accessRules.some(r => r.type === "min_trekking_events")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "min_trekking_events", value: 1, enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "min_trekking_events"));
+                }}
+              >
+                {accessRules.find(r => r.type === "min_trekking_events") && (
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="number" min={1} className="h-8 text-xs flex-1"
+                      value={accessRules.find(r => r.type === "min_trekking_events")?.value as number || ""}
+                      onChange={(e) => setAccessRules(prev => prev.map(r => r.type === "min_trekking_events" ? { ...r, value: parseInt(e.target.value) || 0 } : r))}
+                    />
+                    <EnforcementToggle rule={accessRules.find(r => r.type === "min_trekking_events")!} onChange={(enforcement) => setAccessRules(prev => prev.map(r => r.type === "min_trekking_events" ? { ...r, enforcement } : r))} />
+                  </div>
+                )}
+              </RuleToggleRow>
+
+              {/* Min total events attended */}
+              <RuleToggleRow
+                label="Min. presenze totali"
+                isActive={accessRules.some(r => r.type === "min_attended_events")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "min_attended_events", value: 1, enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "min_attended_events"));
+                }}
+              >
+                {accessRules.find(r => r.type === "min_attended_events") && (
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="number" min={1} className="h-8 text-xs flex-1"
+                      value={accessRules.find(r => r.type === "min_attended_events")?.value as number || ""}
+                      onChange={(e) => setAccessRules(prev => prev.map(r => r.type === "min_attended_events" ? { ...r, value: parseInt(e.target.value) || 0 } : r))}
+                    />
+                    <EnforcementToggle rule={accessRules.find(r => r.type === "min_attended_events")!} onChange={(enforcement) => setAccessRules(prev => prev.map(r => r.type === "min_attended_events" ? { ...r, enforcement } : r))} />
+                  </div>
+                )}
+              </RuleToggleRow>
+            </div>
+
+            {/* GROUP 3: ⚙️ Accesso */}
+            <div className="space-y-2 pt-2 border-t border-border/30">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">⚙️ Accesso</p>
+
+              {/* Membership */}
+              <RuleToggleRow
+                label="Membership attiva richiesta"
+                isActive={accessRules.some(r => r.type === "require_membership")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "require_membership", enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "require_membership"));
+                }}
+              />
+
+              {/* Badge */}
+              <RuleToggleRow
+                label="Badge specifico richiesto"
+                isActive={accessRules.some(r => r.type === "require_badge")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "require_badge", enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "require_badge"));
+                }}
+              >
+                {accessRules.find(r => r.type === "require_badge") && (
+                  <BadgeSelector
+                    value={accessRules.find(r => r.type === "require_badge")?.badge_id || ""}
+                    onChange={(badgeId, badgeName) => setAccessRules(prev => prev.map(r => r.type === "require_badge" ? { ...r, badge_id: badgeId, badge_name: badgeName, value: badgeId } : r))}
+                  />
+                )}
+              </RuleToggleRow>
+
+              {/* Manual approval */}
+              <RuleToggleRow
+                label="Approvazione manuale richiesta"
+                isActive={accessRules.some(r => r.type === "manual_approval")}
+                onToggle={(active) => {
+                  if (active) setAccessRules(prev => [...prev, { type: "manual_approval", enforcement: "hard" }]);
+                  else setAccessRules(prev => prev.filter(r => r.type !== "manual_approval"));
+                }}
+              />
+            </div>
 
             {accessRules.length > 0 && (
               <div className="space-y-3 pt-2 border-t border-border/50">
                 <div>
-                  <Label className="text-xs">Exclusivity Label (shown on event card)</Label>
+                  <Label className="text-xs">Etichetta esclusività (mostrata sulla card)</Label>
                   <Select value={exclusivityLabel} onValueChange={setExclusivityLabel}>
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Auto-detect from rules" /></SelectTrigger>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Rileva automaticamente" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value=" ">Auto-detect</SelectItem>
-                      <SelectItem value="Exclusive Event">⭐ Exclusive Event</SelectItem>
-                      <SelectItem value="Members Only">👑 Members Only</SelectItem>
-                      <SelectItem value="Community Priority">🤝 Community Priority</SelectItem>
-                      <SelectItem value="Experience Required">🔒 Experience Required</SelectItem>
+                      <SelectItem value="Exclusive Event">⭐ Evento esclusivo</SelectItem>
+                      <SelectItem value="Members Only">👑 Solo membri</SelectItem>
+                      <SelectItem value="Community Priority">🤝 Priorità community</SelectItem>
+                      <SelectItem value="Experience Required">🔒 Esperienza richiesta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs">Global Restriction Message (optional)</Label>
+                  <Label className="text-xs">Messaggio di restrizione globale (opzionale)</Label>
                   <Input
                     value={restrictionMessage}
                     onChange={(e) => setRestrictionMessage(e.target.value)}
-                    placeholder="e.g. This event is reserved for experienced members"
+                    placeholder="es. Questo evento è riservato ai membri esperti"
                     className="mt-1"
                   />
-                  <p className="text-[10px] text-muted-foreground font-body mt-1">Shown when a user doesn't meet requirements. If empty, individual rule messages are used.</p>
+                  <p className="text-[10px] text-muted-foreground font-body mt-1">Mostrato quando un utente non soddisfa i requisiti. Se vuoto, vengono usati i messaggi delle singole regole.</p>
                 </div>
               </div>
             )}
