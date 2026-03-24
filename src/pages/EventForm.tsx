@@ -112,6 +112,8 @@ const EventForm = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+  const [validationPopupOpen, setValidationPopupOpen] = useState(false);
+  const [validationPopupFields, setValidationPopupFields] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     title: "",
