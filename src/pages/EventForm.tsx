@@ -522,16 +522,25 @@ const EventForm = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="date">Date *</Label>
-                <Input id="date" type="date" value={form.date} onChange={(e) => updateForm("date", e.target.value)} />
+                <Input id="date" type="date" value={form.date} onChange={(e) => { updateForm("date", e.target.value); setValidationErrors(prev => ({ ...prev, date: false })); }} className={validationErrors.date ? "border-destructive ring-destructive/20 ring-2" : ""} />
+                {validationErrors.date && <p className="text-xs text-destructive mt-1">Required</p>}
               </div>
               <div>
                 <Label htmlFor="time">Time *</Label>
-                <Input id="time" type="time" value={form.time} onChange={(e) => updateForm("time", e.target.value)} />
+                <Input id="time" type="time" value={form.time} onChange={(e) => { updateForm("time", e.target.value); setValidationErrors(prev => ({ ...prev, time: false })); }} className={validationErrors.time ? "border-destructive ring-destructive/20 ring-2" : ""} />
+                {validationErrors.time && <p className="text-xs text-destructive mt-1">Required</p>}
               </div>
             </div>
             <div>
               <Label htmlFor="location">Location *</Label>
-              <Input id="location" value={form.location} onChange={(e) => updateForm("location", e.target.value)} placeholder="Event location" />
+              <LocationAutocomplete
+                id="location"
+                value={form.location}
+                onChange={(val) => { updateForm("location", val); setValidationErrors(prev => ({ ...prev, location: false })); }}
+                placeholder="Search location..."
+                error={validationErrors.location}
+              />
+              {validationErrors.location && <p className="text-xs text-destructive mt-1">Location is required</p>}
             </div>
             <div>
               <Label htmlFor="category">Category</Label>
