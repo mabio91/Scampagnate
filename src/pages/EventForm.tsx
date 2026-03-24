@@ -381,12 +381,13 @@ const EventForm = () => {
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       const missingFields = [];
-      if (errors.title) missingFields.push("Title");
-      if (errors.date) missingFields.push("Date");
-      if (errors.time) missingFields.push("Time");
-      if (errors.location) missingFields.push("Location");
-      if (errors.image) missingFields.push("Cover image");
-      toast({ title: "Campi obbligatori mancanti", description: missingFields.join(", "), variant: "destructive" });
+      if (errors.title) missingFields.push("Titolo");
+      if (errors.date) missingFields.push("Data");
+      if (errors.time) missingFields.push("Ora");
+      if (errors.location) missingFields.push("Località");
+      if (errors.image) missingFields.push("Immagine di copertina");
+      setValidationPopupFields(missingFields);
+      setValidationPopupOpen(true);
       return;
     }
     setValidationErrors({});
