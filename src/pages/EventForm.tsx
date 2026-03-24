@@ -252,15 +252,32 @@ const EventForm = () => {
       }
 
       // Load additional fields
-      if (event.additional_fields && Array.isArray(event.additional_fields)) {
-        setAdditionalFields(
-          (event.additional_fields as any[]).map((f: any) => ({
-            label: f.label || "",
-            type: f.type || "text",
-            required: f.required || false,
-            options: f.options || "",
-          }))
-        );
+      if (event.additional_fields) {
+        const af = event.additional_fields as any;
+        if (af.ask_car_availability !== undefined) {
+          // New format: { fields: [...], ask_car_availability: bool }
+          setAskCarAvailability(!!af.ask_car_availability);
+          if (Array.isArray(af.fields)) {
+            setAdditionalFields(
+              af.fields.map((f: any) => ({
+                label: f.label || "",
+                type: f.type || "text",
+                required: f.required || false,
+                options: f.options || "",
+              }))
+            );
+          }
+        } else if (Array.isArray(af)) {
+          // Legacy format: plain array
+          setAdditionalFields(
+            af.map((f: any) => ({
+              label: f.label || "",
+              type: f.type || "text",
+              required: f.required || false,
+              options: f.options || "",
+            }))
+          );
+        }
       }
 
       // Load access rules
