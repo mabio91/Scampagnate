@@ -207,7 +207,7 @@ export const useRegisterForEvent = () => {
       if (asWaitlist) status = "waitlist";
       if (requestApproval) status = "pending_approval";
 
-      const { error } = await supabase.from("event_registrations").insert({
+      const { data: insertedData, error } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: user.id,
         meeting_point_id: meetingPointId || null,
@@ -215,8 +215,9 @@ export const useRegisterForEvent = () => {
         status: status as any,
         payment_status: paymentStatus,
         price_option_id: priceOptionId || null,
-      } as any);
+      } as any).select('id').single();
       if (error) throw error;
+      return { registrationId: insertedData?.id, eventId };
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["event", vars.eventId] });
