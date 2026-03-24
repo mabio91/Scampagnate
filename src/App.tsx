@@ -62,26 +62,7 @@ const App = () => (
           <RestrictionBanner />
           <BrowserRouter>
             <Suspense fallback={<PageFallback />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/event/:id" element={<EventDetail />} />
-                <Route path="/my-events" element={<MyEvents />} />
-                <Route path="/merch" element={<Merch />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile-setup" element={<ProfileSetup />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/organizer" element={<OrganizerDashboard />} />
-                <Route path="/organizer/:id" element={<OrganizerProfile />} />
-                <Route path="/organizer/events/new" element={<EventForm />} />
-                <Route path="/organizer/events/:id" element={<EventManage />} />
-                <Route path="/organizer/events/:id/edit" element={<EventForm />} />
-                <Route path="/membership-success" element={<MembershipSuccess />} />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AnimatedRoutes />
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>
