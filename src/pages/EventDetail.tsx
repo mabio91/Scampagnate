@@ -2,11 +2,11 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, ChevronDown, X, ZoomIn
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
@@ -39,6 +39,8 @@ import {
 import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { Checkbox } from "@/components/ui/checkbox";
 import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import useEmblaCarousel from "embla-carousel-react";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -70,6 +72,24 @@ const EventDetail = () => {
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [carAvailability, setCarAvailability] = useState("");
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+
+  // New states
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+  const [equipmentOpen, setEquipmentOpen] = useState(false);
+  const [showOrganizerContact, setShowOrganizerContact] = useState(false);
+  const [showNavigationModal, setShowNavigationModal] = useState(false);
+  const [navigationLocation, setNavigationLocation] = useState("");
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+
+  // Gallery carousel
+  const [emblaRef, emblaApi] = useEmblaCarousel({ startIndex: galleryStartIndex });
+
+  useEffect(() => {
+    if (emblaApi && showGalleryModal) {
+      emblaApi.scrollTo(galleryStartIndex, true);
+    }
+  }, [emblaApi, showGalleryModal, galleryStartIndex]);
   
   // Hero parallax/fade on scroll
   const [scrollY, setScrollY] = useState(0);
@@ -103,10 +123,8 @@ const EventDetail = () => {
     queryKey: ["organizer-profile", event?.organizer_id],
     queryFn: async () => {
       if (!event?.organizer_id) return null;
-      // Get public profile data
       const { data: publicData } = await supabase.rpc("get_public_profile", { profile_id: event.organizer_id });
       const pub = publicData?.[0] || null;
-      // Try to get phone (only works if user has RLS access — e.g. self, admin, or event participant)
       let phone: string | null = null;
       const { data: fullData } = await supabase
         .from("profiles")
@@ -197,7 +215,6 @@ const EventDetail = () => {
   };
 
   const handleAddToCalendar = (type: "google" | "apple" | "outlook") => {
-    // On mobile, always download .ics file — it opens the native calendar app
     if (isMobileDevice()) {
       const url = generateICSBlob();
       const a = document.createElement("a");
@@ -209,7 +226,6 @@ const EventDetail = () => {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       return;
     }
-    // On desktop, use web URLs for Google/Outlook, .ics for Apple
     if (type === "apple") {
       const url = generateICSBlob();
       const a = document.createElement("a");
@@ -238,7 +254,6 @@ const EventDetail = () => {
 
     if (isRegistered) return;
 
-    // Phone verification gate — must verify before joining
     if (!profile?.phone_verified) {
       setShowPhoneVerification(true);
       return;
@@ -249,7 +264,6 @@ const EventDetail = () => {
       return;
     }
 
-    // Show soft warnings dialog if any, but don't block
     if (accessData && accessData.softWarnings && accessData.softWarnings.length > 0) {
       setShowAccessWarning(true);
       return;
@@ -260,7 +274,6 @@ const EventDetail = () => {
 
   const handlePhoneVerified = () => {
     setShowPhoneVerification(false);
-    // After verification, continue to registration
     if (accessData && !accessData.hasAccess) {
       setShowAccessWarning(true);
     } else if (accessData && accessData.softWarnings && accessData.softWarnings.length > 0) {
@@ -296,7 +309,6 @@ const EventDetail = () => {
       if (appliedDiscount?.discount_code_id) {
         body.discountCodeId = appliedDiscount.discount_code_id;
       }
-      // Pass price option if selected
       const regPriceOptionId = (myRegistration as any).price_option_id;
       if (regPriceOptionId) {
         body.priceOptionId = regPriceOptionId;
@@ -323,8 +335,6 @@ const EventDetail = () => {
   };
 
   const handleRegister = async (requestApproval = false) => {
-    // For free/location events, non-members complete membership checkout first.
-    // For paid/deposit events, membership is charged together in event checkout.
     if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
       await handleMembershipCheckout();
       return;
@@ -345,7 +355,6 @@ const EventDetail = () => {
       setShowAccessWarning(false);
       setIsRequestingOverride(false);
 
-      // For paid/deposit events, immediately redirect to Stripe checkout
       const requiresPayment = !isWaitlist && !requestApproval && (event.payment_type === "paid" || event.payment_type === "deposit");
       if (requiresPayment && result?.registrationId) {
         setPaymentLoading(true);
@@ -378,23 +387,23 @@ const EventDetail = () => {
       }
 
       if (requestApproval) {
-        toast({ title: "Request sent", description: "Your manual approval request has been sent to the organizer.", duration: 5000 });
+        toast({ title: "Richiesta inviata", description: "La tua richiesta è stata inviata all'organizzatore.", duration: 5000 });
       } else if (isWaitlist) {
-        toast({ title: "Added to waitlist", description: `You'll be notified when a spot opens for ${event.title}` });
+        toast({ title: "Lista d'attesa", description: `Sarai notificato quando si libererà un posto per ${event.title}` });
       } else {
-        toast({ title: "Registration confirmed", description: `You've registered for ${event.title}` });
+        toast({ title: "Registrazione confermata", description: `Ti sei iscritto a ${event.title}` });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
     }
   };
 
   const handleCancel = async () => {
     try {
       await cancelMutation.mutateAsync(event.id);
-      toast({ title: "Registration cancelled", description: "Your registration has been cancelled." });
+      toast({ title: "Registrazione annullata", description: "La tua iscrizione è stata annullata." });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
     }
   };
 
@@ -402,24 +411,25 @@ const EventDetail = () => {
   const isPendingApproval = isRegistered && myRegistration?.status === "pending_approval";
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
+  // CTA PRIORITY ORDER (from highest to lowest)
   const getCTALabel = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return t("eventClosed");
-    if (!user) return t("signInToJoin");
-    if (isPendingApproval) return t("approvalPending");
-    if (isOnWaitlist) return t("onWaitlist");
-    if (needsPayment) return t("payNow");
-    if (isRegistered) return t("registered");
-    if (event.status === "full") return t("joinWaitlist");
-    if (accessData && !accessData.hasAccess) return t("viewRequirements");
-    return t("joinEvent");
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Evento chiuso";
+    if (!user) return "Partecipa";
+    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Registrato ✓";
+    if (isPendingApproval) return "In attesa di approvazione";
+    if (isOnWaitlist) return "Lista d'attesa";
+    if (needsPayment) return "Paga ora";
+    if (event.status === "full") return "Lista d'attesa";
+    return "Partecipa";
   };
 
   const getCTAClass = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "bg-muted text-muted-foreground cursor-not-allowed";
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
-    if (isOnWaitlist || isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
+    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-green-600 text-white";
+    if (isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
+    if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
-    if (isRegistered) return "bg-success text-success-foreground";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
     if (accessData && !accessData.hasAccess) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
     return "bg-primary text-primary-foreground hover:bg-primary/90";
@@ -440,31 +450,79 @@ const EventDetail = () => {
     window.open(urls[app], "_blank");
   };
 
-  const DirectionsButton = ({ location, className = "" }: { location: string; className?: string }) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/10 text-secondary text-xs sm:text-sm font-body font-semibold hover:bg-secondary/20 transition-colors ${className}`}>
-          <Navigation className="h-4 w-4 shrink-0" />
-          <span className="truncate">{t("directions")}</span>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={() => openDirections(location, "google")} className="font-body cursor-pointer">
-          <MapPinned className="h-4 w-4 mr-2 text-muted-foreground" /> Google Maps
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => openDirections(location, "apple")} className="font-body cursor-pointer">
-          <Map className="h-4 w-4 mr-2 text-muted-foreground" /> Apple Maps
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => openDirections(location, "waze")} className="font-body cursor-pointer">
-          <Car className="h-4 w-4 mr-2 text-muted-foreground" /> Waze
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+  // Format date string for display
+  const formatDateDisplay = () => {
+    const dateObj = new Date(event.date);
+    const dayName = dateObj.toLocaleDateString(language === "it" ? "it-IT" : "en-US", { weekday: "long" });
+    const dayNum = dateObj.getDate();
+    const month = dateObj.toLocaleDateString(language === "it" ? "it-IT" : "en-US", { month: "long" });
+    const year = dateObj.getFullYear();
+    const startTime = event.time?.slice(0, 5);
+    // Check if duration provides end time info
+    const durationStr = event.duration;
+    let endTime = "";
+    if (durationStr) {
+      const hoursMatch = durationStr.match(/(\d+)\s*h/i);
+      const minsMatch = durationStr.match(/(\d+)\s*m/i);
+      if (hoursMatch || minsMatch) {
+        const startParts = (startTime || "00:00").split(":").map(Number);
+        const totalMins = startParts[0] * 60 + startParts[1] + (hoursMatch ? parseInt(hoursMatch[1]) * 60 : 0) + (minsMatch ? parseInt(minsMatch[1]) : 0);
+        const endH = Math.floor(totalMins / 60) % 24;
+        const endM = totalMins % 60;
+        endTime = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+      }
+    }
+    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    return {
+      dateText: `${capitalize(dayName)}, ${dayNum} ${capitalize(month)} ${year}`,
+      timeText: endTime ? `${startTime} – ${endTime}` : startTime || "",
+    };
+  };
+
+  const { dateText, timeText } = formatDateDisplay();
+
+  // Price display logic (simplified for event page)
+  const getPriceDisplay = () => {
+    const hasPriceOptions = event.price_options && event.price_options.length > 0;
+    if (Number(event.price) === 0 && event.payment_type === "free") return "Gratis";
+    if (hasPriceOptions) {
+      const prices = event.price_options!.map((o: any) => Number(o.price));
+      const minPrice = Math.min(...prices);
+      if (prices.length > 1) return `Da €${minPrice.toFixed(0)}`;
+      return `€${minPrice.toFixed(0)}`;
+    }
+    return `€${Number(event.price).toFixed(0)}`;
+  };
+
+  // Get cancellation policy short label
+  const getCancellationLabel = () => {
+    if (!event.cancellation_policy) return null;
+    const { policyType } = parseCancellationPolicy(event.cancellation_policy);
+    if (!policyType) return null;
+    const labels: Record<string, string> = {
+      flexible: "Flessibile",
+      moderate: "Moderata",
+      strict: "Rigida",
+      custom: "Personalizzata",
+    };
+    return labels[policyType] || null;
+  };
+
+  // Get what's included bullets
+  const getIncludedItems = () => {
+    const items: string[] = [];
+    const af = event.additional_fields as any;
+    if (af && af.includes && Array.isArray(af.includes)) {
+      return af.includes.slice(0, 3);
+    }
+    return items;
+  };
+
+  const remainingSpots = event.spots_total - event.spots_taken;
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
-      {/* Hero with parallax/fade */}
+      {/* 1. HERO with parallax/fade */}
       <div ref={heroRef} className="relative overflow-hidden" style={{ height: `${heroHeight}px` }}>
         <div
           style={{
@@ -482,9 +540,9 @@ const EventDetail = () => {
         {/* Top buttons with Apple safe area */}
         <div className="absolute top-0 left-0 right-0 pt-safe">
           <div className="flex items-center justify-between px-4 pt-3">
-            <Link to="/" className="p-2.5 rounded-full bg-background/20 backdrop-blur-md text-primary-foreground touch-target flex items-center justify-center">
+            <button onClick={() => navigate(-1)} className="p-2.5 rounded-full bg-background/20 backdrop-blur-md text-primary-foreground touch-target flex items-center justify-center">
               <ArrowLeft className="h-5 w-5" />
-            </Link>
+            </button>
             <div className="flex gap-2">
               <button onClick={handleToggleSave} className="p-2.5 rounded-full bg-background/20 backdrop-blur-md text-primary-foreground touch-target flex items-center justify-center">
                 {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
@@ -538,39 +596,49 @@ const EventDetail = () => {
         </div>
 
       <div className="max-w-lg mx-auto px-4">
-        {/* Date & Time */}
+
+        {/* 2. DATE & LOCATION (WEMEET STYLE) */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-4 border-b border-border">
-          <div className="flex items-start gap-3 mb-3">
-            <CalendarDays className="h-5 w-5 text-secondary shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-body font-semibold text-foreground capitalize">
-                {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-              </p>
-              <p className="text-xs font-body text-muted-foreground">{event.time?.slice(0, 5)} GMT+1</p>
+          {/* Row 1 – Date & Time → tap opens calendar */}
+          <button
+            onClick={() => setShowCalendarModal(true)}
+            className="flex items-start gap-3 mb-3 w-full text-left group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <CalendarDays className="h-5 w-5 text-primary" />
             </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 text-secondary shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-body font-semibold text-foreground">{event.location.split(',')[0]}</p>
+              <p className="text-sm font-body font-semibold text-foreground capitalize group-hover:text-primary transition-colors">
+                {dateText}
+              </p>
+              <p className="text-xs font-body text-muted-foreground">{timeText}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-3" />
+          </button>
+
+          {/* Row 2 – Location → tap opens navigation choice modal */}
+          <button
+            onClick={() => { setNavigationLocation(event.location); setShowNavigationModal(true); }}
+            className="flex items-start gap-3 w-full text-left group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+              <MapPin className="h-5 w-5 text-secondary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-body font-semibold text-foreground group-hover:text-secondary transition-colors">{event.location.split(',')[0]}</p>
               <p className="text-xs font-body text-muted-foreground truncate">{event.location}</p>
             </div>
-            <button
-              onClick={() => openDirections(event.location, "google")}
-              className="shrink-0 p-2 rounded-full hover:bg-muted transition-colors"
-            >
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-3" />
+          </button>
         </motion.div>
 
-        {/* Organizer + Participants Row (WeMeet style) */}
+        {/* 10. ORGANIZER + 9. PARTICIPANTS (WeMeet style) */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="py-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">
-            {/* Organizer */}
+            {/* Organizer (left) */}
             <div className="flex-shrink-0">
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("organizer")}</p>
-              <Link to={`/organizer/${event.organizer_id}`} className="flex items-center gap-2 group">
+              <button onClick={() => setShowOrganizerContact(true)} className="flex items-center gap-2 group text-left">
                 {organizerProfile?.avatar_url ? (
                   <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
                 ) : (
@@ -582,10 +650,10 @@ const EventDetail = () => {
                   <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{organizerProfile?.first_name || event.organizer_name}</p>
                   <p className="text-xs font-body text-primary">Contatta</p>
                 </div>
-              </Link>
+              </button>
             </div>
 
-            {/* Participants preview */}
+            {/* Participants (right) */}
             <div className="flex-shrink-0">
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
               <button
@@ -652,31 +720,33 @@ const EventDetail = () => {
         {/* Weather Forecast */}
         <WeatherForecast location={event.location} date={event.date} />
 
-        {/* Description with "Leggi di più" */}
+        {/* 4. DESCRIPTION → "L'esperienza" with gradient fade */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-2">L'evento in breve</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">L'esperienza</h3>
           <div className="relative">
-            <p className={`text-sm font-body text-muted-foreground leading-relaxed ${!descriptionExpanded ? "line-clamp-4" : ""}`}>
+            <p className={`text-sm font-body text-muted-foreground leading-relaxed whitespace-pre-line ${!descriptionExpanded ? "line-clamp-6" : ""}`}>
               {event.description}
             </p>
-            {event.description && event.description.length > 200 && !descriptionExpanded && (
+            {event.description && event.description.length > 250 && !descriptionExpanded && (
+              <>
+                <div className="absolute bottom-6 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                <button
+                  onClick={() => setDescriptionExpanded(true)}
+                  className="relative text-sm font-body font-semibold text-primary mt-1 hover:underline"
+                >
+                  Leggi di più
+                </button>
+              </>
+            )}
+            {descriptionExpanded && event.description && event.description.length > 250 && (
               <button
-                onClick={() => setDescriptionExpanded(true)}
-                className="text-sm font-body font-semibold text-foreground mt-1 hover:underline"
+                onClick={() => setDescriptionExpanded(false)}
+                className="text-sm font-body font-semibold text-primary mt-1 hover:underline"
               >
-                Leggi di più
+                Mostra meno
               </button>
             )}
           </div>
-          {/* Category tag */}
-          {event.category && (
-            <div className="mt-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-xs font-body font-semibold text-muted-foreground">
-                {event.category.icon && <span>{event.category.icon}</span>}
-                {event.category.name}
-              </span>
-            </div>
-          )}
         </motion.div>
 
         {/* Safety Warning for demanding events */}
@@ -688,7 +758,6 @@ const EventDetail = () => {
               const trekkingExp = (profile as any).trekking_experience;
               const activityFreq = (profile as any).activity_frequency;
               
-              // Determine if user's profile suggests they may be underprepared
               const isUnderprepared = (() => {
                 if (diffLevel >= 4) {
                   return selfLevel !== "advanced" || (trekkingExp !== "5_plus" && trekkingExp !== "5+") || (activityFreq !== "high" && activityFreq !== ">2/week");
@@ -720,13 +789,17 @@ const EventDetail = () => {
           </motion.div>
         )}
 
-        {/* Gallery */}
+        {/* 5. GALLERY → click opens fullscreen */}
         {event.gallery_images && event.gallery_images.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="py-4 border-b border-border">
             <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("gallery")}</h3>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 auto-cols-[180px] grid-flow-col grid">
-              {event.gallery_images.sort((a,b) => a.order - b.order).map((img, idx) => (
-                <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer shadow-md active:scale-95 transition-all">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+              {event.gallery_images.sort((a: any, b: any) => a.order - b.order).map((img: any, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => { setGalleryStartIndex(idx); setShowGalleryModal(true); }}
+                  className="relative aspect-square w-[140px] sm:w-[180px] rounded-xl overflow-hidden bg-muted group cursor-pointer shadow-md active:scale-95 transition-all flex-shrink-0"
+                >
                   <OptimizedImage 
                     src={img.url} 
                     alt={`Gallery ${idx + 1}`} 
@@ -734,14 +807,16 @@ const EventDetail = () => {
                     width={180} 
                     height={180}
                   />
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <ZoomIn className="h-6 w-6 text-white drop-shadow-lg" />
+                  </div>
+                </button>
               ))}
             </div>
           </motion.div>
         )}
 
-        {/* Equipment List */}
+        {/* 6. EQUIPMENT – Collapsible (default CLOSED), amber for mandatory */}
         {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).length > 0 && (() => {
           const allItems = event.equipment_list as any[];
           const mandatoryItems = allItems.filter((item: any) => item.is_mandatory);
@@ -750,160 +825,121 @@ const EventDetail = () => {
 
           return (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }} className="py-4 border-b border-border">
-              <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("equipment")}</h3>
-
-              {/* Mandatory Equipment */}
-              {hasMandatory && (
-                <div className="mb-4">
-                  <p className="text-xs font-body font-bold text-destructive uppercase tracking-wider mb-2">{t("mandatoryEquipment")}</p>
-                  <div className="space-y-2 p-3 rounded-xl bg-destructive/5 border border-destructive/15">
-                    {mandatoryItems.map((item: any, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm font-body">
-                        <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-destructive/10 text-destructive flex items-center justify-center text-[10px] font-bold">!</span>
-                        <div>
-                          <span className="font-semibold text-foreground">{item.name}</span>
-                          {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
-                        </div>
+              <Collapsible open={equipmentOpen} onOpenChange={setEquipmentOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                  <h3 className="font-display text-lg font-bold text-foreground">{t("equipment")}</h3>
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${equipmentOpen ? "rotate-180" : ""}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  {/* Mandatory Equipment – amber/orange */}
+                  {hasMandatory && (
+                    <div className="mb-4">
+                      <p className="text-xs font-body font-bold text-amber-600 uppercase tracking-wider mb-2">{t("mandatoryEquipment")}</p>
+                      <div className="space-y-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30">
+                        {mandatoryItems.map((item: any, idx: number) => (
+                          <div key={idx} className="flex items-start gap-2 text-sm font-body">
+                            <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center text-[10px] font-bold">!</span>
+                            <div>
+                              <span className="font-semibold text-foreground">{item.name}</span>
+                              {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {/* Recommended Equipment */}
-              {recommendedItems.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("recommendedEquipment")}</p>
-                  <div className="space-y-2">
-                    {recommendedItems.map((item: any, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm font-body">
-                        <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">·</span>
-                        <div>
-                          <span className="text-muted-foreground">{item.name}</span>
-                          {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
-                        </div>
+                  {/* Recommended Equipment */}
+                  {recommendedItems.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("recommendedEquipment")}</p>
+                      <div className="space-y-2">
+                        {recommendedItems.map((item: any, idx: number) => (
+                          <div key={idx} className="flex items-start gap-2 text-sm font-body">
+                            <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">·</span>
+                            <div>
+                              <span className="text-muted-foreground">{item.name}</span>
+                              {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {/* Safety Warning */}
-              {hasMandatory && (
-                <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
-                  <p className="text-xs font-body text-warning-foreground leading-relaxed">
-                    <strong>{t("safetyNotice")}</strong> {t("safetyNoticeText")}
-                  </p>
-                </div>
-              )}
+                  {/* 7. SAFETY NOTICE (inside equipment) */}
+                  {hasMandatory && (
+                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-xs font-body text-foreground leading-relaxed">
+                        <strong>Avviso importante</strong><br />
+                        I partecipanti che si presentano senza l'attrezzatura obbligatoria potrebbero non essere ammessi all'attività per motivi di sicurezza.
+                      </p>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
             </motion.div>
           );
         })()}
 
-
+        {/* 8. MEETING POINTS – compact */}
         {event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
             <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("meetingPoints")}</h3>
-            <div className="space-y-3">
-              {event.meeting_points.map((mp) => (
-                <div key={mp.id} className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-muted/50">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                      <MapPin className="h-5 w-5 text-secondary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
-                      <p className="text-xs font-body text-muted-foreground truncate">{mp.location} · {mp.time?.slice(0, 5)}</p>
-                    </div>
+            <div className="space-y-2">
+              {event.meeting_points.map((mp: any) => (
+                <button
+                  key={mp.id}
+                  onClick={() => { setNavigationLocation(mp.location); setShowNavigationModal(true); }}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 w-full text-left hover:bg-muted transition-colors group"
+                >
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center">
+                    <MapPin className="h-4 w-4 text-secondary" />
                   </div>
-                  <DirectionsButton location={mp.location} />
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
+                    <p className="text-xs font-body text-muted-foreground truncate">{mp.location}</p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-sm font-body font-bold text-foreground">{mp.time?.slice(0, 5)}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
               ))}
             </div>
           </motion.div>
         )}
 
-        {/* Buono a sapersi / Info sections */}
+        {/* 11. PAYMENT SECTION (SIMPLIFIED) */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-3">Buono a sapersi</h3>
-          <div className="space-y-4">
-            {event.cancellation_policy && (() => {
-              const { policyType, customText } = parseCancellationPolicy(event.cancellation_policy);
-              if (!policyType) return null;
-              const policy = CANCELLATION_POLICIES[policyType];
-              const PolicyIcon = policy.icon;
-              return (
-                <div className="flex items-start gap-3">
-                  <PolicyIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-body font-semibold text-foreground">Termini di cancellazione</p>
-                    <p className="text-xs font-body text-muted-foreground">{policyType === "custom" ? customText : policy.description}</p>
-                  </div>
-                </div>
-              );
-            })()}
-            {event.payment_type !== "free" && (
-              <div className="flex items-start gap-3">
-                <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-body font-semibold text-foreground">Pagamenti e rimborsi</p>
-                  <p className="text-xs font-body text-muted-foreground">
-                    {(event.payment_type as string) === "paid" && `€${Number(event.price).toFixed(0)} da pagare online`}
-                    {(event.payment_type as string) === "location" && `€${Number(event.price).toFixed(0)} da saldare in contanti all'arrivo`}
-                    {(event.payment_type as string) === "deposit" && `€${Number(event.deposit).toFixed(0)} online + €${(Number(event.price) - Number(event.deposit)).toFixed(0)} in loco`}
-                  </p>
-                </div>
-              </div>
+          <h3 className="font-display text-lg font-bold text-foreground mb-3">Prezzo</h3>
+          <div className="flex items-center gap-3">
+            <p className="text-2xl font-display font-bold text-foreground">{getPriceDisplay()}</p>
+            {getCancellationLabel() && (
+              <span className="text-xs font-body text-muted-foreground px-2 py-1 rounded-full bg-muted">
+                {getCancellationLabel()}
+              </span>
             )}
-            <div className="flex items-start gap-3">
-              <Navigation className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-body font-semibold text-foreground">Come arrivare</p>
-                <DirectionsButton location={event.location} />
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <CalendarPlus className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-body font-semibold text-foreground">Aggiungi al calendario</p>
-                <div className="flex gap-2 mt-1">
-                  <button onClick={() => handleAddToCalendar("google")} className="text-xs font-body text-primary hover:underline">Google</button>
-                  <span className="text-muted-foreground">·</span>
-                  <button onClick={() => handleAddToCalendar("apple")} className="text-xs font-body text-primary hover:underline">Apple</button>
-                  <span className="text-muted-foreground">·</span>
-                  <button onClick={() => handleAddToCalendar("outlook")} className="text-xs font-body text-primary hover:underline">Outlook</button>
-                </div>
-              </div>
-            </div>
           </div>
+          {/* Optional included items */}
+          {getIncludedItems().length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {getIncludedItems().map((item: string, idx: number) => (
+                <li key={idx} className="text-xs font-body text-muted-foreground flex items-center gap-1.5">
+                  <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
+          {event.payment_type === "location" && Number(event.price) > 0 && (
+            <p className="text-xs font-body text-muted-foreground mt-1">Da saldare in loco</p>
+          )}
         </motion.div>
 
-        {/* Contact organizer */}
-        {user && organizerProfile?.phone && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4 border-b border-border">
-            <div className="flex gap-2">
-              <a
-                href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-[#25D366]/10 text-[#25D366] text-sm font-body font-semibold hover:bg-[#25D366]/20 transition-colors"
-              >
-                <MessageCircle className="h-4 w-4" /> WhatsApp
-              </a>
-              <a
-                href={`tel:${organizerProfile.phone}`}
-                className="flex items-center gap-2 flex-1 justify-center px-3 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-body font-semibold hover:bg-primary/20 transition-colors"
-              >
-                <Phone className="h-4 w-4" /> Chiama
-              </a>
-            </div>
-          </motion.div>
-        )}
-
-
         {/* Actions for registered users */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="py-4">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
           {/* Discount code for Pay Now state */}
           {needsPayment && user && (
             <div className="mb-4">
@@ -917,85 +953,203 @@ const EventDetail = () => {
 
           {isRegistered && (
             <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
-              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("cancelling")}</> : t("cancelRegistration")}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
             </Button>
           )}
         </motion.div>
       </div>
       </div> {/* end rounded top container */}
 
-      {/* Fixed CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t border-border p-4 pb-safe z-50">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-xs font-body text-muted-foreground">
-              {resolvedPriceOptions && resolvedPriceOptions.length > 0
-                ? (bestPrice.label ? t("yourPrice") : t("from"))
-                : (event.payment_type as string) === "deposit" ? t("from") : t("price")}
-            </p>
-            {appliedDiscount && needsPayment ? (
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-display font-bold text-muted-foreground line-through">
-                  €{Number(appliedDiscount.original_price).toFixed(2)}
-                </p>
-                <p className="text-xl font-display font-bold text-success">
-                  €{Number(appliedDiscount.final_price).toFixed(2)}
-                </p>
-              </div>
-            ) : (
-              <div>
-                {bestPrice.originalPrice && bestPrice.originalPrice > bestPrice.price && (
-                  <p className="text-xs font-display text-muted-foreground line-through">€{bestPrice.originalPrice.toFixed(2)}</p>
-                )}
-                <p className={`text-xl font-display font-bold ${bestPrice.originalPrice && bestPrice.originalPrice > bestPrice.price ? "text-green-500" : "text-foreground"}`}>
-                  {(() => {
-                    if (resolvedPriceOptions && resolvedPriceOptions.length > 0) {
-                      const eligible = resolvedPriceOptions.filter(o => o.isEligible && o.isPromoActive);
-                      if (eligible.length > 0) return `€${Math.min(...eligible.map(o => o.price)).toFixed(2)}`;
-                      const allGroup = resolvedPriceOptions.filter(o => o.eligible_group === "all" && o.isPromoActive);
-                      if (allGroup.length > 0) return `€${Math.min(...allGroup.map(o => o.price)).toFixed(2)}`;
-                    }
-                    const hasPriceOptions = event.price_options && event.price_options.length > 0;
-                    if (hasPriceOptions) {
-                      const minPrice = Math.min(...event.price_options!.map((o: any) => Number(o.price)));
-                      return `€${minPrice.toFixed(2)}`;
-                    }
-                    if (Number(event.price) === 0 && (!profile || isMembershipActive(profile))) return t("free");
-                    if ((event.payment_type as string) === "deposit" && event.deposit) return `€${event.deposit}`;
-                    return `€${Number(event.price)}`;
-                  })()}
-                </p>
-              </div>
-            )}
-            {(event.payment_type as string) === "deposit" && event.deposit && !appliedDiscount && (
-              <p className="text-[10px] font-body text-muted-foreground">{t("deposit")} · €{Number(event.price)} {t("total")}</p>
-            )}
-            {(event.payment_type as string) === "location" && Number(event.price) > 0 && (
-              <p className="text-[10px] font-body text-muted-foreground">{t("payOnLocation")}</p>
-            )}
-            <p className="text-[10px] font-body text-muted-foreground">{event.spots_total - event.spots_taken} posti disponibili</p>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <Button
-              onClick={handleCTA}
-              className={`px-8 py-3 rounded-xl font-body font-semibold text-base w-full sm:w-auto ${getCTAClass()}`}
-              disabled={paymentLoading || isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" || (!!user && isRegistered && !needsPayment && !isOnWaitlist)}
-            >
-              {paymentLoading ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting...</>
-              ) : getCTALabel()}
-            </Button>
-            {accessData && !accessData.hasAccess && !isRegistered && !isEventPast && event.status !== "closed" && event.status !== "cancelled" && (
-              <button
-                onClick={() => setShowAccessWarning(true)}
-                className="text-[10px] font-body text-primary hover:underline"
-              >
-                {t("requestManualApproval")}
-              </button>
+      {/* 12. STICKY BOTTOM BAR */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border p-3 pb-safe z-50">
+        <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            {/* Price display */}
+            <div className="flex items-baseline gap-1.5">
+              {appliedDiscount && needsPayment ? (
+                <>
+                  <p className="text-sm font-display text-muted-foreground line-through">€{Number(appliedDiscount.original_price).toFixed(0)}</p>
+                  <p className="text-lg font-display font-bold text-green-600">€{Number(appliedDiscount.final_price).toFixed(0)}</p>
+                </>
+              ) : (
+                <p className="text-lg font-display font-bold text-foreground">{getPriceDisplay()}</p>
+              )}
+              <span className="text-xs font-body text-muted-foreground">·</span>
+              <span className="text-xs font-body text-muted-foreground">{remainingSpots > 0 ? `${remainingSpots} posti disponibili` : "Sold out"}</span>
+            </div>
+            {/* Registration deadline (if applicable) */}
+            {event.additional_fields && (event.additional_fields as any).registration_deadline && (
+              <p className="text-[10px] font-body text-muted-foreground">
+                Iscrizioni fino al {new Date((event.additional_fields as any).registration_deadline).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })}
+              </p>
             )}
           </div>
+          <Button
+            onClick={handleCTA}
+            className={`px-6 py-3 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
+            disabled={
+              paymentLoading ||
+              isEventPast ||
+              event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" ||
+              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval)
+            }
+          >
+            {paymentLoading ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Attendere...</>
+            ) : getCTALabel()}
+          </Button>
         </div>
       </div>
+
+      {/* ══════════════════ MODALS ══════════════════ */}
+
+      {/* 5. Gallery Fullscreen Modal */}
+      <AnimatePresence>
+        {showGalleryModal && event.gallery_images && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 pt-safe">
+              <span className="text-white/70 text-sm font-body">{galleryStartIndex + 1} / {event.gallery_images.length}</span>
+              <button onClick={() => setShowGalleryModal(false)} className="p-2 rounded-full bg-white/10 text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden" ref={emblaRef}>
+              <div className="flex h-full">
+                {event.gallery_images.sort((a: any, b: any) => a.order - b.order).map((img: any, idx: number) => (
+                  <div key={idx} className="flex-[0_0_100%] min-w-0 flex items-center justify-center p-4">
+                    <img
+                      src={img.url}
+                      alt={`Gallery ${idx + 1}`}
+                      className="max-w-full max-h-full object-contain rounded-lg"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 10. Organizer Contact Panel */}
+      <Dialog open={showOrganizerContact} onOpenChange={setShowOrganizerContact}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="font-display">{organizerProfile?.first_name || event.organizer_name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-2">
+            {organizerProfile?.avatar_url ? (
+              <img src={organizerProfile.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover" />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold text-2xl">
+                {event.organizer_name?.[0] || "O"}
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start font-body"
+              onClick={() => { setShowOrganizerContact(false); navigate(`/organizer/${event.organizer_id}`); }}
+            >
+              <UserIcon className="h-4 w-4 mr-3" /> Profilo
+            </Button>
+            {organizerProfile?.phone && (
+              <>
+                <Button
+                  asChild
+                  className="w-full justify-start font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none"
+                >
+                  <a
+                    href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-3" /> WhatsApp
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-full justify-start font-body"
+                >
+                  <a href={`tel:${organizerProfile.phone}`}>
+                    <Phone className="h-4 w-4 mr-3" /> Telefona
+                  </a>
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Navigation Choice Modal */}
+      <Dialog open={showNavigationModal} onOpenChange={setShowNavigationModal}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="font-display">Apri con</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start font-body"
+              onClick={() => { openDirections(navigationLocation, "google"); setShowNavigationModal(false); }}
+            >
+              <MapPinned className="h-4 w-4 mr-3" /> Google Maps
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start font-body"
+              onClick={() => { openDirections(navigationLocation, "apple"); setShowNavigationModal(false); }}
+            >
+              <Map className="h-4 w-4 mr-3" /> Apple Maps
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start font-body"
+              onClick={() => { openDirections(navigationLocation, "waze"); setShowNavigationModal(false); }}
+            >
+              <Car className="h-4 w-4 mr-3" /> Waze
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Choice Modal */}
+      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="font-display">Aggiungi al calendario</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start font-body"
+              onClick={() => { handleAddToCalendar("google"); setShowCalendarModal(false); }}
+            >
+              <Calendar className="h-4 w-4 mr-3" /> Google Calendar
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start font-body"
+              onClick={() => { handleAddToCalendar("apple"); setShowCalendarModal(false); }}
+            >
+              <Apple className="h-4 w-4 mr-3" /> Apple Calendar
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start font-body"
+              onClick={() => { handleAddToCalendar("outlook"); setShowCalendarModal(false); }}
+            >
+              <Mail className="h-4 w-4 mr-3" /> Outlook
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Registration Dialog */}
       <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
@@ -1007,12 +1161,12 @@ const EventDetail = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {/* Auxiliary: Meeting Point */}
+            {/* Meeting Point */}
             {event.meeting_points && event.meeting_points.length > 0 && (
               <div>
                 <Label className="font-body text-sm font-semibold">{t("meetingPoint")}</Label>
                 <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className="mt-2 space-y-2">
-                  {event.meeting_points.map((mp) => (
+                  {event.meeting_points.map((mp: any) => (
                     <label key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
                       <RadioGroupItem value={mp.id} />
                       <div>
@@ -1025,7 +1179,7 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* Auxiliary: Sport Level */}
+            {/* Sport Level */}
             {isSportCategory && (
               <div>
                 <Label className="font-body text-sm font-semibold">{t("sportLevel")}</Label>
@@ -1050,119 +1204,93 @@ const EventDetail = () => {
                   placeholder={t("orEnterCustomLevel")}
                   className="mt-2"
                 />
-                <p className="text-[10px] text-muted-foreground font-body mt-1">
-                  {t("helpsOrganizers")}
-                </p>
               </div>
             )}
 
-            {/* Additional Registration Fields */}
+            {/* Car Availability */}
+            {event.additional_fields && (event.additional_fields as any).car_availability_enabled && (
+              <div>
+                <Label className="font-body text-sm font-semibold">Saresti disposto a prendere la macchina?</Label>
+                <RadioGroup value={carAvailability} onValueChange={setCarAvailability} className="mt-2 space-y-2">
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
+                    <RadioGroupItem value="yes" />
+                    <span className="text-sm font-body">✅ Sì</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
+                    <RadioGroupItem value="prefer_not" />
+                    <span className="text-sm font-body">🤷 Preferirei di no</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
+                    <RadioGroupItem value="no_car" />
+                    <span className="text-sm font-body">🚶 Non sono automunito</span>
+                  </label>
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* Additional Fields */}
             {(() => {
               const af = event.additional_fields as any;
               const fields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []);
-              const askCar = af && af.ask_car_availability === true;
-              return (
-                <>
-                  {fields.length > 0 && (
-                    <div className="space-y-3">
-                      {fields.map((field: any, idx: number) => (
-                        <div key={idx}>
-                          <Label className="font-body text-sm font-semibold">
-                            {field.label} {field.required && <span className="text-destructive">*</span>}
-                          </Label>
-                          {field.type === "select" && field.options ? (
-                            <Select
-                              value={additionalResponses[field.label] || ""}
-                              onValueChange={(v) => setAdditionalResponses(prev => ({ ...prev, [field.label]: v }))}
-                            >
-                              <SelectTrigger className="mt-1"><SelectValue placeholder={`Select ${field.label.toLowerCase()}`} /></SelectTrigger>
-                              <SelectContent>
-                                {(Array.isArray(field.options) ? field.options : field.options.split(",").map((o: string) => o.trim())).map((opt: string) => (
-                                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Input
-                              value={additionalResponses[field.label] || ""}
-                              onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
-                              placeholder={`Enter ${field.label.toLowerCase()}`}
-                              className="mt-1"
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
+              if (!fields || fields.length === 0) return null;
+              return fields.map((field: any, idx: number) => (
+                <div key={idx}>
+                  <Label className="font-body text-sm font-semibold">
+                    {field.label} {field.required && <span className="text-destructive">*</span>}
+                  </Label>
+                  {field.type === "text" && (
+                    <Input
+                      value={additionalResponses[field.label] || ""}
+                      onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
+                      placeholder={field.placeholder || ""}
+                      className="mt-1"
+                    />
                   )}
-
-                  {/* Car Availability Question */}
-                  {askCar && (
-                    <div>
-                      <Label className="font-body text-sm font-semibold flex items-center gap-2">
-                        <Car className="h-4 w-4 text-primary" />
-                        Saresti disposto a prendere la macchina?
-                      </Label>
-                      <div className="grid gap-2 mt-2">
-                        {[
-                          { value: "yes", label: "Sì", icon: "✅" },
-                          { value: "prefer_not", label: "Preferirei di no", icon: "🤷" },
-                          { value: "no_car", label: "Non sono automunito", icon: "🚶" },
-                        ].map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setCarAvailability(carAvailability === opt.value ? "" : opt.value)}
-                            className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
-                              carAvailability === opt.value
-                                ? "bg-primary/10 border-2 border-primary ring-1 ring-primary/20"
-                                : "bg-muted/50 border-2 border-transparent hover:bg-muted"
-                            }`}
-                          >
-                            <span className="text-base">{opt.icon}</span>
-                            <span className="text-sm font-body font-semibold text-foreground">{opt.label}</span>
-                            {carAvailability === opt.value && (
-                              <span className="ml-auto text-primary">✓</span>
-                            )}
-                          </button>
+                  {field.type === "select" && (
+                    <Select
+                      value={additionalResponses[field.label] || ""}
+                      onValueChange={(val) => setAdditionalResponses(prev => ({ ...prev, [field.label]: val }))}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Seleziona..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(field.options || []).map((opt: string, optIdx: number) => (
+                          <SelectItem key={optIdx} value={opt}>{opt}</SelectItem>
                         ))}
-                      </div>
-                    </div>
+                      </SelectContent>
+                    </Select>
                   )}
-                </>
-              );
+                  {field.type === "number" && (
+                    <Input
+                      type="number"
+                      value={additionalResponses[field.label] || ""}
+                      onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
+                      placeholder={field.placeholder || ""}
+                      className="mt-1"
+                    />
+                  )}
+                </div>
+              ));
             })()}
 
             {/* Mandatory Equipment Confirmation */}
             {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && (
-              <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-destructive/5 border border-destructive/15 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
-                    <p className="text-xs font-body font-bold text-destructive">{t("mandatoryEquipment")}</p>
-                  </div>
-                  <div className="space-y-1 ml-6">
-                    {(event.equipment_list as any[]).filter((item: any) => item.is_mandatory).map((item: any, idx: number) => (
-                      <p key={idx} className="text-xs font-body text-foreground">• {item.name}</p>
-                    ))}
-                  </div>
-                  <p className="text-[10px] font-body text-muted-foreground ml-6">
-                    {t("safetyNoticeText")}
-                  </p>
-                </div>
-                <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30">
+                <label className="flex items-start gap-3 cursor-pointer">
                   <Checkbox
                     checked={equipmentConfirmed}
-                    onCheckedChange={(v) => setEquipmentConfirmed(!!v)}
+                    onCheckedChange={(checked) => setEquipmentConfirmed(!!checked)}
                     className="mt-0.5"
                   />
-                  <span className="text-xs font-body text-foreground leading-relaxed group-hover:text-foreground/80 transition-colors">
-                    {t("equipmentConfirmation")}
+                  <span className="text-xs font-body text-foreground leading-relaxed">
+                    Confermo di avere tutta l'attrezzatura obbligatoria richiesta per questa attività
                   </span>
                 </label>
               </div>
             )}
 
-            {/* ── STEP 1: Select Pricing Option ── */}
+            {/* ── Pricing Options ── */}
             {resolvedPriceOptions && resolvedPriceOptions.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -1174,27 +1302,20 @@ const EventDetail = () => {
                     <label
                       key={opt.id}
                       className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                        opt.isEligible && opt.isPromoActive
-                          ? "bg-muted/50 hover:bg-muted"
-                          : "bg-muted/20 opacity-60 cursor-not-allowed"
+                        !opt.isEligible ? "bg-muted/30 opacity-60 cursor-not-allowed" :
+                        selectedPriceOption === opt.id ? "bg-primary/10 border-2 border-primary" :
+                        "bg-muted/50 hover:bg-muted"
                       }`}
-                      onClick={(e) => {
-                        if (!opt.isEligible || !opt.isPromoActive) e.preventDefault();
-                      }}
                     >
                       <div className="flex items-center gap-3">
-                        <RadioGroupItem value={opt.id} disabled={!opt.isEligible || !opt.isPromoActive} />
+                        <RadioGroupItem value={opt.id} disabled={!opt.isEligible} />
                         <div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
                             <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
-                            {opt.eligible_group === "members" && (
-                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold">Members</span>
-                            )}
-                            {opt.eligible_group === "experienced" && (
-                              <span className="text-[10px] bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded-full font-body font-semibold">Experienced</span>
-                            )}
-                            {opt.eligible_group === "loyal" && (
-                              <span className="text-[10px] bg-gold/20 text-gold px-1.5 py-0.5 rounded-full font-body font-semibold">Loyal</span>
+                            {opt.isEligible && opt.eligible_group !== "all" && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
+                                <Sparkles className="h-2.5 w-2.5" /> {opt.eligible_group === "members" ? "Soci" : opt.eligible_group === "experienced" ? "Esperto" : opt.eligible_group === "loyal" ? "Fedele" : opt.eligible_group}
+                              </span>
                             )}
                             {opt.is_promotional && opt.isPromoActive && (
                               <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
@@ -1225,7 +1346,7 @@ const EventDetail = () => {
                 </RadioGroup>
               </div>
             )}
-            {/* Fallback: show raw price options if eligibility not loaded yet */}
+            {/* Fallback price options */}
             {!resolvedPriceOptions && event.price_options && event.price_options.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -1246,7 +1367,7 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* ── STEP 2: Discount Code ── */}
+            {/* Discount Code */}
             {event.payment_type !== "free" && event.payment_type !== "location" && user && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -1261,7 +1382,7 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* ── STEP 3: Membership Verification ── */}
+            {/* Membership Verification */}
             {!isMembershipActive(profile) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -1287,15 +1408,13 @@ const EventDetail = () => {
                         <p>{t("membershipAfterPayment")}</p>
                       </>
                     )}
-                    <p>
-                      {t("membershipFeePerYear", { year: String(new Date().getFullYear()) })}
-                    </p>
+                    <p>{t("membershipFeePerYear", { year: String(new Date().getFullYear()) })}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ── STEP 4: Order Summary ── */}
+            {/* Order Summary */}
             {event.payment_type !== "free" && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -1312,21 +1431,16 @@ const EventDetail = () => {
                     const displayPrice = isDeposit ? depositAmount : basePrice;
                     const needsMembership = !isMembershipActive(profile);
                     const membershipFee = needsMembership ? 10 : 0;
-
-                    // Calculate final event price after discount
                     const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
 
                     return (
                       <>
-                        {/* Event price line */}
                         <div className="flex justify-between text-sm font-body">
                           <span className="text-muted-foreground">{isDeposit ? `${t("deposit")} — ${displayLabel}` : displayLabel}</span>
                           <span className={`font-semibold ${appliedDiscount ? "line-through text-muted-foreground" : "text-foreground"}`}>
                             €{displayPrice.toFixed(2)}
                           </span>
                         </div>
-
-                        {/* Discount line */}
                         {appliedDiscount && (
                           <div className="flex justify-between text-sm font-body">
                             <span className="text-success font-semibold flex items-center gap-1">
@@ -1335,21 +1449,15 @@ const EventDetail = () => {
                             <span className="font-bold text-success">€{discountedEventPrice.toFixed(2)}</span>
                           </div>
                         )}
-
-                        {/* Remaining balance for deposits */}
                         {isDeposit && (
                           <div className="flex justify-between text-sm font-body">
                             <span className="text-muted-foreground">{t("remainingPayLater")}</span>
                             <span className="text-muted-foreground">€{(Number(event.price) - depositAmount).toFixed(2)}</span>
                           </div>
                         )}
-
-                        {/* Location payment note */}
                         {(event.payment_type as string) === "location" && (
                           <p className="text-xs font-body text-muted-foreground">{t("paymentOnLocation")}</p>
                         )}
-
-                        {/* Membership fee line */}
                         {needsMembership && (
                           <div className="flex justify-between text-sm font-body">
                             <span className="text-primary font-semibold flex items-center gap-1">
@@ -1358,16 +1466,12 @@ const EventDetail = () => {
                             <span className="font-semibold text-primary">€{membershipFee.toFixed(2)}</span>
                           </div>
                         )}
-
-                        {/* Divider + Total */}
                         <div className="flex justify-between text-sm font-body pt-1.5 mt-1 border-t border-gold/20">
                           <span className="font-bold text-foreground">{t("totalDueToday")}</span>
                           <span className="font-bold text-foreground text-base">
                             €{(discountedEventPrice + membershipFee).toFixed(2)}
                           </span>
                         </div>
-
-                        {/* Payment method note */}
                         <p className="text-[10px] font-body text-muted-foreground pt-1">
                           {needsMembership
                             ? t("membershipIncludedInCheckout")
@@ -1375,9 +1479,7 @@ const EventDetail = () => {
                               ? t("fullPaymentViaStripe")
                               : isDeposit
                                 ? t("depositViaStripe")
-                                : (event.payment_type as string) === "location"
-                                  ? ""
-                                  : ""
+                                : ""
                           }
                         </p>
                       </>
@@ -1462,7 +1564,6 @@ const EventDetail = () => {
             )}
 
             <div className="flex flex-col gap-2 pt-2">
-              {/* If only soft warnings, allow direct registration */}
               {(!accessData?.failedRules || accessData.failedRules.length === 0) && (
                 <Button
                   onClick={() => {
