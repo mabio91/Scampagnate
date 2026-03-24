@@ -1280,7 +1280,7 @@ const EventForm = () => {
         <Card className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-bold text-foreground">Registration Fields</h2>
-            <Button type="button" variant="outline" size="sm" onClick={() => setAdditionalFields(prev => [...prev, { label: "", type: "text", required: false, options: "" }])} className="gap-1">
+            <Button type="button" variant="outline" size="sm" onClick={() => setAdditionalFields(prev => [...prev, { label: "", type: "text", required: false, options: [] }])} className="gap-1">
               <Plus className="h-3.5 w-3.5" /> Add Field
             </Button>
           </div>
