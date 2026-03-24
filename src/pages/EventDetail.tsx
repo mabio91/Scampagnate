@@ -245,6 +245,8 @@ const EventDetail = () => {
     // After verification, continue to registration
     if (accessData && !accessData.hasAccess) {
       setShowAccessWarning(true);
+    } else if (accessData && accessData.softWarnings && accessData.softWarnings.length > 0) {
+      setShowAccessWarning(true);
     } else {
       setShowRegisterDialog(true);
     }
