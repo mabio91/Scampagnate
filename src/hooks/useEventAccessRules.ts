@@ -13,12 +13,14 @@ export interface AccessRule {
     | "min_attended_events"
     | "min_level"
     | "min_experience"
-    | "min_activity_frequency";
+    | "min_activity_frequency"
+    | "interests";
   value?: number | string;
   badge_id?: string;
   badge_name?: string;
   message?: string;
   enforcement?: "hard" | "soft"; // hard = blocking, soft = advisory only
+  interests?: string[]; // for interests rule
 }
 
 export interface AccessRulesConfig {
