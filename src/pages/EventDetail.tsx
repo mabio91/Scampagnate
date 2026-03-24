@@ -64,7 +64,7 @@ const EventDetail = () => {
   const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
   const [membershipLoading, setMembershipLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [showAllParticipants, setShowAllParticipants] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
   const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
