@@ -692,23 +692,29 @@ const EventDetail = () => {
         </motion.div>
 
         {/* Stats */}
-        {event.distance && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-4 gap-2 py-4 border-b border-border">
-            <div className="text-center">
-              <Route className="h-5 w-5 mx-auto text-secondary mb-1" />
-              <p className="text-sm font-body font-bold text-foreground">{event.distance}</p>
-              <p className="text-[10px] text-muted-foreground font-body">{t("distance")}</p>
-            </div>
-            <div className="text-center">
-              <Mountain className="h-5 w-5 mx-auto text-secondary mb-1" />
-              <p className="text-sm font-body font-bold text-foreground">{event.elevation}</p>
-              <p className="text-[10px] text-muted-foreground font-body">{t("elevation")}</p>
-            </div>
-            <div className="text-center">
-              <Clock className="h-5 w-5 mx-auto text-secondary mb-1" />
-              <p className="text-sm font-body font-bold text-foreground">{event.duration}</p>
-              <p className="text-[10px] text-muted-foreground font-body">{t("duration")}</p>
-            </div>
+        {(event.distance || event.elevation || event.duration) && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className={`grid gap-2 py-4 border-b border-border`} style={{ gridTemplateColumns: `repeat(${[event.distance, event.elevation, event.duration, true].filter(Boolean).length}, 1fr)` }}>
+            {event.distance && (
+              <div className="text-center">
+                <Route className="h-5 w-5 mx-auto text-secondary mb-1" />
+                <p className="text-sm font-body font-bold text-foreground">{event.distance}</p>
+                <p className="text-[10px] text-muted-foreground font-body">{t("distance")}</p>
+              </div>
+            )}
+            {event.elevation && (
+              <div className="text-center">
+                <Mountain className="h-5 w-5 mx-auto text-secondary mb-1" />
+                <p className="text-sm font-body font-bold text-foreground">{event.elevation}</p>
+                <p className="text-[10px] text-muted-foreground font-body">{t("elevation")}</p>
+              </div>
+            )}
+            {event.duration && (
+              <div className="text-center">
+                <Clock className="h-5 w-5 mx-auto text-secondary mb-1" />
+                <p className="text-sm font-body font-bold text-foreground">{event.duration}</p>
+                <p className="text-[10px] text-muted-foreground font-body">{t("duration")}</p>
+              </div>
+            )}
             <div className="text-center">
               <Users className="h-5 w-5 mx-auto text-secondary mb-1" />
               <p className="text-sm font-body font-bold text-foreground">{event.spots_taken}/{event.spots_total}</p>
