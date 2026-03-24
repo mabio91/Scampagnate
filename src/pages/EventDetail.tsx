@@ -1425,12 +1425,17 @@ const EventDetail = () => {
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {(registerMutation.isPending || membershipLoading) ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? t("redirectingToPayment") : isRequestingOverride ? t("submitting") : t("registering")}</>
+              {(registerMutation.isPending || membershipLoading || paymentLoading) ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{paymentLoading ? t("redirectingToPayment") : membershipLoading ? t("redirectingToPayment") : isRequestingOverride ? t("submitting") : t("registering")}</>
               ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
                   {isMembershipExpired(profile) ? t("renewMembershipAndRegister") : t("payMembershipAndRegister")}
+                </>
+              ) : (event.payment_type === "paid" || event.payment_type === "deposit") ? (
+                <>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {t("proceedToPayment") || "Procedi al pagamento"}
                 </>
               ) : event.status === "full" ? (
                 t("joinWaitlist")
