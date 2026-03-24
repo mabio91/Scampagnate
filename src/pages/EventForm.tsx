@@ -95,7 +95,32 @@ interface MeetingPointInput {
   notes: string;
 }
 
-const EventForm = () => {
+// Helper components for grouped access rules UI
+const RuleToggleRow = ({ label, isActive, onToggle, children }: {
+  label: string;
+  isActive: boolean;
+  onToggle: (active: boolean) => void;
+  children?: React.ReactNode;
+}) => (
+  <div className="p-2.5 bg-background rounded-lg border border-border/50 space-y-2">
+    <div className="flex items-center justify-between">
+      <span className="text-xs font-body text-foreground">{label}</span>
+      <Switch checked={isActive} onCheckedChange={onToggle} />
+    </div>
+    {isActive && children}
+  </div>
+);
+
+const EnforcementToggle = ({ rule, onChange }: { rule: AccessRule; onChange: (v: "hard" | "soft") => void }) => (
+  <Select value={rule.enforcement || "hard"} onValueChange={(v) => onChange(v as "hard" | "soft")}>
+    <SelectTrigger className="w-20 h-8 text-[10px]"><SelectValue /></SelectTrigger>
+    <SelectContent>
+      <SelectItem value="hard">🔒 Hard</SelectItem>
+      <SelectItem value="soft">💡 Soft</SelectItem>
+    </SelectContent>
+  </Select>
+);
+
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const duplicateId = searchParams.get("duplicate");
