@@ -69,7 +69,7 @@ export const parseCancellationPolicy = (raw: string | null | undefined): {
       return { policyType: prefix, customText: raw.slice(colonIdx + 1) };
     }
     // Legacy custom format
-    if (prefix === "custom") {
+    if (prefix === ("custom" as string)) {
       return { policyType: "non_refundable", customText: raw.slice(colonIdx + 1) };
     }
   }

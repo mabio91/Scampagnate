@@ -864,10 +864,10 @@ const EventForm = () => {
             {/* Price Options moved to Access & Pricing Rules section */}
 
             <div>
-              <Label>Cancellation Policy</Label>
+              <Label>Politica di cancellazione</Label>
               <Select value={policyType} onValueChange={(v) => setPolicyType(v as PolicyType)}>
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select a policy type" />
+                  <SelectValue placeholder="Seleziona una politica" />
                 </SelectTrigger>
                 <SelectContent>
                   {(Object.values(CANCELLATION_POLICIES)).map((p) => {
@@ -876,26 +876,17 @@ const EventForm = () => {
                       <SelectItem key={p.type} value={p.type}>
                         <span className={`inline-flex items-center gap-1.5 ${p.colorClass}`}>
                           <Icon className="h-3.5 w-3.5" />
-                          {p.label} — {p.type === "custom" ? "define your own policy" : p.type === "strict" ? "non-refundable" : `refundable up to ${p.type === "flexible" ? "24h" : "48h"} before`}
+                          {p.labelIt}
                         </span>
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
-              {policyType && policyType !== "custom" && (
-                <p className="mt-1.5 text-xs text-muted-foreground font-body px-1">
-                  {CANCELLATION_POLICIES[policyType as PolicyType]?.description}
+              {policyType && (
+                <p className={`mt-1.5 text-xs font-body px-1 ${CANCELLATION_POLICIES[policyType as PolicyType]?.colorClass || 'text-muted-foreground'}`}>
+                  {CANCELLATION_POLICIES[policyType as PolicyType]?.descriptionIt}
                 </p>
-              )}
-              {policyType === "custom" && (
-                <Textarea
-                  className="mt-2"
-                  value={policyCustomText}
-                  onChange={(e) => setPolicyCustomText(e.target.value)}
-                  placeholder="e.g., Full refund if cancelled 72h in advance. No refunds after that."
-                  rows={3}
-                />
               )}
             </div>
           </div>
