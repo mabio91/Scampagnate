@@ -464,23 +464,41 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
-      {/* Hero */}
-      <div className="relative">
-        <OptimizedImage src={event.image_url} alt={event.title} className="w-full h-72 object-cover bg-muted" width={600} height={288} loading="eager" />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
-        <Link to="/" className="absolute top-4 left-4 p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="absolute top-4 right-4 flex gap-2">
-          <button onClick={handleToggleSave} className="p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
-            {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
-          </button>
-          <button onClick={shareEvent} className="p-2 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground">
-            <Share2 className="h-5 w-5" />
-          </button>
+      {/* Hero with parallax/fade */}
+      <div ref={heroRef} className="relative overflow-hidden" style={{ height: `${heroHeight}px` }}>
+        <div
+          style={{
+            opacity: heroOpacity,
+            transform: `scale(${heroScale}) translateY(${heroTranslateY}px)`,
+            willChange: "transform, opacity",
+            position: "absolute",
+            inset: 0,
+          }}
+        >
+          <OptimizedImage src={event.image_url} alt={event.title} className="w-full h-full object-cover bg-muted" width={600} height={320} loading="eager" />
         </div>
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" style={{ opacity: heroOpacity }} />
+        
+        {/* Top buttons with Apple safe area */}
+        <div className="absolute top-0 left-0 right-0 pt-safe">
+          <div className="flex items-center justify-between px-4 pt-3">
+            <Link to="/" className="p-2.5 rounded-full bg-background/20 backdrop-blur-md text-primary-foreground touch-target flex items-center justify-center">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div className="flex gap-2">
+              <button onClick={handleToggleSave} className="p-2.5 rounded-full bg-background/20 backdrop-blur-md text-primary-foreground touch-target flex items-center justify-center">
+                {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+              </button>
+              <button onClick={shareEvent} className="p-2.5 rounded-full bg-background/20 backdrop-blur-md text-primary-foreground touch-target flex items-center justify-center">
+                <Share2 className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Badges over hero */}
+        <div className="absolute bottom-12 left-4 right-4" style={{ opacity: heroOpacity }}>
+          <div className="flex items-center gap-2 flex-wrap">
             {event.difficulty && (
               <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center hover:opacity-90 transition-opacity">
                 <DifficultyBadge difficulty={event.difficulty} className="bg-accent text-accent-foreground" />
@@ -510,9 +528,14 @@ const EventDetail = () => {
               </span>
             )}
           </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-primary-foreground leading-tight">{event.title}</h1>
         </div>
       </div>
+
+      {/* Rounded top container overlapping the hero */}
+      <div className="relative -mt-6 bg-background rounded-t-3xl z-10">
+        <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground leading-tight">{event.title}</h1>
+        </div>
 
       <div className="max-w-lg mx-auto px-4">
         {/* Quick Info */}
