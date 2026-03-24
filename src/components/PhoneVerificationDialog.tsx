@@ -153,8 +153,15 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
     sendOtp(channel);
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && step !== "success") {
+      trackVerificationEvent("drop_off", { step });
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         <AnimatePresence mode="wait">
           {/* PROMPT: Must verify to join */}
