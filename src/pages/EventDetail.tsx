@@ -70,6 +70,24 @@ const EventDetail = () => {
   const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [carAvailability, setCarAvailability] = useState("");
+  
+  // Hero parallax/fade on scroll
+  const [scrollY, setScrollY] = useState(0);
+  const heroRef = useRef<HTMLDivElement>(null);
+  
+  const handleScroll = useCallback(() => {
+    setScrollY(window.scrollY);
+  }, []);
+  
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+  
+  const heroHeight = 320;
+  const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 0.7));
+  const heroScale = 1 + scrollY * 0.0005;
+  const heroTranslateY = scrollY * 0.4;
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
