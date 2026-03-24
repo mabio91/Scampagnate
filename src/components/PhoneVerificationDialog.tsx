@@ -124,6 +124,7 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
 
       if (data?.verified) {
         setStep("success");
+        trackVerificationEvent("success", { channel });
         await refreshProfile();
         setTimeout(() => {
           onVerified();
