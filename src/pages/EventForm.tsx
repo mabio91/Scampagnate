@@ -6,6 +6,7 @@ import type { AccessRule, AccessRulesConfig } from "@/hooks/useEventAccessRules"
 import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import AppLayout from "@/components/layout/AppLayout";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
