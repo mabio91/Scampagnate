@@ -39,7 +39,7 @@ interface AdditionalField {
   label: string;
   type: "text" | "select";
   required: boolean;
-  options: string; // comma-separated for select type
+  options: string[]; // array of options for select type
 }
 
 const useEquipmentTemplates = () => {
