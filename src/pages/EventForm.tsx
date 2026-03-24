@@ -1315,11 +1315,35 @@ const EventForm = () => {
                   </SelectContent>
                 </Select>
                 {field.type === "select" && (
-                  <Input
-                    placeholder="Options (comma-separated)"
-                    value={field.options}
-                    onChange={(e) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, options: e.target.value } : f))}
-                  />
+                  <div className="col-span-2 space-y-2">
+                    <Label className="text-xs text-muted-foreground">Dropdown Options</Label>
+                    {field.options.map((opt, optIdx) => (
+                      <div key={optIdx} className="flex items-center gap-2">
+                        <Input
+                          placeholder={`Option ${optIdx + 1}`}
+                          value={opt}
+                          onChange={(e) => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, options: f.options.map((o, oi) => oi === optIdx ? e.target.value : o) } : f))}
+                          className="flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, options: f.options.filter((_, oi) => oi !== optIdx) } : f))}
+                          className="text-destructive p-1"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAdditionalFields(prev => prev.map((f, i) => i === index ? { ...f, options: [...f.options, ""] } : f))}
+                      className="gap-1 w-full"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Option
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
