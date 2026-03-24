@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain, Route,
-  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield
+  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield, Car
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -163,6 +163,7 @@ const EventForm = () => {
   };
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
+  const [askCarAvailability, setAskCarAvailability] = useState(false);
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
@@ -251,15 +252,32 @@ const EventForm = () => {
       }
 
       // Load additional fields
-      if (event.additional_fields && Array.isArray(event.additional_fields)) {
-        setAdditionalFields(
-          (event.additional_fields as any[]).map((f: any) => ({
-            label: f.label || "",
-            type: f.type || "text",
-            required: f.required || false,
-            options: f.options || "",
-          }))
-        );
+      if (event.additional_fields) {
+        const af = event.additional_fields as any;
+        if (af.ask_car_availability !== undefined) {
+          // New format: { fields: [...], ask_car_availability: bool }
+          setAskCarAvailability(!!af.ask_car_availability);
+          if (Array.isArray(af.fields)) {
+            setAdditionalFields(
+              af.fields.map((f: any) => ({
+                label: f.label || "",
+                type: f.type || "text",
+                required: f.required || false,
+                options: f.options || "",
+              }))
+            );
+          }
+        } else if (Array.isArray(af)) {
+          // Legacy format: plain array
+          setAdditionalFields(
+            af.map((f: any) => ({
+              label: f.label || "",
+              type: f.type || "text",
+              required: f.required || false,
+              options: f.options || "",
+            }))
+          );
+        }
       }
 
       // Load access rules
@@ -377,7 +395,10 @@ const EventForm = () => {
         visibility: form.visibility,
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
-        additional_fields: additionalFields.filter((f) => f.label.trim()) as any,
+        additional_fields: {
+          fields: additionalFields.filter((f) => f.label.trim()),
+          ask_car_availability: askCarAvailability,
+        } as any,
         access_rules: accessRules.length > 0 ? {
           rules: accessRules,
           exclusivity_label: exclusivityLabel || undefined,
@@ -1126,6 +1147,29 @@ const EventForm = () => {
             <p className="text-sm text-muted-foreground font-body text-center py-2">
               No equipment items. Select a template or add items manually.
             </p>
+          )}
+        </Card>
+
+        {/* Car Availability Toggle */}
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+                <Car className="h-4 w-4" /> Car Availability
+              </h2>
+              <p className="text-xs text-muted-foreground font-body">
+                Ask participants if they can drive to the event location.
+              </p>
+            </div>
+            <Switch checked={askCarAvailability} onCheckedChange={setAskCarAvailability} />
+          </div>
+          {askCarAvailability && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs font-body text-muted-foreground">
+                During registration, participants will see: <strong>"Saresti disposto a prendere la macchina?"</strong>
+              </p>
+              <p className="text-[10px] font-body text-muted-foreground mt-1">Options: Sì · Preferirei di no · Non sono automunito</p>
+            </div>
           )}
         </Card>
 
