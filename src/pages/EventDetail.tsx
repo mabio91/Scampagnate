@@ -1417,7 +1417,7 @@ const EventDetail = () => {
             <Button
               onClick={() => handleRegister(isRequestingOverride)}
               disabled={
-                registerMutation.isPending || membershipLoading ||
+                registerMutation.isPending || membershipLoading || paymentLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
                 (event.price_options && event.price_options.length > 0 && !selectedPriceOption) ||
                 (() => { const af = event.additional_fields as any; const fields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []); return fields.some((f: any) => f.required && !additionalResponses[f.label]?.trim()); })() ||
