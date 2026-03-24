@@ -114,7 +114,9 @@ const EventForm = () => {
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
   const [validationPopupOpen, setValidationPopupOpen] = useState(false);
   const [validationPopupFields, setValidationPopupFields] = useState<string[]>([]);
-
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryUploadProgress, setGalleryUploadProgress] = useState(0);
+  const [galleryUploadTotal, setGalleryUploadTotal] = useState(0);
   const [form, setForm] = useState({
     title: "",
     description: "",
