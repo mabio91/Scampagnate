@@ -306,7 +306,7 @@ const EventDetail = () => {
 
     const isWaitlist = event.status === "full";
     try {
-      await registerMutation.mutateAsync({
+      const result = await registerMutation.mutateAsync({
         eventId: event.id,
         meetingPointId: selectedMeetingPoint || undefined,
         sportLevel: sportLevel || undefined,
@@ -318,6 +318,38 @@ const EventDetail = () => {
       setShowRegisterDialog(false);
       setShowAccessWarning(false);
       setIsRequestingOverride(false);
+
+      // For paid/deposit events, immediately redirect to Stripe checkout
+      const requiresPayment = !isWaitlist && !requestApproval && (event.payment_type === "paid" || event.payment_type === "deposit");
+      if (requiresPayment && result?.registrationId) {
+        setPaymentLoading(true);
+        try {
+          const body: any = { eventId: event.id, registrationId: result.registrationId };
+          if (appliedDiscount?.discount_code_id) {
+            body.discountCodeId = appliedDiscount.discount_code_id;
+          }
+          if (selectedPriceOption) {
+            body.priceOptionId = selectedPriceOption;
+          }
+          const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+          if (error) throw error;
+          if (data?.free) {
+            toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
+            setPaymentLoading(false);
+            window.location.reload();
+            return;
+          }
+          if (data?.url) {
+            window.location.href = data.url;
+          } else {
+            throw new Error("No checkout URL returned");
+          }
+        } catch (err: any) {
+          toast({ title: "Errore pagamento", description: err.message, variant: "destructive" });
+          setPaymentLoading(false);
+        }
+        return;
+      }
 
       if (requestApproval) {
         toast({ title: "Request sent", description: "Your manual approval request has been sent to the organizer.", duration: 5000 });
@@ -1385,7 +1417,7 @@ const EventDetail = () => {
             <Button
               onClick={() => handleRegister(isRequestingOverride)}
               disabled={
-                registerMutation.isPending || membershipLoading ||
+                registerMutation.isPending || membershipLoading || paymentLoading ||
                 (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
                 (event.price_options && event.price_options.length > 0 && !selectedPriceOption) ||
                 (() => { const af = event.additional_fields as any; const fields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []); return fields.some((f: any) => f.required && !additionalResponses[f.label]?.trim()); })() ||
@@ -1393,12 +1425,17 @@ const EventDetail = () => {
               }
               className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
             >
-              {(registerMutation.isPending || membershipLoading) ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{membershipLoading ? t("redirectingToPayment") : isRequestingOverride ? t("submitting") : t("registering")}</>
+              {(registerMutation.isPending || membershipLoading || paymentLoading) ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{paymentLoading ? t("redirectingToPayment") : membershipLoading ? t("redirectingToPayment") : isRequestingOverride ? t("submitting") : t("registering")}</>
               ) : !isMembershipActive(profile) ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
                   {isMembershipExpired(profile) ? t("renewMembershipAndRegister") : t("payMembershipAndRegister")}
+                </>
+              ) : (event.payment_type === "paid" || event.payment_type === "deposit") ? (
+                <>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {t("payNow")}
                 </>
               ) : event.status === "full" ? (
                 t("joinWaitlist")
