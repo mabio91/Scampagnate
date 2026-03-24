@@ -31,6 +31,7 @@ const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
 const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const EventParticipants = lazy(() => import("./pages/EventParticipants"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
