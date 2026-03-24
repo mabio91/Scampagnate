@@ -428,6 +428,7 @@ export type Database = {
           price_option_id: string | null
           sport_level: string | null
           status: Database["public"]["Enums"]["registration_status"]
+          stripe_payment_intent_id: string | null
           user_id: string
         }
         Insert: {
@@ -440,6 +441,7 @@ export type Database = {
           price_option_id?: string | null
           sport_level?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
+          stripe_payment_intent_id?: string | null
           user_id: string
         }
         Update: {
@@ -452,6 +454,7 @@ export type Database = {
           price_option_id?: string | null
           sport_level?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
+          stripe_payment_intent_id?: string | null
           user_id?: string
         }
         Relationships: [

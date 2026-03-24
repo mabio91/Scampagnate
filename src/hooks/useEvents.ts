@@ -236,12 +236,15 @@ export const useCancelRegistration = () => {
   return useMutation({
     mutationFn: async (eventId: string) => {
       if (!user) throw new Error("Devi effettuare il login");
-      const { error } = await supabase
-        .from("event_registrations")
-        .update({ status: "cancelled" })
-        .eq("event_id", eventId)
-        .eq("user_id", user.id);
-      if (error) throw error;
+      
+      const { data, error } = await supabase.functions.invoke("process-refund", {
+        body: { eventId },
+      });
+      
+      if (error) throw new Error(error.message || "Errore durante la cancellazione");
+      if (data?.error) throw new Error(data.error);
+      
+      return data as { refunded: boolean; cancelled: boolean; reason?: string; policy?: string };
     },
     onSuccess: (_, eventId) => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });

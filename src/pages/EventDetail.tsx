@@ -400,8 +400,16 @@ const EventDetail = () => {
 
   const handleCancel = async () => {
     try {
-      await cancelMutation.mutateAsync(event.id);
-      toast({ title: "Registrazione annullata", description: "La tua iscrizione è stata annullata." });
+      const result = await cancelMutation.mutateAsync(event.id);
+      if (result?.refunded) {
+        toast({ title: "Iscrizione annullata", description: "Il rimborso è stato elaborato automaticamente. Riceverai l'accredito entro 5-10 giorni lavorativi." });
+      } else if (result?.reason === "non_refundable") {
+        toast({ title: "Iscrizione annullata", description: "Questo evento ha una politica non rimborsabile. Nessun rimborso sarà elaborato." });
+      } else if (result?.reason === "outside_window") {
+        toast({ title: "Iscrizione annullata", description: "Il periodo per il rimborso è scaduto. Nessun rimborso sarà elaborato." });
+      } else {
+        toast({ title: "Iscrizione annullata", description: "La tua iscrizione è stata annullata." });
+      }
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
     }
