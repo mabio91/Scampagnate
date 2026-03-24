@@ -365,10 +365,25 @@ const EventForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.date || !form.time || !form.location || (!imageFile && !form.image_url)) {
-      toast({ title: "Please fill required fields (including cover image)", variant: "destructive" });
+    const errors: Record<string, boolean> = {};
+    if (!form.title) errors.title = true;
+    if (!form.date) errors.date = true;
+    if (!form.time) errors.time = true;
+    if (!form.location) errors.location = true;
+    if (!imageFile && !form.image_url) errors.image = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const missingFields = [];
+      if (errors.title) missingFields.push("Title");
+      if (errors.date) missingFields.push("Date");
+      if (errors.time) missingFields.push("Time");
+      if (errors.location) missingFields.push("Location");
+      if (errors.image) missingFields.push("Cover image");
+      toast({ title: "Campi obbligatori mancanti", description: missingFields.join(", "), variant: "destructive" });
       return;
     }
+    setValidationErrors({});
 
     setSaving(true);
     try {
