@@ -6,6 +6,7 @@ import type { AccessRule, AccessRulesConfig } from "@/hooks/useEventAccessRules"
 import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import AppLayout from "@/components/layout/AppLayout";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -106,6 +107,7 @@ const EventForm = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
 
   const [form, setForm] = useState({
     title: "",
@@ -363,10 +365,25 @@ const EventForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.date || !form.time || !form.location || (!imageFile && !form.image_url)) {
-      toast({ title: "Please fill required fields (including cover image)", variant: "destructive" });
+    const errors: Record<string, boolean> = {};
+    if (!form.title) errors.title = true;
+    if (!form.date) errors.date = true;
+    if (!form.time) errors.time = true;
+    if (!form.location) errors.location = true;
+    if (!imageFile && !form.image_url) errors.image = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const missingFields = [];
+      if (errors.title) missingFields.push("Title");
+      if (errors.date) missingFields.push("Date");
+      if (errors.time) missingFields.push("Time");
+      if (errors.location) missingFields.push("Location");
+      if (errors.image) missingFields.push("Cover image");
+      toast({ title: "Campi obbligatori mancanti", description: missingFields.join(", "), variant: "destructive" });
       return;
     }
+    setValidationErrors({});
 
     setSaving(true);
     try {
@@ -495,7 +512,8 @@ const EventForm = () => {
           <div className="space-y-3">
             <div>
               <Label htmlFor="title">Title *</Label>
-              <Input id="title" value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Event title" />
+              <Input id="title" value={form.title} onChange={(e) => { updateForm("title", e.target.value); setValidationErrors(prev => ({ ...prev, title: false })); }} placeholder="Event title" className={validationErrors.title ? "border-destructive ring-destructive/20 ring-2" : ""} />
+              {validationErrors.title && <p className="text-xs text-destructive mt-1">Title is required</p>}
             </div>
             <div>
               <Label htmlFor="description">Description</Label>
@@ -504,16 +522,25 @@ const EventForm = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="date">Date *</Label>
-                <Input id="date" type="date" value={form.date} onChange={(e) => updateForm("date", e.target.value)} />
+                <Input id="date" type="date" value={form.date} onChange={(e) => { updateForm("date", e.target.value); setValidationErrors(prev => ({ ...prev, date: false })); }} className={validationErrors.date ? "border-destructive ring-destructive/20 ring-2" : ""} />
+                {validationErrors.date && <p className="text-xs text-destructive mt-1">Required</p>}
               </div>
               <div>
                 <Label htmlFor="time">Time *</Label>
-                <Input id="time" type="time" value={form.time} onChange={(e) => updateForm("time", e.target.value)} />
+                <Input id="time" type="time" value={form.time} onChange={(e) => { updateForm("time", e.target.value); setValidationErrors(prev => ({ ...prev, time: false })); }} className={validationErrors.time ? "border-destructive ring-destructive/20 ring-2" : ""} />
+                {validationErrors.time && <p className="text-xs text-destructive mt-1">Required</p>}
               </div>
             </div>
             <div>
               <Label htmlFor="location">Location *</Label>
-              <Input id="location" value={form.location} onChange={(e) => updateForm("location", e.target.value)} placeholder="Event location" />
+              <LocationAutocomplete
+                id="location"
+                value={form.location}
+                onChange={(val) => { updateForm("location", val); setValidationErrors(prev => ({ ...prev, location: false })); }}
+                placeholder="Search location..."
+                error={validationErrors.location}
+              />
+              {validationErrors.location && <p className="text-xs text-destructive mt-1">Location is required</p>}
             </div>
             <div>
               <Label htmlFor="category">Category</Label>
@@ -1071,7 +1098,11 @@ const EventForm = () => {
                 </button>
               </div>
               <Input placeholder="Name" value={point.name} onChange={(e) => updateMeetingPoint(index, "name", e.target.value)} />
-              <Input placeholder="Location/Address" value={point.location} onChange={(e) => updateMeetingPoint(index, "location", e.target.value)} />
+              <LocationAutocomplete
+                value={point.location}
+                onChange={(val) => updateMeetingPoint(index, "location", val)}
+                placeholder="Location/Address"
+              />
               <div className="grid grid-cols-2 gap-2">
                 <Input type="time" value={point.time} onChange={(e) => updateMeetingPoint(index, "time", e.target.value)} />
                 <Input placeholder="Notes" value={point.notes} onChange={(e) => updateMeetingPoint(index, "notes", e.target.value)} />
