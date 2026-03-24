@@ -119,6 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: window.location.origin,
       },
     });
+    // Return session regardless — email verification is not required
     return { error, session: data?.session };
   };
 
