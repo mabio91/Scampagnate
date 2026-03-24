@@ -1269,6 +1269,33 @@ const EventForm = () => {
           {isEditing ? "Update Event" : "Create Event"}
         </Button>
       </form>
+
+      <AlertDialog open={validationPopupOpen} onOpenChange={setValidationPopupOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Campi obbligatori mancanti
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Compila i seguenti campi per continuare:</p>
+                <ul className="space-y-1.5">
+                  {validationPopupFields.map((field) => (
+                    <li key={field} className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
+                      {field}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Ho capito</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };
