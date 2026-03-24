@@ -123,7 +123,7 @@ export const useCheckEventAccessRules = (
             if (!isMembershipActiveFn(profile)) {
               target.push({
                 rule,
-                reason: rule.message || "Questa esperienza è riservata ai membri attivi della community.",
+                reason: rule.message || "Questo evento richiede una membership attiva.",
               });
             }
             break;
@@ -146,7 +146,7 @@ export const useCheckEventAccessRules = (
             if (trekkingCount < minCount) {
               target.push({
                 rule,
-                reason: rule.message || `Questo evento è riservato a chi ha già partecipato ad almeno ${minCount} attività di trekking.`,
+                reason: rule.message || `Questo evento richiede almeno ${minCount} esperienze di trekking completate.`,
               });
             }
             break;
@@ -164,7 +164,7 @@ export const useCheckEventAccessRules = (
             if ((count || 0) < minCount) {
               target.push({
                 rule,
-                reason: rule.message || `Questo evento è riservato a chi ha già partecipato ad almeno ${minCount} attività.`,
+                reason: rule.message || `Questo evento richiede almeno ${minCount} presenze totali.`,
               });
             }
             break;
@@ -183,7 +183,7 @@ export const useCheckEventAccessRules = (
               if (!userBadge) {
                 target.push({
                   rule,
-                  reason: rule.message || `Per accedere a questo evento è necessario il badge "${rule.badge_name || "richiesto"}".`,
+                  reason: rule.message || `Questo evento richiede il badge "${rule.badge_name || "richiesto"}".`,
                 });
               }
             }
@@ -207,7 +207,7 @@ export const useCheckEventAccessRules = (
             if ((count || 0) < minCount) {
               target.push({
                 rule,
-                reason: rule.message || `L'accesso a questo evento è limitato ai partecipanti con esperienza precedente (minimo ${minCount} attività).`,
+                reason: rule.message || `Questo evento richiede almeno ${minCount} attività completate.`,
               });
             }
             break;
@@ -219,7 +219,7 @@ export const useCheckEventAccessRules = (
             if (userLevel < requiredLevel) {
               target.push({
                 rule,
-                reason: rule.message || `Livello minimo richiesto: ${LEVEL_LABELS[String(requiredLevel)] || requiredLevel}. Il tuo livello attuale non è sufficiente.`,
+                reason: rule.message || `Questo evento richiede almeno un livello ${LEVEL_LABELS[String(requiredLevel)] || "richiesto"}.`,
               });
             }
             break;
@@ -231,7 +231,7 @@ export const useCheckEventAccessRules = (
             if (userExp < requiredExp) {
               target.push({
                 rule,
-                reason: rule.message || `Esperienza minima richiesta: ${EXPERIENCE_LABELS[String(requiredExp)] || requiredExp}. La tua esperienza attuale non è sufficiente.`,
+                reason: rule.message || `Questo evento richiede almeno ${EXPERIENCE_LABELS[String(requiredExp)] || "l'esperienza richiesta"}.`,
               });
             }
             break;
@@ -243,8 +243,24 @@ export const useCheckEventAccessRules = (
             if (userFreq < requiredFreq) {
               target.push({
                 rule,
-                reason: rule.message || `Frequenza di attività minima richiesta: ${FREQUENCY_LABELS[String(requiredFreq)] || requiredFreq}. La tua frequenza attuale non è sufficiente.`,
+                reason: rule.message || `Questo evento richiede una frequenza di attività minima: ${FREQUENCY_LABELS[String(requiredFreq)] || "richiesta"}.`,
               });
+            }
+            break;
+          }
+
+          case "interests": {
+            // Interests are always soft
+            const eventInterests = rule.interests || [];
+            const userInterests = (profile as any).interests || [];
+            if (eventInterests.length > 0) {
+              const intersection = eventInterests.filter((i: string) => userInterests.includes(i));
+              if (intersection.length === 0) {
+                softWarnings.push({
+                  rule,
+                  reason: rule.message || "Questo evento potrebbe non essere perfettamente in linea con i tuoi interessi.",
+                });
+              }
             }
             break;
           }
