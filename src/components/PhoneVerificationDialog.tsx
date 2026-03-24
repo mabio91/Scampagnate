@@ -49,6 +49,7 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
       setError("");
       setCooldown(0);
       setRemainingAttempts(null);
+      trackVerificationEvent("started");
     }
   }, [open]);
 
