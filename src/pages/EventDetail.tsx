@@ -634,6 +634,8 @@ const EventDetail = () => {
           </button>
         </motion.div>
 
+        {/* Weather Forecast - right after Date & Location */}
+        <WeatherForecast location={event.location} date={event.date} />
         {/* 10. ORGANIZER + 9. PARTICIPANTS (WeMeet style) */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="py-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">
