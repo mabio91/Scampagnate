@@ -727,8 +727,8 @@ const EventDetail = () => {
           </motion.div>
         )}
 
-        {/* Weather Forecast */}
-        <WeatherForecast location={event.location} date={event.date} />
+
+
 
         {/* 4. DESCRIPTION → "L'esperienza" with gradient fade */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
