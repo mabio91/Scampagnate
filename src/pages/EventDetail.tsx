@@ -653,10 +653,31 @@ const EventDetail = () => {
         {/* Weather Forecast */}
         <WeatherForecast location={event.location} date={event.date} />
 
-        {/* Description */}
+        {/* Description with "Leggi di più" */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-2">{t("description")}</h3>
-          <p className="text-sm font-body text-muted-foreground leading-relaxed">{event.description}</p>
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">L'evento in breve</h3>
+          <div className="relative">
+            <p className={`text-sm font-body text-muted-foreground leading-relaxed ${!descriptionExpanded ? "line-clamp-4" : ""}`}>
+              {event.description}
+            </p>
+            {event.description && event.description.length > 200 && !descriptionExpanded && (
+              <button
+                onClick={() => setDescriptionExpanded(true)}
+                className="text-sm font-body font-semibold text-foreground mt-1 hover:underline"
+              >
+                Leggi di più
+              </button>
+            )}
+          </div>
+          {/* Category tag */}
+          {event.category && (
+            <div className="mt-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-xs font-body font-semibold text-muted-foreground">
+                {event.category.icon && <span>{event.category.icon}</span>}
+                {event.category.name}
+              </span>
+            </div>
+          )}
         </motion.div>
 
         {/* Safety Warning for demanding events */}
