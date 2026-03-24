@@ -70,6 +70,7 @@ const EventDetail = () => {
   const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [carAvailability, setCarAvailability] = useState("");
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   
   // Hero parallax/fade on scroll
   const [scrollY, setScrollY] = useState(0);
