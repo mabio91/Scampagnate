@@ -8,6 +8,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Smartphone, Loader2, CheckCircle2, ArrowLeft, RefreshCw, ShieldCheck } from "lucide-react";
 
+// Analytics helper — tracks verification events
+const trackVerificationEvent = (event: string, data?: Record<string, string>) => {
+  try {
+    // Use custom event tracking if available (e.g., Vercel Analytics)
+    if (typeof window !== "undefined" && (window as any).va) {
+      (window as any).va("event", { name: `phone_verification_${event}`, ...data });
+    }
+    // Also log to console for debugging
+    console.log(`[Analytics] phone_verification_${event}`, data);
+  } catch {}
+};
+
 interface PhoneVerificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -37,6 +49,7 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
       setError("");
       setCooldown(0);
       setRemainingAttempts(null);
+      trackVerificationEvent("started");
     }
   }, [open]);
 
@@ -56,6 +69,7 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
     setSending(true);
     setError("");
     setChannel(selectedChannel);
+    trackVerificationEvent("method_selected", { channel: selectedChannel });
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("send-otp", {
@@ -110,6 +124,7 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
 
       if (data?.verified) {
         setStep("success");
+        trackVerificationEvent("success", { channel });
         await refreshProfile();
         setTimeout(() => {
           onVerified();
@@ -138,8 +153,15 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
     sendOtp(channel);
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && step !== "success") {
+      trackVerificationEvent("drop_off", { step });
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         <AnimatePresence mode="wait">
           {/* PROMPT: Must verify to join */}
