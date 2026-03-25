@@ -200,6 +200,8 @@ const EventForm = () => {
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
   const [askCarAvailability, setAskCarAvailability] = useState(false);
+  const [weatherOverrideCondition, setWeatherOverrideCondition] = useState("");
+  const [weatherOverrideTemp, setWeatherOverrideTemp] = useState("");
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
@@ -293,6 +295,8 @@ const EventForm = () => {
         if (af.ask_car_availability !== undefined) {
           // New format: { fields: [...], ask_car_availability: bool }
           setAskCarAvailability(!!af.ask_car_availability);
+          if (af.weather_override_condition) setWeatherOverrideCondition(af.weather_override_condition);
+          if (af.weather_override_temp != null && af.weather_override_temp !== "") setWeatherOverrideTemp(String(af.weather_override_temp));
           if (Array.isArray(af.fields)) {
             setAdditionalFields(
               af.fields.map((f: any) => ({
@@ -450,6 +454,8 @@ const EventForm = () => {
         additional_fields: {
           fields: additionalFields.filter((f) => f.label.trim()),
           ask_car_availability: askCarAvailability,
+          weather_override_condition: weatherOverrideCondition || undefined,
+          weather_override_temp: weatherOverrideTemp ? parseFloat(weatherOverrideTemp) : undefined,
         } as any,
         access_rules: accessRules.length > 0 ? {
           rules: accessRules,
@@ -925,6 +931,35 @@ const EventForm = () => {
           <div className="flex items-center gap-3">
             <Switch id="featured" checked={form.featured} onCheckedChange={(v) => updateForm("featured", v)} />
             <Label htmlFor="featured">Featured event</Label>
+          </div>
+
+          {/* Weather Override (Admin/Organizer) */}
+          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              🌤️ Override Meteo (opzionale)
+            </Label>
+            <p className="text-[11px] text-muted-foreground font-body">
+              Lascia vuoto per usare la previsione automatica. Compila per sovrascrivere.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Condizione</Label>
+                <Input
+                  value={weatherOverrideCondition}
+                  onChange={(e) => setWeatherOverrideCondition(e.target.value)}
+                  placeholder="es. Sereno, Nuvoloso"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Temperatura (°C)</Label>
+                <Input
+                  type="number"
+                  value={weatherOverrideTemp}
+                  onChange={(e) => setWeatherOverrideTemp(e.target.value)}
+                  placeholder="es. 22"
+                />
+              </div>
+            </div>
           </div>
         </Card>
 
