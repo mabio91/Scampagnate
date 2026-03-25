@@ -452,6 +452,8 @@ const EventForm = () => {
         additional_fields: {
           fields: additionalFields.filter((f) => f.label.trim()),
           ask_car_availability: askCarAvailability,
+          weather_override_condition: weatherOverrideCondition || undefined,
+          weather_override_temp: weatherOverrideTemp ? parseFloat(weatherOverrideTemp) : undefined,
         } as any,
         access_rules: accessRules.length > 0 ? {
           rules: accessRules,
