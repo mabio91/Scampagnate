@@ -932,6 +932,35 @@ const EventForm = () => {
             <Switch id="featured" checked={form.featured} onCheckedChange={(v) => updateForm("featured", v)} />
             <Label htmlFor="featured">Featured event</Label>
           </div>
+
+          {/* Weather Override (Admin/Organizer) */}
+          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              🌤️ Override Meteo (opzionale)
+            </Label>
+            <p className="text-[11px] text-muted-foreground font-body">
+              Lascia vuoto per usare la previsione automatica. Compila per sovrascrivere.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Condizione</Label>
+                <Input
+                  value={weatherOverrideCondition}
+                  onChange={(e) => setWeatherOverrideCondition(e.target.value)}
+                  placeholder="es. Sereno, Nuvoloso"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Temperatura (°C)</Label>
+                <Input
+                  type="number"
+                  value={weatherOverrideTemp}
+                  onChange={(e) => setWeatherOverrideTemp(e.target.value)}
+                  placeholder="es. 22"
+                />
+              </div>
+            </div>
+          </div>
         </Card>
 
         {/* Access & Pricing Rules — Unified Section */}
