@@ -295,6 +295,8 @@ const EventForm = () => {
         if (af.ask_car_availability !== undefined) {
           // New format: { fields: [...], ask_car_availability: bool }
           setAskCarAvailability(!!af.ask_car_availability);
+          if (af.weather_override_condition) setWeatherOverrideCondition(af.weather_override_condition);
+          if (af.weather_override_temp != null && af.weather_override_temp !== "") setWeatherOverrideTemp(String(af.weather_override_temp));
           if (Array.isArray(af.fields)) {
             setAdditionalFields(
               af.fields.map((f: any) => ({
