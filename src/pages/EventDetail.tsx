@@ -108,6 +108,7 @@ const EventDetail = () => {
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 0.7));
   const heroScale = 1 + scrollY * 0.0005;
   const heroTranslateY = scrollY * 0.4;
+  const showStickyHeader = scrollY > heroHeight - 60;
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
@@ -524,6 +525,31 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
+      {/* 17. STICKY HEADER ON SCROLL */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-safe ${
+          showStickyHeader
+            ? "bg-background/95 backdrop-blur-lg shadow-sm border-b border-border/50 translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="max-w-lg mx-auto flex items-center justify-between px-4 py-2.5">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-muted transition-colors shrink-0">
+              <ArrowLeft className="h-5 w-5 text-foreground" />
+            </button>
+            <h2 className="text-sm font-display font-bold text-foreground truncate">{event.title}</h2>
+          </div>
+          <div className="flex gap-1.5 shrink-0">
+            <button onClick={handleToggleSave} className="p-2 rounded-full hover:bg-muted transition-colors">
+              {isSaved ? <BookmarkCheck className="h-5 w-5 text-primary" /> : <Bookmark className="h-5 w-5 text-foreground" />}
+            </button>
+            <button onClick={shareEvent} className="p-2 rounded-full hover:bg-muted transition-colors">
+              <Share2 className="h-5 w-5 text-foreground" />
+            </button>
+          </div>
+        </div>
+      </div>
       {/* 1. HERO with parallax/fade */}
       <div ref={heroRef} className="relative overflow-hidden" style={{ height: `${heroHeight}px` }}>
         <div
@@ -591,8 +617,8 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* Rounded top container overlapping the hero */}
-      <div className="relative -mt-6 bg-background rounded-t-3xl z-10">
+      {/* 16. Rounded top container overlapping the hero */}
+      <div className="relative -mt-6 bg-background rounded-t-3xl z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground leading-tight">{event.title}</h1>
         </div>
