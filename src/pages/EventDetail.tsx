@@ -617,8 +617,8 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* Rounded top container overlapping the hero */}
-      <div className="relative -mt-6 bg-background rounded-t-3xl z-10">
+      {/* 16. Rounded top container overlapping the hero */}
+      <div className="relative -mt-6 bg-background rounded-t-3xl z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground leading-tight">{event.title}</h1>
         </div>
