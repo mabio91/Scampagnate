@@ -200,6 +200,8 @@ const EventForm = () => {
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
   const [askCarAvailability, setAskCarAvailability] = useState(false);
+  const [weatherOverrideCondition, setWeatherOverrideCondition] = useState("");
+  const [weatherOverrideTemp, setWeatherOverrideTemp] = useState("");
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
