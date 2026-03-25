@@ -108,6 +108,7 @@ const EventDetail = () => {
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 0.7));
   const heroScale = 1 + scrollY * 0.0005;
   const heroTranslateY = scrollY * 0.4;
+  const showStickyHeader = scrollY > heroHeight - 60;
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
