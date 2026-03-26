@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +20,7 @@ import { ActivityHistory } from "@/components/profile/ActivityHistory";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
-  const { t } = useLanguage();
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
