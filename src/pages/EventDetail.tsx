@@ -1383,6 +1383,42 @@ const EventDetail = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Fit Score Warning Dialog (score < 30) */}
+      <Dialog open={showFitScoreWarning} onOpenChange={setShowFitScoreWarning}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Attenzione
+            </DialogTitle>
+            <DialogDescription className="font-body text-sm leading-relaxed">
+              La tua compatibilità con questo evento è molto bassa ({fitScore.score}%). 
+              Questo evento potrebbe essere significativamente troppo impegnativo per il tuo livello attuale.
+              Sei sicuro di voler procedere con l'iscrizione?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 mt-2">
+            <Button
+              onClick={() => {
+                setShowFitScoreWarning(false);
+                setShowRegisterDialog(true);
+              }}
+              variant="destructive"
+              className="w-full font-body h-12"
+            >
+              Procedi comunque
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full font-body text-muted-foreground text-xs h-10"
+              onClick={() => setShowFitScoreWarning(false)}
+            >
+              Annulla
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <DifficultyGuideDialog
         open={showDifficultyGuide}
         onOpenChange={setShowDifficultyGuide}
