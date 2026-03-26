@@ -15,7 +15,8 @@ import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
-import { Info } from "lucide-react";
+import ActivityProposalForm from "@/components/ActivityProposalForm";
+import { Info, Lightbulb } from "lucide-react";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
 
 const Profile = () => {
