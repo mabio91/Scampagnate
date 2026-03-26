@@ -79,13 +79,7 @@ const RegistrationCheckoutDialog = ({
   const expiryDate = getMembershipExpiryDate(profile);
   const expiryStr = expiryDate ? expiryDate.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
 
-  // Cancellation policy
-  const cancellationLabel = (() => {
-    if (!event.cancellation_policy) return null;
-    const { policyType } = parseCancellationPolicy(event.cancellation_policy);
-    if (!policyType) return null;
-    return CANCELLATION_POLICIES[policyType]?.labelIt || null;
-  })();
+  // (cancellation details computed below after pricing)
 
   // Validation
   const meetingPointRequired = hasMeetingPoints && !selectedMeetingPoint;
