@@ -66,7 +66,7 @@ serve(async (req) => {
     const twilioUrl = `https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`;
     
     const bodyParams: Record<string, string> = {
-      To: channel === "whatsapp" ? `whatsapp:${phone}` : phone,
+      To: phone,
       Channel: channel,
     };
 
