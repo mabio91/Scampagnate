@@ -72,9 +72,24 @@ const PhoneVerificationDialog = ({ open, onOpenChange, onVerified }: PhoneVerifi
     trackVerificationEvent("method_selected", { channel: selectedChannel });
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("send-otp", {
-        body: { phone: profile.phone, channel: selectedChannel },
-      });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Sessione non valida. Effettua nuovamente il login.");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ phone: profile.phone, channel: selectedChannel }),
+        }
+      );
+      const data = await response.json();
+      const fnError = !response.ok ? { message: data?.error || `Errore ${response.status}` } : null;
 
       if (fnError) throw new Error(fnError.message);
 
