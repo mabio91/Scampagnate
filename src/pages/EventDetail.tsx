@@ -434,7 +434,8 @@ const EventDetail = () => {
 
   // CTA PRIORITY ORDER (from highest to lowest)
   const getCTALabel = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Evento chiuso";
+    if (event.status === "closed") return "Iscrizioni chiuse";
+    if (isEventPast || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Evento chiuso";
     if (!user) return "Partecipa";
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Registrato ✓";
     if (isPendingApproval) return "In attesa di approvazione";
