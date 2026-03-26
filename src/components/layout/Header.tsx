@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
-import flagIt from "@/assets/flag-it.png";
-import flagEn from "@/assets/flag-en.png";
+import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
 import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +19,7 @@ const Header = () => {
   const notifRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   useEffect(() => setMounted(true), []);
 
@@ -36,10 +35,6 @@ const Header = () => {
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
-
-  const toggleLanguage = () => {
-    setLanguage(language === "it" ? "en" : "it");
   };
 
   return (
