@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Award, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import { Award, Lock, ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { Progress } from "@/components/ui/progress";
 import EmptyState from "@/components/EmptyState";
