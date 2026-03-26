@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
 import EventCard from "@/components/events/EventCard";
-import QuickFilters, { type QuickFilterType } from "@/components/events/QuickFilters";
+import QuickFilters from "@/components/events/QuickFilters";
 import RecommendedSection from "@/components/events/RecommendedSection";
 import ProposalSuggestionCard from "@/components/ProposalSuggestionCard";
 import EmptyState from "@/components/EmptyState";
@@ -23,8 +23,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "@/contexts/SearchContext";
 import { UI_LABELS } from "@/lib/labels";
 
-type PriceFilter = "all" | "free" | "paid";
-
 // Interest-to-keyword map for personalized recommendations
 const INTEREST_KEYWORDS: Record<string, string[]> = {
   "Trekking e camminate": ["trekking", "outdoor", "escursion"],
@@ -38,13 +36,17 @@ const INTEREST_KEYWORDS: Record<string, string[]> = {
 };
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
-  const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
-  const [showFilters, setShowFilters] = useState(false);
-  const [quickFilters, setQuickFilters] = useState<QuickFilterType[]>([]);
-  const { searchOpen } = useSearch();
+  const {
+    searchOpen,
+    selectedCategory, setSelectedCategory,
+    searchQuery, setSearchQuery,
+    dateFilter, setDateFilter,
+    priceFilter, setPriceFilter,
+    showFilters, setShowFilters,
+    quickFilters, toggleQuickFilter,
+    hasActiveFilters,
+    clearAllFilters,
+  } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
 
@@ -57,17 +59,11 @@ const Index = () => {
       setPriceFilter("all");
       setShowFilters(false);
     }
-  }, [searchOpen]);
+  }, [searchOpen, setSearchQuery, setDateFilter, setPriceFilter, setShowFilters]);
 
   const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
   const { data: discountMap } = useActiveDiscounts();
-
-  const hasActiveFilters = searchQuery || dateFilter || priceFilter !== "all" || quickFilters.length > 0;
-
-  const toggleQuickFilter = useCallback((f: QuickFilterType) => {
-    setQuickFilters(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
-  }, []);
 
   // All upcoming, non-draft/past/cancelled events
   const allUpcoming = useMemo(() => {
@@ -147,13 +143,7 @@ const Index = () => {
     return { thisWeekEvents: tw, laterEvents: later };
   }, [filteredEvents]);
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setDateFilter(undefined);
-    setPriceFilter("all");
-    setSelectedCategory(null);
-    setQuickFilters([]);
-  };
+  const clearFilters = clearAllFilters;
 
   return (
     <AppLayout>
@@ -245,7 +235,7 @@ const Index = () => {
                             </PopoverContent>
                           </Popover>
 
-                          {(["all", "free", "paid"] as PriceFilter[]).map(p => (
+                          {(["all", "free", "paid"] as const).map(p => (
                             <Button
                               key={p}
                               variant="outline"
