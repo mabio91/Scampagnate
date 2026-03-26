@@ -64,14 +64,10 @@ const EventDetail = () => {
   const [isRequestingOverride, setIsRequestingOverride] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
-  const [additionalResponses, setAdditionalResponses] = useState<Record<string, string>>({});
   const [membershipLoading, setMembershipLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
-  const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [carAvailability, setCarAvailability] = useState("");
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   // New states
