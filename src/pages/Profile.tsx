@@ -241,6 +241,9 @@ const Profile = () => {
           </div>
         )}
 
+        {/* Profile Completeness */}
+        <ProfileCompleteness />
+
         {/* Membership Status Card */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
