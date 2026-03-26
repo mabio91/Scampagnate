@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EventFitScoreCompact } from "@/components/events/EventFitScore";
+import LevelAvatar from "@/components/LevelAvatar";
 import type { FitScoreResult } from "@/hooks/useEventFitScore";
 import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
 import { useMemo } from "react";
@@ -119,13 +120,13 @@ const EventParticipants = () => {
       if (participantIds.length === 0) return {};
       const { data } = await supabase
         .from("profiles")
-        .select("id, self_level, trekking_experience, activity_frequency, interests")
+        .select("id, self_level, trekking_experience, activity_frequency, interests, total_points")
         .in("id", participantIds);
       const map: Record<string, any> = {};
       (data || []).forEach((p: any) => { map[p.id] = p; });
       return map;
     },
-    enabled: isOrgOrAdmin && participantIds.length > 0,
+    enabled: participantIds.length > 0,
   });
 
   const { data: organizerProfile } = useQuery({
@@ -231,13 +232,13 @@ const EventParticipants = () => {
 
                 return (
                   <div key={p.id} className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-                    {p.profiles?.avatar_url ? (
-                      <img src={p.profiles.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
-                    ) : (
-                      <span className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                        {p.profiles?.first_name?.[0] || "?"}
-                      </span>
-                    )}
+                    <LevelAvatar
+                      avatarUrl={p.profiles?.avatar_url}
+                      firstName={p.profiles?.first_name}
+                      points={pProfile?.total_points || 0}
+                      size="md"
+                      showBadge
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-body font-semibold text-foreground">
                         {p.profiles?.first_name}{p.profiles?.last_name_initial ? ` ${p.profiles.last_name_initial}` : ''}
