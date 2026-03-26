@@ -106,16 +106,33 @@ const RegistrationCheckoutDialog = ({
     });
   };
 
-  // CTA label
+  // CTA label (dynamic per scenario)
   const ctaLabel = (() => {
-    if (isSubmitting) return null; // handled by spinner
-    if (needsMembership) {
-      return membershipExpired ? "Rinnova Tessera e Iscriviti" : "Paga Tessera e Iscriviti";
-    }
-    if (isPaymentEvent) return "Procedi al pagamento";
+    if (isSubmitting) return null;
+    if (isRequestingOverride || requiresApproval) return "Invia richiesta di iscrizione";
     if (event.status === "full") return "Iscriviti alla lista d'attesa";
-    if (isRequestingOverride || requiresApproval) return "Invia richiesta";
+    if (needsMembership && !isPaymentEvent && event.payment_type === "free") return "Attiva tessera e iscriviti";
+    if (isDeposit) return "Paga acconto e iscriviti";
+    if (isPaymentEvent) return "Paga e completa l'iscrizione";
+    if (needsMembership) return "Attiva tessera e iscriviti";
     return "Conferma iscrizione";
+  })();
+
+  // Helper text above CTA
+  const ctaHelperText = (() => {
+    if (isRequestingOverride || requiresApproval) return "La tua richiesta verrà inviata agli organizzatori per l'approvazione.";
+    if (isPaymentEvent || needsMembership) return "Verrai reindirizzato al pagamento sicuro per completare l'iscrizione.";
+    return "L'iscrizione verrà confermata subito.";
+  })();
+
+  // Cancellation policy details
+  const cancellationDetails = (() => {
+    if (!event.cancellation_policy) return null;
+    const { policyType } = parseCancellationPolicy(event.cancellation_policy);
+    if (!policyType) return null;
+    const policy = CANCELLATION_POLICIES[policyType];
+    if (!policy) return null;
+    return { label: policy.labelIt, description: policy.descriptionIt, icon: policy.icon, colorClass: policy.colorClass };
   })();
 
   // Check if Section 1 has any content
