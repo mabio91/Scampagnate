@@ -1,17 +1,19 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, User as UserIcon } from "lucide-react";
+import { ArrowLeft, User as UserIcon, LogIn } from "lucide-react";
 import { useEvent, useEventParticipants } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { EventFitScoreCompact } from "@/components/events/EventFitScore";
 import LevelAvatar from "@/components/LevelAvatar";
+import { useCommunityLevel } from "@/hooks/useCommunityLevel";
 import type { FitScoreResult } from "@/hooks/useEventFitScore";
 import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
 import { useMemo } from "react";
 
-// Lightweight score calculation for a given participant profile
+// --- Fit score calc (organizer/admin only) ---
 const LEVEL_MAP: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
 const EXPERIENCE_MAP: Record<string, number> = { "0_2": 1, "3_5": 2, "5_plus": 3, "5+": 3 };
 const FREQUENCY_MAP: Record<string, number> = { low: 1, "0-1/week": 1, medium: 2, "1-2/week": 2, high: 3, ">2/week": 3 };
@@ -103,6 +105,53 @@ function calcFitScore(
   };
 }
 
+// --- Participant row with level label ---
+const ParticipantRow = ({
+  avatarUrl,
+  firstName,
+  points,
+  fitScore,
+  isOrgOrAdmin,
+}: {
+  avatarUrl?: string | null;
+  firstName?: string;
+  points: number;
+  fitScore: FitScoreResult | null;
+  isOrgOrAdmin: boolean;
+}) => {
+  const { data: level } = useCommunityLevel(points);
+
+  return (
+    <div className="flex items-center gap-4 py-3.5 border-b border-border last:border-0">
+      <LevelAvatar
+        avatarUrl={avatarUrl}
+        firstName={firstName}
+        points={points}
+        level={level}
+        size="md"
+        showBadge
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-body font-semibold text-foreground truncate">
+          {firstName || "Utente"}
+        </p>
+        {level && (
+          <p className="text-xs font-body text-muted-foreground">
+            {level.name}
+          </p>
+        )}
+      </div>
+      {/* Fit score for organizer/admin only */}
+      {isOrgOrAdmin && fitScore && !fitScore.hidden && (
+        <div className="shrink-0">
+          <EventFitScoreCompact fitScore={fitScore} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Main page ---
 const EventParticipants = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -112,7 +161,6 @@ const EventParticipants = () => {
 
   const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
 
-  // Fetch full profiles for participants if organizer/admin (for fit score)
   const participantIds = useMemo(() => (participants || []).map((p: any) => p.user_id), [participants]);
   const { data: fullProfiles } = useQuery({
     queryKey: ["participant-full-profiles", id, participantIds],
@@ -141,6 +189,7 @@ const EventParticipants = () => {
 
   const accessRules = (event?.access_rules as AccessRulesConfig | null)?.rules || [];
 
+  // --- Loading ---
   if (eventLoading || participantsLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -150,9 +199,12 @@ const EventParticipants = () => {
         </div>
         <div className="px-4 py-4 space-y-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="flex items-center gap-3">
+            <div key={i} className="flex items-center gap-4">
               <Skeleton className="w-12 h-12 rounded-full" />
-              <Skeleton className="h-4 w-32" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-20" />
+              </div>
             </div>
           ))}
         </div>
@@ -160,6 +212,7 @@ const EventParticipants = () => {
     );
   }
 
+  // --- Not found ---
   if (!event) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -168,8 +221,34 @@ const EventParticipants = () => {
     );
   }
 
-  const myRegistration = participants?.find((p: any) => p.user_id === user?.id);
-  const canView = !!user && (!!myRegistration || user.id === event.organizer_id || isAdmin);
+  // --- Guest / not logged in ---
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft className="h-5 w-5 text-foreground" /></button>
+          <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
+        </div>
+        <div className="px-4 py-16 text-center max-w-sm mx-auto">
+          <UserIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+          <p className="text-base font-body font-semibold text-foreground mb-1">
+            Ti stai perdendo qualcosa!
+          </p>
+          <p className="text-sm font-body text-muted-foreground mb-6">
+            Accedi e completa il profilo per scoprire chi partecipa.
+          </p>
+          <Button onClick={() => navigate("/auth")} className="gap-2">
+            <LogIn className="h-4 w-4" />
+            Accedi
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Logged in but not registered / not organizer / not admin ---
+  const myRegistration = participants?.find((p: any) => p.user_id === user.id);
+  const canView = !!myRegistration || user.id === event.organizer_id || isAdmin;
 
   if (!canView) {
     return (
@@ -185,23 +264,28 @@ const EventParticipants = () => {
     );
   }
 
+  // --- Full participant list ---
   return (
     <div className="min-h-screen bg-background pb-8">
-      {/* Header */}
       <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
+        {participants && participants.length > 0 && (
+          <span className="ml-auto text-xs font-body text-muted-foreground">
+            {participants.length} iscritti
+          </span>
+        )}
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-4">
         {/* Organizer */}
         <div className="mb-6">
-          <p className="text-sm font-body font-semibold text-muted-foreground mb-3">Organizzatore</p>
+          <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Organizzatore</p>
           <Link
             to={`/organizer/${event.organizer_id}`}
-            className="flex items-center gap-3"
+            className="flex items-center gap-4"
           >
             <LevelAvatar
               avatarUrl={organizerProfile?.avatar_url}
@@ -216,14 +300,13 @@ const EventParticipants = () => {
           </Link>
         </div>
 
-        {/* Separator */}
         <div className="border-t border-border" />
 
         {/* Participants */}
         {participants && participants.length > 0 ? (
           <div className="mt-4">
-            <p className="text-sm font-body font-semibold text-muted-foreground mb-3">Chi c'è?</p>
-            <div className="space-y-1">
+            <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Chi c'è?</p>
+            <div>
               {participants.map((p: any) => {
                 const pProfile = fullProfiles?.[p.user_id];
                 const fitScore = isOrgOrAdmin && pProfile
@@ -231,31 +314,14 @@ const EventParticipants = () => {
                   : null;
 
                 return (
-                  <div key={p.id} className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-                    <LevelAvatar
-                      avatarUrl={p.profiles?.avatar_url}
-                      firstName={p.profiles?.first_name}
-                      points={pProfile?.total_points || 0}
-                      size="md"
-                      showBadge
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-body font-semibold text-foreground">
-                        {p.profiles?.first_name}{p.profiles?.last_name_initial ? ` ${p.profiles.last_name_initial}` : ''}
-                      </p>
-                      {p.badges && p.badges.length > 0 && (
-                        <p className="text-xs font-body text-muted-foreground">
-                          {p.badges.length} badge
-                        </p>
-                      )}
-                    </div>
-                    {/* Fit score for organizer/admin only */}
-                    {fitScore && !fitScore.hidden && (
-                      <div className="shrink-0">
-                        <EventFitScoreCompact fitScore={fitScore} />
-                      </div>
-                    )}
-                  </div>
+                  <ParticipantRow
+                    key={p.id}
+                    avatarUrl={p.profiles?.avatar_url}
+                    firstName={p.profiles?.first_name}
+                    points={pProfile?.total_points || 0}
+                    fitScore={fitScore}
+                    isOrgOrAdmin={isOrgOrAdmin}
+                  />
                 );
               })}
             </div>
