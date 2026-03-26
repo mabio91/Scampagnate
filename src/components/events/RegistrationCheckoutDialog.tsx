@@ -13,7 +13,7 @@ import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { ResolvedPriceOption } from "@/hooks/usePricingEligibility";
 import {
   MapPin, Clock, Car, CreditCard, Loader2, Tag, Lock, Sparkles, ShieldCheck,
-  AlertTriangle, Info, ChevronRight
+  AlertTriangle, ChevronRight
 } from "lucide-react";
 
 interface RegistrationCheckoutDialogProps {
@@ -79,13 +79,7 @@ const RegistrationCheckoutDialog = ({
   const expiryDate = getMembershipExpiryDate(profile);
   const expiryStr = expiryDate ? expiryDate.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
 
-  // Cancellation policy
-  const cancellationLabel = (() => {
-    if (!event.cancellation_policy) return null;
-    const { policyType } = parseCancellationPolicy(event.cancellation_policy);
-    if (!policyType) return null;
-    return CANCELLATION_POLICIES[policyType]?.labelIt || null;
-  })();
+  // (cancellation details computed below after pricing)
 
   // Validation
   const meetingPointRequired = hasMeetingPoints && !selectedMeetingPoint;
@@ -106,16 +100,33 @@ const RegistrationCheckoutDialog = ({
     });
   };
 
-  // CTA label
+  // CTA label (dynamic per scenario)
   const ctaLabel = (() => {
-    if (isSubmitting) return null; // handled by spinner
-    if (needsMembership) {
-      return membershipExpired ? "Rinnova Tessera e Iscriviti" : "Paga Tessera e Iscriviti";
-    }
-    if (isPaymentEvent) return "Procedi al pagamento";
+    if (isSubmitting) return null;
+    if (isRequestingOverride || requiresApproval) return "Invia richiesta di iscrizione";
     if (event.status === "full") return "Iscriviti alla lista d'attesa";
-    if (isRequestingOverride || requiresApproval) return "Invia richiesta";
+    if (needsMembership && !isPaymentEvent && event.payment_type === "free") return "Attiva tessera e iscriviti";
+    if (isDeposit) return "Paga acconto e iscriviti";
+    if (isPaymentEvent) return "Paga e completa l'iscrizione";
+    if (needsMembership) return "Attiva tessera e iscriviti";
     return "Conferma iscrizione";
+  })();
+
+  // Helper text above CTA
+  const ctaHelperText = (() => {
+    if (isRequestingOverride || requiresApproval) return "La tua richiesta verrà inviata agli organizzatori per l'approvazione.";
+    if (isPaymentEvent || needsMembership) return "Verrai reindirizzato al pagamento sicuro per completare l'iscrizione.";
+    return "L'iscrizione verrà confermata subito.";
+  })();
+
+  // Cancellation policy details
+  const cancellationDetails = (() => {
+    if (!event.cancellation_policy) return null;
+    const { policyType } = parseCancellationPolicy(event.cancellation_policy);
+    if (!policyType) return null;
+    const policy = CANCELLATION_POLICIES[policyType];
+    if (!policy) return null;
+    return { label: policy.labelIt, description: policy.descriptionIt, icon: policy.icon, colorClass: policy.colorClass };
   })();
 
   // Check if Section 1 has any content
@@ -474,11 +485,16 @@ const RegistrationCheckoutDialog = ({
             )}
 
             {/* Cancellation policy */}
-            {cancellationLabel && (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30">
-                <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <p className="text-xs font-body text-muted-foreground">
-                  Politica di cancellazione: <span className="font-semibold">{cancellationLabel}</span>
+            {cancellationDetails && (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
+                <div className="flex items-center gap-2">
+                  <cancellationDetails.icon className={`h-4 w-4 shrink-0 ${cancellationDetails.colorClass}`} />
+                  <p className="text-sm font-body font-semibold text-foreground">
+                    Politica di cancellazione: {cancellationDetails.label}
+                  </p>
+                </div>
+                <p className="text-xs font-body text-muted-foreground pl-6">
+                  {cancellationDetails.description}
                 </p>
               </div>
             )}
@@ -506,11 +522,16 @@ const RegistrationCheckoutDialog = ({
               </div>
             )}
 
+            {/* Helper text above CTA */}
+            <p className="text-xs font-body text-muted-foreground text-center leading-relaxed px-2">
+              {ctaHelperText}
+            </p>
+
             {/* CTA */}
             <Button
               onClick={handleSubmit}
               disabled={isDisabled}
-              className="w-full h-12 font-body font-semibold text-sm bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full h-12 font-body font-semibold text-sm rounded-xl"
             >
               {isSubmitting ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Attendere...</>
