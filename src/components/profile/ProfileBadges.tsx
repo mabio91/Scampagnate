@@ -68,7 +68,21 @@ const ProfileBadges = () => {
     },
   });
 
-  const attendedCount = profile?.total_points || 0;
+  // Count actual attended events (not points) for badge progress
+  const { data: attendedCount = 0 } = useQuery({
+    queryKey: ["attended-count", user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count } = await supabase
+        .from("event_registrations")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .or("status.eq.attended,checked_in.eq.true");
+      return count || 0;
+    },
+    enabled: !!user,
+  });
+
   const earnedIds = new Set(userBadges.map((ub) => ub.badge_id));
   const earnedNames = new Set(userBadges.map((ub) => ub.badges?.name));
 
