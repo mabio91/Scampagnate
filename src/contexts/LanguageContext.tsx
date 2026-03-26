@@ -407,7 +407,7 @@ const translations = {
     participantAlreadyJoined: "partecipanti già iscritti.",
     noParticipantsSignIn: "Nessun partecipante ancora.",
     promoExpired: "Promozione scaduta",
-  },
+};
 
   en: {
     // Navigation
