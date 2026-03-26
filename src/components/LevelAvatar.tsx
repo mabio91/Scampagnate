@@ -8,8 +8,9 @@ interface LevelAvatarProps {
   points?: number;
   size?: "sm" | "md" | "lg";
   showBadge?: boolean;
+  showLevelLabel?: boolean;
   className?: string;
-  level?: CommunityLevel | null; // pass directly to avoid extra queries
+  level?: CommunityLevel | null;
 }
 
 const LEVEL_ICONS: Record<number, string> = {
@@ -34,6 +35,7 @@ const LevelAvatar = ({
   points = 0,
   size = "md",
   showBadge = true,
+  showLevelLabel = false,
   className = "",
   level: externalLevel,
 }: LevelAvatarProps) => {
