@@ -143,13 +143,7 @@ const Index = () => {
     return { thisWeekEvents: tw, laterEvents: later };
   }, [filteredEvents]);
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setDateFilter(undefined);
-    setPriceFilter("all");
-    setSelectedCategory(null);
-    setQuickFilters([]);
-  };
+  const clearFilters = clearAllFilters;
 
   return (
     <AppLayout>
@@ -241,7 +235,7 @@ const Index = () => {
                             </PopoverContent>
                           </Popover>
 
-                          {(["all", "free", "paid"] as PriceFilter[]).map(p => (
+                          {(["all", "free", "paid"] as const).map(p => (
                             <Button
                               key={p}
                               variant="outline"
