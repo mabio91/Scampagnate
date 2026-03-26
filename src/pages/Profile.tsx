@@ -63,9 +63,9 @@ const Profile = () => {
       if (updateError) throw updateError;
 
       await refreshProfile();
-      toast({ title: t("profilePhotoUpdated") });
+      toast({ title: "Foto profilo aggiornata" });
     } catch (err: any) {
-      toast({ title: "Upload error", description: err.message, variant: "destructive" });
+      toast({ title: "Errore upload", description: err.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -77,9 +77,9 @@ const Profile = () => {
       <AppLayout>
         <div className="px-4 py-12 text-center">
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">{t("profile")}</h1>
-          <p className="text-muted-foreground font-body text-sm mb-4">{t("signInToViewProfile")}</p>
-          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">{t("signIn")}</Button>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Profilo</h1>
+          <p className="text-muted-foreground font-body text-sm mb-4">Accedi per visualizzare il tuo profilo</p>
+          <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Accedi</Button>
         </div>
       </AppLayout>
     );
@@ -113,10 +113,10 @@ const Profile = () => {
     }).eq("id", user.id);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
     } else {
       await refreshProfile();
-      toast({ title: t("profileUpdated") });
+      toast({ title: "Profilo aggiornato" });
       setEditing(false);
     }
     setSaving(false);
@@ -171,7 +171,7 @@ const Profile = () => {
             </h1>
             <p className="text-sm font-body text-muted-foreground">{user.email}</p>
             <p className="text-xs font-body text-secondary mt-0.5">
-              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} {t("points")}
+              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} punti
             </p>
           </div>
           <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
@@ -184,27 +184,27 @@ const Profile = () => {
           <div className="space-y-3 mb-6 p-4 rounded-xl bg-card animate-fade-in">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="font-body text-xs">{t("firstName")}</Label>
+                <Label className="font-body text-xs">Nome</Label>
                 <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label className="font-body text-xs">{t("lastName")}</Label>
+                <Label className="font-body text-xs">Cognome</Label>
                 <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1" />
               </div>
             </div>
             <div>
-              <Label className="font-body text-xs">{t("phone")}</Label>
+              <Label className="font-body text-xs">Telefono</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label className="font-body text-xs">{t("bio")}</Label>
+              <Label className="font-body text-xs">Bio</Label>
               <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1" rows={2} />
             </div>
 
             {/* Category Preferences - category names stay Italian */}
             {categories && categories.length > 0 && (
               <div>
-                <Label className="font-body text-xs">{t("categoryPreferences")}</Label>
+                <Label className="font-body text-xs">Preferenze categoria</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {categories.map((cat: any) => (
                     <button
@@ -229,7 +229,7 @@ const Profile = () => {
         {/* Preferences display (when not editing) */}
         {!editing && currentPreferences.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-display text-lg font-bold text-foreground mb-2">{t("preferences")}</h2>
+            <h2 className="font-display text-lg font-bold text-foreground mb-2">Preferenze</h2>
             <div className="flex flex-wrap gap-2">
               {currentPreferences.map((pref: string) => (
                 <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
@@ -382,21 +382,22 @@ const Profile = () => {
 
         {/* Help & Information */}
         <div className="mb-6 space-y-3 animate-fade-in">
-          <h2 className="font-display text-lg font-bold text-foreground">{t("helpAndInfo")}</h2>
+          <h2 className="font-display text-lg font-bold text-foreground">Aiuto e informazioni</h2>
           <Button 
             variant="outline" 
             onClick={() => setShowDifficultyGuide(true)} 
             className="w-full justify-start font-body font-semibold h-12 transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
           >
             <Info className="h-5 w-5 mr-3 text-secondary" />
-            {t("trekkingDifficultyGuide")}
+            Guida difficoltà trekking
+          </Button>
           </Button>
           <ReportIssueDialog />
         </div>
 
         {/* Sign out */}
         <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 active:scale-[0.98] transition-all duration-200 font-body mb-8">
-          <LogOut className="h-4 w-4 mr-2" /> {t("signOut")}
+          <LogOut className="h-4 w-4 mr-2" /> Esci
         </Button>
       </div>
       <DifficultyGuideDialog 
