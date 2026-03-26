@@ -83,89 +83,11 @@ Per esercitare i tuoi diritti, contattaci a: privacy@scampagnate.com`,
 Ultimo aggiornamento: Marzo 2026`,
     },
   ],
-  en: [
-    {
-      icon: Shield,
-      title: "Data Controller",
-      content: `Scampagnate ("we", "our") is the data controller for personal data collected through this application. For any privacy-related questions, contact us at: privacy@scampagnate.com`,
-    },
-    {
-      icon: Eye,
-      title: "Data We Collect",
-      content: `We collect the following personal data:
-
-• **Registration data**: first name, last name, email, phone number
-• **Profile data**: profile photo, bio, trekking experience, activity frequency
-• **Usage data**: events you register for, preferences, badges earned
-• **Technical data**: IP address, browser type, device used
-• **Payment data**: processed securely through Stripe (we do not store card details)`,
-    },
-    {
-      icon: Lock,
-      title: "How We Use Your Data",
-      content: `Your personal data is used to:
-
-• Manage your account and event registrations
-• Send you notifications about events you're registered for
-• Improve user experience and personalize content
-• Ensure safety during outdoor activities
-• Service communications and important updates
-• Comply with legal obligations`,
-    },
-    {
-      icon: UserCheck,
-      title: "Profile Visibility",
-      content: `We follow a tiered privacy model:
-
-• **Public**: only your first name and profile photo are visible to other users
-• **Participants**: registered participants of the same event can see names and avatars
-• **Organizers & Admins**: have access to email and phone for organizational purposes
-• **Your last name** is shown only as an initial (e.g., "Mario R.") to protect your identity`,
-    },
-    {
-      icon: Server,
-      title: "Storage & Security",
-      content: `Your data is stored on secure servers provided by Supabase (AWS infrastructure) with encryption at rest and in transit. We retain data for as long as necessary to provide the service or to comply with legal obligations. You can request deletion of your account and associated data at any time.`,
-    },
-    {
-      icon: Globe,
-      title: "Cookies & Tracking Technologies",
-      content: `We use:
-
-• **Technical cookies**: necessary for app functionality (authentication, language/theme preferences)
-• **Analytics**: Vercel Analytics for anonymous usage statistics
-• **No third-party** advertising profiling cookies`,
-    },
-    {
-      icon: Clock,
-      title: "Your Rights",
-      content: `Under the GDPR (EU Regulation 2016/679), you have the right to:
-
-• **Access**: request a copy of your personal data
-• **Rectification**: correct inaccurate or incomplete data
-• **Erasure**: request deletion of your data
-• **Portability**: receive your data in a structured format
-• **Objection**: object to the processing of your data
-• **Withdraw consent**: at any time
-
-To exercise your rights, contact us at: privacy@scampagnate.com`,
-    },
-    {
-      icon: Mail,
-      title: "Contact",
-      content: `For any privacy-related questions or requests:
-
-📧 Email: privacy@scampagnate.com
-🌐 Website: scampagnate.com
-
-Last updated: March 2026`,
-    },
-  ],
 };
 
 const Privacy = () => {
-  const { language, t } = useLanguage();
-  const currentSections = sections[language];
+  const { t } = useLanguage();
+  const currentSections = sections.it;
 
   return (
     <AppLayout>
@@ -177,13 +99,9 @@ const Privacy = () => {
               <Shield className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {language === "it" ? "Privacy Policy" : "Privacy Policy"}
-              </h1>
+              <h1 className="text-2xl font-bold text-foreground">Privacy Policy</h1>
               <p className="text-sm text-muted-foreground">
-                {language === "it"
-                  ? "Come proteggiamo i tuoi dati personali"
-                  : "How we protect your personal data"}
+                Come proteggiamo i tuoi dati personali
               </p>
             </div>
           </div>
@@ -195,9 +113,7 @@ const Privacy = () => {
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
             <p className="text-sm text-foreground leading-relaxed">
-              {language === "it"
-                ? "La tua privacy è importante per noi. Questa informativa descrive quali dati raccogliamo, come li utilizziamo e quali sono i tuoi diritti. Operiamo in conformità con il Regolamento Generale sulla Protezione dei Dati (GDPR)."
-                : "Your privacy is important to us. This policy describes what data we collect, how we use it, and what your rights are. We operate in compliance with the General Data Protection Regulation (GDPR)."}
+              La tua privacy è importante per noi. Questa informativa descrive quali dati raccogliamo, come li utilizziamo e quali sono i tuoi diritti. Operiamo in conformità con il Regolamento Generale sulla Protezione dei Dati (GDPR).
             </p>
           </CardContent>
         </Card>
@@ -238,8 +154,7 @@ const Privacy = () => {
         {/* Footer */}
         <div className="text-center py-4">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Scampagnate —{" "}
-            {language === "it" ? "Tutti i diritti riservati" : "All rights reserved"}
+            © {new Date().getFullYear()} Scampagnate — Tutti i diritti riservati
           </p>
         </div>
       </div>

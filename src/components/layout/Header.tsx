@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
-import flagIt from "@/assets/flag-it.png";
-import flagEn from "@/assets/flag-en.png";
 import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +18,7 @@ const Header = () => {
   const notifRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   useEffect(() => setMounted(true), []);
 
@@ -38,10 +36,6 @@ const Header = () => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language === "it" ? "en" : "it");
-  };
-
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-safe">
       <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 max-w-lg mx-auto">
@@ -50,19 +44,6 @@ const Header = () => {
           <span className="font-display text-sm sm:text-base font-bold text-foreground truncate">Scampagnate</span>
         </Link>
         <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-          {/* Language Switcher */}
-          <button
-            className="p-1.5 sm:p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
-            onClick={toggleLanguage}
-            aria-label={language === "it" ? "Switch to English" : "Passa all'italiano"}
-          >
-            <img
-              src={language === "it" ? flagEn : flagIt}
-              alt={language === "it" ? "English" : "Italiano"}
-              className="h-4 sm:h-5 w-4 sm:w-5 rounded-sm object-cover"
-            />
-          </button>
-
           {mounted && (
             <button
               className="p-1.5 sm:p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
