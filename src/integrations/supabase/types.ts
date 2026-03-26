@@ -658,6 +658,7 @@ export type Database = {
           created_at: string
           description: string
           description_it: string | null
+          gallery_images: Json | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -674,6 +675,7 @@ export type Database = {
           created_at?: string
           description?: string
           description_it?: string | null
+          gallery_images?: Json | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -690,6 +692,7 @@ export type Database = {
           created_at?: string
           description?: string
           description_it?: string | null
+          gallery_images?: Json | null
           id?: string
           image_url?: string | null
           is_active?: boolean

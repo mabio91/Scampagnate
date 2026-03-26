@@ -12,7 +12,7 @@ const BottomNav = () => {
     { icon: Home, label: t("home"), path: "/" },
     { icon: CalendarDays, label: t("myEvents"), path: "/my-events" },
     ...(isOrganizer ? [{ icon: ClipboardList, label: t("organize"), path: "/organizer" }] : []),
-    { icon: ShoppingBag, label: t("merch"), path: "/merch" },
+    { icon: ShoppingBag, label: t("merch"), path: "/shop" },
     { icon: User, label: t("profile"), path: "/profile" },
   ];
 

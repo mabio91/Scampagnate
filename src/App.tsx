@@ -18,6 +18,7 @@ import Index from "./pages/Index";
 const EventDetail = lazy(() => import("./pages/EventDetail"));
 const MyEvents = lazy(() => import("./pages/MyEvents"));
 const Merch = lazy(() => import("./pages/Merch"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Auth = lazy(() => import("./pages/Auth"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -60,6 +61,8 @@ const AnimatedRoutes = () => {
           <Route path="/event/:id" element={<EventDetail />} />
           <Route path="/event/:id/participants" element={<EventParticipants />} />
           <Route path="/my-events" element={<MyEvents />} />
+          <Route path="/shop" element={<Merch />} />
+          <Route path="/shop/:id" element={<ProductDetail />} />
           <Route path="/merch" element={<Merch />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />

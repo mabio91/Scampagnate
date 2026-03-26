@@ -10,7 +10,7 @@ const translations = {
     home: "Home",
     myEvents: "I Miei Eventi",
     organize: "Organizza",
-    merch: "Merch",
+    merch: "Shop",
     profile: "Profilo",
 
     // Header
@@ -251,13 +251,17 @@ const translations = {
     enterYourEmail: "Inserisci la tua email",
     pleaseEnterEmail: "Per favore inserisci il tuo indirizzo email.",
 
-    // Merch
-    merchandise: "Merchandise",
+    // Shop
+    merchandise: "Shop",
     merchDescription: "Prodotti ufficiali Scampagnate. Contattaci via WhatsApp per acquistare.",
     whatsapp: "WhatsApp",
     merchOrderInfo: "Tutti gli ordini sono gestiti manualmente via WhatsApp.",
     merchDeliveryInfo: "I dettagli di consegna e pagamento saranno concordati direttamente con il team.",
     noProducts: "Nessun prodotto disponibile al momento.",
+    backToShop: "Torna allo Shop",
+    buyOnWhatsApp: "Acquista su WhatsApp",
+    productNotFound: "Prodotto non trovato",
+    productNotFoundDesc: "Il prodotto che stai cercando non esiste o non è più disponibile.",
 
     // Notifications
     notifications: "Notifiche",
@@ -410,7 +414,7 @@ const translations = {
     home: "Home",
     myEvents: "My Events",
     organize: "Organize",
-    merch: "Merch",
+    merch: "Shop",
     profile: "Profile",
 
     // Header
@@ -651,13 +655,17 @@ const translations = {
     enterYourEmail: "Enter your email",
     pleaseEnterEmail: "Please enter your email address.",
 
-    // Merch
-    merchandise: "Merchandise",
+    // Shop
+    merchandise: "Shop",
     merchDescription: "Official Scampagnate branded products. Contact us via WhatsApp to purchase.",
     whatsapp: "WhatsApp",
     merchOrderInfo: "All orders are managed manually via WhatsApp.",
     merchDeliveryInfo: "Delivery details and payment will be arranged directly with the team.",
     noProducts: "No products available at the moment.",
+    backToShop: "Back to Shop",
+    buyOnWhatsApp: "Buy on WhatsApp",
+    productNotFound: "Product not found",
+    productNotFoundDesc: "The product you're looking for doesn't exist or is no longer available.",
 
     // Notifications
     notifications: "Notifications",

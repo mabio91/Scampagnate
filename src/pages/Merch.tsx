@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { MessageCircle, ShoppingBag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,46 +52,48 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
   )}`;
 
   return (
-    <Card className="overflow-hidden border-0 shadow-sm">
-      <div className="relative aspect-square bg-muted">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={displayName}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <ShoppingBag className="h-12 w-12 opacity-30" />
-          </div>
-        )}
-        {displayBadge && (
-          <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-body">
-            {displayBadge}
-          </Badge>
-        )}
-      </div>
-      <CardContent className="p-4 space-y-3">
-        <div>
-          <h3 className="font-display text-sm font-bold text-foreground leading-tight">
-            {displayName}
-          </h3>
-          <p className="text-lg font-display font-bold text-primary mt-1">
-            €{Number(product.price).toFixed(2)}
-          </p>
+    <Link to={`/shop/${product.id}`} className="block">
+      <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+        <div className="relative aspect-square bg-muted">
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={displayName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <ShoppingBag className="h-12 w-12 opacity-30" />
+            </div>
+          )}
+          {displayBadge && (
+            <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-body">
+              {displayBadge}
+            </Badge>
+          )}
         </div>
-        <p className="text-xs font-body text-muted-foreground leading-relaxed">
-          {displayDesc}
-        </p>
-        <Button
-          className="w-full gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-body text-[11px] sm:text-sm px-2 sm:px-4 h-9 sm:h-10"
-          onClick={() => window.open(whatsappUrl, "_blank")}
-        >
-          <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          <span className="truncate">{t("whatsapp")}</span>
-        </Button>
-      </CardContent>
-    </Card>
+        <CardContent className="p-4 space-y-3">
+          <div>
+            <h3 className="font-display text-sm font-bold text-foreground leading-tight">
+              {displayName}
+            </h3>
+            <p className="text-lg font-display font-bold text-primary mt-1">
+              €{Number(product.price).toFixed(2)}
+            </p>
+          </div>
+          <p className="text-xs font-body text-muted-foreground leading-relaxed line-clamp-2">
+            {displayDesc}
+          </p>
+          <Button
+            className="w-full gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-body text-[11px] sm:text-sm px-2 sm:px-4 h-9 sm:h-10"
+            onClick={(e) => { e.preventDefault(); window.open(whatsappUrl, "_blank"); }}
+          >
+            <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="truncate">{t("whatsapp")}</span>
+          </Button>
+        </CardContent>
+      </Card>
+    </Link>
   );
 };
 
