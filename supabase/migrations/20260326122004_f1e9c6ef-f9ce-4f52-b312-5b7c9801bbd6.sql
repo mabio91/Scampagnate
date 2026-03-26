@@ -1,0 +1,1 @@
+ALTER TABLE public.activity_proposals ADD COLUMN IF NOT EXISTS category text;

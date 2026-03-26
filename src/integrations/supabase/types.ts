@@ -17,6 +17,7 @@ export type Database = {
       activity_proposals: {
         Row: {
           activity_title: string
+          category: string | null
           created_at: string
           description: string
           id: string
@@ -31,6 +32,7 @@ export type Database = {
         }
         Insert: {
           activity_title: string
+          category?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -45,6 +47,7 @@ export type Database = {
         }
         Update: {
           activity_title?: string
+          category?: string | null
           created_at?: string
           description?: string
           id?: string

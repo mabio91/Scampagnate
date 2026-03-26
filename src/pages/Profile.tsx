@@ -15,7 +15,8 @@ import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
-import { Info } from "lucide-react";
+import ActivityProposalForm from "@/components/ActivityProposalForm";
+import { Info, Lightbulb } from "lucide-react";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
 
 const Profile = () => {
@@ -32,6 +33,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
+  const [showProposalForm, setShowProposalForm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useCategories();
@@ -392,6 +394,14 @@ const Profile = () => {
             Guida difficoltà trekking
           </Button>
           <ReportIssueDialog />
+          <Button 
+            variant="outline" 
+            onClick={() => setShowProposalForm(true)} 
+            className="w-full justify-start font-body font-semibold h-12 transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
+          >
+            <Lightbulb className="h-5 w-5 mr-3 text-primary" />
+            Proponi un'attività
+          </Button>
         </div>
 
         {/* Sign out */}
@@ -402,6 +412,10 @@ const Profile = () => {
       <DifficultyGuideDialog 
         open={showDifficultyGuide} 
         onOpenChange={setShowDifficultyGuide} 
+      />
+      <ActivityProposalForm
+        open={showProposalForm}
+        onOpenChange={setShowProposalForm}
       />
     </AppLayout>
   );
