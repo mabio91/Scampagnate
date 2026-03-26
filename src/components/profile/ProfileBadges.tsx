@@ -297,7 +297,4 @@ const ProfileBadges = () => {
   );
 };
 
-// Need CheckCircle for the modal
-import { CheckCircle } from "lucide-react";
-
 export default ProfileBadges;
