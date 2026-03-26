@@ -296,7 +296,12 @@ export const ActivityHistory = () => {
               );
             })
           ) : (
-            <p className="text-sm font-body text-muted-foreground py-3 pl-3">Nessun evento passato</p>
+            <div className="py-4 pl-3 text-center">
+              <p className="text-sm font-body font-semibold text-foreground mb-1">Nessun evento passato</p>
+              <p className="text-xs font-body text-muted-foreground">
+                I tuoi eventi completati appariranno qui in ordine cronologico
+              </p>
+            </div>
           )}
         </div>
       )}
