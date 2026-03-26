@@ -326,15 +326,15 @@ const Profile = () => {
                 {/* Benefits */}
                 <div className="mt-3 pt-3 border-t border-primary/10">
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold mb-1.5">Benefici inclusi</p>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <span className="text-success">✓</span> Copertura assicurativa base durante le attività
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Copertura assicurativa base durante le attività
                     </li>
                     <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <span className="text-success">✓</span> Accesso a tutti gli eventi della community
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Accesso a tutti gli eventi della community
                     </li>
                     <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <span className="text-success">✓</span> Prezzi riservati ai soci
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Prezzi riservati ai soci
                     </li>
                   </ul>
                 </div>
@@ -382,12 +382,12 @@ const Profile = () => {
 
 
         {/* Help & Information */}
-        <div className="mb-6 space-y-3">
+        <div className="mb-6 space-y-3 animate-fade-in">
           <h2 className="font-display text-lg font-bold text-foreground">{t("helpAndInfo")}</h2>
           <Button 
             variant="outline" 
             onClick={() => setShowDifficultyGuide(true)} 
-            className="w-full justify-start font-body font-semibold h-12"
+            className="w-full justify-start font-body font-semibold h-12 transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
           >
             <Info className="h-5 w-5 mr-3 text-secondary" />
             {t("trekkingDifficultyGuide")}
@@ -396,7 +396,7 @@ const Profile = () => {
         </div>
 
         {/* Sign out */}
-        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 font-body mb-8">
+        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 active:scale-[0.98] transition-all duration-200 font-body mb-8">
           <LogOut className="h-4 w-4 mr-2" /> {t("signOut")}
         </Button>
       </div>
