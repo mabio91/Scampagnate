@@ -1,7 +1,7 @@
 /**
- * Membership is annual — valid for exactly one year from the registration date.
+ * Membership is annual — valid until December 31 of the year it was activated.
  * A user is active if membership_status is 'Active' AND
- * their membership_registration_date + 1 year > today.
+ * the current date is within the membership year (i.e. before Dec 31 of that year).
  */
 
 interface MembershipProfile {
@@ -14,9 +14,9 @@ export function getMembershipExpiryDate(profile: MembershipProfile | null | unde
   if (!profile?.membership_registration_date) return null;
   const regDate = new Date(profile.membership_registration_date);
   if (isNaN(regDate.getTime())) return null;
-  const expiry = new Date(regDate);
-  expiry.setFullYear(expiry.getFullYear() + 1);
-  return expiry;
+  // Expires on Dec 31 of the registration year
+  const year = profile.membership_year || regDate.getFullYear();
+  return new Date(year, 11, 31, 23, 59, 59, 999);
 }
 
 export function isMembershipActive(profile: MembershipProfile | null | undefined): boolean {
