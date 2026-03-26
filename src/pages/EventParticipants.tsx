@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, User as UserIcon, LogIn } from "lucide-react";
+import { ArrowLeft, User as UserIcon, LogIn, Check, AlertTriangle } from "lucide-react";
 import { useEvent, useEventParticipants } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -105,22 +105,29 @@ function calcFitScore(
   };
 }
 
-// --- Participant row with level label ---
+// --- Reliability calc helper ---
+function calcReliabilityLabel(registrations: any[]): string {
+  if (!registrations || registrations.length === 0) return "Ottima";
+  const noShows = registrations.filter((r: any) => r.status === "no_show").length;
+  const cancellations = registrations.filter((r: any) => r.status === "cancelled").length;
+  const score = Math.max(0, Math.min(100, 100 - (noShows * 10) - (cancellations * 3)));
+  if (score >= 80) return "Ottima";
+  if (score >= 60) return "Buona";
+  return "Da migliorare";
+}
+
+// --- Standard participant row (user-facing) ---
 const ParticipantRow = ({
   avatarUrl,
   firstName,
   points,
-  fitScore,
-  isOrgOrAdmin,
+  level,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
   points: number;
-  fitScore: FitScoreResult | null;
-  isOrgOrAdmin: boolean;
+  level?: { name: string; level_number: number; color: string; icon: string } | null;
 }) => {
-  const { data: level } = useCommunityLevel(points);
-
   return (
     <div className="flex items-center gap-4 py-3.5 border-b border-border last:border-0">
       <LevelAvatar
@@ -141,12 +148,67 @@ const ParticipantRow = ({
           </p>
         )}
       </div>
-      {/* Fit score for organizer/admin only */}
-      {isOrgOrAdmin && fitScore && !fitScore.hidden && (
-        <div className="shrink-0">
-          <EventFitScoreCompact fitScore={fitScore} />
+    </div>
+  );
+};
+
+// --- Enhanced participant row (organizer/admin only) ---
+const AdminParticipantRow = ({
+  avatarUrl,
+  firstName,
+  points,
+  level,
+  fitScore,
+  reliabilityLabel,
+  completedEvents,
+}: {
+  avatarUrl?: string | null;
+  firstName?: string;
+  points: number;
+  level?: { name: string; level_number: number; color: string; icon: string } | null;
+  fitScore: FitScoreResult | null;
+  reliabilityLabel: string;
+  completedEvents: number;
+}) => {
+  return (
+    <div className="flex items-center gap-4 py-4 border-b border-border last:border-0">
+      <LevelAvatar
+        avatarUrl={avatarUrl}
+        firstName={firstName}
+        points={points}
+        level={level}
+        size="md"
+        showBadge
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-body font-semibold text-foreground truncate">
+          {firstName || "Utente"}
+        </p>
+        {level && (
+          <p className="text-xs font-body text-muted-foreground mb-1">
+            {level.name}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+          {fitScore && !fitScore.hidden && (
+            <span className={`text-[11px] font-body ${
+              fitScore.color === "green" ? "text-green-600 dark:text-green-400" :
+              fitScore.color === "red" ? "text-destructive" : "text-amber-600 dark:text-amber-400"
+            }`}>
+              {fitScore.score >= 80 ? "✔️" : fitScore.score >= 50 ? "✔️" : "⚠️"} Compatibilità: {fitScore.score}%
+            </span>
+          )}
+          <span className={`text-[11px] font-body ${
+            reliabilityLabel === "Ottima" ? "text-green-600 dark:text-green-400" :
+            reliabilityLabel === "Buona" ? "text-amber-600 dark:text-amber-400" : "text-destructive"
+          }`}>
+            {reliabilityLabel === "Da migliorare" ? "⚠️" : "✔️"} Affidabilità: {reliabilityLabel}
+          </span>
+          <span className="text-[11px] font-body text-muted-foreground">
+            ✔️ {completedEvents} eventi completati
+          </span>
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -162,6 +224,8 @@ const EventParticipants = () => {
   const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
 
   const participantIds = useMemo(() => (participants || []).map((p: any) => p.user_id), [participants]);
+  
+  // Fetch full profiles (for fit score calc + points)
   const { data: fullProfiles } = useQuery({
     queryKey: ["participant-full-profiles", id, participantIds],
     queryFn: async () => {
@@ -175,6 +239,31 @@ const EventParticipants = () => {
       return map;
     },
     enabled: participantIds.length > 0,
+  });
+
+  // Fetch community levels for all participants in one batch
+  const participantPoints = useMemo(() => {
+    if (!fullProfiles) return [];
+    return participantIds.map((uid: string) => fullProfiles[uid]?.total_points || 0);
+  }, [fullProfiles, participantIds]);
+
+  // Fetch all registrations for reliability + completed events (org/admin only)
+  const { data: allRegistrations } = useQuery({
+    queryKey: ["participant-registrations-admin", participantIds],
+    queryFn: async () => {
+      if (participantIds.length === 0) return {};
+      const { data } = await supabase
+        .from("event_registrations")
+        .select("user_id, status, checked_in")
+        .in("user_id", participantIds);
+      const map: Record<string, any[]> = {};
+      (data || []).forEach((r: any) => {
+        if (!map[r.user_id]) map[r.user_id] = [];
+        map[r.user_id].push(r);
+      });
+      return map;
+    },
+    enabled: isOrgOrAdmin && participantIds.length > 0,
   });
 
   const { data: organizerProfile } = useQuery({
@@ -228,6 +317,11 @@ const EventParticipants = () => {
         <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft className="h-5 w-5 text-foreground" /></button>
           <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
+          {participants && participants.length > 0 && (
+            <span className="ml-auto text-xs font-body text-muted-foreground">
+              {participants.length} iscritti
+            </span>
+          )}
         </div>
         <div className="px-4 py-16 text-center max-w-sm mx-auto">
           <UserIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
@@ -263,6 +357,16 @@ const EventParticipants = () => {
       </div>
     );
   }
+
+  // Helper: get completed events count from registrations
+  const getCompletedEvents = (userId: string) => {
+    const regs = allRegistrations?.[userId] || [];
+    return regs.filter((r: any) => r.status === "attended" || r.checked_in).length;
+  };
+
+  const getReliabilityLabel = (userId: string) => {
+    return calcReliabilityLabel(allRegistrations?.[userId] || []);
+  };
 
   // --- Full participant list ---
   return (
@@ -309,18 +413,32 @@ const EventParticipants = () => {
             <div>
               {participants.map((p: any) => {
                 const pProfile = fullProfiles?.[p.user_id];
-                const fitScore = isOrgOrAdmin && pProfile
-                  ? calcFitScore(pProfile, accessRules, event.difficulty || null)
-                  : null;
+                const points = pProfile?.total_points || 0;
+
+                if (isOrgOrAdmin) {
+                  const fitScore = pProfile
+                    ? calcFitScore(pProfile, accessRules, event.difficulty || null)
+                    : null;
+
+                  return (
+                    <AdminParticipantRow
+                      key={p.id}
+                      avatarUrl={p.profiles?.avatar_url}
+                      firstName={p.profiles?.first_name}
+                      points={points}
+                      fitScore={fitScore}
+                      reliabilityLabel={getReliabilityLabel(p.user_id)}
+                      completedEvents={getCompletedEvents(p.user_id)}
+                    />
+                  );
+                }
 
                 return (
-                  <ParticipantRow
+                  <ParticipantRowWithLevel
                     key={p.id}
                     avatarUrl={p.profiles?.avatar_url}
                     firstName={p.profiles?.first_name}
-                    points={pProfile?.total_points || 0}
-                    fitScore={fitScore}
-                    isOrgOrAdmin={isOrgOrAdmin}
+                    points={points}
                   />
                 );
               })}
@@ -334,6 +452,27 @@ const EventParticipants = () => {
         )}
       </div>
     </div>
+  );
+};
+
+// Wrapper that fetches level for standard user view
+const ParticipantRowWithLevel = ({
+  avatarUrl,
+  firstName,
+  points,
+}: {
+  avatarUrl?: string | null;
+  firstName?: string;
+  points: number;
+}) => {
+  const { data: level } = useCommunityLevel(points);
+  return (
+    <ParticipantRow
+      avatarUrl={avatarUrl}
+      firstName={firstName}
+      points={points}
+      level={level}
+    />
   );
 };
 
