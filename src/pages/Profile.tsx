@@ -391,7 +391,6 @@ const Profile = () => {
             <Info className="h-5 w-5 mr-3 text-secondary" />
             Guida difficoltà trekking
           </Button>
-          </Button>
           <ReportIssueDialog />
         </div>
 
