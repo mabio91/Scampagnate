@@ -262,7 +262,7 @@ const Profile = () => {
         {/* Membership Status Card */}
         <div className="mb-6">
           <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-secondary" /> {t("membership")}
+            <CreditCard className="h-5 w-5 text-secondary" /> Tessera
           </h2>
           <div className={`p-4 rounded-2xl border ${
             isMembershipActive(profile) 
@@ -273,7 +273,7 @@ const Profile = () => {
           }`}>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">{t("status")}</p>
+                <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Stato tessera</p>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full ${
                     isMembershipActive(profile) ? 'bg-success animate-pulse' : isMembershipExpired(profile) ? 'bg-warning' : 'bg-muted-foreground'
@@ -281,25 +281,24 @@ const Profile = () => {
                   <span className={`text-sm font-display font-bold ${
                     isMembershipActive(profile) ? 'text-success' : isMembershipExpired(profile) ? 'text-warning' : 'text-muted-foreground'
                   }`}>
-                    {isMembershipActive(profile) ? t("activeMember") : isMembershipExpired(profile) ? t("expiredMember") : t("inactiveMember")}
+                    {isMembershipActive(profile) ? 'Attiva' : isMembershipExpired(profile) ? 'Scaduta' : 'Non attiva'}
                   </span>
                   {(profile as any)?.is_founding_member && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">
-                      <Crown className="h-3 w-3" /> {t("foundingMember")}
+                      <Crown className="h-3 w-3" /> Fondatore
                     </span>
                   )}
                 </div>
               </div>
               {profile?.membership_id && (
                 <div className="text-right">
-                  <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">{t("memberId")}</p>
+                  <p className="text-xs font-body text-muted-foreground uppercase tracking-wider font-bold">Tessera N°</p>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(String(profile.membership_id));
-                      toast({ title: t("copied"), description: t("memberIdCopied", { id: String(profile.membership_id) }) });
+                      toast({ title: "Copiato!", description: `ID tessera #${profile.membership_id} copiato` });
                     }}
                     className="flex items-center gap-1.5 mt-0.5 group cursor-pointer"
-                    title="Copy Member ID"
                   >
                     <p className="text-lg font-display font-bold text-foreground">#{profile.membership_id}</p>
                     <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -309,55 +308,81 @@ const Profile = () => {
             </div>
 
             {isMembershipActive(profile) ? (
-              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-primary/10">
-                <div>
-                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberSince")}</p>
-                  <p className="text-sm font-body font-semibold text-foreground">
-                    {(() => {
-                      const dateStr = profile.membership_registration_date || (profile as any).created_at;
-                      return dateStr 
-                        ? new Date(dateStr).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) 
-                        : 'N/A';
-                    })()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("validUntil")}</p>
-                  <p className="text-sm font-body font-semibold text-foreground">
-                    {(() => {
+              <>
+                {/* Active: show expiry prominently + benefits */}
+                <div className="mt-3 p-3 rounded-xl bg-success/10 border border-success/20">
+                  <p className="text-sm font-body font-bold text-success">
+                    Tessera attiva fino al {(() => {
                       const expiry = getMembershipExpiryDate(profile);
-                      return expiry ? expiry.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A';
+                      return expiry ? expiry.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : '31/12/' + new Date().getFullYear();
                     })()}
                   </p>
                 </div>
-              </div>
-            ) : isMembershipExpired(profile) ? (
-              <div className="mt-3 space-y-2">
-                <p className="text-xs font-body text-warning font-semibold">
-                  {t("membershipExpiredRenew")}
-                </p>
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-warning/10">
+                <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-primary/10">
                   <div>
-                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberSince")}</p>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Membro dal</p>
                     <p className="text-sm font-body font-semibold text-foreground">
                       {(() => {
-                        const dateStr = profile?.membership_registration_date || (profile as any)?.created_at;
-                        return dateStr 
-                          ? new Date(dateStr).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) 
-                          : 'N/A';
+                        const dateStr = profile.membership_registration_date || (profile as any).created_at;
+                        return dateStr ? new Date(dateStr).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/D';
                       })()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">{t("memberId")}</p>
-                    <p className="text-sm font-body font-semibold text-foreground">#{profile?.membership_id}</p>
+                    <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Scadenza</p>
+                    <p className="text-sm font-body font-semibold text-foreground">
+                      {(() => {
+                        const expiry = getMembershipExpiryDate(profile);
+                        return expiry ? expiry.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/D';
+                      })()}
+                    </p>
                   </div>
                 </div>
+                {/* Benefits */}
+                <div className="mt-3 pt-3 border-t border-primary/10">
+                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold mb-1.5">Benefici inclusi</p>
+                  <ul className="space-y-1">
+                    <li className="text-xs font-body text-foreground flex items-center gap-2">
+                      <span className="text-success">✓</span> Copertura assicurativa base durante le attività
+                    </li>
+                    <li className="text-xs font-body text-foreground flex items-center gap-2">
+                      <span className="text-success">✓</span> Accesso a tutti gli eventi della community
+                    </li>
+                    <li className="text-xs font-body text-foreground flex items-center gap-2">
+                      <span className="text-success">✓</span> Prezzi riservati ai soci
+                    </li>
+                  </ul>
+                </div>
+              </>
+            ) : isMembershipExpired(profile) ? (
+              <div className="mt-3 space-y-3">
+                <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
+                  <p className="text-sm font-body font-bold text-warning">
+                    La tua tessera è scaduta il 31/12/{(profile as any)?.membership_year || new Date().getFullYear() - 1}
+                  </p>
+                  <p className="text-xs font-body text-muted-foreground mt-1">
+                    Rinnova per continuare a partecipare agli eventi
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate("/")}
+                  className="w-full bg-primary text-primary-foreground font-body font-semibold"
+                >
+                  Rinnova la tessera
+                </Button>
               </div>
             ) : (
-              <p className="text-xs font-body text-muted-foreground mt-3">
-                {t("joinFirstEvent")}
-              </p>
+              <div className="mt-3 space-y-3">
+                <p className="text-xs font-body text-muted-foreground">
+                  Attiva la tessera per partecipare agli eventi e ottenere la copertura assicurativa.
+                </p>
+                <Button
+                  onClick={() => navigate("/")}
+                  className="w-full bg-primary text-primary-foreground font-body font-semibold"
+                >
+                  Attiva la tessera
+                </Button>
+              </div>
             )}
           </div>
         </div>
