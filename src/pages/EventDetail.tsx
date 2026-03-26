@@ -42,6 +42,8 @@ import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 import RegistrationCheckoutDialog from "@/components/events/RegistrationCheckoutDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import useEmblaCarousel from "embla-carousel-react";
+import { useEventFitScore } from "@/hooks/useEventFitScore";
+import EventFitScore from "@/components/events/EventFitScore";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -111,6 +113,9 @@ const EventDetail = () => {
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
   const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
+
+  // Event Fit Score
+  const fitScore = useEventFitScore(eventAccessRules, event ? { difficulty: event.difficulty, category: event.category } : null);
 
   // Dynamic pricing eligibility
   const rawPriceOptions = event?.price_options as PriceOption[] | null;
@@ -665,6 +670,12 @@ const EventDetail = () => {
           overrideCondition={(event.additional_fields as any)?.weather_override_condition || null}
           overrideTemp={(event.additional_fields as any)?.weather_override_temp ?? null}
         />
+
+        {/* Event Fit Score — below date/location/weather */}
+        {user && !accessData?.failedRules?.length && (
+          <EventFitScore fitScore={fitScore} showWarnings={true} />
+        )}
+
         {/* 10. ORGANIZER + 9. PARTICIPANTS (WeMeet style) */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="py-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">

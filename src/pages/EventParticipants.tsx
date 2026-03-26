@@ -5,13 +5,128 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EventFitScoreCompact } from "@/components/events/EventFitScore";
+import type { FitScoreResult } from "@/hooks/useEventFitScore";
+import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
+import { useMemo } from "react";
+
+// Lightweight score calculation for a given participant profile
+const LEVEL_MAP: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
+const EXPERIENCE_MAP: Record<string, number> = { "0_2": 1, "3_5": 2, "5_plus": 3, "5+": 3 };
+const FREQUENCY_MAP: Record<string, number> = { low: 1, "0-1/week": 1, medium: 2, "1-2/week": 2, high: 3, ">2/week": 3 };
+
+function calcFitScore(
+  participantProfile: any,
+  rules: AccessRule[],
+  difficulty: string | null
+): FitScoreResult {
+  const HIDDEN: FitScoreResult = {
+    score: 0,
+    breakdown: { level: null, experience: null, activity: null, interests: null },
+    label: "media", labelDisplay: "", color: "amber", reasons: [], profileIncomplete: false, hidden: true,
+  };
+
+  const hasLevel = rules.some(r => r.type === "min_level") || !!difficulty;
+  const hasExp = rules.some(r => r.type === "min_experience" || r.type === "min_trekking_events" || r.type === "min_attended_events" || r.type === "min_activities");
+  const hasFreq = rules.some(r => r.type === "min_activity_frequency");
+  const hasInterests = rules.some(r => r.type === "interests");
+
+  if (!hasLevel && !hasExp && !hasFreq && !hasInterests) return HIDDEN;
+  if (!participantProfile) return { ...HIDDEN, hidden: false, profileIncomplete: true };
+
+  const breakdown: FitScoreResult["breakdown"] = { level: null, experience: null, activity: null, interests: null };
+  const reasons: FitScoreResult["reasons"] = [];
+  const weights: { key: keyof typeof breakdown; weight: number }[] = [];
+
+  if (hasLevel) {
+    const levelRule = rules.find(r => r.type === "min_level");
+    const req = levelRule ? Number(levelRule.value) || 1 : parseInt(difficulty || "0") || 0;
+    if (req > 0) {
+      const user = LEVEL_MAP[participantProfile.self_level || ""] || 0;
+      const diff = user - req;
+      const s = diff >= 0 ? 100 : diff === -1 ? 60 : 20;
+      breakdown.level = s;
+      weights.push({ key: "level", weight: 35 });
+      reasons.push({ icon: s >= 60 ? "check" : "warning", text: s >= 60 ? "Livello adeguato" : "Livello inferiore" });
+    }
+  }
+
+  if (hasExp) {
+    const r = rules.find(r => r.type === "min_experience");
+    const req = r ? Number(r.value) || 1 : 1;
+    const user = EXPERIENCE_MAP[participantProfile.trekking_experience || ""] || 0;
+    const diff = user - req;
+    const s = diff >= 0 ? 100 : diff === -1 ? 70 : 30;
+    breakdown.experience = s;
+    weights.push({ key: "experience", weight: 20 });
+    reasons.push({ icon: s >= 70 ? "check" : "warning", text: s >= 70 ? "Esperienza sufficiente" : "Esperienza bassa" });
+  }
+
+  if (hasFreq) {
+    const r = rules.find(r => r.type === "min_activity_frequency");
+    const req = r ? Number(r.value) || 1 : 1;
+    const user = FREQUENCY_MAP[participantProfile.activity_frequency || ""] || 0;
+    const diff = user - req;
+    const s = diff >= 0 ? 100 : diff === -1 ? 70 : 40;
+    breakdown.activity = s;
+    weights.push({ key: "activity", weight: 20 });
+    reasons.push({ icon: s >= 70 ? "check" : "warning", text: s >= 70 ? "Attività adeguata" : "Attività bassa" });
+  }
+
+  if (hasInterests) {
+    const ir = rules.find(r => r.type === "interests");
+    const eventI = ir?.interests || [];
+    const userI = participantProfile.interests || [];
+    if (eventI.length > 0 && userI.length > 0) {
+      const m = eventI.filter((i: string) => userI.includes(i)).length;
+      const s = Math.round((m / Math.max(userI.length, eventI.length)) * 100);
+      breakdown.interests = s;
+      weights.push({ key: "interests", weight: 25 });
+    }
+  }
+
+  if (weights.length === 0) return HIDDEN;
+
+  const tw = weights.reduce((s, w) => s + w.weight, 0);
+  const score = Math.round(weights.reduce((s, w) => s + (breakdown[w.key] || 0) * (w.weight / tw), 0));
+
+  return {
+    score,
+    breakdown,
+    label: score >= 80 ? "alta" : score >= 50 ? "media" : "bassa",
+    labelDisplay: score >= 80 ? "Ottima compatibilità" : score >= 50 ? "Buona compatibilità" : "Bassa compatibilità",
+    color: score >= 80 ? "green" : score >= 50 ? "amber" : "red",
+    reasons,
+    profileIncomplete: false,
+    hidden: false,
+  };
+}
 
 const EventParticipants = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isOrganizer } = useAuth();
   const { data: event, isLoading: eventLoading } = useEvent(id!);
   const { data: participants, isLoading: participantsLoading } = useEventParticipants(id!);
+
+  const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
+
+  // Fetch full profiles for participants if organizer/admin (for fit score)
+  const participantIds = useMemo(() => (participants || []).map((p: any) => p.user_id), [participants]);
+  const { data: fullProfiles } = useQuery({
+    queryKey: ["participant-full-profiles", id, participantIds],
+    queryFn: async () => {
+      if (participantIds.length === 0) return {};
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, self_level, trekking_experience, activity_frequency, interests")
+        .in("id", participantIds);
+      const map: Record<string, any> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p; });
+      return map;
+    },
+    enabled: isOrgOrAdmin && participantIds.length > 0,
+  });
 
   const { data: organizerProfile } = useQuery({
     queryKey: ["organizer-profile-public", event?.organizer_id],
@@ -22,6 +137,8 @@ const EventParticipants = () => {
     },
     enabled: !!event?.organizer_id,
   });
+
+  const accessRules = (event?.access_rules as AccessRulesConfig | null)?.rules || [];
 
   if (eventLoading || participantsLoading) {
     return (
@@ -106,27 +223,40 @@ const EventParticipants = () => {
           <div className="mt-4">
             <p className="text-sm font-body font-semibold text-muted-foreground mb-3">Chi c'è?</p>
             <div className="space-y-1">
-              {participants.map((p: any) => (
-                <div key={p.id} className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-                  {p.profiles?.avatar_url ? (
-                    <img src={p.profiles.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
-                  ) : (
-                    <span className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                      {p.profiles?.first_name?.[0] || "?"}
-                    </span>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-body font-semibold text-foreground">
-                      {p.profiles?.first_name}{p.profiles?.last_name_initial ? ` ${p.profiles.last_name_initial}` : ''}
-                    </p>
-                    {p.badges && p.badges.length > 0 && (
-                      <p className="text-xs font-body text-muted-foreground">
-                        {p.badges.length} badge
+              {participants.map((p: any) => {
+                const pProfile = fullProfiles?.[p.user_id];
+                const fitScore = isOrgOrAdmin && pProfile
+                  ? calcFitScore(pProfile, accessRules, event.difficulty || null)
+                  : null;
+
+                return (
+                  <div key={p.id} className="flex items-center gap-3 py-3 border-b border-border last:border-0">
+                    {p.profiles?.avatar_url ? (
+                      <img src={p.profiles.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <span className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
+                        {p.profiles?.first_name?.[0] || "?"}
+                      </span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-body font-semibold text-foreground">
+                        {p.profiles?.first_name}{p.profiles?.last_name_initial ? ` ${p.profiles.last_name_initial}` : ''}
                       </p>
+                      {p.badges && p.badges.length > 0 && (
+                        <p className="text-xs font-body text-muted-foreground">
+                          {p.badges.length} badge
+                        </p>
+                      )}
+                    </div>
+                    {/* Fit score for organizer/admin only */}
+                    {fitScore && !fitScore.hidden && (
+                      <div className="shrink-0">
+                        <EventFitScoreCompact fitScore={fitScore} />
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : (
