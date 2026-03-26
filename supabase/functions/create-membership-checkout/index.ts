@@ -63,6 +63,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
+      payment_method_types: ["card", "link", "paypal"],
       line_items: [
         {
           price: "price_1TCUj00xDIA9nImZEmVF6hBd",
