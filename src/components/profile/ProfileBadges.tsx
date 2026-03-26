@@ -72,44 +72,34 @@ const ProfileBadges = () => {
   const earnedIds = new Set(userBadges.map((ub) => ub.badge_id));
   const earnedNames = new Set(userBadges.map((ub) => ub.badges?.name));
 
-  // Scampagnatore Ufficiale highlight
   const hasOfficialBadge = userBadges.some((ub) => ub.badges?.name === "Scampagnatore Ufficiale");
-
-  // Earned badges (excluding Scampagnatore Ufficiale for separate highlight)
   const earnedRegular = userBadges.filter((ub) => ub.badges?.name !== "Scampagnatore Ufficiale");
 
-  // Next badges: up to 3 progression badges user hasn't earned yet
   const nextBadges = PROGRESSION_BADGES
     .filter((b) => !earnedNames.has(b.name))
     .slice(0, 3)
     .map((pb) => {
       const dbBadge = allBadges.find((b) => b.name === pb.name);
       const progress = Math.min(attendedCount, pb.required);
-      return {
-        ...pb,
-        icon: dbBadge?.icon || "💫",
-        id: dbBadge?.id || pb.name,
-        progress,
-        dbBadge,
-      };
+      return { ...pb, icon: dbBadge?.icon || "💫", id: dbBadge?.id || pb.name, progress, dbBadge };
     });
 
-  // All badges for expandable section
   const allBadgesSorted = allBadges.filter((b) => b.name !== "Scampagnatore Ufficiale");
 
-  const getBadgeProgress = (badge: BadgeData): { current: number; target: number } => {
-    return { current: Math.min(attendedCount, badge.required_events), target: badge.required_events };
-  };
+  const getBadgeProgress = (badge: BadgeData) => ({
+    current: Math.min(attendedCount, badge.required_events),
+    target: badge.required_events,
+  });
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 animate-fade-in">
       <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
         <Award className="h-5 w-5 text-secondary" /> Badge
       </h2>
 
       {/* Scampagnatore Ufficiale highlight */}
       {hasOfficialBadge && (
-        <div className="mb-4 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
+        <div className="mb-4 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3 transition-all duration-200 hover:shadow-sm">
           <BadgeIcon icon="🏅" className="h-7 w-7 text-primary" />
           <div>
             <p className="text-sm font-display font-bold text-primary">Scampagnatore Ufficiale</p>
@@ -120,14 +110,15 @@ const ProfileBadges = () => {
 
       {/* Section 1: I tuoi badge */}
       <div className="mb-4">
-        <h3 className="text-sm font-display font-bold text-foreground mb-2">I tuoi badge</h3>
+        <h3 className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">I tuoi badge</h3>
         {earnedRegular.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {earnedRegular.map((ub) => (
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide scroll-smooth">
+            {earnedRegular.map((ub, idx) => (
               <button
                 key={ub.id}
                 onClick={() => ub.badges && setSelectedBadge(ub.badges)}
-                className="flex-shrink-0 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors text-center min-w-[100px]"
+                className="flex-shrink-0 p-3 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-sm active:scale-[0.95] transition-all duration-200 text-center min-w-[100px]"
+                style={{ animationDelay: `${idx * 60}ms` }}
               >
                 <BadgeIcon icon={ub.badges?.icon || ""} className="h-7 w-7 mx-auto text-primary" />
                 <p className="text-xs font-body font-semibold text-foreground mt-1.5 leading-tight">
@@ -151,13 +142,13 @@ const ProfileBadges = () => {
       {/* Section 2: Prossimi badge */}
       {nextBadges.length > 0 && (
         <div className="mb-4">
-          <h3 className="text-sm font-display font-bold text-foreground mb-2">Prossimi badge</h3>
+          <h3 className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">Prossimi badge</h3>
           <div className="space-y-2">
             {nextBadges.map((badge) => (
               <button
                 key={badge.id}
                 onClick={() => badge.dbBadge && setSelectedBadge(badge.dbBadge)}
-                className="w-full p-3 rounded-xl bg-muted/50 border border-border hover:border-primary/20 transition-colors flex items-center gap-3 text-left"
+                className="w-full p-3 rounded-xl bg-muted/50 border border-border hover:border-primary/20 hover:shadow-sm active:scale-[0.98] transition-all duration-200 flex items-center gap-3 text-left"
               >
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                   <BadgeIcon icon={badge.icon} className="h-5 w-5 text-muted-foreground/50" />
@@ -167,8 +158,8 @@ const ProfileBadges = () => {
                   <p className="text-[11px] font-body text-muted-foreground">{badge.description}</p>
                   <div className="flex items-center gap-2 mt-1.5">
                     <Progress value={(badge.progress / badge.required) * 100} className="h-1.5 flex-1" />
-                    <span className="text-[10px] font-body text-muted-foreground font-semibold whitespace-nowrap">
-                      {badge.progress} / {badge.required}
+                    <span className="text-[10px] font-display text-muted-foreground font-bold whitespace-nowrap">
+                      {badge.progress}/{badge.required}
                     </span>
                   </div>
                 </div>
@@ -182,14 +173,14 @@ const ProfileBadges = () => {
       <div>
         <button
           onClick={() => setShowAll(!showAll)}
-          className="flex items-center gap-2 text-sm font-display font-bold text-foreground mb-2 hover:text-primary transition-colors"
+          className="flex items-center gap-2 text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2 hover:text-primary transition-colors active:scale-[0.97]"
         >
           Tutti i badge
           {showAll ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
 
         {showAll && (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 animate-fade-in">
             {allBadgesSorted.map((badge) => {
               const isEarned = earnedIds.has(badge.id);
               const { current, target } = getBadgeProgress(badge);
@@ -197,9 +188,9 @@ const ProfileBadges = () => {
                 <button
                   key={badge.id}
                   onClick={() => setSelectedBadge(badge)}
-                  className={`p-3 rounded-xl text-center transition-colors ${
+                  className={`p-3 rounded-xl text-center transition-all duration-200 active:scale-[0.95] ${
                     isEarned
-                      ? "bg-card border border-primary/20 hover:border-primary/40"
+                      ? "bg-card border border-primary/20 hover:border-primary/40 hover:shadow-sm"
                       : "bg-muted/30 border border-border hover:border-muted-foreground/20"
                   }`}
                 >
@@ -236,15 +227,11 @@ const ProfileBadges = () => {
             {selectedBadge && (
               <>
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 ${
-                  earnedIds.has(selectedBadge.id)
-                    ? "bg-primary/10"
-                    : "bg-muted"
+                  earnedIds.has(selectedBadge.id) ? "bg-primary/10" : "bg-muted"
                 }`}>
                   <BadgeIcon
                     icon={selectedBadge.icon}
-                    className={`h-8 w-8 ${
-                      earnedIds.has(selectedBadge.id) ? "text-primary" : "text-muted-foreground/40"
-                    }`}
+                    className={`h-8 w-8 ${earnedIds.has(selectedBadge.id) ? "text-primary" : "text-muted-foreground/40"}`}
                   />
                 </div>
                 <DialogTitle className="font-display">{selectedBadge.name}</DialogTitle>
@@ -257,7 +244,6 @@ const ProfileBadges = () => {
 
           {selectedBadge && (
             <div className="space-y-4">
-              {/* How to earn */}
               <div className="p-3 rounded-xl bg-muted/50">
                 <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-1">
                   Come ottenerlo
@@ -267,7 +253,6 @@ const ProfileBadges = () => {
                 </p>
               </div>
 
-              {/* Progress */}
               <div className="p-3 rounded-xl bg-muted/50">
                 <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Progresso
@@ -277,16 +262,17 @@ const ProfileBadges = () => {
                     value={Math.min(100, (attendedCount / selectedBadge.required_events) * 100)}
                     className="h-2 flex-1"
                   />
-                  <span className="text-sm font-body font-semibold text-foreground">
+                  <span className="text-sm font-display font-bold text-foreground">
                     {Math.min(attendedCount, selectedBadge.required_events)}/{selectedBadge.required_events}
                   </span>
                 </div>
               </div>
 
-              {/* Status */}
               {earnedIds.has(selectedBadge.id) ? (
                 <div className="text-center p-2 rounded-lg bg-primary/10">
-                  <p className="text-sm font-body font-bold text-primary">✅ Badge ottenuto!</p>
+                  <p className="text-sm font-body font-bold text-primary flex items-center justify-center gap-1.5">
+                    <CheckCircle className="h-4 w-4" /> Badge ottenuto!
+                  </p>
                   {userBadges.find((ub) => ub.badge_id === selectedBadge.id)?.earned_at && (
                     <p className="text-[10px] font-body text-muted-foreground mt-0.5">
                       Ottenuto il{" "}
@@ -298,8 +284,8 @@ const ProfileBadges = () => {
                 </div>
               ) : (
                 <div className="text-center p-2 rounded-lg bg-muted/50">
-                  <p className="text-sm font-body text-muted-foreground">
-                    🔒 Mancano {selectedBadge.required_events - Math.min(attendedCount, selectedBadge.required_events)} eventi
+                  <p className="text-sm font-body text-muted-foreground flex items-center justify-center gap-1.5">
+                    <Lock className="h-4 w-4" /> Mancano {selectedBadge.required_events - Math.min(attendedCount, selectedBadge.required_events)} eventi
                   </p>
                 </div>
               )}
@@ -310,5 +296,8 @@ const ProfileBadges = () => {
     </div>
   );
 };
+
+// Need CheckCircle for the modal
+import { CheckCircle } from "lucide-react";
 
 export default ProfileBadges;
