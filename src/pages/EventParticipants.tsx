@@ -126,7 +126,7 @@ const ParticipantRow = ({
   avatarUrl?: string | null;
   firstName?: string;
   points: number;
-  level?: { name: string; level_number: number; color: string; icon: string } | null;
+  level?: CommunityLevel | null;
 }) => {
   return (
     <div className="flex items-center gap-4 py-3.5 border-b border-border last:border-0">
@@ -165,7 +165,7 @@ const AdminParticipantRow = ({
   avatarUrl?: string | null;
   firstName?: string;
   points: number;
-  level?: { name: string; level_number: number; color: string; icon: string } | null;
+  level?: CommunityLevel | null;
   fitScore: FitScoreResult | null;
   reliabilityLabel: string;
   completedEvents: number;
