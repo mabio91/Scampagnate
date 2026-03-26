@@ -465,7 +465,7 @@ const EventForm = () => {
         } as any : null,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
-        status: registrationOpen ? "published" : "closed",
+        status: (registrationOpen ? "published" : "closed") as Database["public"]["Enums"]["event_status"],
       };
 
       let eventId = id;
