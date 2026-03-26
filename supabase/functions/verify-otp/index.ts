@@ -84,7 +84,7 @@ serve(async (req) => {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        To: otpRecord.channel === "whatsapp" ? `whatsapp:${phone}` : phone,
+        To: phone,
         Code: otp,
       }),
     });
