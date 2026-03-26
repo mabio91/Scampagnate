@@ -13,7 +13,7 @@ import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { ResolvedPriceOption } from "@/hooks/usePricingEligibility";
 import {
   MapPin, Clock, Car, CreditCard, Loader2, Tag, Lock, Sparkles, ShieldCheck,
-  AlertTriangle, Info, ChevronRight
+  AlertTriangle, ChevronRight
 } from "lucide-react";
 
 interface RegistrationCheckoutDialogProps {
