@@ -62,6 +62,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_action_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           category: string | null
@@ -71,6 +98,8 @@ export type Database = {
           id: string
           name: string
           required_events: number
+          requirement_type: string | null
+          requirement_value: number
         }
         Insert: {
           category?: string | null
@@ -80,6 +109,8 @@ export type Database = {
           id?: string
           name: string
           required_events?: number
+          requirement_type?: string | null
+          requirement_value?: number
         }
         Update: {
           category?: string | null
@@ -89,6 +120,38 @@ export type Database = {
           id?: string
           name?: string
           required_events?: number
+          requirement_type?: string | null
+          requirement_value?: number
+        }
+        Relationships: []
+      }
+      community_levels: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          level_number: number
+          min_points: number
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          level_number: number
+          min_points?: number
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          level_number?: number
+          min_points?: number
+          name?: string
         }
         Relationships: []
       }
@@ -738,6 +801,56 @@ export type Database = {
         }
         Relationships: []
       }
+      missions: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          reward_badge_id: string | null
+          reward_points: number
+          target_value: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          reward_badge_id?: string | null
+          reward_points?: number
+          target_value?: number
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          reward_badge_id?: string | null
+          reward_points?: number
+          target_value?: number
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missions_reward_badge_id_fkey"
+            columns: ["reward_badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -815,6 +928,69 @@ export type Database = {
           phone_number?: string
           user_id?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      points_config: {
+        Row: {
+          action_type: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      points_history: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          description: string
+          id: string
+          reference_id: string | null
+          type: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          type: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          type?: string
+          user_id?: string
+          value?: number
         }
         Relationships: []
       }
@@ -970,20 +1146,29 @@ export type Database = {
       user_badges: {
         Row: {
           badge_id: string
+          completed: boolean
+          completed_at: string | null
           earned_at: string
           id: string
+          progress: number
           user_id: string
         }
         Insert: {
           badge_id: string
+          completed?: boolean
+          completed_at?: string | null
           earned_at?: string
           id?: string
+          progress?: number
           user_id: string
         }
         Update: {
           badge_id?: string
+          completed?: boolean
+          completed_at?: string | null
           earned_at?: string
           id?: string
+          progress?: number
           user_id?: string
         }
         Relationships: [
@@ -992,6 +1177,44 @@ export type Database = {
             columns: ["badge_id"]
             isOneToOne: false
             referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_missions: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          mission_id: string
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_id: string
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string
+          progress?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
             referencedColumns: ["id"]
           },
         ]
@@ -1023,6 +1246,17 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
+      add_user_points: {
+        Args: {
+          p_admin_id?: string
+          p_description?: string
+          p_reference_id?: string
+          p_type: string
+          p_user_id: string
+          p_value: number
+        }
+        Returns: undefined
+      }
       get_public_profile: {
         Args: { profile_id: string }
         Returns: {
@@ -1039,6 +1273,16 @@ export type Database = {
           first_name: string
           id: string
           last_name_initial: string
+        }[]
+      }
+      get_user_community_level: {
+        Args: { p_points: number }
+        Returns: {
+          color: string
+          icon: string
+          level_number: number
+          min_points: number
+          name: string
         }[]
       }
       has_role: {
