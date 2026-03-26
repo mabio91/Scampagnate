@@ -166,6 +166,7 @@ const EventForm = () => {
     gallery_images: [] as { url: string; order: number }[],
   });
 
+  const [registrationOpen, setRegistrationOpen] = useState(true);
   const [policyType, setPolicyType] = useState<PolicyType | "">("flexible");  
   const [policyCustomText, setPolicyCustomText] = useState("");
 
@@ -464,6 +465,7 @@ const EventForm = () => {
         } as any : null,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
+        status: registrationOpen ? "published" : "closed",
       };
 
       let eventId = id;
@@ -994,6 +996,23 @@ const EventForm = () => {
               {form.visibility === "private" && "Not listed in discovery. Only accessible via direct link or invitation."}
               {form.visibility === "hidden" && "Invisible to regular users. Only organizers and platform administrators can see it."}
             </p>
+          </div>
+
+          {/* Registration Status */}
+          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  📝 Iscrizioni
+                </Label>
+                <p className="text-[11px] text-muted-foreground font-body">
+                  {registrationOpen
+                    ? "Le iscrizioni sono aperte. Gli utenti possono registrarsi."
+                    : "Le iscrizioni sono chiuse. L'evento è visibile ma nessuno può registrarsi."}
+                </p>
+              </div>
+              <Switch checked={registrationOpen} onCheckedChange={setRegistrationOpen} />
+            </div>
           </div>
 
           {/* 2. Access Restrictions - Grouped */}
