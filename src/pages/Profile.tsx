@@ -393,23 +393,6 @@ const Profile = () => {
         {/* Activity History Dashboard */}
         <ActivityHistory />
 
-        {/* Past Events */}
-        <div className="mb-6">
-          <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-secondary" /> {t("pastEvents")}
-          </h2>
-          {pastEvents && pastEvents.length > 0 ? (
-            <div className="space-y-2">
-              {pastEvents.map((r: any) => (
-                <PastEventCard key={r.id} registration={r} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm font-body text-muted-foreground">
-              {t("noPastEventsJoinFirst")}
-            </p>
-          )}
-        </div>
 
         {/* Help & Information */}
         <div className="mb-6 space-y-3">
@@ -438,30 +421,5 @@ const Profile = () => {
   );
 };
 
-
-const PastEventCard = ({ registration }: { registration: any }) => {
-  const { language } = useLanguage();
-  const event = registration.events;
-  if (!event) return null;
-
-  return (
-    <Link to={`/event/${event.id}`} className="block">
-      <div className="flex gap-3 p-3 rounded-xl bg-card hover:bg-muted/50 transition-colors">
-        <OptimizedImage src={event.image_url} alt={event.title} width={64} height={64} className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-muted" />
-        <div className="flex-1 min-w-0">
-          <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
-          <div className="flex items-center gap-2 mt-1 text-muted-foreground text-xs font-body">
-            <CalendarDays className="h-3 w-3" />
-            {new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US", { day: "numeric", month: "short", year: "numeric" })}
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
-            <MapPin className="h-3 w-3" />
-            <span className="truncate">{event.location}</span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-};
 
 export default Profile;
