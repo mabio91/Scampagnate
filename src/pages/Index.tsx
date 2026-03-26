@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
 import EventCard from "@/components/events/EventCard";
-import QuickFilters, { type QuickFilterType } from "@/components/events/QuickFilters";
+import QuickFilters from "@/components/events/QuickFilters";
 import RecommendedSection from "@/components/events/RecommendedSection";
 import ProposalSuggestionCard from "@/components/ProposalSuggestionCard";
 import EmptyState from "@/components/EmptyState";
@@ -22,8 +22,6 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "@/contexts/SearchContext";
 import { UI_LABELS } from "@/lib/labels";
-
-type PriceFilter = "all" | "free" | "paid";
 
 // Interest-to-keyword map for personalized recommendations
 const INTEREST_KEYWORDS: Record<string, string[]> = {
