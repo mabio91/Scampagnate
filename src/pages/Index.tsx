@@ -36,13 +36,17 @@ const INTEREST_KEYWORDS: Record<string, string[]> = {
 };
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
-  const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
-  const [showFilters, setShowFilters] = useState(false);
-  const [quickFilters, setQuickFilters] = useState<QuickFilterType[]>([]);
-  const { searchOpen } = useSearch();
+  const {
+    searchOpen,
+    selectedCategory, setSelectedCategory,
+    searchQuery, setSearchQuery,
+    dateFilter, setDateFilter,
+    priceFilter, setPriceFilter,
+    showFilters, setShowFilters,
+    quickFilters, toggleQuickFilter,
+    hasActiveFilters,
+    clearAllFilters,
+  } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
 
@@ -55,17 +59,11 @@ const Index = () => {
       setPriceFilter("all");
       setShowFilters(false);
     }
-  }, [searchOpen]);
+  }, [searchOpen, setSearchQuery, setDateFilter, setPriceFilter, setShowFilters]);
 
   const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
   const { data: discountMap } = useActiveDiscounts();
-
-  const hasActiveFilters = searchQuery || dateFilter || priceFilter !== "all" || quickFilters.length > 0;
-
-  const toggleQuickFilter = useCallback((f: QuickFilterType) => {
-    setQuickFilters(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
-  }, []);
 
   // All upcoming, non-draft/past/cancelled events
   const allUpcoming = useMemo(() => {
