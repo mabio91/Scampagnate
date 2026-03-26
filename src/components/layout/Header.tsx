@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
 import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
-import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/contexts/SearchContext";
@@ -45,19 +44,6 @@ const Header = () => {
           <span className="font-display text-sm sm:text-base font-bold text-foreground truncate">Scampagnate</span>
         </Link>
         <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-          {/* Language Switcher */}
-          <button
-            className="p-1.5 sm:p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
-            onClick={toggleLanguage}
-            aria-label={language === "it" ? "Switch to English" : "Passa all'italiano"}
-          >
-            <img
-              src={language === "it" ? flagEn : flagIt}
-              alt={language === "it" ? "English" : "Italiano"}
-              className="h-4 sm:h-5 w-4 sm:w-5 rounded-sm object-cover"
-            />
-          </button>
-
           {mounted && (
             <button
               className="p-1.5 sm:p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
