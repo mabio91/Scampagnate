@@ -39,6 +39,7 @@ import {
 import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { Checkbox } from "@/components/ui/checkbox";
 import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
+import RegistrationCheckoutDialog from "@/components/events/RegistrationCheckoutDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import useEmblaCarousel from "embla-carousel-react";
 
