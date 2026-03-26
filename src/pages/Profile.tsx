@@ -72,23 +72,6 @@ const Profile = () => {
   };
 
 
-  const { data: pastEvents } = useQuery({
-    queryKey: ["past-events", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data } = await supabase
-        .from("event_registrations")
-        .select("*, events(*, event_categories(name, icon))")
-        .eq("user_id", user.id)
-        .in("status", ["registered", "paid"])
-        .order("created_at", { ascending: false });
-
-      const now = new Date();
-      return (data || []).filter((r: any) => new Date(r.events?.date) < now);
-    },
-    enabled: !!user,
-  });
-
   if (!user) {
     return (
       <AppLayout>
