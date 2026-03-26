@@ -6,7 +6,6 @@ import { Award, Lock, ChevronDown, ChevronUp } from "lucide-react";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { Progress } from "@/components/ui/progress";
 import EmptyState from "@/components/EmptyState";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
