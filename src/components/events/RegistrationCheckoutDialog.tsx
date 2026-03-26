@@ -491,11 +491,16 @@ const RegistrationCheckoutDialog = ({
             )}
 
             {/* Cancellation policy */}
-            {cancellationLabel && (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30">
-                <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <p className="text-xs font-body text-muted-foreground">
-                  Politica di cancellazione: <span className="font-semibold">{cancellationLabel}</span>
+            {cancellationDetails && (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
+                <div className="flex items-center gap-2">
+                  <cancellationDetails.icon className={`h-4 w-4 shrink-0 ${cancellationDetails.colorClass}`} />
+                  <p className="text-sm font-body font-semibold text-foreground">
+                    Politica di cancellazione: {cancellationDetails.label}
+                  </p>
+                </div>
+                <p className="text-xs font-body text-muted-foreground pl-6">
+                  {cancellationDetails.description}
                 </p>
               </div>
             )}
@@ -523,11 +528,16 @@ const RegistrationCheckoutDialog = ({
               </div>
             )}
 
+            {/* Helper text above CTA */}
+            <p className="text-xs font-body text-muted-foreground text-center leading-relaxed px-2">
+              {ctaHelperText}
+            </p>
+
             {/* CTA */}
             <Button
               onClick={handleSubmit}
               disabled={isDisabled}
-              className="w-full h-12 font-body font-semibold text-sm bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full h-12 font-body font-semibold text-sm rounded-xl"
             >
               {isSubmitting ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Attendere...</>
