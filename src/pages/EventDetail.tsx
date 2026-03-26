@@ -1193,378 +1193,84 @@ const EventDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Registration Dialog */}
-      <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display">{t("registerFor", { title: event.title })}</DialogTitle>
-            <DialogDescription className="font-body text-sm">
-              {t("completeRegistration")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            {/* Meeting Point */}
-            {event.meeting_points && event.meeting_points.length > 0 && (
-              <div>
-                <Label className="font-body text-sm font-semibold">{t("meetingPoint")}</Label>
-                <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className="mt-2 space-y-2">
-                  {event.meeting_points.map((mp: any) => (
-                    <label key={mp.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value={mp.id} />
-                      <div>
-                        <p className="text-sm font-body font-semibold text-foreground">{mp.name}</p>
-                        <p className="text-xs font-body text-muted-foreground">{mp.location} · {mp.time?.slice(0, 5)}</p>
-                      </div>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
+      <RegistrationCheckoutDialog
+        open={showRegisterDialog}
+        onOpenChange={setShowRegisterDialog}
+        event={event}
+        resolvedPriceOptions={resolvedPriceOptions}
+        onRegister={async (opts) => {
+          // Set state from dialog choices
+          if (opts.appliedDiscount) setAppliedDiscount(opts.appliedDiscount);
+          if (opts.priceOptionId) setSelectedPriceOption(opts.priceOptionId);
 
-            {/* Sport Level */}
-            {isSportCategory && (
-              <div>
-                <Label className="font-body text-sm font-semibold">{t("sportLevel")}</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {[{ key: "Beginner", label: t("beginner") }, { key: "Intermediate", label: t("intermediate") }, { key: "Advanced", label: t("advanced") }].map(({ key, label }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setSportLevel(sportLevel === key ? "" : key)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${sportLevel === key
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <Input
-                  value={!["Beginner", "Intermediate", "Advanced"].includes(sportLevel) ? sportLevel : ""}
-                  onChange={(e) => setSportLevel(e.target.value)}
-                  placeholder={t("orEnterCustomLevel")}
-                  className="mt-2"
-                />
-              </div>
-            )}
+          // Check membership for free/location events
+          if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
+            await handleMembershipCheckout();
+            return;
+          }
 
-            {/* Car Availability */}
-            {event.additional_fields && (event.additional_fields as any).car_availability_enabled && (
-              <div>
-                <Label className="font-body text-sm font-semibold">Saresti disposto a prendere la macchina?</Label>
-                <RadioGroup value={carAvailability} onValueChange={setCarAvailability} className="mt-2 space-y-2">
-                  <label className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
-                    <RadioGroupItem value="yes" />
-                    <span className="text-sm font-body">✅ Sì</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
-                    <RadioGroupItem value="prefer_not" />
-                    <span className="text-sm font-body">🤷 Preferirei di no</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer">
-                    <RadioGroupItem value="no_car" />
-                    <span className="text-sm font-body">🚶 Non sono automunito</span>
-                  </label>
-                </RadioGroup>
-              </div>
-            )}
+          const isWaitlist = event.status === "full";
+          try {
+            const result = await registerMutation.mutateAsync({
+              eventId: event.id,
+              meetingPointId: opts.meetingPointId,
+              sportLevel: opts.sportLevel,
+              asWaitlist: isWaitlist,
+              requestApproval: opts.requestApproval,
+              paymentType: event.payment_type,
+              priceOptionId: opts.priceOptionId,
+            });
+            setShowRegisterDialog(false);
+            setShowAccessWarning(false);
+            setIsRequestingOverride(false);
 
-            {/* Additional Fields */}
-            {(() => {
-              const af = event.additional_fields as any;
-              const fields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []);
-              if (!fields || fields.length === 0) return null;
-              return fields.map((field: any, idx: number) => (
-                <div key={idx}>
-                  <Label className="font-body text-sm font-semibold">
-                    {field.label} {field.required && <span className="text-destructive">*</span>}
-                  </Label>
-                  {field.type === "text" && (
-                    <Input
-                      value={additionalResponses[field.label] || ""}
-                      onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
-                      placeholder={field.placeholder || ""}
-                      className="mt-1"
-                    />
-                  )}
-                  {field.type === "select" && (
-                    <Select
-                      value={additionalResponses[field.label] || ""}
-                      onValueChange={(val) => setAdditionalResponses(prev => ({ ...prev, [field.label]: val }))}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleziona..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(field.options || []).map((opt: string, optIdx: number) => (
-                          <SelectItem key={optIdx} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {field.type === "number" && (
-                    <Input
-                      type="number"
-                      value={additionalResponses[field.label] || ""}
-                      onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
-                      placeholder={field.placeholder || ""}
-                      className="mt-1"
-                    />
-                  )}
-                </div>
-              ));
-            })()}
-
-            {/* Mandatory Equipment Confirmation */}
-            {event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && (
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox
-                    checked={equipmentConfirmed}
-                    onCheckedChange={(checked) => setEquipmentConfirmed(!!checked)}
-                    className="mt-0.5"
-                  />
-                  <span className="text-xs font-body text-foreground leading-relaxed">
-                    Confermo di avere tutta l'attrezzatura obbligatoria richiesta per questa attività
-                  </span>
-                </label>
-              </div>
-            )}
-
-            {/* ── Pricing Options ── */}
-            {resolvedPriceOptions && resolvedPriceOptions.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                  <Label className="font-body text-sm font-semibold">{t("choosePricingOption")}</Label>
-                </div>
-                <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
-                  {resolvedPriceOptions.map((opt: ResolvedPriceOption) => (
-                    <label
-                      key={opt.id}
-                      className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                        !opt.isEligible ? "bg-muted/30 opacity-60 cursor-not-allowed" :
-                        selectedPriceOption === opt.id ? "bg-primary/10 border-2 border-primary" :
-                        "bg-muted/50 hover:bg-muted"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem value={opt.id} disabled={!opt.isEligible} />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
-                            {opt.isEligible && opt.eligible_group !== "all" && (
-                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
-                                <Sparkles className="h-2.5 w-2.5" /> {opt.eligible_group === "members" ? "Soci" : opt.eligible_group === "experienced" ? "Esperto" : opt.eligible_group === "loyal" ? "Fedele" : opt.eligible_group}
-                              </span>
-                            )}
-                            {opt.is_promotional && opt.isPromoActive && (
-                              <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
-                                <Sparkles className="h-2.5 w-2.5" /> Promo
-                              </span>
-                            )}
-                          </div>
-                          {!opt.isEligible && opt.eligibilityReason && (
-                            <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1 mt-0.5">
-                              <Lock className="h-2.5 w-2.5" /> {opt.eligibilityReason}
-                            </p>
-                          )}
-                          {opt.is_promotional && !opt.isPromoActive && (
-                            <p className="text-[10px] text-muted-foreground font-body mt-0.5">{t("promoExpired")}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {opt.original_price && opt.original_price > opt.price && (
-                          <span className="text-xs font-body text-muted-foreground line-through block">€{opt.original_price.toFixed(2)}</span>
-                        )}
-                        <span className={`text-sm font-display font-bold ${opt.isEligible && opt.original_price ? "text-green-500" : "text-foreground"}`}>
-                          €{Number(opt.price).toFixed(2)}
-                        </span>
-                      </div>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-            {/* Fallback price options */}
-            {!resolvedPriceOptions && event.price_options && event.price_options.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                  <Label className="font-body text-sm font-semibold">{t("choosePricingOption")}</Label>
-                </div>
-                <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
-                  {event.price_options.map((opt: any) => (
-                    <label key={opt.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted transition-colors">
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem value={opt.id} />
-                        <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
-                      </div>
-                      <span className="text-sm font-display font-bold text-foreground">€{Number(opt.price).toFixed(2)}</span>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-
-            {/* Discount Code */}
-            {event.payment_type !== "free" && event.payment_type !== "location" && user && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                  <Label className="font-body text-sm font-semibold">{t("discountCode")} <span className="text-muted-foreground font-normal">({t("optional")})</span></Label>
-                </div>
-                <DiscountCodeInput
-                  eventId={event.id}
-                  userId={user.id}
-                  onDiscountApplied={setAppliedDiscount}
-                />
-              </div>
-            )}
-
-            {/* Membership Verification */}
-            {!isMembershipActive(profile) && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                  <Label className="font-body text-sm font-semibold">
-                    {isMembershipExpired(profile) ? t("membershipRenewalRequired") : t("membershipRequired")}
-                  </Label>
-                </div>
-                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-body font-bold text-primary">{t("membershipCardTitle")}</p>
-                  </div>
-                  <div className="text-[10px] font-body text-primary/90 leading-relaxed space-y-2">
-                    {isMembershipExpired(profile) ? (
-                      <>
-                        <p>{t("membershipExpiredText")}</p>
-                        <p>{t("membershipKeepId")} <strong>#{profile?.membership_id}</strong></p>
-                      </>
-                    ) : (
-                      <>
-                        <p>{t("membershipNewText")}</p>
-                        <p>{t("membershipAfterPayment")}</p>
-                      </>
-                    )}
-                    <p>{t("membershipFeePerYear", { year: String(new Date().getFullYear()) })}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Order Summary */}
-            {event.payment_type !== "free" && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">{!isMembershipActive(profile) ? '4' : '3'}</span>
-                  <Label className="font-body text-sm font-semibold">{t("orderSummary")}</Label>
-                </div>
-                <div className="p-3 rounded-xl bg-gold/10 border border-gold/20 space-y-1.5">
-                  {(() => {
-                    const selectedOpt = event.price_options?.find((o: any) => o.id === selectedPriceOption);
-                    const basePrice = selectedOpt ? Number(selectedOpt.price) : Number(event.price);
-                    const displayLabel = selectedOpt ? selectedOpt.name : t("event");
-                    const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
-                    const depositAmount = isDeposit ? Number(event.deposit) : 0;
-                    const displayPrice = isDeposit ? depositAmount : basePrice;
-                    const needsMembership = !isMembershipActive(profile);
-                    const membershipFee = needsMembership ? 10 : 0;
-                    const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
-
-                    return (
-                      <>
-                        <div className="flex justify-between text-sm font-body">
-                          <span className="text-muted-foreground">{isDeposit ? `${t("deposit")} — ${displayLabel}` : displayLabel}</span>
-                          <span className={`font-semibold ${appliedDiscount ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                            €{displayPrice.toFixed(2)}
-                          </span>
-                        </div>
-                        {appliedDiscount && (
-                          <div className="flex justify-between text-sm font-body">
-                            <span className="text-success font-semibold flex items-center gap-1">
-                              <Tag className="h-3 w-3" /> {t("discountApplied")}
-                            </span>
-                            <span className="font-bold text-success">€{discountedEventPrice.toFixed(2)}</span>
-                          </div>
-                        )}
-                        {isDeposit && (
-                          <div className="flex justify-between text-sm font-body">
-                            <span className="text-muted-foreground">{t("remainingPayLater")}</span>
-                            <span className="text-muted-foreground">€{(Number(event.price) - depositAmount).toFixed(2)}</span>
-                          </div>
-                        )}
-                        {(event.payment_type as string) === "location" && (
-                          <p className="text-xs font-body text-muted-foreground">{t("paymentOnLocation")}</p>
-                        )}
-                        {needsMembership && (
-                          <div className="flex justify-between text-sm font-body">
-                            <span className="text-primary font-semibold flex items-center gap-1">
-                              <CreditCard className="h-3 w-3" /> {t("membershipFee")}
-                            </span>
-                            <span className="font-semibold text-primary">€{membershipFee.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-sm font-body pt-1.5 mt-1 border-t border-gold/20">
-                          <span className="font-bold text-foreground">{t("totalDueToday")}</span>
-                          <span className="font-bold text-foreground text-base">
-                            €{(discountedEventPrice + membershipFee).toFixed(2)}
-                          </span>
-                        </div>
-                        <p className="text-[10px] font-body text-muted-foreground pt-1">
-                          {needsMembership
-                            ? t("membershipIncludedInCheckout")
-                            : (event.payment_type === "paid" || selectedOpt)
-                              ? t("fullPaymentViaStripe")
-                              : isDeposit
-                                ? t("depositViaStripe")
-                                : ""
-                          }
-                        </p>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
-            <Button
-              onClick={() => handleRegister(isRequestingOverride || (accessData?.requiresApproval ?? false))}
-              disabled={
-                registerMutation.isPending || membershipLoading || paymentLoading ||
-                (event.meeting_points && event.meeting_points.length > 0 && !selectedMeetingPoint) ||
-                (event.price_options && event.price_options.length > 0 && !selectedPriceOption) ||
-                (() => { const af = event.additional_fields as any; const fields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []); return fields.some((f: any) => f.required && !additionalResponses[f.label]?.trim()); })() ||
-                (event.equipment_list && Array.isArray(event.equipment_list) && (event.equipment_list as any[]).some((item: any) => item.is_mandatory) && !equipmentConfirmed)
+            const requiresPayment = !isWaitlist && !opts.requestApproval && (event.payment_type === "paid" || event.payment_type === "deposit");
+            if (requiresPayment && result?.registrationId) {
+              setPaymentLoading(true);
+              try {
+                const body: any = { eventId: event.id, registrationId: result.registrationId };
+                if (opts.appliedDiscount?.discount_code_id) {
+                  body.discountCodeId = opts.appliedDiscount.discount_code_id;
+                }
+                if (opts.priceOptionId) {
+                  body.priceOptionId = opts.priceOptionId;
+                }
+                const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+                if (error) throw error;
+                if (data?.free) {
+                  toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
+                  setPaymentLoading(false);
+                  window.location.reload();
+                  return;
+                }
+                if (data?.url) {
+                  window.location.href = data.url;
+                } else {
+                  throw new Error("No checkout URL returned");
+                }
+              } catch (err: any) {
+                toast({ title: "Errore pagamento", description: err.message, variant: "destructive" });
+                setPaymentLoading(false);
               }
-              className={`w-full font-body font-semibold ${event.status === "full" ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
-            >
-              {(registerMutation.isPending || membershipLoading || paymentLoading) ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{paymentLoading ? t("redirectingToPayment") : membershipLoading ? t("redirectingToPayment") : (isRequestingOverride || accessData?.requiresApproval) ? t("submitting") : t("registering")}</>
-              ) : !isMembershipActive(profile) ? (
-                <>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  {isMembershipExpired(profile) ? t("renewMembershipAndRegister") : t("payMembershipAndRegister")}
-                </>
-              ) : (event.payment_type === "paid" || event.payment_type === "deposit") ? (
-                <>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  {t("payNow")}
-                </>
-              ) : event.status === "full" ? (
-                t("joinWaitlist")
-              ) : (isRequestingOverride || accessData?.requiresApproval) ? (
-                t("submitRequest")
-              ) : (
-                t("confirmRegistration")
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              return;
+            }
+
+            if (opts.requestApproval) {
+              toast({ title: "Richiesta inviata", description: "La tua richiesta è stata inviata all'organizzatore.", duration: 5000 });
+            } else if (isWaitlist) {
+              toast({ title: "Lista d'attesa", description: `Sarai notificato quando si libererà un posto per ${event.title}` });
+            } else {
+              toast({ title: "Registrazione confermata", description: `Ti sei iscritto a ${event.title}` });
+            }
+          } catch (err: any) {
+            toast({ title: "Errore", description: err.message, variant: "destructive" });
+          }
+        }}
+        isSubmitting={registerMutation.isPending || membershipLoading || paymentLoading}
+        isRequestingOverride={isRequestingOverride}
+        requiresApproval={accessData?.requiresApproval}
+        isSportCategory={isSportCategory}
+      />
 
       {/* Access Warning Dialog */}
       <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>
