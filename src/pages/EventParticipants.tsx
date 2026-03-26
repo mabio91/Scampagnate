@@ -203,13 +203,13 @@ const EventParticipants = () => {
             to={`/organizer/${event.organizer_id}`}
             className="flex items-center gap-3"
           >
-            {organizerProfile?.avatar_url ? (
-              <img src={organizerProfile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold">
-                {event.organizer_name?.[0] || "O"}
-              </div>
-            )}
+            <LevelAvatar
+              avatarUrl={organizerProfile?.avatar_url}
+              firstName={organizerProfile?.first_name || event.organizer_name}
+              points={fullProfiles?.[event.organizer_id || ""]?.total_points || 0}
+              size="md"
+              showBadge
+            />
             <p className="text-sm font-body font-semibold text-foreground">
               {organizerProfile?.first_name || event.organizer_name}
             </p>
