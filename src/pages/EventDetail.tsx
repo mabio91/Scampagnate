@@ -42,6 +42,8 @@ import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
 import RegistrationCheckoutDialog from "@/components/events/RegistrationCheckoutDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import useEmblaCarousel from "embla-carousel-react";
+import { useEventFitScore } from "@/hooks/useEventFitScore";
+import EventFitScore from "@/components/events/EventFitScore";
 
 const EventDetail = () => {
   const { id } = useParams();
