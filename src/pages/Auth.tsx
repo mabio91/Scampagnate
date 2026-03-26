@@ -155,12 +155,6 @@ const Auth = () => {
             </svg>
             {t("continueWithGoogle")}
           </Button>
-          <Button type="button" variant="outline" className="w-full h-11 bg-black hover:bg-gray-900 text-white shadow-sm font-body font-semibold flex items-center justify-center gap-2" onClick={() => handleOAuthLogin('apple')}>
-            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="currentColor">
-              <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.62-1.48 3.608-2.935 1.156-1.688 1.631-3.324 1.657-3.415-.026-.013-3.181-1.22-3.207-4.856-.026-3.051 2.493-4.506 2.61-4.584-1.428-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.844-1.012 1.415-2.427 1.259-3.83-1.194.052-2.674.805-3.545 1.818-.78.896-1.454 2.338-1.272 3.714 1.337.104 2.713-.688 3.558-1.701z" />
-            </svg>
-            {t("continueWithApple")}
-          </Button>
         </div>
 
         <div className="relative mb-6">
