@@ -292,10 +292,16 @@ export const ActivityHistory = () => {
             })
           ) : (
             <div className="py-4 pl-3 text-center">
-              <p className="text-sm font-body font-semibold text-foreground mb-1">Nessun evento passato</p>
-              <p className="text-xs font-body text-muted-foreground">
-                I tuoi eventi completati appariranno qui in ordine cronologico
+              <p className="text-sm font-body font-semibold text-foreground mb-1">Non hai ancora partecipato a eventi</p>
+              <p className="text-xs font-body text-muted-foreground mb-3">
+                Scopri le prossime esperienze disponibili
               </p>
+              <Link
+                to="/"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-body font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Esplora eventi
+              </Link>
             </div>
           )}
         </div>
