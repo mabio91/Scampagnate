@@ -132,9 +132,9 @@ const Profile = () => {
 
   return (
     <AppLayout>
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 scroll-smooth">
         {/* Profile header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-6 animate-fade-in">
           <input
             ref={fileInputRef}
             type="file"
@@ -148,7 +148,7 @@ const Profile = () => {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="relative w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group"
+            className="relative w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group transition-transform duration-200 hover:scale-105 active:scale-95"
           >
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" loading="eager" />
@@ -175,14 +175,14 @@ const Profile = () => {
               <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} {t("points")}
             </p>
           </div>
-          <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-colors">
+          <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
             {editing ? <Check className="h-5 w-5 text-success" /> : <Edit3 className="h-5 w-5 text-muted-foreground" />}
           </button>
         </div>
 
         {/* Edit form */}
         {editing && (
-          <div className="space-y-3 mb-6 p-4 rounded-xl bg-card">
+          <div className="space-y-3 mb-6 p-4 rounded-xl bg-card animate-fade-in">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="font-body text-xs">{t("firstName")}</Label>
