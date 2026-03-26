@@ -68,6 +68,7 @@ const EventDetail = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   // New states
