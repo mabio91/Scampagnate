@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
+import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
