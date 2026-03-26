@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import EmptyState from "@/components/EmptyState";
 import {
   Activity, CalendarCheck, CalendarX, AlertCircle, CheckCircle2,
   Flame, Clock, TrendingUp, ChevronDown, ChevronUp, BarChart3, Shield
@@ -61,19 +62,13 @@ export const ActivityHistory = () => {
         <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
           <Activity className="h-5 w-5 text-secondary" /> Cronologia Attività
         </h2>
-        <div className="p-6 rounded-2xl border border-dashed border-border bg-muted/30 text-center">
-          <CalendarCheck className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-          <p className="text-sm font-display font-bold text-foreground mb-1">Nessuna attività ancora</p>
-          <p className="text-xs font-body text-muted-foreground mb-4">
-            Partecipa al tuo primo evento per iniziare a costruire la tua cronologia e sbloccare le statistiche!
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-body font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Scopri gli eventi
-          </Link>
-        </div>
+        <EmptyState
+          icon={CalendarCheck}
+          title="Nessuna attività ancora registrata"
+          description="Partecipa al tuo primo evento per iniziare a costruire la tua cronologia e sbloccare le statistiche"
+          ctaLabel="Esplora eventi"
+          ctaTo="/"
+        />
       </div>
     );
   }

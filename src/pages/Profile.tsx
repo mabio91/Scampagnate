@@ -357,15 +357,17 @@ const Profile = () => {
                 </Button>
               </div>
             ) : (
-              <div className="mt-3 space-y-3">
-                <p className="text-xs font-body text-muted-foreground">
-                  Attiva la tessera per partecipare agli eventi e ottenere la copertura assicurativa.
+              <div className="mt-3 p-4 rounded-xl border border-dashed border-border bg-muted/30 text-center">
+                <CreditCard className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-sm font-display font-bold text-foreground mb-1">Non hai ancora una tessera attiva</p>
+                <p className="text-xs font-body text-muted-foreground mb-3">
+                  Attivala per partecipare agli eventi e ottenere la copertura assicurativa
                 </p>
                 <Button
                   onClick={() => navigate("/")}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
-                  Attiva la tessera
+                  Scopri eventi
                 </Button>
               </div>
             )}
