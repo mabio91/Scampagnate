@@ -32,11 +32,11 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    // Check if membership is still active (registration_date + 1 year > now)
+    // Check if membership is still active (calendar year: Dec 31 of registration year)
     if (profile?.membership_status === "Active" && profile?.membership_registration_date) {
       const regDate = new Date(profile.membership_registration_date);
-      const expiry = new Date(regDate);
-      expiry.setFullYear(expiry.getFullYear() + 1);
+      const year = regDate.getFullYear();
+      const expiry = new Date(year, 11, 31, 23, 59, 59, 999);
       if (new Date() < expiry) {
         return new Response(
           JSON.stringify({ error: "Your membership is still active" }),
