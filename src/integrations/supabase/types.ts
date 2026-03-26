@@ -89,6 +89,36 @@ export type Database = {
         }
         Relationships: []
       }
+      content_pages: {
+        Row: {
+          content_html: string
+          created_at: string
+          id: string
+          is_published: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_html?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_html?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       discount_code_usage: {
         Row: {
           created_at: string
