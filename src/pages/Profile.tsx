@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown } from "lucide-react";
+import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2 } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import { useCategories } from "@/hooks/useEvents";
@@ -132,9 +132,9 @@ const Profile = () => {
 
   return (
     <AppLayout>
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 scroll-smooth">
         {/* Profile header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-6 animate-fade-in">
           <input
             ref={fileInputRef}
             type="file"
@@ -148,7 +148,7 @@ const Profile = () => {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="relative w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group"
+            className="relative w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group transition-transform duration-200 hover:scale-105 active:scale-95"
           >
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" loading="eager" />
@@ -175,14 +175,14 @@ const Profile = () => {
               <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} {t("points")}
             </p>
           </div>
-          <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-colors">
+          <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
             {editing ? <Check className="h-5 w-5 text-success" /> : <Edit3 className="h-5 w-5 text-muted-foreground" />}
           </button>
         </div>
 
         {/* Edit form */}
         {editing && (
-          <div className="space-y-3 mb-6 p-4 rounded-xl bg-card">
+          <div className="space-y-3 mb-6 p-4 rounded-xl bg-card animate-fade-in">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="font-body text-xs">{t("firstName")}</Label>
@@ -326,15 +326,15 @@ const Profile = () => {
                 {/* Benefits */}
                 <div className="mt-3 pt-3 border-t border-primary/10">
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold mb-1.5">Benefici inclusi</p>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <span className="text-success">✓</span> Copertura assicurativa base durante le attività
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Copertura assicurativa base durante le attività
                     </li>
                     <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <span className="text-success">✓</span> Accesso a tutti gli eventi della community
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Accesso a tutti gli eventi della community
                     </li>
                     <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <span className="text-success">✓</span> Prezzi riservati ai soci
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Prezzi riservati ai soci
                     </li>
                   </ul>
                 </div>
@@ -382,12 +382,12 @@ const Profile = () => {
 
 
         {/* Help & Information */}
-        <div className="mb-6 space-y-3">
+        <div className="mb-6 space-y-3 animate-fade-in">
           <h2 className="font-display text-lg font-bold text-foreground">{t("helpAndInfo")}</h2>
           <Button 
             variant="outline" 
             onClick={() => setShowDifficultyGuide(true)} 
-            className="w-full justify-start font-body font-semibold h-12"
+            className="w-full justify-start font-body font-semibold h-12 transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
           >
             <Info className="h-5 w-5 mr-3 text-secondary" />
             {t("trekkingDifficultyGuide")}
@@ -396,7 +396,7 @@ const Profile = () => {
         </div>
 
         {/* Sign out */}
-        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 font-body mb-8">
+        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 active:scale-[0.98] transition-all duration-200 font-body mb-8">
           <LogOut className="h-4 w-4 mr-2" /> {t("signOut")}
         </Button>
       </div>
