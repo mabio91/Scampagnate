@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EventFitScoreCompact } from "@/components/events/EventFitScore";
 import LevelAvatar from "@/components/LevelAvatar";
-import { useCommunityLevel } from "@/hooks/useCommunityLevel";
+import { useCommunityLevel, type CommunityLevel } from "@/hooks/useCommunityLevel";
 import type { FitScoreResult } from "@/hooks/useEventFitScore";
 import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
 import { useMemo } from "react";
