@@ -12,6 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2 } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
+import ProfileGamification from "@/components/profile/ProfileGamification";
+import ProfileMissions from "@/components/profile/ProfileMissions";
+import ProfileReliability from "@/components/profile/ProfileReliability";
+import LevelAvatar from "@/components/LevelAvatar";
 import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
@@ -149,20 +153,21 @@ const Profile = () => {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="relative w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden group transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="relative group transition-transform duration-200 hover:scale-105 active:scale-95"
           >
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" loading="eager" />
-            ) : (
-              <span className="text-2xl font-display font-bold text-primary">
-                {profile?.first_name?.[0] || "?"}{profile?.last_name?.[0] || ""}
-              </span>
-            )}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <LevelAvatar
+              avatarUrl={profile?.avatar_url}
+              firstName={profile?.first_name}
+              lastName={profile?.last_name}
+              points={profile?.total_points || 0}
+              size="lg"
+              showBadge
+            />
+            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Camera className="h-5 w-5 text-white" />
             </div>
             {uploading && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               </div>
             )}
@@ -375,8 +380,17 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* Gamification: Points & Level */}
+        <ProfileGamification />
+
+        {/* Missions */}
+        <ProfileMissions />
+
         {/* Badges */}
         <ProfileBadges />
+
+        {/* Reliability */}
+        <ProfileReliability />
 
         {/* Activity History Dashboard */}
         <ActivityHistory />
