@@ -256,6 +256,7 @@ const EventForm = () => {
         visibility: isDuplicating ? "private" : (event.visibility || "public"),
         gallery_images: (event.gallery_images as any[]) || [],
       });
+      setRegistrationOpen(event.status !== "closed");
       // Parse existing cancellation policy
       const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
       setPolicyType(pt || "flexible");
