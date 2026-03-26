@@ -73,18 +73,6 @@ const Profile = () => {
     }
   };
 
-  const { data: userBadges } = useQuery({
-    queryKey: ["user-badges", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data } = await supabase
-        .from("user_badges")
-        .select("*, badges(*)")
-        .eq("user_id", user.id);
-      return data || [];
-    },
-    enabled: !!user,
-  });
 
   const { data: pastEvents } = useQuery({
     queryKey: ["past-events", user?.id],
