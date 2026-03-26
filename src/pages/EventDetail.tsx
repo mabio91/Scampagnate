@@ -114,6 +114,9 @@ const EventDetail = () => {
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
   const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
 
+  // Event Fit Score
+  const fitScore = useEventFitScore(eventAccessRules, event ? { difficulty: event.difficulty, category: event.category } : null);
+
   // Dynamic pricing eligibility
   const rawPriceOptions = event?.price_options as PriceOption[] | null;
   const { data: resolvedPriceOptions } = usePricingEligibility(rawPriceOptions);
