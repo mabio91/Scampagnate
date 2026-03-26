@@ -52,8 +52,9 @@ serve(async (req) => {
       const regDate = new Date(profile.membership_registration_date);
       if (Number.isNaN(regDate.getTime())) return true;
 
-      const expiry = new Date(regDate);
-      expiry.setFullYear(expiry.getFullYear() + 1);
+      // Calendar year expiry: Dec 31 of the registration year
+      const year = regDate.getFullYear();
+      const expiry = new Date(year, 11, 31, 23, 59, 59, 999);
       return new Date() < expiry;
     })();
 
