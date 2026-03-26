@@ -33,6 +33,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
+  const [showProposalForm, setShowProposalForm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useCategories();
