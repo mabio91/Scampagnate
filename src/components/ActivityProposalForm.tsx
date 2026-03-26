@@ -203,7 +203,7 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
                 value={location}
                 onChange={(val) => { setLocation(val); setErrors(p => ({ ...p, location: false })); }}
                 placeholder="Città o luogo (es. Monte Soratte, Roma)"
-                className={errors.location ? "border-destructive" : ""}
+                error={errors.location}
               />
               {errors.location && <p className="text-xs text-destructive mt-1">Campo obbligatorio</p>}
             </div>
