@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Award, Lock, ChevronDown, ChevronUp } from "lucide-react";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { Progress } from "@/components/ui/progress";
+import EmptyState from "@/components/EmptyState";
 import {
   Dialog,
   DialogContent,
@@ -136,13 +137,14 @@ const ProfileBadges = () => {
             ))}
           </div>
         ) : (
-          <div className="p-4 rounded-xl border border-dashed border-border bg-muted/30 text-center">
-            <Award className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-            <p className="text-sm font-body font-semibold text-foreground mb-1">Nessun badge ottenuto</p>
-            <p className="text-xs font-body text-muted-foreground">
-              Partecipa al tuo primo evento per sbloccare il badge <span className="font-semibold text-primary">"Nuovo Arrivato"</span>!
-            </p>
-          </div>
+          <EmptyState
+            icon={Award}
+            title="Nessun badge ottenuto"
+            description="Partecipa al tuo primo evento per iniziare a guadagnare badge e mostrare i tuoi traguardi"
+            ctaLabel="Scopri eventi"
+            ctaTo="/"
+            compact
+          />
         )}
       </div>
 
