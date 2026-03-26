@@ -28,6 +28,14 @@ const EmptyState = ({ icon: Icon, title, description, ctaLabel, ctaTo, onCtaClic
           {ctaLabel}
         </Link>
       )}
+      {ctaLabel && !ctaTo && onCtaClick && (
+        <button
+          onClick={onCtaClick}
+          className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-body font-semibold hover:bg-primary/90 transition-colors"
+        >
+          {ctaLabel}
+        </button>
+      )}
     </div>
   );
 };
