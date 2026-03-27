@@ -69,6 +69,7 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
     awardPoints();
   }, [percentage, user]);
 
+  if (!profile) return null;
   // Don't show if fully complete
   if (percentage === 100) return null;
 
