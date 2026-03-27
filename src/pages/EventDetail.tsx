@@ -44,6 +44,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import useEmblaCarousel from "embla-carousel-react";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
+import { resolveEventBadges } from "@/lib/eventBadges";
 
 const EventDetail = () => {
   const { id } = useParams();
