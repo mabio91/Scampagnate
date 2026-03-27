@@ -618,6 +618,12 @@ const EventDetail = () => {
                 {event.category.name}
               </span>
             )}
+            {/* Event badges */}
+            {eventBadges.map((b) => (
+              <span key={b.key} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold backdrop-blur-sm border border-white/10 shadow-sm ${b.className}`}>
+                {b.emoji} {b.label}
+              </span>
+            ))}
             {exclusivityIndicators.map((ind, idx) => (
               <span key={idx} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold backdrop-blur-sm border border-white/10 shadow-sm ${
                 ind.variant === "members" ? "bg-primary/90 text-primary-foreground" :
