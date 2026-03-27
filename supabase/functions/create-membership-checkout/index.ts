@@ -47,39 +47,15 @@ serve(async (req) => {
 
     const { eventId } = await req.json();
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-
-    // Find or create Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    }
-
     const origin = req.headers.get("origin") || "https://scampagnate.app";
+    const successUrl = `${origin}/membership-success?event_id=${eventId || ""}`;
 
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      payment_method_types: ["card", "link", "paypal"],
-      line_items: [
-        {
-          price: "price_1TFUUY0xDIA9nImZF9nt1Xq1",
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${origin}/membership-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId || ""}`,
-      cancel_url: `${origin}/event/${eventId || ""}`,
-      metadata: {
-        user_id: user.id,
-        event_id: eventId || "",
-      },
-    });
+    // Use Stripe Payment Link with prefilled email and client reference
+    const paymentLinkUrl = new URL("https://buy.stripe.com/test_9B69AL3ZI1f175ogc71Fe00");
+    paymentLinkUrl.searchParams.set("prefilled_email", user.email);
+    paymentLinkUrl.searchParams.set("client_reference_id", user.id);
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ url: paymentLinkUrl.toString() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
