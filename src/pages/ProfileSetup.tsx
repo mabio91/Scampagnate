@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,6 +111,9 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const carSectionRef = useRef<HTMLDivElement>(null);
+  const interestsSectionRef = useRef<HTMLDivElement>(null);
+  const [step3Errors, setStep3Errors] = useState<{ car?: boolean; interests?: boolean }>({});
   const [searchParams] = useSearchParams();
 
   // Edit mode: when user already completed onboarding and is editing preferences
@@ -495,8 +498,8 @@ const ProfileSetup = () => {
                 </div>
 
                 {/* Car availability */}
-                <div className="space-y-2">
-                  <Label className="font-body text-sm font-semibold">Sei automunito?</Label>
+                <div ref={carSectionRef} className="space-y-2">
+                  <Label className={`font-body text-sm font-semibold ${step3Errors.car ? "text-destructive" : ""}`}>Sei automunito? {step3Errors.car && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}</Label>
                   <div className="space-y-2">
                     {[
                       { val: "yes", emoji: "🚗", label: "Sì" },
