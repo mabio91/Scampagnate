@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS event_badges jsonb DEFAULT '[]'::jsonb;

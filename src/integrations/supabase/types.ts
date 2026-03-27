@@ -599,6 +599,7 @@ export type Database = {
           duration: string | null
           elevation: string | null
           equipment_list: Json | null
+          event_badges: Json | null
           featured: boolean
           gallery_images: Json | null
           id: string
@@ -631,6 +632,7 @@ export type Database = {
           duration?: string | null
           elevation?: string | null
           equipment_list?: Json | null
+          event_badges?: Json | null
           featured?: boolean
           gallery_images?: Json | null
           id?: string
@@ -663,6 +665,7 @@ export type Database = {
           duration?: string | null
           elevation?: string | null
           equipment_list?: Json | null
+          event_badges?: Json | null
           featured?: boolean
           gallery_images?: Json | null
           id?: string
