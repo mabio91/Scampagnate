@@ -111,11 +111,6 @@ serve(async (req) => {
 
     // Apply discount if provided
     if (discountCodeId) {
-      // Use service role to validate and record discount
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-      );
 
       const { data: discount, error: discountError } = await supabaseAdmin
         .from("discount_codes")
