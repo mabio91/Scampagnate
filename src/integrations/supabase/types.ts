@@ -1173,6 +1173,45 @@ export type Database = {
           },
         ]
       }
+      trekking_difficulty_levels: {
+        Row: {
+          color_background: string
+          color_border: string
+          color_icon: string
+          color_primary: string
+          created_at: string
+          icon: string
+          id: string
+          label: string
+          level_number: number
+          updated_at: string
+        }
+        Insert: {
+          color_background?: string
+          color_border?: string
+          color_icon?: string
+          color_primary?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          label: string
+          level_number: number
+          updated_at?: string
+        }
+        Update: {
+          color_background?: string
+          color_border?: string
+          color_icon?: string
+          color_primary?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          label?: string
+          level_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_id: string
