@@ -683,7 +683,7 @@ const EventDetail = () => {
 
         {/* Event Fit Score — below date/location/weather */}
         {user && !accessData?.failedRules?.length && (
-          <EventFitScore fitScore={fitScore} showWarnings={true} />
+          <EventFitScore fitScore={fitScore} />
         )}
 
         {/* 10. ORGANIZER + 9. PARTICIPANTS (WeMeet style) */}
