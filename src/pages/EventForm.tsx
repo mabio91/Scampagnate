@@ -237,6 +237,8 @@ const EventForm = () => {
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
+  const [manualBadges, setManualBadges] = useState<string[]>([]);
+  const [customBadge, setCustomBadge] = useState("");
 
   interface PriceOptionInput {
     name: string;
