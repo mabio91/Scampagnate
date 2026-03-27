@@ -88,6 +88,36 @@ const BadgeSelector = ({ value, onChange }: { value: string; onChange: (badgeId:
   );
 };
 
+const PricingBadgeSelector = ({ selectedIds, onChange }: { selectedIds: string[]; onChange: (ids: string[]) => void }) => {
+  const { data: badges } = useBadges();
+  const toggleBadge = (id: string) => {
+    onChange(selectedIds.includes(id) ? selectedIds.filter(b => b !== id) : [...selectedIds, id]);
+  };
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[11px] text-muted-foreground">Select badge(s) — user must have at least one</Label>
+      <div className="flex flex-wrap gap-1.5">
+        {badges?.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => toggleBadge(b.id)}
+            className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+              selectedIds.includes(b.id)
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/50 text-muted-foreground border-border/50 hover:border-primary/50"
+            }`}
+          >
+            {b.icon} {b.name}
+          </button>
+        ))}
+        {(!badges || badges.length === 0) && (
+          <span className="text-xs text-muted-foreground">No badges available</span>
+        )}
+      </div>
+    </div>
+  );
+
 interface MeetingPointInput {
   name: string;
   location: string;
