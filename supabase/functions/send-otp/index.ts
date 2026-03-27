@@ -6,22 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const TWILIO_ACCOUNT_SID = "ACf3af1b91609b9829e72c133a0d77c2d6";
+const TWILIO_AUTH_TOKEN = "d2b75f084eb4f86b83def39b3c7f1aa2";
+const TWILIO_SENDER = "+14155238886";
+
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  if (req.method === "OPTIONS") { return new Response(null, { headers: corsHeaders }); }
   try {
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    if (!accountSid) throw new Error("TWILIO_ACCOUNT_SID is not configured");
-
-    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    if (!authToken) throw new Error("TWILIO_AUTH_TOKEN is not configured");
-
-    const serviceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
-    if (!serviceSid) throw new Error("TWILIO_VERIFY_SERVICE_SID is not configured");
-
-    // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
 
@@ -37,7 +28,7 @@ serve(async (req) => {
     if (!phone || !channel) throw new Error("Missing phone or channel");
     if (!["sms", "whatsapp"].includes(channel)) throw new Error("Invalid channel");
 
-    // Rate limit: check last OTP sent in last 30 seconds
+    // Check rate limit
     const { data: recentOtp } = await supabase
       .from("phone_otps")
       .select("created_at")
@@ -51,71 +42,80 @@ serve(async (req) => {
       if (elapsed < 30000) {
         return new Response(
           JSON.stringify({ error: "Attendi 30 secondi prima di richiedere un nuovo codice", cooldown: Math.ceil((30000 - elapsed) / 1000) }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
 
-    // Delete old OTPs for this user
-    await supabase
-      .from("phone_otps")
-      .delete()
-      .eq("user_id", user.id);
+    const formattedPhone = phone.startsWith("+") ? phone : `+${phone}`;
 
-    // Send verification via Twilio Verify API
-    const twilioUrl = `https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`;
+    // Generate 6-digit OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    // Hash OTP
+    const encoder = new TextEncoder();
+    const data = encoder.encode(otp);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const otpHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+    await supabase.from("phone_otps").delete().eq("user_id", user.id);
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const { error: insertError } = await supabase.from("phone_otps").insert({
+      user_id: user.id,
+      phone_number: formattedPhone,
+      otp_hash: otpHash,
+      channel,
+      expires_at: expiresAt,
+    });
+    if (insertError) throw new Error(`Failed to store OTP: ${insertError.message}`);
+
+    const authString = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+    const message = `Il tuo codice di verifica Scampagnate è: ${otp}. Scade tra 5 minuti.`;
+
+    let toNumber = formattedPhone;
     
-    const bodyParams: Record<string, string> = {
-      To: phone,
-      Channel: channel,
-    };
+    // Per gli SMS, usa il numero Twilio ufficiale configurato in Supabase
+    let fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER") || TWILIO_SENDER;
 
-    const twilioRes = await fetch(twilioUrl, {
+    if (channel === "whatsapp") {
+      toNumber = `whatsapp:${formattedPhone}`;
+      // Sandbox WhatsApp number
+      fromNumber = `whatsapp:${TWILIO_SENDER}`;
+    }
+
+    // Call Twilio Programmable Messaging API
+    const twilioResponse = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
       method: "POST",
       headers: {
-        Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
+        "Authorization": `Basic ${authString}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams(bodyParams),
     });
 
-    const twilioData = await twilioRes.json();
+    const twilioData = await twilioResponse.json();
 
-    if (!twilioRes.ok) {
-      console.error("Twilio Verify error:", JSON.stringify(twilioData));
+    if (!twilioResponse.ok) {
+      console.error("Twilio error:", JSON.stringify(twilioData));
 
-      // If WhatsApp fails, suggest SMS fallback
+      // Rollback OTP insertion on failure to prevent rate-limit blocking
+      await supabase.from("phone_otps").delete().eq("user_id", user.id);
+
       if (channel === "whatsapp") {
         return new Response(
           JSON.stringify({ error: "WhatsApp non disponibile, usa SMS", fallback: "sms" }),
-          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      throw new Error(`Failed to send OTP: ${JSON.stringify(twilioData)}`);
+      throw new Error(`Errore Twilio: ${twilioData.message || JSON.stringify(twilioData)}`);
     }
 
-    // Store a record for rate limiting and tracking
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    await supabase
-      .from("phone_otps")
-      .insert({
-        user_id: user.id,
-        phone_number: phone,
-        otp_hash: twilioData.sid || "twilio-verify",
-        channel,
-        expires_at: expiresAt,
-      });
-
-    return new Response(
-      JSON.stringify({ success: true, channel }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, channel }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("send-otp error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
