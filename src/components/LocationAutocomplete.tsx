@@ -4,6 +4,13 @@ import { Input } from "@/components/ui/input";
 import { MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface Suggestion {
+  placeId: string;
+  mainText: string;
+  secondaryText: string;
+  fullText: string;
+}
+
 interface LocationAutocompleteProps {
   value: string;
   onChange: (value: string, lat?: number, lng?: number) => void;
@@ -12,6 +19,8 @@ interface LocationAutocompleteProps {
   className?: string;
   error?: boolean;
 }
+
+const GOOGLE_API_KEY = "AIzaSyCPktJ9nE3SLzugNWgWoh_givCXkl8w2Qg";
 
 const LocationAutocomplete = ({
   value,
@@ -23,36 +32,14 @@ const LocationAutocomplete = ({
 }: LocationAutocompleteProps) => {
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesService = useRef<google.maps.places.PlacesService | null>(null);
-  const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const dummyDiv = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setInputValue(value);
   }, [value]);
-
-  // Initialize services once Google Maps is loaded
-  const ensureServices = useCallback(() => {
-    if (!window.google?.maps?.places) return false;
-    if (!autocompleteService.current) {
-      autocompleteService.current = new google.maps.places.AutocompleteService();
-    }
-    if (!placesService.current) {
-      if (!dummyDiv.current) {
-        dummyDiv.current = document.createElement("div");
-      }
-      placesService.current = new google.maps.places.PlacesService(dummyDiv.current);
-    }
-    if (!sessionToken.current) {
-      sessionToken.current = new google.maps.places.AutocompleteSessionToken();
-    }
-    return true;
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -64,45 +51,58 @@ const LocationAutocomplete = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const searchLocations = useCallback(
-    async (query: string) => {
-      if (query.length < 3) {
+  const searchLocations = useCallback(async (query: string) => {
+    if (query.length < 3) {
+      setSuggestions([]);
+      setIsOpen(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Use Places API (New) - Autocomplete REST endpoint
+      const res = await fetch(
+        "https://places.googleapis.com/v1/places:autocomplete",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": GOOGLE_API_KEY,
+          },
+          body: JSON.stringify({
+            input: query,
+            includedRegionCodes: ["it"],
+            languageCode: "it",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error("Places Autocomplete error:", res.status);
         setSuggestions([]);
         setIsOpen(false);
         return;
       }
-      if (!ensureServices()) return;
 
-      setLoading(true);
-      try {
-        autocompleteService.current!.getPlacePredictions(
-          {
-            input: query,
-            componentRestrictions: { country: "it" },
-            sessionToken: sessionToken.current!,
-            types: ["geocode", "establishment"],
-          },
-          (predictions, status) => {
-            setLoading(false);
-            if (
-              status === google.maps.places.PlacesServiceStatus.OK &&
-              predictions
-            ) {
-              setSuggestions(predictions);
-              setIsOpen(predictions.length > 0);
-            } else {
-              setSuggestions([]);
-              setIsOpen(false);
-            }
-          }
-        );
-      } catch {
-        setLoading(false);
-        setSuggestions([]);
-      }
-    },
-    [ensureServices]
-  );
+      const data = await res.json();
+      const results: Suggestion[] = (data.suggestions || [])
+        .filter((s: any) => s.placePrediction)
+        .map((s: any) => ({
+          placeId: s.placePrediction.placeId,
+          mainText: s.placePrediction.structuredFormat?.mainText?.text || "",
+          secondaryText: s.placePrediction.structuredFormat?.secondaryText?.text || "",
+          fullText: s.placePrediction.text?.text || "",
+        }));
+
+      setSuggestions(results);
+      setIsOpen(results.length > 0);
+    } catch (err) {
+      console.error("Places search error:", err);
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -112,33 +112,35 @@ const LocationAutocomplete = ({
     debounceRef.current = setTimeout(() => searchLocations(val), 300);
   };
 
-  const handleSelect = (prediction: google.maps.places.AutocompletePrediction) => {
-    if (!ensureServices()) return;
-
-    placesService.current!.getDetails(
-      {
-        placeId: prediction.place_id,
-        fields: ["formatted_address", "geometry", "name"],
-        sessionToken: sessionToken.current!,
-      },
-      (place, status) => {
-        // Reset session token after getDetails (billing best practice)
-        sessionToken.current = new google.maps.places.AutocompleteSessionToken();
-
-        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-          const displayName = place.formatted_address || place.name || prediction.description;
-          const lat = place.geometry?.location?.lat();
-          const lng = place.geometry?.location?.lng();
-          setInputValue(displayName!);
-          onChange(displayName!, lat, lng);
-        } else {
-          setInputValue(prediction.description);
-          onChange(prediction.description);
-        }
-      }
-    );
+  const handleSelect = async (suggestion: Suggestion) => {
     setIsOpen(false);
     setSuggestions([]);
+    setInputValue(suggestion.fullText);
+
+    try {
+      // Fetch place details for coordinates using Places API (New)
+      const res = await fetch(
+        `https://places.googleapis.com/v1/places/${suggestion.placeId}?fields=formattedAddress,displayName,location&languageCode=it`,
+        {
+          headers: {
+            "X-Goog-Api-Key": GOOGLE_API_KEY,
+          },
+        }
+      );
+
+      if (res.ok) {
+        const place = await res.json();
+        const displayName = place.formattedAddress || place.displayName?.text || suggestion.fullText;
+        const lat = place.location?.latitude;
+        const lng = place.location?.longitude;
+        setInputValue(displayName);
+        onChange(displayName, lat, lng);
+      } else {
+        onChange(suggestion.fullText);
+      }
+    } catch {
+      onChange(suggestion.fullText);
+    }
   };
 
   return (
@@ -165,30 +167,26 @@ const LocationAutocomplete = ({
 
       {isOpen && suggestions.length > 0 && (
         <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
-          {suggestions.map((s) => {
-            const main = s.structured_formatting.main_text;
-            const secondary = s.structured_formatting.secondary_text;
-            return (
-              <button
-                key={s.place_id}
-                type="button"
-                onClick={() => handleSelect(s)}
-                className="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors"
-              >
-                <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <p className="text-sm font-body font-semibold text-foreground truncate">
-                    {main}
+          {suggestions.map((s) => (
+            <button
+              key={s.placeId}
+              type="button"
+              onClick={() => handleSelect(s)}
+              className="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors"
+            >
+              <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm font-body font-semibold text-foreground truncate">
+                  {s.mainText}
+                </p>
+                {s.secondaryText && (
+                  <p className="text-xs font-body text-muted-foreground truncate">
+                    {s.secondaryText}
                   </p>
-                  {secondary && (
-                    <p className="text-xs font-body text-muted-foreground truncate">
-                      {secondary}
-                    </p>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+                )}
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>
