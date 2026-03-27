@@ -7,6 +7,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { UI_LABELS } from "@/lib/labels";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
+import { resolveEventBadges } from "@/lib/eventBadges";
 
 const exclusivityIcons: Record<string, typeof Crown> = {
   members: Crown,
@@ -25,6 +26,15 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
   const indicators = getExclusivityIndicators(event.access_rules as AccessRulesConfig | null);
   const spotsLeft = event.spots_total - event.spots_taken;
+
+  const eventBadges = useMemo(() => resolveEventBadges({
+    price: Number(event.price),
+    spots_taken: event.spots_taken,
+    spots_total: event.spots_total,
+    status: event.status,
+    access_rules: event.access_rules,
+    event_badges: (event as any).event_badges,
+  }), [event.price, event.spots_taken, event.spots_total, event.status, event.access_rules, (event as any).event_badges]);
 
   const fitScore = useEventFitScore(
     showCompatibility ? event.access_rules : null,
@@ -75,6 +85,16 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
           {event.difficulty && (
             <div className="absolute top-1 left-1">
               <DifficultyBadge difficulty={event.difficulty} className="bg-background/80 backdrop-blur-md text-foreground shadow-sm px-1.5 py-0.5 text-[10px]" showLabel={false} />
+            </div>
+          )}
+          {/* Event badges (top-right) */}
+          {eventBadges.length > 0 && (
+            <div className="absolute top-1 right-1 flex flex-col gap-0.5 items-end">
+              {eventBadges.map((b) => (
+                <span key={b.key} className={`px-1.5 py-0.5 rounded-md text-[9px] font-body font-bold backdrop-blur-md shadow-sm ${b.className}`}>
+                  {b.emoji} {b.label}
+                </span>
+              ))}
             </div>
           )}
           {discount && (

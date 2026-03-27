@@ -5,6 +5,7 @@ import { useCategories } from "@/hooks/useEvents";
 import type { AccessRule, AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
+import { MANUAL_BADGE_OPTIONS } from "@/lib/eventBadges";
 import AppLayout from "@/components/layout/AppLayout";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
@@ -237,6 +238,8 @@ const EventForm = () => {
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
+  const [manualBadges, setManualBadges] = useState<string[]>([]);
+  const [customBadge, setCustomBadge] = useState("");
 
   interface PriceOptionInput {
     name: string;
@@ -360,6 +363,14 @@ const EventForm = () => {
         setAccessRules(ar.rules || []);
         setExclusivityLabel(ar.exclusivity_label || "");
         setRestrictionMessage(ar.restriction_message || "");
+      }
+      // Load event badges
+      if ((event as any).event_badges && Array.isArray((event as any).event_badges)) {
+        const badges = (event as any).event_badges as string[];
+        const knownManual = ["evento_top", "best_seller", "consigliato", "prezzo_speciale", "early_bird"];
+        setManualBadges(badges.filter(b => knownManual.includes(b)));
+        const custom = badges.find(b => !knownManual.includes(b));
+        if (custom) setCustomBadge(custom);
       }
 
       const { data: options } = await supabase
@@ -501,6 +512,7 @@ const EventForm = () => {
           exclusivity_label: exclusivityLabel || undefined,
           restriction_message: restrictionMessage || undefined,
         } as any : null,
+        event_badges: [...manualBadges, ...(customBadge.trim() ? [customBadge.trim()] : [])] as any,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
         status: (registrationOpen ? "published" : "closed") as Database["public"]["Enums"]["event_status"],
@@ -973,7 +985,46 @@ const EventForm = () => {
             <Label htmlFor="featured">Featured event</Label>
           </div>
 
-          {/* Weather Override (Admin/Organizer) */}
+          {/* Event Badges */}
+          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              🏷️ Event Badges
+            </Label>
+            <p className="text-[11px] text-muted-foreground font-body">Select up to 2 manual badges. Auto badges (Ultimi posti, Gratuito, Founding Event) are applied automatically.</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MANUAL_BADGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setManualBadges(prev =>
+                      prev.includes(opt.value)
+                        ? prev.filter(b => b !== opt.value)
+                        : prev.length < 2 ? [...prev, opt.value] : prev
+                    );
+                  }}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    manualBadges.includes(opt.value)
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted/50 text-muted-foreground border-border/50 hover:border-primary/50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Custom badge (optional)</Label>
+              <Input
+                placeholder="e.g., Nuovo formato"
+                value={customBadge}
+                onChange={(e) => setCustomBadge(e.target.value)}
+                className="h-8 text-xs mt-0.5"
+                maxLength={25}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
             <Label className="text-sm font-semibold flex items-center gap-1.5">
               🌤️ Override Meteo (opzionale)

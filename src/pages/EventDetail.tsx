@@ -44,6 +44,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import useEmblaCarousel from "embla-carousel-react";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
+import { resolveEventBadges } from "@/lib/eventBadges";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -171,6 +172,15 @@ const EventDetail = () => {
   const imageSrc = resolveEventImageSrc(event.image_url);
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
+  
+  const eventBadges = resolveEventBadges({
+    price: Number(event.price),
+    spots_taken: event.spots_taken,
+    spots_total: event.spots_total,
+    status: event.status,
+    access_rules: event.access_rules,
+    event_badges: (event as any).event_badges,
+  });
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
   const eventStartDate = parseEventDateTime(event.date, event.time);
   const isEventPast = eventStartDate < new Date();
@@ -608,6 +618,12 @@ const EventDetail = () => {
                 {event.category.name}
               </span>
             )}
+            {/* Event badges */}
+            {eventBadges.map((b) => (
+              <span key={b.key} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold backdrop-blur-sm border border-white/10 shadow-sm ${b.className}`}>
+                {b.emoji} {b.label}
+              </span>
+            ))}
             {exclusivityIndicators.map((ind, idx) => (
               <span key={idx} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold backdrop-blur-sm border border-white/10 shadow-sm ${
                 ind.variant === "members" ? "bg-primary/90 text-primary-foreground" :
