@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2 } from "lucide-react";
+import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -20,7 +20,6 @@ import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import ActivityProposalForm from "@/components/ActivityProposalForm";
-import { Info, Lightbulb } from "lucide-react";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
 
 const Profile = () => {
@@ -397,31 +396,69 @@ const Profile = () => {
 
 
         {/* Help & Information */}
-        <div className="mb-6 space-y-3 animate-fade-in">
-          <h2 className="font-display text-lg font-bold text-foreground">Aiuto e informazioni</h2>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowDifficultyGuide(true)} 
-            className="w-full justify-start font-body font-semibold h-12 transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
-          >
-            <Info className="h-5 w-5 mr-3 text-secondary" />
-            Guida difficoltà trekking
-          </Button>
-          <ReportIssueDialog />
-          <Button 
-            variant="outline" 
-            onClick={() => setShowProposalForm(true)} 
-            className="w-full justify-start font-body font-semibold h-12 transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
-          >
-            <Lightbulb className="h-5 w-5 mr-3 text-primary" />
-            Proponi un'attività
-          </Button>
-        </div>
+        <div className="mb-8 animate-fade-in">
+          <h2 className="font-display text-lg font-bold text-foreground mb-4">Aiuto e informazioni</h2>
 
-        {/* Sign out */}
-        <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 active:scale-[0.98] transition-all duration-200 font-body mb-8">
-          <LogOut className="h-4 w-4 mr-2" /> Esci
-        </Button>
+          {/* Contenuti */}
+          <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2 mt-0">Contenuti</p>
+          <div className="space-y-1 mb-5">
+            <Link to="/page/chi-siamo" className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group">
+              <Users className="h-4.5 w-4.5 text-secondary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-body font-semibold text-foreground">Chi siamo</p>
+                <p className="text-xs font-body text-muted-foreground">Scopri la community</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </Link>
+            <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group w-full text-left">
+              <Mountain className="h-4.5 w-4.5 text-secondary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-body font-semibold text-foreground">Guida difficoltà trekking</p>
+                <p className="text-xs font-body text-muted-foreground">Come scegliere il livello giusto</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </button>
+          </div>
+
+          {/* Community */}
+          <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Community</p>
+          <div className="space-y-1 mb-5">
+            <button onClick={() => setShowProposalForm(true)} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group w-full text-left">
+              <Lightbulb className="h-4.5 w-4.5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-body font-semibold text-foreground">Proponi un'attività</p>
+                <p className="text-xs font-body text-muted-foreground">Condividi la tua idea con il gruppo</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </button>
+          </div>
+
+          {/* Supporto */}
+          <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Supporto</p>
+          <div className="space-y-1 mb-5">
+            <Link to="/page/faq" className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group">
+              <HelpCircle className="h-4.5 w-4.5 text-secondary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-body font-semibold text-foreground">FAQ</p>
+                <p className="text-xs font-body text-muted-foreground">Risposte rapide alle domande più comuni</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </Link>
+            <ReportIssueDialog />
+          </div>
+
+          {/* Account */}
+          <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Account</p>
+          <div className="space-y-1">
+            <button onClick={handleSignOut} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-destructive/5 transition-colors group w-full text-left">
+              <LogOut className="h-4.5 w-4.5 text-destructive shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-body font-semibold text-destructive">Esci</p>
+                <p className="text-xs font-body text-muted-foreground">Termina la sessione</p>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
       <DifficultyGuideDialog 
         open={showDifficultyGuide} 

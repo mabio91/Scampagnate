@@ -33,6 +33,7 @@ const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const EventParticipants = lazy(() => import("./pages/EventParticipants"));
+const ContentPage = lazy(() => import("./pages/ContentPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,6 +78,7 @@ const AnimatedRoutes = () => {
           <Route path="/membership-success" element={<MembershipSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </PageTransition>
