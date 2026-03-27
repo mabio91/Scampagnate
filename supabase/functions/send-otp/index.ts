@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const TWILIO_ACCOUNT_SID = "ACf3af1b91609b9829e72c133a0d77c2d6";
@@ -92,11 +92,7 @@ serve(async (req) => {
         "Authorization": `Basic ${authString}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        To: toNumber,
-        From: fromNumber,
-        Body: message,
-      }),
+      body: new URLSearchParams(bodyParams),
     });
 
     const twilioData = await twilioResponse.json();

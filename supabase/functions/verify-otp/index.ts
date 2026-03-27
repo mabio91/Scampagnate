@@ -3,12 +3,21 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") { return new Response(null, { headers: corsHeaders }); }
   try {
+    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    if (!accountSid) throw new Error("TWILIO_ACCOUNT_SID is not configured");
+
+    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    if (!authToken) throw new Error("TWILIO_AUTH_TOKEN is not configured");
+
+    const serviceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
+    if (!serviceSid) throw new Error("TWILIO_VERIFY_SERVICE_SID is not configured");
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
 
@@ -22,10 +31,13 @@ serve(async (req) => {
 
     const { otp } = await req.json();
     if (!otp || typeof otp !== "string" || otp.length !== 6) {
-      throw new Error("Invalid OTP format");
+      return new Response(
+        JSON.stringify({ error: "Formato codice non valido", code: "INVALID" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Get latest OTP for user
+    // Get the OTP record to find the phone number
     const { data: otpRecord, error: fetchError } = await supabase
       .from("phone_otps")
       .select("*")
@@ -58,14 +70,25 @@ serve(async (req) => {
       );
     }
 
-    // Hash the provided OTP and compare
-    const encoder = new TextEncoder();
-    const data = encoder.encode(otp);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const otpHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    // Verify via Twilio Verify API
+    const phone = otpRecord.phone_number;
+    const twilioUrl = `https://verify.twilio.com/v2/Services/${serviceSid}/VerificationCheck`;
 
-    if (otpHash !== otpRecord.otp_hash) {
+    const twilioRes = await fetch(twilioUrl, {
+      method: "POST",
+      headers: {
+        Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: phone,
+        Code: otp,
+      }),
+    });
+
+    const twilioData = await twilioRes.json();
+
+    if (!twilioRes.ok || twilioData.status !== "approved") {
       // Increment attempts
       await supabase
         .from("phone_otps")
@@ -74,10 +97,10 @@ serve(async (req) => {
 
       const remaining = otpRecord.max_attempts - otpRecord.attempts - 1;
       return new Response(
-        JSON.stringify({ 
-          error: "Codice non valido", 
+        JSON.stringify({
+          error: "Codice non valido",
           code: "INVALID",
-          remaining_attempts: remaining
+          remaining_attempts: remaining,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
