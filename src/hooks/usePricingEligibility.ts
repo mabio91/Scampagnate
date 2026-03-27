@@ -125,6 +125,11 @@ function checkGroupEligibility(
       if (!ctx.isMember) return { eligible: false, reason: "Prezzo riservato ai membri attivi" };
       return { eligible: true, reason: "" };
 
+    case "new_users":
+      if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
+      if (ctx.attendedCount > 0) return { eligible: false, reason: "Prezzo riservato ai nuovi utenti (0 eventi)" };
+      return { eligible: true, reason: "" };
+
     case "experienced":
       if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
       if (ctx.attendedCount < 1) return { eligible: false, reason: "Prezzo riservato a chi ha già partecipato ad almeno 1 evento" };
@@ -136,11 +141,12 @@ function checkGroupEligibility(
       return { eligible: true, reason: "" };
 
     default:
-      // badge:<id> pattern
+      // badge:<id1>,<id2> pattern — user must have at least one
       if (group.startsWith("badge:")) {
-        const badgeId = group.replace("badge:", "");
+        const badgeIds = group.replace("badge:", "").split(",").filter(Boolean);
         if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
-        if (!ctx.userBadgeIds.includes(badgeId)) return { eligible: false, reason: "Prezzo riservato a chi possiede un badge specifico" };
+        const hasAny = badgeIds.some(id => ctx.userBadgeIds.includes(id));
+        if (!hasAny) return { eligible: false, reason: "Prezzo riservato a chi possiede un badge specifico" };
         return { eligible: true, reason: "" };
       }
       return { eligible: true, reason: "" };
