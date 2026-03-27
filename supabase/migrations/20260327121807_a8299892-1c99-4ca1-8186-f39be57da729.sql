@@ -1,0 +1,6 @@
+-- Seed initial CMS content pages for Chi siamo and FAQ
+INSERT INTO content_pages (slug, title, content_html, is_published)
+VALUES 
+  ('chi-siamo', 'Chi siamo', '<p>Benvenuto nella nostra community! Siamo un gruppo di appassionati di attività outdoor e sociali.</p><p>Organizziamo trekking, aperitivi, cene e molto altro per creare momenti indimenticabili insieme.</p>', true),
+  ('faq', 'FAQ', '<h3>Come mi iscrivo a un evento?</h3><p>Vai nella pagina dell''evento e clicca su "Iscriviti". Se l''evento è a pagamento, verrai guidato al checkout.</p><h3>Posso cancellare la mia iscrizione?</h3><p>Sì, puoi cancellare la tua iscrizione dalla sezione "I Miei Eventi" fino alla data dell''evento.</p><h3>Come funziona la tessera?</h3><p>La tessera è valida fino al 31 dicembre dell''anno corrente e include copertura assicurativa durante le attività.</p><h3>Come contatto l''organizzatore?</h3><p>Nella pagina dell''evento trovi il pulsante per contattare l''organizzatore via WhatsApp.</p>', true)
+ON CONFLICT DO NOTHING;
