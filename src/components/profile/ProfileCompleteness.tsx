@@ -1,5 +1,4 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { UserCheck, CheckCircle2, XCircle } from "lucide-react";
@@ -7,24 +6,30 @@ import { UserCheck, CheckCircle2, XCircle } from "lucide-react";
 interface ProfileField {
   label: string;
   completed: boolean;
+  group: "profile" | "preferences";
 }
 
-const ProfileCompleteness = () => {
+interface ProfileCompletenessProps {
+  onCompleteProfile?: () => void;
+}
+
+const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) => {
   const { profile } = useAuth();
-  const navigate = useNavigate();
 
   if (!profile) return null;
 
   const fields: ProfileField[] = [
-    { label: "Nome e cognome", completed: !!(profile.first_name && profile.last_name) },
-    { label: "Telefono", completed: !!profile.phone },
-    { label: "Foto profilo", completed: !!profile.avatar_url },
-    { label: "Bio", completed: !!profile.bio },
-    { label: "Livello esperienza", completed: !!profile.self_level },
-    { label: "Esperienza trekking", completed: !!profile.trekking_experience },
-    { label: "Frequenza attività", completed: !!profile.activity_frequency },
-    { label: "Interessi", completed: !!(profile.interests && profile.interests.length > 0) },
-    { label: "Automunito", completed: !!profile.has_car },
+    // Profile fields
+    { label: "Nome e cognome", completed: !!(profile.first_name && profile.last_name), group: "profile" },
+    { label: "Telefono", completed: !!profile.phone, group: "profile" },
+    { label: "Foto profilo", completed: !!profile.avatar_url, group: "profile" },
+    { label: "Bio", completed: !!profile.bio, group: "profile" },
+    // Preferences/onboarding fields
+    { label: "Livello esperienza", completed: !!profile.self_level, group: "preferences" },
+    { label: "Esperienza trekking", completed: !!profile.trekking_experience, group: "preferences" },
+    { label: "Frequenza attività", completed: !!profile.activity_frequency, group: "preferences" },
+    { label: "Interessi", completed: !!(profile.interests && profile.interests.length > 0), group: "preferences" },
+    { label: "Automunito", completed: !!profile.has_car, group: "preferences" },
   ];
 
   const completedCount = fields.filter(f => f.completed).length;
@@ -33,7 +38,15 @@ const ProfileCompleteness = () => {
   // Don't show if fully complete
   if (percentage === 100) return null;
 
-  const missingFields = fields.filter(f => !f.completed);
+  const missingProfile = fields.filter(f => !f.completed && f.group === "profile");
+  const missingPreferences = fields.filter(f => !f.completed && f.group === "preferences");
+  const completedFields = fields.filter(f => f.completed);
+
+  const handleClick = () => {
+    if (onCompleteProfile) {
+      onCompleteProfile();
+    }
+  };
 
   return (
     <div className="mb-6">
@@ -50,20 +63,37 @@ const ProfileCompleteness = () => {
           Completa il profilo per migliorare i suggerimenti e accedere a tutti gli eventi
         </p>
 
-        {/* Show missing + completed fields */}
-        <div className="space-y-1.5 mb-3">
-          {missingFields.slice(0, 4).map((field) => (
-            <div key={field.label} className="flex items-center gap-2">
-              <XCircle className="h-3.5 w-3.5 text-destructive/70 flex-shrink-0" />
-              <span className="text-xs font-body text-muted-foreground">{field.label}</span>
+        {/* Missing fields grouped */}
+        <div className="space-y-2.5 mb-3">
+          {missingProfile.length > 0 && (
+            <div>
+              <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-wider mb-1">Profilo</p>
+              <div className="space-y-1">
+                {missingProfile.map((field) => (
+                  <div key={field.label} className="flex items-center gap-2">
+                    <XCircle className="h-3.5 w-3.5 text-destructive/70 flex-shrink-0" />
+                    <span className="text-xs font-body text-muted-foreground">{field.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-          {missingFields.length > 4 && (
-            <p className="text-[10px] font-body text-muted-foreground ml-5">
-              +{missingFields.length - 4} altri campi
-            </p>
           )}
-          {fields.filter(f => f.completed).slice(0, 3).map((field) => (
+          {missingPreferences.length > 0 && (
+            <div>
+              <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-wider mb-1">Preferenze</p>
+              <div className="space-y-1">
+                {missingPreferences.map((field) => (
+                  <div key={field.label} className="flex items-center gap-2">
+                    <XCircle className="h-3.5 w-3.5 text-destructive/70 flex-shrink-0" />
+                    <span className="text-xs font-body text-muted-foreground">{field.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Show some completed fields */}
+          {completedFields.slice(0, 3).map((field) => (
             <div key={field.label} className="flex items-center gap-2">
               <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" />
               <span className="text-xs font-body text-foreground">{field.label}</span>
@@ -71,13 +101,25 @@ const ProfileCompleteness = () => {
           ))}
         </div>
 
-        <Button
-          onClick={() => navigate("/profile-setup")}
-          size="sm"
-          className="w-full bg-primary text-primary-foreground font-body font-semibold"
-        >
-          Completa profilo
-        </Button>
+        {/* CTA: Opens profile edit (not onboarding) */}
+        {missingProfile.length > 0 ? (
+          <Button
+            onClick={handleClick}
+            size="sm"
+            className="w-full bg-primary text-primary-foreground font-body font-semibold"
+          >
+            Completa profilo
+          </Button>
+        ) : missingPreferences.length > 0 ? (
+          <Button
+            onClick={handleClick}
+            size="sm"
+            variant="outline"
+            className="w-full font-body font-semibold"
+          >
+            Completa preferenze
+          </Button>
+        ) : null}
       </div>
     </div>
   );
