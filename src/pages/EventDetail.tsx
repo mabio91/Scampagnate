@@ -1069,6 +1069,11 @@ const EventDetail = () => {
               </p>
             )}
           </div>
+          {isBlockedByAccessRules && (
+            <p className="text-xs text-destructive font-body text-center max-w-[280px] leading-tight">
+              {blockingMessage}
+            </p>
+          )}
           <Button
             onClick={handleCTA}
             className={`px-6 py-3 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
@@ -1076,7 +1081,8 @@ const EventDetail = () => {
               paymentLoading ||
               isEventPast ||
               event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" ||
-              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval)
+              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) ||
+              isBlockedByAccessRules
             }
           >
             {paymentLoading ? (
