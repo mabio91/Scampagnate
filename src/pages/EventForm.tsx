@@ -363,6 +363,14 @@ const EventForm = () => {
         setExclusivityLabel(ar.exclusivity_label || "");
         setRestrictionMessage(ar.restriction_message || "");
       }
+      // Load event badges
+      if ((event as any).event_badges && Array.isArray((event as any).event_badges)) {
+        const badges = (event as any).event_badges as string[];
+        const knownManual = ["evento_top", "best_seller", "consigliato", "prezzo_speciale", "early_bird"];
+        setManualBadges(badges.filter(b => knownManual.includes(b)));
+        const custom = badges.find(b => !knownManual.includes(b));
+        if (custom) setCustomBadge(custom);
+      }
 
       const { data: options } = await supabase
         .from("event_price_options")
