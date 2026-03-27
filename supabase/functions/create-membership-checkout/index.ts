@@ -32,7 +32,6 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    // Check if membership is still active (calendar year: Dec 31 of registration year)
     if (profile?.membership_status === "Active" && profile?.membership_registration_date) {
       const regDate = new Date(profile.membership_registration_date);
       const year = regDate.getFullYear();
@@ -47,15 +46,39 @@ serve(async (req) => {
 
     const { eventId } = await req.json();
 
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
+
+    // Find or create Stripe customer
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let customerId: string | undefined;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+    }
+
     const origin = req.headers.get("origin") || "https://scampagnate.app";
-    const successUrl = `${origin}/membership-success?event_id=${eventId || ""}`;
 
-    // Use Stripe Payment Link with prefilled email and client reference
-    const paymentLinkUrl = new URL("https://buy.stripe.com/test_9B69AL3ZI1f175ogc71Fe00");
-    paymentLinkUrl.searchParams.set("prefilled_email", user.email);
-    paymentLinkUrl.searchParams.set("client_reference_id", user.id);
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      line_items: [
+        {
+          price: "price_1TFUUY0xDIA9nImZF9nt1Xq1",
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${origin}/membership-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId || ""}`,
+      cancel_url: eventId ? `${origin}/event/${eventId}` : `${origin}/`,
+      metadata: {
+        user_id: user.id,
+        event_id: eventId || "",
+        type: "membership",
+      },
+    });
 
-    return new Response(JSON.stringify({ url: paymentLinkUrl.toString() }), {
+    return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
