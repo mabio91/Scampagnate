@@ -173,10 +173,6 @@ serve(async (req) => {
 
     if (totalAmountCents <= 0) {
       // Free after discount and no membership fee — mark as paid directly
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-      );
       await supabaseAdmin
         .from("event_registrations")
         .update({ payment_status: "paid", status: "paid" })
