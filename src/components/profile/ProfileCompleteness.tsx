@@ -21,24 +21,20 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
   const { toast } = useToast();
   const pointsAwardedRef = useRef(false);
 
-  if (!profile) return null;
-
-  const fields: ProfileField[] = [
-    // Profile fields
+  const fields: ProfileField[] = profile ? [
     { label: "Nome e cognome", completed: !!(profile.first_name && profile.last_name), group: "profile" },
     { label: "Telefono", completed: !!profile.phone, group: "profile" },
     { label: "Foto profilo", completed: !!profile.avatar_url, group: "profile" },
     { label: "Bio", completed: !!profile.bio, group: "profile" },
-    // Preferences/onboarding fields
     { label: "Livello esperienza", completed: !!profile.self_level, group: "preferences" },
     { label: "Esperienza trekking", completed: !!profile.trekking_experience, group: "preferences" },
     { label: "Frequenza attività", completed: !!profile.activity_frequency, group: "preferences" },
     { label: "Interessi", completed: !!(profile.interests && profile.interests.length > 0), group: "preferences" },
     { label: "Automunito", completed: !!profile.has_car, group: "preferences" },
-  ];
+  ] : [];
 
   const completedCount = fields.filter(f => f.completed).length;
-  const percentage = Math.round((completedCount / fields.length) * 100);
+  const percentage = fields.length > 0 ? Math.round((completedCount / fields.length) * 100) : 0;
 
   // Award points when profile reaches 100%
   useEffect(() => {
