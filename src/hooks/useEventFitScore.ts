@@ -117,7 +117,10 @@ export const useEventFitScore = (
     // 1. Level match (35%)
     if (hasLevelRule) {
       const levelRule = rules.find(r => r.type === "min_level");
-      const requiredLevel = levelRule ? Number(levelRule.value) || 1 : (parseInt(event.difficulty || "0") || 0);
+      // Map difficulty (1-5 scale) to the same 1-3 tier as self_level
+      const rawRequired = levelRule ? Number(levelRule.value) || 1 : (parseInt(event.difficulty || "0") || 0);
+      // Difficulty 1-2 → tier 1 (beginner), 3 → tier 2 (intermediate), 4-5 → tier 3 (advanced)
+      const requiredLevel = rawRequired <= 0 ? 0 : rawRequired <= 2 ? 1 : rawRequired <= 3 ? 2 : 3;
 
       if (requiredLevel > 0) {
         const userLevel = LEVEL_MAP[profile.self_level || ""] || 0;
