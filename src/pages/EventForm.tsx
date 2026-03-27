@@ -984,7 +984,46 @@ const EventForm = () => {
             <Label htmlFor="featured">Featured event</Label>
           </div>
 
-          {/* Weather Override (Admin/Organizer) */}
+          {/* Event Badges */}
+          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              🏷️ Event Badges
+            </Label>
+            <p className="text-[11px] text-muted-foreground font-body">Select up to 2 manual badges. Auto badges (Ultimi posti, Gratuito, Founding Event) are applied automatically.</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MANUAL_BADGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setManualBadges(prev =>
+                      prev.includes(opt.value)
+                        ? prev.filter(b => b !== opt.value)
+                        : prev.length < 2 ? [...prev, opt.value] : prev
+                    );
+                  }}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    manualBadges.includes(opt.value)
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted/50 text-muted-foreground border-border/50 hover:border-primary/50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Custom badge (optional)</Label>
+              <Input
+                placeholder="e.g., Nuovo formato"
+                value={customBadge}
+                onChange={(e) => setCustomBadge(e.target.value)}
+                className="h-8 text-xs mt-0.5"
+                maxLength={25}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
             <Label className="text-sm font-semibold flex items-center gap-1.5">
               🌤️ Override Meteo (opzionale)
