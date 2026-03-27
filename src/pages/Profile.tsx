@@ -247,7 +247,18 @@ const Profile = () => {
         )}
 
         {/* Profile Completeness */}
-        <ProfileCompleteness />
+        <ProfileCompleteness
+          onCompleteProfile={() => {
+            // Check if missing profile fields → open inline edit
+            const missingProfileFields = !profile?.bio || !profile?.avatar_url || !profile?.phone || !profile?.first_name || !profile?.last_name;
+            if (missingProfileFields) {
+              startEditing();
+            } else {
+              // Only preferences missing → go to onboarding edit
+              navigate("/profile-setup?mode=edit");
+            }
+          }}
+        />
 
         {/* Membership Status Card */}
         <div className="mb-6">
