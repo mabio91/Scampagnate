@@ -295,41 +295,12 @@ const Index = () => {
 
               <div className={`transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
                 {filteredEvents.length > 0 ? (
-                  <>
-                    {/* This week */}
-                    {thisWeekEvents.length > 0 && (
-                      <div className="mb-4">
-                        {laterEvents.length > 0 && (
-                          <h3 className="font-display text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-                            {UI_LABELS.thisWeek}
-                          </h3>
-                        )}
-                        <div className="space-y-2.5">
-                          {thisWeekEvents.map((event, i) => {
-                            const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
-                            return <EventCard key={event.id} event={event} index={i} discount={discount} />;
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Later */}
-                    {laterEvents.length > 0 && (
-                      <div className="mb-4">
-                        {thisWeekEvents.length > 0 && (
-                          <h3 className="font-display text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-                            {UI_LABELS.later}
-                          </h3>
-                        )}
-                        <div className="space-y-2.5">
-                          {laterEvents.map((event, i) => {
-                            const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
-                            return <EventCard key={event.id} event={event} index={i + thisWeekEvents.length} discount={discount} />;
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <div className="space-y-2.5">
+                    {filteredEvents.map((event, i) => {
+                      const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
+                      return <EventCard key={event.id} event={event} index={i} discount={discount} />;
+                    })}
+                  </div>
                 ) : (
                   /* Empty states */
                   !isFetching && (
