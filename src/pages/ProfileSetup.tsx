@@ -195,8 +195,33 @@ const ProfileSetup = () => {
     }
   };
 
+  const validateStep3 = useCallback(() => {
+    const errors: { car?: boolean; interests?: boolean } = {};
+    if (!hasCar) errors.car = true;
+    if (interests.length < 1) errors.interests = true;
+    setStep3Errors(errors);
+    if (errors.car) {
+      carSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    if (errors.interests) {
+      interestsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    return true;
+  }, [hasCar, interests]);
+
+  // Clear errors when user selects values
+  useEffect(() => {
+    if (hasCar && step3Errors.car) setStep3Errors(prev => ({ ...prev, car: false }));
+  }, [hasCar]);
+  useEffect(() => {
+    if (interests.length >= 1 && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
+  }, [interests]);
+
   const handleSubmit = async () => {
     if (!user) return;
+    if (!validateStep3()) return;
     setSaving(true);
     try {
       const grade = calculateExperienceGrade(trekkingExp, activityFreq);
