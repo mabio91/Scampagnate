@@ -117,6 +117,7 @@ const PricingBadgeSelector = ({ selectedIds, onChange }: { selectedIds: string[]
       </div>
     </div>
   );
+};
 
 interface MeetingPointInput {
   name: string;
