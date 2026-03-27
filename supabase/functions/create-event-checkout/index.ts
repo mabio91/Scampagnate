@@ -71,10 +71,11 @@ serve(async (req) => {
     
     if (!effectivePriceOptionId) {
       // Check the registration for a stored price_option_id
-      const { data: reg } = await supabaseClient
+      const { data: reg } = await supabaseAdmin
         .from("event_registrations")
         .select("price_option_id")
         .eq("id", registrationId)
+        .eq("user_id", user.id)
         .single();
       if (reg?.price_option_id) {
         effectivePriceOptionId = reg.price_option_id;
