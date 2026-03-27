@@ -65,7 +65,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           <span className="text-[10px] font-body font-semibold text-primary-foreground/60 uppercase tracking-widest">
             {UI_LABELS.featuredEvent}
           </span>
-          <h2 className="font-display text-2xl font-bold text-primary-foreground mt-1.5 leading-tight">{event.title}</h2>
+          <h2 className="font-display text-xl font-bold text-primary-foreground mt-1.5 leading-tight">{event.title}</h2>
           <div className="flex flex-wrap items-center gap-x-1 mt-2.5 text-primary-foreground/80 text-xs font-body">
             {metaParts.map((part, i) => (
               <span key={i} className="flex items-center gap-1">
@@ -78,7 +78,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
             ))}
           </div>
           <div className="flex items-center justify-between mt-4">
-            <span className="text-primary-foreground font-display font-bold text-xl">
+            <span className="text-primary-foreground font-display font-bold text-lg">
               {Number(event.price) === 0 ? UI_LABELS.free : `€${event.price}`}
             </span>
             <span className="flex items-center gap-1.5 text-accent text-sm font-body font-bold group-hover:gap-2.5 transition-all duration-200">
