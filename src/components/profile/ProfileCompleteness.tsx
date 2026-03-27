@@ -40,6 +40,39 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
   const completedCount = fields.filter(f => f.completed).length;
   const percentage = Math.round((completedCount / fields.length) * 100);
 
+  // Award points when profile reaches 100%
+  useEffect(() => {
+    if (percentage !== 100 || !user || pointsAwardedRef.current) return;
+    pointsAwardedRef.current = true;
+
+    const awardPoints = async () => {
+      try {
+        // Check if already awarded
+        const { data: existing } = await supabase
+          .from("points_history")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("type", "profile_complete")
+          .maybeSingle();
+
+        if (existing) return;
+
+        await supabase.rpc("add_user_points", {
+          p_user_id: user.id,
+          p_value: 10,
+          p_type: "profile_complete",
+          p_description: "Profilo completato al 100%",
+        });
+
+        await refreshProfile();
+        toast({ title: "Profilo completato! +10 punti 🎉" });
+      } catch (e) {
+        // Silent fail - points not critical
+      }
+    };
+    awardPoints();
+  }, [percentage, user]);
+
   // Don't show if fully complete
   if (percentage === 100) return null;
 
