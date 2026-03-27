@@ -7,10 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  if (req.method === "OPTIONS") { return new Response(null, { headers: corsHeaders }); }
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
@@ -40,8 +37,8 @@ serve(async (req) => {
 
     if (fetchError || !otpRecord) {
       return new Response(
-        JSON.stringify({ error: "Codice non valido", code: "INVALID" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Codice non valido o scaduto", code: "INVALID" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -49,7 +46,7 @@ serve(async (req) => {
     if (new Date(otpRecord.expires_at) < new Date()) {
       return new Response(
         JSON.stringify({ error: "Codice scaduto, richiedine uno nuovo", code: "EXPIRED" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -57,7 +54,7 @@ serve(async (req) => {
     if (otpRecord.attempts >= otpRecord.max_attempts) {
       return new Response(
         JSON.stringify({ error: "Troppi tentativi. Riprova tra qualche minuto", code: "TOO_MANY_ATTEMPTS" }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -82,15 +79,12 @@ serve(async (req) => {
           code: "INVALID",
           remaining_attempts: remaining
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // OTP is valid — mark as verified
-    await supabase
-      .from("phone_otps")
-      .update({ verified: true })
-      .eq("id", otpRecord.id);
+    await supabase.from("phone_otps").update({ verified: true }).eq("id", otpRecord.id);
 
     // Update user profile
     const { error: profileError } = await supabase
@@ -109,10 +103,7 @@ serve(async (req) => {
     }
 
     // Clean up OTPs
-    await supabase
-      .from("phone_otps")
-      .delete()
-      .eq("user_id", user.id);
+    await supabase.from("phone_otps").delete().eq("user_id", user.id);
 
     return new Response(
       JSON.stringify({ success: true, verified: true }),
@@ -123,7 +114,7 @@ serve(async (req) => {
     const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
