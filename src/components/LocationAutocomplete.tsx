@@ -1,14 +1,8 @@
+/// <reference types="google.maps" />
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface LocationSuggestion {
-  display_name: string;
-  lat: string;
-  lon: string;
-  place_id: number;
-}
 
 interface LocationAutocompleteProps {
   value: string;
@@ -22,21 +16,43 @@ interface LocationAutocompleteProps {
 const LocationAutocomplete = ({
   value,
   onChange,
-  placeholder = "Search location...",
+  placeholder = "Cerca luogo...",
   id,
   className,
   error,
 }: LocationAutocompleteProps) => {
-  const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState(value);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
+  const placesService = useRef<google.maps.places.PlacesService | null>(null);
+  const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const dummyDiv = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setInputValue(value);
   }, [value]);
+
+  // Initialize services once Google Maps is loaded
+  const ensureServices = useCallback(() => {
+    if (!window.google?.maps?.places) return false;
+    if (!autocompleteService.current) {
+      autocompleteService.current = new google.maps.places.AutocompleteService();
+    }
+    if (!placesService.current) {
+      if (!dummyDiv.current) {
+        dummyDiv.current = document.createElement("div");
+      }
+      placesService.current = new google.maps.places.PlacesService(dummyDiv.current);
+    }
+    if (!sessionToken.current) {
+      sessionToken.current = new google.maps.places.AutocompleteSessionToken();
+    }
+    return true;
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -48,42 +64,79 @@ const LocationAutocomplete = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const searchLocations = useCallback(async (query: string) => {
-    if (query.length < 3) {
-      setSuggestions([]);
-      setIsOpen(false);
-      return;
-    }
+  const searchLocations = useCallback(
+    async (query: string) => {
+      if (query.length < 3) {
+        setSuggestions([]);
+        setIsOpen(false);
+        return;
+      }
+      if (!ensureServices()) return;
 
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&countrycodes=it`,
-        { headers: { "Accept-Language": "it" } }
-      );
-      const data: LocationSuggestion[] = await res.json();
-      setSuggestions(data);
-      setIsOpen(data.length > 0);
-    } catch {
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      setLoading(true);
+      try {
+        autocompleteService.current!.getPlacePredictions(
+          {
+            input: query,
+            componentRestrictions: { country: "it" },
+            sessionToken: sessionToken.current!,
+            types: ["geocode", "establishment"],
+          },
+          (predictions, status) => {
+            setLoading(false);
+            if (
+              status === google.maps.places.PlacesServiceStatus.OK &&
+              predictions
+            ) {
+              setSuggestions(predictions);
+              setIsOpen(predictions.length > 0);
+            } else {
+              setSuggestions([]);
+              setIsOpen(false);
+            }
+          }
+        );
+      } catch {
+        setLoading(false);
+        setSuggestions([]);
+      }
+    },
+    [ensureServices]
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInputValue(val);
     onChange(val);
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => searchLocations(val), 300);
   };
 
-  const handleSelect = (suggestion: LocationSuggestion) => {
-    const displayName = suggestion.display_name;
-    setInputValue(displayName);
-    onChange(displayName, parseFloat(suggestion.lat), parseFloat(suggestion.lon));
+  const handleSelect = (prediction: google.maps.places.AutocompletePrediction) => {
+    if (!ensureServices()) return;
+
+    placesService.current!.getDetails(
+      {
+        placeId: prediction.place_id,
+        fields: ["formatted_address", "geometry", "name"],
+        sessionToken: sessionToken.current!,
+      },
+      (place, status) => {
+        // Reset session token after getDetails (billing best practice)
+        sessionToken.current = new google.maps.places.AutocompleteSessionToken();
+
+        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+          const displayName = place.formatted_address || place.name || prediction.description;
+          const lat = place.geometry?.location?.lat();
+          const lng = place.geometry?.location?.lng();
+          setInputValue(displayName!);
+          onChange(displayName!, lat, lng);
+        } else {
+          setInputValue(prediction.description);
+          onChange(prediction.description);
+        }
+      }
+    );
     setIsOpen(false);
     setSuggestions([]);
   };
@@ -113,9 +166,8 @@ const LocationAutocomplete = ({
       {isOpen && suggestions.length > 0 && (
         <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
           {suggestions.map((s) => {
-            const parts = s.display_name.split(", ");
-            const main = parts[0];
-            const secondary = parts.slice(1, 3).join(", ");
+            const main = s.structured_formatting.main_text;
+            const secondary = s.structured_formatting.secondary_text;
             return (
               <button
                 key={s.place_id}
@@ -125,9 +177,13 @@ const LocationAutocomplete = ({
               >
                 <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div className="min-w-0">
-                  <p className="text-sm font-body font-semibold text-foreground truncate">{main}</p>
+                  <p className="text-sm font-body font-semibold text-foreground truncate">
+                    {main}
+                  </p>
                   {secondary && (
-                    <p className="text-xs font-body text-muted-foreground truncate">{secondary}</p>
+                    <p className="text-xs font-body text-muted-foreground truncate">
+                      {secondary}
+                    </p>
                   )}
                 </div>
               </button>
