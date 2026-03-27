@@ -207,28 +207,6 @@ const Profile = () => {
               <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1" rows={2} />
             </div>
 
-            {/* Category Preferences - category names stay Italian */}
-            {categories && categories.length > 0 && (
-              <div>
-                <Label className="font-body text-xs">Preferenze categoria</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {categories.map((cat: any) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => togglePreference(cat.name)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-colors ${
-                        selectedPreferences.includes(cat.name)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
