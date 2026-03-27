@@ -18,6 +18,11 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
   try {
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -28,8 +33,8 @@ serve(async (req) => {
     const { eventId, registrationId, discountCodeId, priceOptionId } = await req.json();
     if (!eventId || !registrationId) throw new Error("Event ID and Registration ID required");
 
-    // Fetch event details
-    const { data: event, error: eventError } = await supabaseClient
+    // Fetch event details using admin client to bypass RLS
+    const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
       .select("id, title, price, deposit, payment_type")
       .eq("id", eventId)
@@ -37,7 +42,7 @@ serve(async (req) => {
 
     if (eventError || !event) throw new Error("Event not found");
 
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("membership_status, membership_registration_date")
       .eq("id", user.id)

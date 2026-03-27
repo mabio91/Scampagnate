@@ -262,6 +262,12 @@ const EventDetail = () => {
     }
     if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return;
 
+    // Check hard access rules BEFORE any payment or registration flow
+    if (accessData && !accessData.hasAccess) {
+      setShowAccessWarning(true);
+      return;
+    }
+
     if (needsPayment) {
       handleEventPayment();
       return;
@@ -271,11 +277,6 @@ const EventDetail = () => {
 
     if (!profile?.phone_verified) {
       setShowPhoneVerification(true);
-      return;
-    }
-
-    if (accessData && !accessData.hasAccess) {
-      setShowAccessWarning(true);
       return;
     }
 
@@ -443,6 +444,12 @@ const EventDetail = () => {
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
 
   // CTA PRIORITY ORDER (from highest to lowest)
+  // Check if user is blocked by hard access rules
+  const isBlockedByAccessRules = !!(user && accessData && !accessData.hasAccess && accessData.failedRules.length > 0);
+  const blockingMessage = isBlockedByAccessRules
+    ? (accessData?.restrictionMessage || accessData?.failedRules?.[0]?.reason || "Non soddisfi i requisiti per partecipare a questo evento.")
+    : null;
+
   const getCTALabel = () => {
     if (event.status === "closed") return "Iscrizioni chiuse";
     if (isEventPast || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Evento chiuso";
@@ -450,6 +457,8 @@ const EventDetail = () => {
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Registrato ✓";
     if (isPendingApproval) return "In attesa di approvazione";
     if (isOnWaitlist) return "Lista d'attesa";
+    // Block CTA if user doesn't meet hard requirements (even if they have a pending payment)
+    if (isBlockedByAccessRules) return "Requisiti non soddisfatti";
     if (needsPayment) return "Paga ora";
     if (event.status === "full") return "Lista d'attesa";
     return "Partecipa";
@@ -461,9 +470,9 @@ const EventDetail = () => {
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-green-600 text-white";
     if (isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
+    if (isBlockedByAccessRules) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
-    if (accessData && !accessData.hasAccess) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
     return "bg-primary text-primary-foreground hover:bg-primary/90";
   };
 
