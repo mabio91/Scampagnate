@@ -451,9 +451,9 @@ const ProfileSetup = () => {
                   <Label className="font-body text-sm font-semibold">Con che frequenza pratichi attività fisica?</Label>
                   <div className="space-y-2">
                     {[
-                      { val: "high", emoji: "💪", label: "Più di 2 volte a settimana" },
-                      { val: "medium", emoji: "🙂", label: "1–2 volte a settimana" },
                       { val: "low", emoji: "🌿", label: "Raramente" },
+                      { val: "medium", emoji: "🙂", label: "1–2 volte a settimana" },
+                      { val: "high", emoji: "💪", label: "Più di 2 volte a settimana" },
                     ].map((opt) => (
                       <SelectionCard
                         key={opt.val}
