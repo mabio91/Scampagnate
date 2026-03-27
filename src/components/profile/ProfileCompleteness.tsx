@@ -1,7 +1,10 @@
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { UserCheck, CheckCircle2, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileField {
   label: string;
@@ -14,7 +17,9 @@ interface ProfileCompletenessProps {
 }
 
 const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) => {
-  const { profile } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
+  const { toast } = useToast();
+  const pointsAwardedRef = useRef(false);
 
   if (!profile) return null;
 
