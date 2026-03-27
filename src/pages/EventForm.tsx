@@ -511,6 +511,7 @@ const EventForm = () => {
           exclusivity_label: exclusivityLabel || undefined,
           restriction_message: restrictionMessage || undefined,
         } as any : null,
+        event_badges: [...manualBadges, ...(customBadge.trim() ? [customBadge.trim()] : [])] as any,
         organizer_id: user.id,
         organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
         status: (registrationOpen ? "published" : "closed") as Database["public"]["Enums"]["event_status"],
