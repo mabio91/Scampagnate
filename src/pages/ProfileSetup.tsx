@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -111,25 +111,37 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
 
-  const [step, setStep] = useState(1);
+  // Edit mode: when user already completed onboarding and is editing preferences
+  const isEditMode = searchParams.get("mode") === "edit";
+
+  // In edit mode, start at step 2 (skip profile basics) and skip step 1
+  const startStep = isEditMode ? 2 : 1;
+  const totalSteps = isEditMode ? 2 : 3; // steps 2-3 in edit mode
+
+  const [step, setStep] = useState(startStep);
   const [direction, setDirection] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Step 1
+  // Step 1 (only in first-time mode)
   const [phone, setPhone] = useState(profile?.phone || "");
 
-  // Step 2
-  const [trekkingExp, setTrekkingExp] = useState("");
-  const [selfLevel, setSelfLevel] = useState("");
-  const [activityFreq, setActivityFreq] = useState("");
+  // Step 2 - prefill from profile in edit mode
+  const [trekkingExp, setTrekkingExp] = useState(isEditMode ? (profile?.trekking_experience || "") : "");
+  const [selfLevel, setSelfLevel] = useState(isEditMode ? (profile?.self_level || "") : "");
+  const [activityFreq, setActivityFreq] = useState(isEditMode ? (profile?.activity_frequency || "") : "");
 
-  // Step 3
-  const [hasCar, setHasCar] = useState("");
-  const [interests, setInterests] = useState<string[]>([]);
-  const [eventMotivation, setEventMotivation] = useState("");
+  // Step 3 - prefill from profile in edit mode
+  const [hasCar, setHasCar] = useState(isEditMode ? (profile?.has_car || "") : "");
+  const [interests, setInterests] = useState<string[]>(
+    isEditMode && profile?.interests ? (profile.interests as string[]) : []
+  );
+  const [eventMotivation, setEventMotivation] = useState(
+    isEditMode ? (profile?.event_motivation || "") : ""
+  );
 
   const goNext = useCallback(() => {
     setDirection(1);
@@ -137,9 +149,13 @@ const ProfileSetup = () => {
   }, []);
 
   const goBack = useCallback(() => {
+    if (isEditMode && step === 2) {
+      navigate(-1);
+      return;
+    }
     setDirection(-1);
     setStep((s) => s - 1);
-  }, []);
+  }, [isEditMode, step, navigate]);
 
   const toggleInterest = (val: string) => {
     setInterests((prev) =>
@@ -175,23 +191,35 @@ const ProfileSetup = () => {
     setSaving(true);
     try {
       const grade = calculateExperienceGrade(trekkingExp, activityFreq);
+      const updateData: Record<string, any> = {
+        trekking_experience: trekkingExp,
+        activity_frequency: activityFreq,
+        experience_grade: grade,
+        self_level: selfLevel,
+        has_car: hasCar,
+        interests,
+        event_motivation: eventMotivation || null,
+        onboarding_completed: true,
+      };
+
+      // Only update phone in first-time mode
+      if (!isEditMode) {
+        updateData.phone = phone.trim();
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          phone: phone.trim(),
-          trekking_experience: trekkingExp,
-          activity_frequency: activityFreq,
-          experience_grade: grade,
-          self_level: selfLevel,
-          has_car: hasCar,
-          interests,
-          event_motivation: eventMotivation || null,
-          onboarding_completed: true,
-        } as any)
+        .update(updateData as any)
         .eq("id", user.id);
       if (error) throw error;
       await refreshProfile();
-      setShowSuccess(true);
+
+      if (isEditMode) {
+        toast({ title: "Preferenze aggiornate!" });
+        navigate("/profile", { replace: true });
+      } else {
+        setShowSuccess(true);
+      }
     } catch (error: any) {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     } finally {
@@ -246,24 +274,30 @@ const ProfileSetup = () => {
     );
   }
 
+  const currentStepLabel = step === 1 ? "Profilo base" : step === 2 ? "Esperienza" : "Preferenze";
+  const progressValue = isEditMode
+    ? ((step - 1) / totalSteps) * 100
+    : (step / totalSteps) * 100;
+  const stepDisplay = isEditMode ? `Step ${step - 1} di ${totalSteps}` : `Step ${step} di ${totalSteps}`;
+
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background flex flex-col">
       {/* Progress header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 space-y-2">
         <div className="flex items-center justify-between max-w-md mx-auto">
-          <p className="text-sm font-semibold text-foreground font-body">Step {step} di 3</p>
+          <p className="text-sm font-semibold text-foreground font-body">{stepDisplay}</p>
           <p className="text-xs text-muted-foreground font-body">
-            {step === 1 ? "Profilo base" : step === 2 ? "Esperienza" : "Preferenze"}
+            {isEditMode ? "Modifica preferenze" : currentStepLabel}
           </p>
         </div>
-        <Progress value={(step / 3) * 100} className="h-1.5 max-w-md mx-auto" />
+        <Progress value={progressValue} className="h-1.5 max-w-md mx-auto" />
       </div>
 
       {/* Content */}
       <div className="flex-1 flex items-start justify-center px-4 py-6 overflow-hidden">
         <div className="w-full max-w-md">
           <AnimatePresence mode="wait" custom={direction}>
-            {step === 1 && (
+            {step === 1 && !isEditMode && (
               <motion.div
                 key="step1"
                 custom={direction}
@@ -315,7 +349,6 @@ const ProfileSetup = () => {
                     inputMode="tel"
                     value={phone}
                     onChange={(e) => {
-                      // Prevent letters
                       const val = e.target.value;
                       if (/[a-zA-Z]/.test(val)) return;
                       setPhone(val);
@@ -354,9 +387,13 @@ const ProfileSetup = () => {
                 className="space-y-6"
               >
                 <div className="space-y-2">
-                  <h1 className="font-display text-xl font-bold text-foreground">Esperienza e attività</h1>
+                  <h1 className="font-display text-xl font-bold text-foreground">
+                    {isEditMode ? "Esperienza e attività" : "Esperienza e attività"}
+                  </h1>
                   <p className="text-sm text-muted-foreground font-body">
-                    Per aiutarci a consigliarti eventi adatti e garantire la sicurezza durante le attività outdoor.
+                    {isEditMode
+                      ? "Aggiorna le tue informazioni per ricevere suggerimenti più accurati."
+                      : "Per aiutarci a consigliarti eventi adatti e garantire la sicurezza durante le attività outdoor."}
                   </p>
                 </div>
 
@@ -426,7 +463,7 @@ const ProfileSetup = () => {
                 <div className="flex gap-3">
                   <Button variant="outline" className="flex-1 h-12 font-body font-semibold" onClick={goBack}>
                     <ChevronLeft className="mr-1 h-4 w-4" />
-                    Indietro
+                    {isEditMode ? "Annulla" : "Indietro"}
                   </Button>
                   <Button className="flex-1 h-12 font-body font-semibold" disabled={!step2Valid} onClick={goNext}>
                     Continua
@@ -539,6 +576,8 @@ const ProfileSetup = () => {
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Salvataggio...
                       </>
+                    ) : isEditMode ? (
+                      "Salva preferenze"
                     ) : (
                       "Scopri gli eventi per te"
                     )}
