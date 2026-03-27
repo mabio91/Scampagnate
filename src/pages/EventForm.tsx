@@ -211,6 +211,7 @@ const EventForm = () => {
     name: string;
     price: number;
     eligible_group: string;
+    badge_ids: string[];
     original_price: number | null;
     is_promotional: boolean;
     promo_start: string;
@@ -1287,7 +1288,7 @@ const EventForm = () => {
                   </Label>
                   <p className="text-[11px] text-muted-foreground font-body">Define who sees which price. Configure tiered, community, or promotional pricing.</p>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0, eligible_group: "all", original_price: null, is_promotional: false, promo_start: "", promo_end: "" }])} className="gap-1 shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0, eligible_group: "all", badge_ids: [], original_price: null, is_promotional: false, promo_start: "", promo_end: "" }])} className="gap-1 shrink-0">
                   <Plus className="h-3.5 w-3.5" /> Add Tier
                 </Button>
               </div>
@@ -1318,15 +1319,23 @@ const EventForm = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[11px] text-muted-foreground">Who sees this price</Label>
-                      <Select value={opt.eligible_group} onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, eligible_group: v } : o))}>
+                      <Select value={opt.eligible_group.startsWith("badge:") ? "badges" : opt.eligible_group} onValueChange={(v) => {
+                        if (v === "badges") {
+                          setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, eligible_group: "badges", badge_ids: o.badge_ids || [] } : o));
+                        } else {
+                          setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, eligible_group: v, badge_ids: [] } : o));
+                        }
+                      }}>
                         <SelectTrigger className="h-8 text-xs mt-0.5">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Everyone</SelectItem>
                           <SelectItem value="members">Active Members</SelectItem>
+                          <SelectItem value="new_users">New Users (0 events)</SelectItem>
                           <SelectItem value="experienced">Experienced Users (1+ events)</SelectItem>
                           <SelectItem value="loyal">Loyal Participants (5+ events)</SelectItem>
+                          <SelectItem value="badges">Specific Badge(s)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1343,6 +1352,16 @@ const EventForm = () => {
                       />
                     </div>
                   </div>
+                  {/* Badge selector when "badges" group is chosen */}
+                  {(opt.eligible_group === "badges" || opt.eligible_group.startsWith("badge:")) && (
+                    <PricingBadgeSelector
+                      selectedIds={opt.badge_ids || []}
+                      onChange={(ids) => {
+                        const group = ids.length > 0 ? `badge:${ids.join(",")}` : "badges";
+                        setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, badge_ids: ids, eligible_group: group } : o));
+                      }}
+                    />
+                  )}
                   <div className="flex items-center gap-3">
                     <Switch
                       checked={opt.is_promotional}
