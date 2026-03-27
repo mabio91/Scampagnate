@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Search, X, SlidersHorizontal, Lightbulb, SearchX } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isThisWeek, startOfDay } from "date-fns";
+import { format, isThisWeek, startOfWeek, endOfWeek, addWeeks, getDay, startOfDay } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -120,28 +120,27 @@ const Index = () => {
     if (priceFilter === "free") filtered = filtered.filter(e => Number(e.price) === 0);
     if (priceFilter === "paid") filtered = filtered.filter(e => Number(e.price) > 0);
 
-    // Quick filters
+    // Quick filters (combinable)
     if (quickFilters.includes("featured")) filtered = filtered.filter(e => e.featured);
     if (quickFilters.includes("lastSpots")) filtered = filtered.filter(e => (e.spots_taken / e.spots_total) > 0.8 && e.status !== "full");
     if (quickFilters.includes("thisWeek")) filtered = filtered.filter(e => isThisWeek(new Date(e.date), { weekStartsOn: 1 }));
-    if (quickFilters.includes("free")) filtered = filtered.filter(e => Number(e.price) === 0);
+    if (quickFilters.includes("nextWeek")) {
+      const nextWeekStart = startOfWeek(addWeeks(new Date(), 1), { weekStartsOn: 1 });
+      const nextWeekEnd = endOfWeek(addWeeks(new Date(), 1), { weekStartsOn: 1 });
+      filtered = filtered.filter(e => {
+        const d = new Date(e.date);
+        return d >= nextWeekStart && d <= nextWeekEnd;
+      });
+    }
+    if (quickFilters.includes("weekend")) {
+      filtered = filtered.filter(e => {
+        const day = getDay(new Date(e.date));
+        return day === 5 || day === 6 || day === 0; // Fri, Sat, Sun
+      });
+    }
 
     return filtered;
   }, [allUpcoming, searchQuery, dateFilter, priceFilter, quickFilters]);
-
-  // Group events: this week vs later
-  const { thisWeekEvents, laterEvents } = useMemo(() => {
-    const tw: typeof filteredEvents = [];
-    const later: typeof filteredEvents = [];
-    for (const e of filteredEvents) {
-      if (isThisWeek(new Date(e.date), { weekStartsOn: 1 })) {
-        tw.push(e);
-      } else {
-        later.push(e);
-      }
-    }
-    return { thisWeekEvents: tw, laterEvents: later };
-  }, [filteredEvents]);
 
   const clearFilters = clearAllFilters;
 
@@ -296,41 +295,12 @@ const Index = () => {
 
               <div className={`transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
                 {filteredEvents.length > 0 ? (
-                  <>
-                    {/* This week */}
-                    {thisWeekEvents.length > 0 && (
-                      <div className="mb-4">
-                        {laterEvents.length > 0 && (
-                          <h3 className="font-display text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-                            {UI_LABELS.thisWeek}
-                          </h3>
-                        )}
-                        <div className="space-y-2.5">
-                          {thisWeekEvents.map((event, i) => {
-                            const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
-                            return <EventCard key={event.id} event={event} index={i} discount={discount} />;
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Later */}
-                    {laterEvents.length > 0 && (
-                      <div className="mb-4">
-                        {thisWeekEvents.length > 0 && (
-                          <h3 className="font-display text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-                            {UI_LABELS.later}
-                          </h3>
-                        )}
-                        <div className="space-y-2.5">
-                          {laterEvents.map((event, i) => {
-                            const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
-                            return <EventCard key={event.id} event={event} index={i + thisWeekEvents.length} discount={discount} />;
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <div className="space-y-2.5">
+                    {filteredEvents.map((event, i) => {
+                      const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
+                      return <EventCard key={event.id} event={event} index={i} discount={discount} />;
+                    })}
+                  </div>
                 ) : (
                   /* Empty states */
                   !isFetching && (

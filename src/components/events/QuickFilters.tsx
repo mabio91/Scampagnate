@@ -1,14 +1,15 @@
 import { memo } from "react";
-import { Star, Flame, CalendarClock, Gift } from "lucide-react";
+import { Star, Flame, CalendarClock, CalendarPlus, Palmtree } from "lucide-react";
 import { UI_LABELS } from "@/lib/labels";
 
-export type QuickFilterType = "featured" | "lastSpots" | "thisWeek" | "free";
+export type QuickFilterType = "featured" | "lastSpots" | "thisWeek" | "nextWeek" | "weekend";
 
 const FILTERS: { key: QuickFilterType; label: string; icon: typeof Star }[] = [
   { key: "featured", label: UI_LABELS.filterFeatured, icon: Star },
   { key: "lastSpots", label: UI_LABELS.filterLastSpots, icon: Flame },
   { key: "thisWeek", label: UI_LABELS.filterThisWeek, icon: CalendarClock },
-  { key: "free", label: UI_LABELS.filterFree, icon: Gift },
+  { key: "nextWeek", label: UI_LABELS.filterNextWeek, icon: CalendarPlus },
+  { key: "weekend", label: UI_LABELS.filterWeekend, icon: Palmtree },
 ];
 
 interface Props {
