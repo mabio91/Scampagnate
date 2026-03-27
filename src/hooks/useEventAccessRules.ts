@@ -379,10 +379,10 @@ export const getExclusivityIndicators = (accessRules: AccessRulesConfig | null |
   if (ruleTypes.includes("require_badge")) {
     indicators.push({ label: "Exclusive Event", variant: "exclusive" });
   }
-  if (ruleTypes.includes("min_trekking_events") || ruleTypes.includes("min_attended_events") || ruleTypes.includes("min_activities")) {
-    indicators.push({ label: "Experience Required", variant: "restricted" });
-  }
-  if (ruleTypes.includes("min_level") || ruleTypes.includes("min_experience") || ruleTypes.includes("min_activity_frequency")) {
+  if (
+    ruleTypes.includes("min_trekking_events") || ruleTypes.includes("min_attended_events") || ruleTypes.includes("min_activities") ||
+    ruleTypes.includes("min_level") || ruleTypes.includes("min_experience") || ruleTypes.includes("min_activity_frequency")
+  ) {
     indicators.push({ label: "Experience Required", variant: "restricted" });
   }
   if (ruleTypes.includes("manual_approval")) {
