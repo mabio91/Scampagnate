@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Search, X, SlidersHorizontal, Lightbulb, SearchX } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isThisWeek, startOfDay } from "date-fns";
+import { format, isThisWeek, startOfWeek, endOfWeek, addWeeks, getDay, startOfDay } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";

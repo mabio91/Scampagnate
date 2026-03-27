@@ -15,7 +15,8 @@ export const UI_LABELS = {
   filterFeatured: "In evidenza",
   filterLastSpots: "Ultimi posti",
   filterThisWeek: "Questa settimana",
-  filterFree: "Gratuiti",
+  filterNextWeek: "Prossima settimana",
+  filterWeekend: "Weekend",
 
   // Event States
   open: "Aperto",
