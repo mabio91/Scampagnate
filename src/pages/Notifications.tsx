@@ -57,7 +57,8 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
         {(notification.type === 'event_reminder_24h' || notification.type === 'event_reminder_3h') ? (
           <div className="mt-1 space-y-1">
             {notification.message.split('\n').map((line, i) => {
-              const mapsMatch = line.match(/🗺️.*?(https:\/\/\S+)/);
+              const cleanLine = line.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
+              const mapsMatch = cleanLine.match(/🗺️.*?(https:\/\/\S+)/);
               if (mapsMatch) {
                 return (
                   <a
@@ -73,23 +74,23 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
                   </a>
                 );
               }
-              if (line.includes('📍')) {
+              if (cleanLine.includes('📍')) {
                 return (
                   <p key={i} className="flex items-start gap-1 text-xs text-foreground font-body font-medium">
                     <MapPin className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
-                    <span>{line.replace('📍 ', '')}</span>
+                    <span>{cleanLine.replace('📍 ', '')}</span>
                   </p>
                 );
               }
-              if (line.trim()) {
-                return <p key={i} className="text-xs text-muted-foreground font-body line-clamp-2 leading-relaxed">{line}</p>;
+              if (cleanLine.trim()) {
+                return <p key={i} className="text-xs text-muted-foreground font-body line-clamp-2 leading-relaxed">{cleanLine}</p>;
               }
               return null;
             })}
           </div>
         ) : (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-            {notification.message}
+            {notification.message.replace(/(\d{2}:\d{2}):\d{2}/g, '$1')}
           </p>
         )}
         <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-medium">
