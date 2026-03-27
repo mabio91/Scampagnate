@@ -518,8 +518,8 @@ const ProfileSetup = () => {
                 </div>
 
                 {/* Interests */}
-                <div className="space-y-2">
-                  <Label className="font-body text-sm font-semibold">
+                <div ref={interestsSectionRef} className="space-y-2">
+                  <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
                     Quali esperienze ti attirano di più?
                   </Label>
                   <p className="text-xs text-muted-foreground font-body">Seleziona fino a 3 opzioni.</p>
