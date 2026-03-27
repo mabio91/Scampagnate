@@ -1,7 +1,10 @@
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { UserCheck, CheckCircle2, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileField {
   label: string;
@@ -14,27 +17,59 @@ interface ProfileCompletenessProps {
 }
 
 const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) => {
-  const { profile } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
+  const { toast } = useToast();
+  const pointsAwardedRef = useRef(false);
 
-  if (!profile) return null;
-
-  const fields: ProfileField[] = [
-    // Profile fields
+  const fields: ProfileField[] = profile ? [
     { label: "Nome e cognome", completed: !!(profile.first_name && profile.last_name), group: "profile" },
     { label: "Telefono", completed: !!profile.phone, group: "profile" },
     { label: "Foto profilo", completed: !!profile.avatar_url, group: "profile" },
     { label: "Bio", completed: !!profile.bio, group: "profile" },
-    // Preferences/onboarding fields
     { label: "Livello esperienza", completed: !!profile.self_level, group: "preferences" },
     { label: "Esperienza trekking", completed: !!profile.trekking_experience, group: "preferences" },
     { label: "Frequenza attività", completed: !!profile.activity_frequency, group: "preferences" },
     { label: "Interessi", completed: !!(profile.interests && profile.interests.length > 0), group: "preferences" },
     { label: "Automunito", completed: !!profile.has_car, group: "preferences" },
-  ];
+  ] : [];
 
   const completedCount = fields.filter(f => f.completed).length;
-  const percentage = Math.round((completedCount / fields.length) * 100);
+  const percentage = fields.length > 0 ? Math.round((completedCount / fields.length) * 100) : 0;
 
+  // Award points when profile reaches 100%
+  useEffect(() => {
+    if (percentage !== 100 || !user || pointsAwardedRef.current) return;
+    pointsAwardedRef.current = true;
+
+    const awardPoints = async () => {
+      try {
+        // Check if already awarded
+        const { data: existing } = await supabase
+          .from("points_history")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("type", "profile_complete")
+          .maybeSingle();
+
+        if (existing) return;
+
+        await supabase.rpc("add_user_points", {
+          p_user_id: user.id,
+          p_value: 10,
+          p_type: "profile_complete",
+          p_description: "Profilo completato al 100%",
+        });
+
+        await refreshProfile();
+        toast({ title: "Profilo completato! +10 punti 🎉" });
+      } catch (e) {
+        // Silent fail - points not critical
+      }
+    };
+    awardPoints();
+  }, [percentage, user]);
+
+  if (!profile) return null;
   // Don't show if fully complete
   if (percentage === 100) return null;
 

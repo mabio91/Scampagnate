@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,7 +72,7 @@ const InterestCard = ({ selected, onClick, emoji, label, disabled }: InterestCar
     whileTap={{ scale: 0.95 }}
     onClick={onClick}
     disabled={disabled && !selected}
-    className={`relative flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 transition-all duration-200 ${
+    className={`relative flex flex-col items-center justify-center text-center gap-1.5 px-3 py-3.5 rounded-xl border-2 transition-all duration-200 ${
       selected
         ? "border-primary bg-primary/10"
         : disabled
@@ -81,14 +81,14 @@ const InterestCard = ({ selected, onClick, emoji, label, disabled }: InterestCar
     }`}
   >
     <span className="text-lg">{emoji}</span>
-    <span className={`text-sm font-medium ${selected ? "text-primary" : "text-foreground"}`}>{label}</span>
+    <span className={`text-xs font-medium leading-tight ${selected ? "text-primary" : "text-foreground"}`}>{label}</span>
     {selected && (
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        className="ml-auto shrink-0 w-4.5 h-4.5 rounded-full bg-primary flex items-center justify-center"
+        className="absolute top-1.5 right-1.5 shrink-0 w-4 h-4 rounded-full bg-primary flex items-center justify-center"
       >
-        <Check className="h-3 w-3 text-primary-foreground" />
+        <Check className="h-2.5 w-2.5 text-primary-foreground" />
       </motion.div>
     )}
   </motion.button>
@@ -111,6 +111,9 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const carSectionRef = useRef<HTMLDivElement>(null);
+  const interestsSectionRef = useRef<HTMLDivElement>(null);
+  const [step3Errors, setStep3Errors] = useState<{ car?: boolean; interests?: boolean }>({});
   const [searchParams] = useSearchParams();
 
   // Edit mode: when user already completed onboarding and is editing preferences
@@ -143,10 +146,15 @@ const ProfileSetup = () => {
     isEditMode ? (profile?.event_motivation || "") : ""
   );
 
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   const goNext = useCallback(() => {
     setDirection(1);
     setStep((s) => s + 1);
-  }, []);
+    setTimeout(scrollToTop, 50);
+  }, [scrollToTop]);
 
   const goBack = useCallback(() => {
     if (isEditMode && step === 2) {
@@ -155,7 +163,8 @@ const ProfileSetup = () => {
     }
     setDirection(-1);
     setStep((s) => s - 1);
-  }, [isEditMode, step, navigate]);
+    setTimeout(scrollToTop, 50);
+  }, [isEditMode, step, navigate, scrollToTop]);
 
   const toggleInterest = (val: string) => {
     setInterests((prev) =>
@@ -186,8 +195,33 @@ const ProfileSetup = () => {
     }
   };
 
+  const validateStep3 = useCallback(() => {
+    const errors: { car?: boolean; interests?: boolean } = {};
+    if (!hasCar) errors.car = true;
+    if (interests.length < 1) errors.interests = true;
+    setStep3Errors(errors);
+    if (errors.car) {
+      carSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    if (errors.interests) {
+      interestsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    return true;
+  }, [hasCar, interests]);
+
+  // Clear errors when user selects values
+  useEffect(() => {
+    if (hasCar && step3Errors.car) setStep3Errors(prev => ({ ...prev, car: false }));
+  }, [hasCar]);
+  useEffect(() => {
+    if (interests.length >= 1 && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
+  }, [interests]);
+
   const handleSubmit = async () => {
     if (!user) return;
+    if (!validateStep3()) return;
     setSaving(true);
     try {
       const grade = calculateExperienceGrade(trekkingExp, activityFreq);
@@ -445,9 +479,9 @@ const ProfileSetup = () => {
                   <Label className="font-body text-sm font-semibold">Con che frequenza pratichi attività fisica?</Label>
                   <div className="space-y-2">
                     {[
-                      { val: "high", emoji: "💪", label: "Più di 2 volte a settimana" },
-                      { val: "medium", emoji: "🙂", label: "1–2 volte a settimana" },
                       { val: "low", emoji: "🌿", label: "Raramente" },
+                      { val: "medium", emoji: "🙂", label: "1–2 volte a settimana" },
+                      { val: "high", emoji: "💪", label: "Più di 2 volte a settimana" },
                     ].map((opt) => (
                       <SelectionCard
                         key={opt.val}
@@ -489,8 +523,8 @@ const ProfileSetup = () => {
                 </div>
 
                 {/* Car availability */}
-                <div className="space-y-2">
-                  <Label className="font-body text-sm font-semibold">Sei automunito?</Label>
+                <div ref={carSectionRef} className="space-y-2">
+                  <Label className={`font-body text-sm font-semibold ${step3Errors.car ? "text-destructive" : ""}`}>Sei automunito? {step3Errors.car && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}</Label>
                   <div className="space-y-2">
                     {[
                       { val: "yes", emoji: "🚗", label: "Sì" },
@@ -509,8 +543,8 @@ const ProfileSetup = () => {
                 </div>
 
                 {/* Interests */}
-                <div className="space-y-2">
-                  <Label className="font-body text-sm font-semibold">
+                <div ref={interestsSectionRef} className="space-y-2">
+                  <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
                     Quali esperienze ti attirano di più?
                   </Label>
                   <p className="text-xs text-muted-foreground font-body">Seleziona fino a 3 opzioni.</p>
