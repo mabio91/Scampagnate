@@ -365,7 +365,7 @@ const EventManage = () => {
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-lg font-bold text-foreground truncate">{event.title}</h1>
             <p className="text-xs text-muted-foreground font-body">
-              {format(new Date(event.date), "dd MMM yyyy")} · {event.time}
+              {format(new Date(event.date), "dd MMM yyyy")} · {event.time?.slice(0, 5)}
             </p>
           </div>
           <Select 
