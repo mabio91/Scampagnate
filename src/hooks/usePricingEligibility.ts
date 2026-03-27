@@ -164,17 +164,19 @@ export const getBestUserPrice = (
     return { price: basePrice, label: null, originalPrice: null };
   }
 
-  const eligible = resolvedOptions.filter(o => o.isEligible && o.isPromoActive);
-  if (eligible.length === 0) {
-    // Fall back to "all" group options or base price
-    const allGroup = resolvedOptions.filter(o => o.eligible_group === "all" && o.isPromoActive);
-    if (allGroup.length > 0) {
-      const cheapest = allGroup.reduce((a, b) => a.price < b.price ? a : b);
-      return { price: cheapest.price, label: cheapest.name, originalPrice: cheapest.original_price };
-    }
-    return { price: basePrice, label: null, originalPrice: null };
+  // First matching tier wins (evaluated in sort_order, top to bottom)
+  const sorted = [...resolvedOptions].sort((a, b) => a.sort_order - b.sort_order);
+  const firstMatch = sorted.find(o => o.isEligible && o.isPromoActive);
+
+  if (firstMatch) {
+    return { price: firstMatch.price, label: firstMatch.name, originalPrice: firstMatch.original_price };
   }
 
-  const cheapest = eligible.reduce((a, b) => a.price < b.price ? a : b);
-  return { price: cheapest.price, label: cheapest.name, originalPrice: cheapest.original_price };
+  // Fall back to "all" group options or base price
+  const allGroup = resolvedOptions.filter(o => o.eligible_group === "all" && o.isPromoActive);
+  if (allGroup.length > 0) {
+    const first = allGroup.sort((a, b) => a.sort_order - b.sort_order)[0];
+    return { price: first.price, label: first.name, originalPrice: first.original_price };
+  }
+  return { price: basePrice, label: null, originalPrice: null };
 };
