@@ -324,7 +324,7 @@ const RegistrationCheckoutDialog = ({
                               {opt.isEligible && opt.eligible_group !== "all" && (
                                 <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
                                   <Sparkles className="h-2.5 w-2.5" />
-                                  {opt.eligible_group === "members" ? "Soci" : opt.eligible_group === "experienced" ? "Esperto" : opt.eligible_group === "loyal" ? "Fedele" : opt.eligible_group}
+                                  {opt.eligible_group === "members" ? "Soci" : opt.eligible_group === "new_users" ? "Nuovo" : opt.eligible_group === "experienced" ? "Esperto" : opt.eligible_group === "loyal" ? "Fedele" : opt.eligible_group.startsWith("badge:") ? "Badge" : opt.eligible_group}
                                 </span>
                               )}
                               {opt.is_promotional && opt.isPromoActive && (
