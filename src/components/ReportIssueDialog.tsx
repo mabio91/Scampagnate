@@ -60,9 +60,14 @@ const ReportIssueDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
-          <AlertTriangle className="h-4 w-4" /> {t("reportIssue")}
-        </Button>
+        <button className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group w-full text-left">
+          <AlertTriangle className="h-4.5 w-4.5 text-destructive shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-body font-semibold text-foreground">Segnala un problema</p>
+            <p className="text-xs font-body text-muted-foreground">Aiutaci a migliorare l'esperienza</p>
+          </div>
+          <svg className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>

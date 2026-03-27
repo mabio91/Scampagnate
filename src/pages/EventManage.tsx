@@ -414,6 +414,46 @@ const EventManage = () => {
           </Button>
         </div>
 
+        {/* Private/Hidden event link sharing */}
+        {event && event.visibility !== "public" && (
+          <Card className="p-3 border-amber-500/20 bg-amber-500/5">
+            <div className="flex items-center gap-2 mb-2">
+              <Lock className="h-4 w-4 text-amber-500" />
+              <span className="text-xs font-body font-bold text-foreground">
+                {event.visibility === "private" ? "Evento privato" : "Evento nascosto"} — Condividi il link
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 bg-muted rounded-lg px-3 py-2 text-[11px] font-body text-muted-foreground truncate select-all">
+                {`${window.location.origin}/event/${event.id}`}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 shrink-0"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/event/${event.id}`);
+                  toast({ title: "Link copiato!" });
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" /> Copia
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 shrink-0 text-[#25D366] border-[#25D366]/30 hover:bg-[#25D366]/10"
+                onClick={() => {
+                  const url = `${window.location.origin}/event/${event.id}`;
+                  const text = encodeURIComponent(`${event.title} — ${url}`);
+                  window.open(`https://wa.me/?text=${text}`, "_blank");
+                }}
+              >
+                <Send className="h-3.5 w-3.5" /> WhatsApp
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Quick Stats */}
         <div className="grid grid-cols-4 gap-2">
           <Card className="p-2 text-center">
