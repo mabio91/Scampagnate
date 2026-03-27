@@ -233,16 +233,55 @@ const Profile = () => {
         )}
 
         {/* Preferences display (when not editing) */}
-        {!editing && currentPreferences.length > 0 && (
+        {!editing && (
           <div className="mb-6">
-            <h2 className="font-display text-lg font-bold text-foreground mb-2">Preferenze</h2>
-            <div className="flex flex-wrap gap-2">
-              {currentPreferences.map((pref: string) => (
-                <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
-                  {pref}
-                </span>
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-display text-lg font-bold text-foreground">Le tue preferenze</h2>
+              <button
+                onClick={() => navigate("/profile-setup?mode=edit")}
+                className="text-xs font-body font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Modifica
+              </button>
             </div>
+            {currentPreferences.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {currentPreferences.map((pref: string) => (
+                  <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
+                    {pref}
+                  </span>
+                ))}
+              </div>
+            ) : profile?.onboarding_completed ? (
+              <p className="text-xs font-body text-muted-foreground">Nessuna preferenza impostata</p>
+            ) : (
+              <button
+                onClick={() => navigate("/profile-setup")}
+                className="text-xs font-body text-primary font-semibold"
+              >
+                Completa le tue preferenze →
+              </button>
+            )}
+            {/* Show summary of onboarding answers */}
+            {profile?.onboarding_completed && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile?.self_level && (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold bg-muted text-muted-foreground">
+                    {profile.self_level === "beginner" ? "🌱 Principiante" : profile.self_level === "intermediate" ? "🥾 Intermedio" : "💪 Avanzato"}
+                  </span>
+                )}
+                {profile?.activity_frequency && (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold bg-muted text-muted-foreground">
+                    {profile.activity_frequency === "high" ? "💪 Molto attivo" : profile.activity_frequency === "medium" ? "🙂 Attivo" : "🌿 Poco attivo"}
+                  </span>
+                )}
+                {profile?.has_car && (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold bg-muted text-muted-foreground">
+                    {profile.has_car === "yes" ? "🚗 Automunito" : profile.has_car === "no" ? "🚫 Non automunito" : "🤷 Preferisce non guidare"}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
