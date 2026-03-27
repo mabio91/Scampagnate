@@ -172,6 +172,15 @@ const EventDetail = () => {
   const imageSrc = resolveEventImageSrc(event.image_url);
   const isRegistered = myRegistration && myRegistration.status !== "cancelled";
   const isSportCategory = event.category?.name === "Sport & Movimento";
+  
+  const eventBadges = resolveEventBadges({
+    price: Number(event.price),
+    spots_taken: event.spots_taken,
+    spots_total: event.spots_total,
+    status: event.status,
+    access_rules: event.access_rules,
+    event_badges: (event as any).event_badges,
+  });
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
   const eventStartDate = parseEventDateTime(event.date, event.time);
   const isEventPast = eventStartDate < new Date();
