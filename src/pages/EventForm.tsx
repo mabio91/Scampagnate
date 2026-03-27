@@ -337,15 +337,20 @@ const EventForm = () => {
         .eq("event_id", eventId)
         .order("sort_order");
       if (options && options.length > 0) {
-        setPriceOptions(options.map((o: any) => ({
-          name: o.name,
-          price: Number(o.price),
-          eligible_group: o.eligible_group || 'all',
-          original_price: o.original_price ? Number(o.original_price) : null,
-          is_promotional: o.is_promotional || false,
-          promo_start: o.promo_start ? o.promo_start.split('T')[0] : '',
-          promo_end: o.promo_end ? o.promo_end.split('T')[0] : '',
-        })));
+        setPriceOptions(options.map((o: any) => {
+          const group = o.eligible_group || 'all';
+          const badgeIds = group.startsWith("badge:") ? group.replace("badge:", "").split(",") : [];
+          return {
+            name: o.name,
+            price: Number(o.price),
+            eligible_group: group,
+            badge_ids: badgeIds,
+            original_price: o.original_price ? Number(o.original_price) : null,
+            is_promotional: o.is_promotional || false,
+            promo_start: o.promo_start ? o.promo_start.split('T')[0] : '',
+            promo_end: o.promo_end ? o.promo_end.split('T')[0] : '',
+          };
+        }));
       }
     }
     setLoadingEvent(false);
