@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -236,7 +236,7 @@ const ProductDetail = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <>
         <div className="space-y-4">
           <Skeleton className="aspect-square w-full" />
           <div className="px-4 space-y-3">
@@ -247,13 +247,13 @@ const ProductDetail = () => {
             <Skeleton className="h-12 w-full" />
           </div>
         </div>
-      </AppLayout>
+      </>
     );
   }
 
   if (isError || !product) {
     return (
-      <AppLayout>
+      <>
         <div className="px-4 py-12 text-center space-y-4">
           <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground opacity-40" />
           <h1 className="font-display text-lg font-bold text-foreground">{t("productNotFound")}</h1>
@@ -263,7 +263,7 @@ const ProductDetail = () => {
             {t("backToShop")}
           </Button>
         </div>
-      </AppLayout>
+      </>
     );
   }
 
@@ -284,7 +284,7 @@ const ProductDetail = () => {
   )}`;
 
   return (
-    <AppLayout>
+    <>
       <div className="pb-6">
         {/* Back button */}
         <div className="px-4 py-3">
@@ -341,7 +341,7 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

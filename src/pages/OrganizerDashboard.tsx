@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizerEvents } from "@/hooks/useOrganizerEvents";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -134,7 +134,7 @@ const OrganizerDashboard = () => {
   if (!user || !isOrganizer) return <Navigate to="/" replace />;
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 pt-4 pb-8 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
@@ -489,7 +489,7 @@ const OrganizerDashboard = () => {
           )}
         </Tabs>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

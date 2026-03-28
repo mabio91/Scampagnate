@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef } from "react";
-import AppLayout from "@/components/layout/AppLayout";
+
 import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
 import EventCard from "@/components/events/EventCard";
@@ -145,7 +145,7 @@ const Index = () => {
   const clearFilters = clearAllFilters;
 
   return (
-    <AppLayout>
+    <>
       <div className="pt-4 pb-4 scroll-smooth">
         {isLoading && !events ? (
           <div className="px-4">
@@ -337,7 +337,7 @@ const Index = () => {
           </>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 };
 

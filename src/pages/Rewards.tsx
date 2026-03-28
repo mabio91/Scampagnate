@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,7 +118,7 @@ const Rewards = () => {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 py-4 space-y-6">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1.5 rounded-full hover:bg-muted transition-colors">
@@ -169,7 +169,7 @@ const Rewards = () => {
           </>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 };
 

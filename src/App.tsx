@@ -12,6 +12,7 @@ import { SearchProvider } from "@/contexts/SearchContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { RestrictionBanner } from "@/components/RestrictionBanner";
 import PageTransition from "@/components/PageTransition";
+import PersistentLayout from "@/components/layout/PersistentLayout";
 import Index from "./pages/Index";
 
 // Lazy-loaded routes for code splitting
@@ -60,29 +61,32 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait" initial={false}>
       <PageTransition key={location.pathname}>
         <Routes location={location}>
-          <Route path="/" element={<Index />} />
+          {/* Routes WITH persistent header & bottom nav */}
+          <Route path="/" element={<PersistentLayout><Index /></PersistentLayout>} />
+          <Route path="/my-events" element={<PersistentLayout><MyEvents /></PersistentLayout>} />
+          <Route path="/shop" element={<PersistentLayout><Merch /></PersistentLayout>} />
+          <Route path="/shop/:id" element={<PersistentLayout><ProductDetail /></PersistentLayout>} />
+          <Route path="/merch" element={<PersistentLayout><Merch /></PersistentLayout>} />
+          <Route path="/profile" element={<PersistentLayout><Profile /></PersistentLayout>} />
+          <Route path="/notifications" element={<PersistentLayout><Notifications /></PersistentLayout>} />
+          <Route path="/organizer" element={<PersistentLayout><OrganizerDashboard /></PersistentLayout>} />
+          <Route path="/organizer/:id" element={<PersistentLayout><OrganizerProfile /></PersistentLayout>} />
+          <Route path="/organizer/events/new" element={<PersistentLayout><EventForm /></PersistentLayout>} />
+          <Route path="/organizer/events/:id" element={<PersistentLayout><EventManage /></PersistentLayout>} />
+          <Route path="/organizer/events/:id/edit" element={<PersistentLayout><EventForm /></PersistentLayout>} />
+          <Route path="/privacy" element={<PersistentLayout><Privacy /></PersistentLayout>} />
+          <Route path="/terms" element={<PersistentLayout><Terms /></PersistentLayout>} />
+          <Route path="/page/:slug" element={<PersistentLayout><ContentPage /></PersistentLayout>} />
+          <Route path="/rewards" element={<PersistentLayout><Rewards /></PersistentLayout>} />
+
+          {/* Routes WITHOUT layout (full-screen pages) */}
           <Route path="/event/:id" element={<EventDetail />} />
           <Route path="/event/:id/participants" element={<EventParticipants />} />
-          <Route path="/my-events" element={<MyEvents />} />
-          <Route path="/shop" element={<Merch />} />
-          <Route path="/shop/:id" element={<ProductDetail />} />
-          <Route path="/merch" element={<Merch />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/organizer" element={<OrganizerDashboard />} />
-          <Route path="/organizer/:id" element={<OrganizerProfile />} />
-          <Route path="/organizer/events/new" element={<EventForm />} />
-          <Route path="/organizer/events/:id" element={<EventManage />} />
-          <Route path="/organizer/events/:id/edit" element={<EventForm />} />
+          <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/membership-success" element={<MembershipSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/page/:slug" element={<ContentPage />} />
-          <Route path="/rewards" element={<Rewards />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </PageTransition>

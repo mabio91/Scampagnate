@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { Button } from "@/components/ui/button";
@@ -80,14 +80,14 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <AppLayout>
+      <>
         <div className="px-4 py-12 text-center">
           <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h1 className="font-display text-2xl font-bold text-foreground mb-2">Profilo</h1>
           <p className="text-muted-foreground font-body text-sm mb-4">Accedi per visualizzare il tuo profilo</p>
           <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">Accedi</Button>
         </div>
-      </AppLayout>
+      </>
     );
   }
 
@@ -136,7 +136,7 @@ const Profile = () => {
   const currentPreferences = Array.isArray((profile as any)?.preferences) ? (profile as any).preferences : [];
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 py-4 scroll-smooth">
         {/* Profile header */}
         <div className="flex items-center gap-4 mb-6 animate-fade-in">
@@ -518,7 +518,7 @@ const Profile = () => {
         open={showProposalForm}
         onOpenChange={setShowProposalForm}
       />
-    </AppLayout>
+    </>
   );
 };
 

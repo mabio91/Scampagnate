@@ -7,7 +7,7 @@ import { it as itLocale } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { useMemo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -151,7 +151,7 @@ const Notifications = () => {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -218,7 +218,7 @@ const Notifications = () => {
           ))}
         </div>
       )}
-    </AppLayout>
+    </>
   );
 };
 

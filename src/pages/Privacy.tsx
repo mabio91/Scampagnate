@@ -1,4 +1,4 @@
-import AppLayout from "@/components/layout/AppLayout";
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, Loader2 } from "lucide-react";
@@ -24,7 +24,7 @@ const Privacy = () => {
   });
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 py-6 space-y-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground text-sm">
           <ArrowLeft className="h-4 w-4" /> Indietro
@@ -63,7 +63,7 @@ const Privacy = () => {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

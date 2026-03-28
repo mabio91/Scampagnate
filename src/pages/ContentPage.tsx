@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 const ContentPage = () => {
@@ -24,7 +24,7 @@ const ContentPage = () => {
   });
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 pt-4 pb-8">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground mb-4">
           <ArrowLeft className="h-4 w-4" /> Indietro
@@ -48,7 +48,7 @@ const ContentPage = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 };
 
