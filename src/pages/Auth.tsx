@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
@@ -266,11 +266,11 @@ const Auth = () => {
                 </motion.div>
                 <span className="text-xs font-body text-muted-foreground leading-snug">
                   Accetto la{" "}
-                  <Link to="/privacy" className="text-primary underline font-medium" onClick={(e) => e.stopPropagation()}>
+                  <Link to="/privacy?from=register" className="text-primary underline font-medium" onClick={(e) => e.stopPropagation()}>
                     Privacy Policy
                   </Link>{" "}
                   e i{" "}
-                  <Link to="/terms" className="text-primary underline font-medium" onClick={(e) => e.stopPropagation()}>
+                  <Link to="/terms?from=register" className="text-primary underline font-medium" onClick={(e) => e.stopPropagation()}>
                     Termini di Servizio
                   </Link>
                 </span>
