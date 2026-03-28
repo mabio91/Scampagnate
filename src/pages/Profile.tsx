@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle, Settings } from "lucide-react";
+import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle, Settings, Gift } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
