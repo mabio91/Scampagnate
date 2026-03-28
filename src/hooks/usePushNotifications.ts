@@ -1,18 +1,33 @@
 import { useState, useEffect, useCallback } from 'react';
+import OneSignal from 'react-onesignal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+const ONESIGNAL_APP_ID = '5b9c05fd-e0f1-427e-8301-0a47caba3274';
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+let onesignalInitialized = false;
+
+async function initOneSignal() {
+  if (onesignalInitialized) return;
+
+  // Don't init in iframe or preview
+  const isInIframe = (() => {
+    try { return window.self !== window.top; } catch { return true; }
+  })();
+  const isPreview = window.location.hostname.includes('id-preview--') || window.location.hostname.includes('lovableproject.com');
+  if (isInIframe || isPreview) return;
+
+  try {
+    await OneSignal.init({
+      appId: ONESIGNAL_APP_ID,
+      allowLocalhostAsSecureOrigin: true,
+      serviceWorkerParam: { scope: '/' },
+      serviceWorkerPath: '/OneSignalSDKWorker.js',
+    });
+    onesignalInitialized = true;
+  } catch (err) {
+    console.error('OneSignal init error:', err);
   }
-  return outputArray;
 }
 
 export const usePushNotifications = () => {
@@ -23,81 +38,113 @@ export const usePushNotifications = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && !!VAPID_PUBLIC_KEY;
+    const supported = 'serviceWorker' in navigator && 'Notification' in window;
     setIsSupported(supported);
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
+    if (supported) {
+      initOneSignal();
+    }
   }, []);
 
+  // Sync subscription state
   useEffect(() => {
-    if (!isSupported || !user) return;
+    if (!isSupported || !onesignalInitialized) return;
 
-    navigator.serviceWorker.ready.then(async (reg) => {
-      const sub = await reg.pushManager.getSubscription();
-      setIsSubscribed(!!sub);
-    });
-  }, [isSupported, user]);
+    const checkSubscription = async () => {
+      try {
+        const subscribed = OneSignal.User.PushSubscription.optedIn ?? false;
+        setIsSubscribed(subscribed);
+      } catch {
+        setIsSubscribed(false);
+      }
+    };
+
+    checkSubscription();
+
+    const handler = (change: any) => {
+      setIsSubscribed(change?.current?.optedIn ?? false);
+    };
+    OneSignal.User.PushSubscription.addEventListener('change', handler);
+    return () => {
+      OneSignal.User.PushSubscription.addEventListener('change', handler);
+    };
+  }, [isSupported]);
+
+  // Store player ID in Supabase when subscribed
+  useEffect(() => {
+    if (!user || !isSubscribed || !onesignalInitialized) return;
+
+    const storePlayerId = async () => {
+      try {
+        const playerId = OneSignal.User.PushSubscription.id;
+        if (!playerId) return;
+
+        // Set external user ID for targeting
+        OneSignal.login(user.id);
+
+        await supabase
+          .from('onesignal_players' as any)
+          .upsert(
+            { user_id: user.id, player_id: playerId, device_type: 'web', updated_at: new Date().toISOString() } as any,
+            { onConflict: 'user_id,player_id' }
+          );
+      } catch (err) {
+        console.error('Failed to store OneSignal player ID:', err);
+      }
+    };
+
+    storePlayerId();
+  }, [user, isSubscribed]);
 
   const subscribe = useCallback(async () => {
-    if (!isSupported || !user || !VAPID_PUBLIC_KEY) return false;
+    if (!isSupported) return false;
     setIsLoading(true);
 
     try {
-      const perm = await Notification.requestPermission();
+      await initOneSignal();
+      await OneSignal.Notifications.requestPermission();
+
+      const perm = Notification.permission;
       setPermission(perm);
       if (perm !== 'granted') {
         setIsLoading(false);
         return false;
       }
 
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
-      });
-
-      const subJson = sub.toJSON();
-
-      const { error } = await supabase
-        .from('push_subscriptions' as any)
-        .upsert({
-          user_id: user.id,
-          endpoint: subJson.endpoint!,
-          p256dh: subJson.keys!.p256dh!,
-          auth: subJson.keys!.auth!,
-        } as any, { onConflict: 'user_id,endpoint' });
-
-      if (error) throw error;
-
+      await OneSignal.User.PushSubscription.optIn();
       setIsSubscribed(true);
       setIsLoading(false);
       return true;
     } catch (err) {
-      console.error('Push subscription failed:', err);
+      console.error('OneSignal subscription failed:', err);
       setIsLoading(false);
       return false;
     }
-  }, [isSupported, user]);
+  }, [isSupported]);
 
   const unsubscribe = useCallback(async () => {
-    if (!isSupported || !user) return;
+    if (!isSupported || !onesignalInitialized) return;
     setIsLoading(true);
 
     try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await sub.unsubscribe();
-        await supabase
-          .from('push_subscriptions' as any)
-          .delete()
-          .eq('user_id', user.id)
-          .eq('endpoint', sub.endpoint);
+      await OneSignal.User.PushSubscription.optOut();
+
+      if (user) {
+        const playerId = OneSignal.User.PushSubscription.id;
+        if (playerId) {
+          await supabase
+            .from('onesignal_players' as any)
+            .delete()
+            .eq('user_id', user.id)
+            .eq('player_id', playerId);
+        }
       }
+
       setIsSubscribed(false);
     } catch (err) {
-      console.error('Push unsubscribe failed:', err);
+      console.error('OneSignal unsubscribe failed:', err);
     } finally {
       setIsLoading(false);
     }
