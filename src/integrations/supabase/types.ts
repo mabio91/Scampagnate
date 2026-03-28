@@ -904,10 +904,17 @@ export type Database = {
           category: string | null
           created_at: string
           description: string
+          expires_at: string | null
+          icon: string
           id: string
           is_active: boolean
+          reset_on_failure: boolean
           reward_badge_id: string | null
           reward_points: number
+          reward_type: string
+          reward_value: string | null
+          streak_count: number | null
+          target_action: string
           target_value: number
           title: string
           type: string
@@ -917,10 +924,17 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string
+          expires_at?: string | null
+          icon?: string
           id?: string
           is_active?: boolean
+          reset_on_failure?: boolean
           reward_badge_id?: string | null
           reward_points?: number
+          reward_type?: string
+          reward_value?: string | null
+          streak_count?: number | null
+          target_action?: string
           target_value?: number
           title: string
           type?: string
@@ -930,10 +944,17 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string
+          expires_at?: string | null
+          icon?: string
           id?: string
           is_active?: boolean
+          reset_on_failure?: boolean
           reward_badge_id?: string | null
           reward_points?: number
+          reward_type?: string
+          reward_value?: string | null
+          streak_count?: number | null
+          target_action?: string
           target_value?: number
           title?: string
           type?: string
@@ -1403,6 +1424,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_rewards: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          mission_id: string | null
+          redeemed_at: string | null
+          status: string
+          title: string
+          type: string
+          user_id: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          mission_id?: string | null
+          redeemed_at?: string | null
+          status?: string
+          title?: string
+          type?: string
+          user_id: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          mission_id?: string | null
+          redeemed_at?: string | null
+          status?: string
+          title?: string
+          type?: string
+          user_id?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rewards_mission_id_fkey"
             columns: ["mission_id"]
             isOneToOne: false
             referencedRelation: "missions"
