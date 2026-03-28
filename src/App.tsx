@@ -32,6 +32,7 @@ const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
 const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 const EventParticipants = lazy(() => import("./pages/EventParticipants"));
 const ContentPage = lazy(() => import("./pages/ContentPage"));
 
