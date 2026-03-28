@@ -1,21 +1,20 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Loader2 } from "lucide-react";
+import { FileText, Loader2, ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 
-const Privacy = () => {
+const Terms = () => {
   const navigate = useNavigate();
 
   const { data: page, isLoading } = useQuery({
-    queryKey: ["content-page", "privacy-policy"],
+    queryKey: ["content-page", "termini-di-servizio"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("content_pages")
         .select("*")
-        .eq("slug", "privacy-policy")
+        .eq("slug", "termini-di-servizio")
         .eq("is_published", true)
         .single();
       if (error) throw error;
@@ -32,11 +31,11 @@ const Privacy = () => {
 
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-primary/10">
-            <Shield className="w-6 h-6 text-primary" />
+            <FileText className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Privacy Policy</h1>
-            <p className="text-sm text-muted-foreground">Come proteggiamo i tuoi dati personali</p>
+            <h1 className="text-2xl font-bold text-foreground">Termini di Servizio</h1>
+            <p className="text-sm text-muted-foreground">Le condizioni per utilizzare la piattaforma</p>
           </div>
         </div>
 
@@ -67,4 +66,4 @@ const Privacy = () => {
   );
 };
 
-export default Privacy;
+export default Terms;

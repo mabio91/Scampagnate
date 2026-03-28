@@ -32,6 +32,7 @@ const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
 const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 const EventParticipants = lazy(() => import("./pages/EventParticipants"));
 const ContentPage = lazy(() => import("./pages/ContentPage"));
 
@@ -78,6 +79,7 @@ const AnimatedRoutes = () => {
           <Route path="/membership-success" element={<MembershipSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
