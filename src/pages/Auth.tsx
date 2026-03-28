@@ -220,12 +220,71 @@ const Auth = () => {
           )}
 
           {!isLogin && (
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={acceptPrivacy} onChange={(e) => setAcceptPrivacy(e.target.checked)} className="mt-1 accent-primary" />
-              <span className="text-xs font-body text-muted-foreground">
-                {t("acceptPrivacy")} <a href="#" className="text-primary underline">{t("privacyPolicy")}</a> {t("and")} <a href="#" className="text-primary underline">{t("termsOfService")}</a>
-              </span>
-            </label>
+            <div className="space-y-1.5">
+              <motion.div
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer select-none transition-colors duration-200 ${
+                  acceptPrivacy
+                    ? "border-green-500/50 bg-green-50 dark:bg-green-950/20"
+                    : privacyError
+                    ? "border-destructive bg-destructive/5"
+                    : "border-border hover:bg-muted/50"
+                }`}
+                onClick={() => {
+                  setAcceptPrivacy(!acceptPrivacy);
+                  if (!acceptPrivacy) setPrivacyError(false);
+                }}
+                animate={acceptPrivacy ? { scale: [0.97, 1] } : {}}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <motion.div
+                  className={`flex items-center justify-center h-5 w-5 rounded border-2 shrink-0 transition-colors duration-200 ${
+                    acceptPrivacy
+                      ? "bg-green-600 border-green-600"
+                      : privacyError
+                      ? "border-destructive"
+                      : "border-muted-foreground/40"
+                  }`}
+                  animate={acceptPrivacy ? { scale: [0.8, 1.1, 1] } : {}}
+                  transition={{ duration: 0.25 }}
+                >
+                  <AnimatePresence>
+                    {acceptPrivacy && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <Check className="h-3.5 w-3.5 text-white" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+                <span className="text-xs font-body text-muted-foreground leading-snug">
+                  Accetto la{" "}
+                  <Link to="/privacy" className="text-primary underline font-medium" onClick={(e) => e.stopPropagation()}>
+                    Privacy Policy
+                  </Link>{" "}
+                  e i{" "}
+                  <Link to="/terms" className="text-primary underline font-medium" onClick={(e) => e.stopPropagation()}>
+                    Termini di Servizio
+                  </Link>
+                </span>
+              </motion.div>
+
+              <AnimatePresence>
+                {privacyError && !acceptPrivacy && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="text-xs text-destructive font-body flex items-center gap-1 pl-1"
+                  >
+                    ⚠️ Devi accettare i Termini e la Privacy per continuare
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
           {isLogin && (
