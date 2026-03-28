@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle, Settings } from "lucide-react";
+import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle, Settings, Gift } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -413,6 +413,18 @@ const Profile = () => {
 
         {/* Missions */}
         <ProfileMissions />
+
+        {/* Rewards link */}
+        <Link to="/rewards" className="flex items-center gap-3 py-3 px-1 mb-4 rounded-lg hover:bg-muted/50 transition-colors group animate-fade-in">
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+            <Gift className="h-4.5 w-4.5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-body font-semibold text-foreground">Le tue ricompense</p>
+            <p className="text-xs font-body text-muted-foreground">Coupon, badge e premi sbloccati</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </Link>
 
         {/* Badges */}
         <ProfileBadges />

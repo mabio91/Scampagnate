@@ -35,6 +35,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const EventParticipants = lazy(() => import("./pages/EventParticipants"));
 const ContentPage = lazy(() => import("./pages/ContentPage"));
+const Rewards = lazy(() => import("./pages/Rewards"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +82,7 @@ const AnimatedRoutes = () => {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/page/:slug" element={<ContentPage />} />
+          <Route path="/rewards" element={<Rewards />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </PageTransition>

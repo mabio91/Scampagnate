@@ -474,6 +474,13 @@ const OrganizerDashboard = () => {
             <DiscountCodesPanel />
           </TabsContent>
 
+          {/* Missions Tab (Admin only) */}
+          {isAdmin && (
+            <TabsContent value="missions" className="mt-4">
+              <MissionsPanel />
+            </TabsContent>
+          )}
+
           {/* Issues Tab (Admin only) */}
           {isAdmin && (
             <TabsContent value="issues" className="mt-4">
