@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
+  const [privacyError, setPrivacyError] = useState(false);
 
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -60,7 +61,7 @@ const Auth = () => {
       }
     } else {
       if (!acceptPrivacy) {
-        toast({ title: t("error"), description: t("errorAcceptPrivacy"), variant: "destructive" });
+        setPrivacyError(true);
         setLoading(false);
         return;
       }
