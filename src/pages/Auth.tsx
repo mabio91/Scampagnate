@@ -14,7 +14,11 @@ import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("mode") !== "register";
+  });
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
