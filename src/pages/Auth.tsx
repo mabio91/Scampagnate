@@ -69,16 +69,7 @@ const Auth = () => {
       if (error) {
         toast({ title: t("error"), description: error.message, variant: "destructive" });
       } else {
-        // Send welcome email (fire-and-forget)
-        if (session?.user) {
-          supabase.functions.invoke('send-welcome-email', {
-            body: {
-              userId: session.user.id,
-              email: session.user.email,
-              firstName,
-            },
-          }).catch(console.error);
-        }
+        // Welcome email is sent automatically via DB trigger on profile creation
         toast({ title: t("welcomeBack"), description: t("accountCreated") });
         navigate("/");
       }

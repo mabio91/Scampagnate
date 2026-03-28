@@ -91,16 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           setTimeout(() => fetchUserData(session.user.id), 0);
           
-          // Send welcome email for new OAuth signups (fire-and-forget)
-          if (event === 'SIGNED_IN' && session.user.app_metadata?.provider !== 'email') {
-            supabase.functions.invoke('send-welcome-email', {
-              body: {
-                userId: session.user.id,
-                email: session.user.email,
-                firstName: session.user.user_metadata?.full_name?.split(' ')[0] || session.user.user_metadata?.first_name || '',
-              },
-            }).catch(console.error);
-          }
+          // Welcome email is sent automatically via DB trigger on profile creation
         } else {
           setProfile(null);
           setRoles([]);

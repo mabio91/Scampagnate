@@ -19,16 +19,19 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { userId, email, firstName } = await req.json();
+    const { userId, email, firstName, lastName } = await req.json();
 
-    if (!userId || !email) {
+    // recipientEmail is an alias supported for DB trigger compatibility
+    const recipientEmail = email;
+
+    if (!userId || !recipientEmail) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: userId, email' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Check if welcome email was already sent to this user
+    // Check if welcome email was already sent to this user (send only once)
     const { data: existingLog } = await supabase
       .from('email_send_log')
       .select('id')
@@ -44,7 +47,7 @@ serve(async (req) => {
       );
     }
 
-    // Fetch the active welcome email template
+    // Fetch the active welcome email template from admin-managed table
     const { data: template } = await supabase
       .from('email_templates')
       .select('*')
@@ -54,48 +57,84 @@ serve(async (req) => {
       .single();
 
     if (!template) {
-      throw new Error('No active welcome email template found');
+      throw new Error('No active welcome email template found in email_templates table');
     }
 
-    // Replace template variables
-    const name = firstName || 'Utente';
-    let htmlBody = template.body_html
-      .replace(/\{\{first_name\}\}/g, name)
-      .replace(/\{\{email\}\}/g, email);
+    // Build template variables
+    const name = firstName || '';
+    const fullName = [firstName, lastName].filter(Boolean).join(' ') || '';
+    const greeting = name ? name : '';
+    const ctaUrl = template.cta_url ? `https://scampagnate.com${template.cta_url}` : 'https://scampagnate.com';
 
-    // Build full HTML email with styling
-    const fullHtml = `
-<!DOCTYPE html>
+    // Replace template variables in body
+    let htmlBody = template.body_html
+      .replace(/\{\{first_name\}\}/g, greeting)
+      .replace(/\{\{full_name\}\}/g, fullName)
+      .replace(/\{\{email\}\}/g, recipientEmail)
+      .replace(/\{\{cta_url\}\}/g, ctaUrl);
+
+    // Handle greeting fallback: if name is empty, fix "Ciao ," to "Ciao!"
+    htmlBody = htmlBody.replace(/Ciao\s*,/g, name ? `Ciao ${name},` : 'Ciao!');
+
+    // Replace subject variables
+    const subject = template.subject
+      .replace(/\{\{first_name\}\}/g, greeting)
+      .replace(/\{\{full_name\}\}/g, fullName);
+
+    // Build plain-text version (anti-spam best practice)
+    const plainTextBody = htmlBody
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    // Build full HTML email with responsive, clean layout
+    const senderName = template.sender_name || 'Scampagnate';
+    const fullHtml = `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${template.subject}</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>${subject}</title>
+  <!--[if mso]>
+  <style>table,td{font-family:Arial,sans-serif!important;}</style>
+  <![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#f7f5f0;font-family:'DM Sans',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f5f0;padding:40px 0;">
+<body style="margin:0;padding:0;background-color:#f7f5f0;font-family:'DM Sans',Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
+  ${template.preview_text ? `<!--[if !mso]><!--><div style="display:none;font-size:1px;color:#f7f5f0;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${template.preview_text.replace(/\{\{first_name\}\}/g, greeting).replace(/\{\{full_name\}\}/g, fullName)}</div><!--<![endif]-->` : ''}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f5f0;padding:40px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
           <!-- Header -->
           <tr>
-            <td style="background-color:#1a3a2a;padding:32px 40px;text-align:center;">
-              <h1 style="color:#f0ebe0;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-size:24px;font-weight:700;margin:0;">
-                🌿 Scampagnate
+            <td style="background-color:#1a3a2a;padding:28px 32px;text-align:center;">
+              <h1 style="color:#f0ebe0;font-family:'Plus Jakarta Sans',Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;margin:0;letter-spacing:0.3px;">
+                Scampagnate
               </h1>
             </td>
           </tr>
           <!-- Body -->
           <tr>
-            <td style="padding:40px;">
-              ${template.preview_text ? `<!--[if !mso]><!--><div style="display:none;max-height:0;overflow:hidden;">${template.preview_text}</div><!--<![endif]-->` : ''}
+            <td style="padding:36px 32px 24px;">
               <div style="font-size:15px;line-height:1.7;color:#2d3b30;">
                 ${htmlBody}
               </div>
               ${template.cta_label && template.cta_url ? `
-              <div style="text-align:center;margin:32px 0 16px;">
-                <a href="https://scampagnate.com${template.cta_url}" 
-                   style="display:inline-block;background-color:#1a3a2a;color:#f0ebe0;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+              <div style="text-align:center;margin:28px 0 8px;">
+                <a href="${ctaUrl}" 
+                   style="display:inline-block;background-color:#1a3a2a;color:#f0ebe0;padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;font-family:'DM Sans',Arial,Helvetica,sans-serif;">
                   ${template.cta_label}
                 </a>
               </div>` : ''}
@@ -103,9 +142,12 @@ serve(async (req) => {
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding:24px 40px;background-color:#f0ebe0;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#6b7c6e;">
-                © ${new Date().getFullYear()} Scampagnate · Tutti i diritti riservati
+            <td style="padding:20px 32px 24px;background-color:#f0ebe0;text-align:center;">
+              <p style="margin:0 0 8px;font-size:12px;color:#6b7c6e;line-height:1.5;">
+                Hai ricevuto questa email perch&eacute; hai creato un account su Scampagnate.
+              </p>
+              <p style="margin:0;font-size:12px;color:#8a9a8d;">
+                &copy; ${new Date().getFullYear()} Scampagnate &middot; Tutti i diritti riservati
               </p>
             </td>
           </tr>
@@ -116,7 +158,7 @@ serve(async (req) => {
 </body>
 </html>`;
 
-    // Send email via Resend
+    // Send email via Resend with both HTML and plain-text
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -124,11 +166,16 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${template.sender_name || 'Scampagnate'} <noreply@scampagnate.com>`,
-        to: [email],
-        subject: template.subject.replace(/\{\{first_name\}\}/g, name),
+        from: `${senderName} <noreply@scampagnate.com>`,
+        to: [recipientEmail],
+        subject,
         html: fullHtml,
-        reply_to: template.reply_to || undefined,
+        text: plainTextBody,
+        reply_to: template.reply_to || 'info@scampagnate.com',
+        headers: {
+          'X-Entity-Ref-ID': `welcome-${userId}`,
+          'List-Unsubscribe': '<mailto:info@scampagnate.com?subject=unsubscribe>',
+        },
       }),
     });
 
@@ -139,7 +186,7 @@ serve(async (req) => {
       await supabase.from('email_send_log').insert({
         user_id: userId,
         email_type: 'welcome',
-        recipient_email: email,
+        recipient_email: recipientEmail,
         status: 'failed',
         template_id: template.id,
         provider_response: JSON.stringify(data),
@@ -151,7 +198,7 @@ serve(async (req) => {
     await supabase.from('email_send_log').insert({
       user_id: userId,
       email_type: 'welcome',
-      recipient_email: email,
+      recipient_email: recipientEmail,
       status: 'sent',
       template_id: template.id,
       provider_response: JSON.stringify(data),
