@@ -312,9 +312,9 @@ const Auth = () => {
         {!isLogin && (
           <div className="mt-8 pt-6 border-t border-border flex flex-col items-center">
             <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center gap-1.5 text-sm text-secondary hover:underline font-body font-semibold">
-              <Info className="h-4 w-4" /> {t("viewDifficultyGuide")}
+              <Info className="h-4 w-4" /> Che livello sei?
             </button>
-            <p className="text-xs text-muted-foreground mt-1.5 text-center px-4">{t("learnCriteria")}</p>
+            <p className="text-xs text-muted-foreground mt-1.5 text-center px-4">Scopri quale esperienza è giusta per te</p>
           </div>
         )}
       </motion.div>
