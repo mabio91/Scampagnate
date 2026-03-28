@@ -290,7 +290,7 @@ const ProfileSetup = () => {
             <PartyPopper className="h-16 w-16 mx-auto text-primary" />
           </motion.div>
           <div className="space-y-2">
-            <h1 className="font-display text-2xl font-bold text-foreground">Perfetto! 🎉</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground"><h1 className="font-display text-2xl font-bold text-foreground">Perfetto!</h1></h1>
             <p className="text-muted-foreground font-body">
               Abbiamo selezionato alcuni eventi in base al tuo profilo.
             </p>
