@@ -289,18 +289,6 @@ const EventDetail = () => {
     setShowRegisterDialog(true);
   };
 
-  const handlePhoneVerified = () => {
-    setShowPhoneVerification(false);
-    if (accessData && !accessData.hasAccess) {
-      setShowAccessWarning(true);
-    } else if (accessData && accessData.softWarnings && accessData.softWarnings.length > 0) {
-      setShowAccessWarning(true);
-    } else if (fitScore && !fitScore.hidden && !fitScore.profileIncomplete && fitScore.score < 30) {
-      setShowFitScoreWarning(true);
-    } else {
-      setShowRegisterDialog(true);
-    }
-  };
 
   const handleMembershipCheckout = async () => {
     setMembershipLoading(true);
