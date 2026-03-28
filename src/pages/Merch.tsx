@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { MessageCircle, ShoppingBag } from "lucide-react";
@@ -40,7 +41,8 @@ const useProducts = () =>
     },
   });
 
-const ProductCard = ({ product }: { product: MerchProduct }) => {
+const ProductCard = React.forwardRef<HTMLAnchorElement, { product: MerchProduct }>(
+  ({ product }, ref) => {
   const { t, language } = useLanguage();
   const displayName = language === "it" && product.name_it ? product.name_it : product.name;
   const displayDesc = language === "it" && product.description_it ? product.description_it : product.description;
@@ -52,7 +54,7 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
   )}`;
 
   return (
-    <Link to={`/shop/${product.id}`} className="block h-full">
+    <Link to={`/shop/${product.id}`} className="block h-full" ref={ref}>
       <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
         <div className="relative aspect-square bg-muted">
           {product.image_url ? (
@@ -67,9 +69,9 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
             </div>
           )}
           {displayBadge && (
-            <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-body">
+            <span className="absolute top-3 left-3 inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-body font-semibold bg-accent text-accent-foreground">
               {displayBadge}
-            </Badge>
+            </span>
           )}
         </div>
         <CardContent className="p-4 space-y-3 flex flex-col flex-1">
@@ -95,7 +97,8 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
       </Card>
     </Link>
   );
-};
+});
+ProductCard.displayName = "ProductCard";
 
 const ProductSkeleton = () => (
   <Card className="overflow-hidden border-0 shadow-sm">
