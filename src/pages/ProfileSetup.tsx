@@ -81,7 +81,7 @@ const InterestCard = ({ selected, onClick, emoji, label, disabled }: InterestCar
     }`}
   >
     <span className="text-lg">{emoji}</span>
-    <span className={`text-xs font-medium leading-tight ${selected ? "text-primary" : "text-foreground"}`}>{label}</span>
+    <span className={`text-xs font-medium leading-tight w-full text-center ${selected ? "text-primary" : "text-foreground"}`}>{label}</span>
     {selected && (
       <motion.div
         initial={{ scale: 0 }}
@@ -147,8 +147,13 @@ const ProfileSetup = () => {
   );
 
   const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
+
+  // BUG 1 fix: Always scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [step]);
 
   const goNext = useCallback(() => {
     setDirection(1);
@@ -523,8 +528,8 @@ const ProfileSetup = () => {
                 </div>
 
                 {/* Car availability */}
-                <div ref={carSectionRef} className="space-y-2">
-                  <Label className={`font-body text-sm font-semibold ${step3Errors.car ? "text-destructive" : ""}`}>Sei automunito? {step3Errors.car && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}</Label>
+                <div ref={carSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.car ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
+                  <Label className={`font-body text-sm font-semibold ${step3Errors.car ? "text-destructive" : ""}`}>Sei automunito? <span className="text-destructive">*</span> {step3Errors.car && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}</Label>
                   <div className="space-y-2">
                     {[
                       { val: "yes", emoji: "🚗", label: "Sì" },
@@ -543,7 +548,7 @@ const ProfileSetup = () => {
                 </div>
 
                 {/* Interests */}
-                <div ref={interestsSectionRef} className="space-y-2">
+                <div ref={interestsSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.interests ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
                   <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
                     Quali esperienze ti attirano di più?
                   </Label>
