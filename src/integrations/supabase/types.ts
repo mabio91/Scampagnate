@@ -290,6 +290,101 @@ export type Database = {
         }
         Relationships: []
       }
+      email_send_log: {
+        Row: {
+          created_at: string | null
+          email_type: string
+          id: string
+          provider_response: string | null
+          recipient_email: string
+          retry_count: number | null
+          sent_at: string | null
+          status: string | null
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_type: string
+          id?: string
+          provider_response?: string | null
+          recipient_email: string
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_type?: string
+          id?: string
+          provider_response?: string | null
+          recipient_email?: string
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_send_log_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body_html: string
+          created_at: string | null
+          cta_label: string | null
+          cta_url: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          preview_text: string | null
+          reply_to: string | null
+          sender_name: string | null
+          subject: string
+          template_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          preview_text?: string | null
+          reply_to?: string | null
+          sender_name?: string | null
+          subject?: string
+          template_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_html?: string
+          created_at?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          preview_text?: string | null
+          reply_to?: string | null
+          sender_name?: string | null
+          subject?: string
+          template_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       equipment_template_items: {
         Row: {
           id: string
