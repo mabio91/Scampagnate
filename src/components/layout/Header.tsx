@@ -37,32 +37,32 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-safe">
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 max-w-lg mx-auto">
-        <Link to="/" className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
-          <img src={logo} alt="Scampagnate" className="h-8 sm:h-9 w-8 sm:w-9 rounded-full shrink-0" />
-          <span className="font-display text-sm sm:text-base font-bold text-foreground truncate">Scampagnate</span>
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 header-safe-top">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-2.5 max-w-lg mx-auto">
+        <Link to="/" className="flex items-center gap-2 min-w-0 shrink">
+          <img src={logo} alt="Scampagnate" className="h-9 sm:h-10 w-9 sm:w-10 rounded-full shrink-0" />
+          <span className="font-display text-base sm:text-lg font-bold text-foreground truncate">Scampagnate</span>
         </Link>
-        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {mounted && (
             <button
-              className="p-1.5 sm:p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
+              className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
               onClick={toggleTheme}
               aria-label={t("toggleTheme")}
             >
               {resolvedTheme === "dark" ? (
-                <Sun className="h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
+                <Sun className="h-[18px] sm:h-5 w-[18px] sm:w-5 text-muted-foreground" />
               ) : (
-                <Moon className="h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
+                <Moon className="h-[18px] sm:h-5 w-[18px] sm:w-5 text-muted-foreground" />
               )}
             </button>
           )}
           <button
-            className="p-1.5 sm:p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
+            className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
             onClick={() => { navigate("/"); toggleSearch(); }}
             aria-label={t("search")}
           >
-            <Search className="h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
+            <Search className="h-[18px] sm:h-5 w-[18px] sm:w-5 text-muted-foreground" />
           </button>
           {user ? (
             <>
