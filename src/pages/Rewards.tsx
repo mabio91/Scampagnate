@@ -118,7 +118,7 @@ const Rewards = () => {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 py-4 space-y-6">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1.5 rounded-full hover:bg-muted transition-colors">
@@ -169,7 +169,7 @@ const Rewards = () => {
           </>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 };
 

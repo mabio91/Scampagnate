@@ -344,18 +344,18 @@ const EventManage = () => {
 
   if (eventLoading) {
     return (
-      <AppLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-      </AppLayout>
+      </>
     );
   }
 
   if (!event) return <Navigate to="/organizer" replace />;
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 pt-4 pb-8 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -1368,7 +1368,7 @@ const EventManage = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </>
   );
 };
 

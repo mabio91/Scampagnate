@@ -24,7 +24,7 @@ const OrganizerProfile = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <>
         <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
           <div className="flex flex-col items-center space-y-4">
             <Skeleton className="w-28 h-28 rounded-full" />
@@ -41,13 +41,13 @@ const OrganizerProfile = () => {
             <Skeleton className="h-28 w-full rounded-2xl" />
           </div>
         </div>
-      </AppLayout>
+      </>
     );
   }
 
   if (error || !organizer) {
     return (
-      <AppLayout>
+      <>
         <div className="max-w-lg mx-auto px-4 py-20 text-center space-y-3">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
             <UserIcon className="h-8 w-8 text-muted-foreground" />
@@ -55,7 +55,7 @@ const OrganizerProfile = () => {
           <p className="text-muted-foreground font-body">Organizer not found</p>
           <Link to="/" className="text-primary font-body block">Back to Home</Link>
         </div>
-      </AppLayout>
+      </>
     );
   }
 
@@ -65,7 +65,7 @@ const OrganizerProfile = () => {
   const pastEvents = events?.filter(e => new Date(e.date) < new Date()) || [];
 
   return (
-    <AppLayout>
+    <>
       <div className="bg-background pb-24">
         {/* Back button */}
         <div className="max-w-lg mx-auto px-4 pt-4">
@@ -227,7 +227,7 @@ const OrganizerProfile = () => {
           )}
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

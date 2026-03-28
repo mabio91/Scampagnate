@@ -145,7 +145,7 @@ const Index = () => {
   const clearFilters = clearAllFilters;
 
   return (
-    <AppLayout>
+    <>
       <div className="pt-4 pb-4 scroll-smooth">
         {isLoading && !events ? (
           <div className="px-4">
@@ -337,7 +337,7 @@ const Index = () => {
           </>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 };
 

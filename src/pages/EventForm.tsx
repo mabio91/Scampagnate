@@ -603,16 +603,16 @@ const EventForm = () => {
 
   if (loadingEvent) {
     return (
-      <AppLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-      </AppLayout>
+      </>
     );
   }
 
   return (
-    <AppLayout>
+    <>
       <form onSubmit={handleSubmit} className="px-4 pt-4 pb-8 space-y-6">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate(-1)} className="p-1">
@@ -1729,7 +1729,7 @@ const EventForm = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AppLayout>
+    </>
   );
 };
 

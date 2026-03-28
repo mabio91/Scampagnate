@@ -118,7 +118,7 @@ const Merch = () => {
   const { data: products, isLoading } = useProducts();
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 py-6 space-y-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ const Merch = () => {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

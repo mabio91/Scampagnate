@@ -23,7 +23,7 @@ const Terms = () => {
   });
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 py-6 space-y-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground text-sm">
           <ArrowLeft className="h-4 w-4" /> Indietro
@@ -62,7 +62,7 @@ const Terms = () => {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

@@ -92,14 +92,14 @@ const MyEvents = () => {
 
   if (!user) {
     return (
-      <AppLayout>
+      <>
         <div className="px-4 py-12 text-center">
           <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h1 className="font-display text-2xl font-bold text-foreground mb-2">{t("myEvents")}</h1>
           <p className="text-muted-foreground font-body text-sm mb-4">{t("signInToViewProfile")}</p>
           <Button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground font-body">{t("signIn")}</Button>
         </div>
-      </AppLayout>
+      </>
     );
   }
 
@@ -110,7 +110,7 @@ const MyEvents = () => {
   const cancelled = registrations?.filter((r: any) => r.status === "cancelled") || [];
 
   return (
-    <AppLayout>
+    <>
       <div className="px-4 py-4">
         <h1 className="font-display text-2xl font-bold text-foreground mb-4">{t("myEvents")}</h1>
         <Tabs defaultValue="upcoming">
@@ -180,7 +180,7 @@ const MyEvents = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </>
   );
 };
 
