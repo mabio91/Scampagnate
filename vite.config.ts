@@ -56,6 +56,9 @@ export default defineConfig(({ mode }) => ({
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,jpg,svg,woff2}"],
       },
+      devOptions: {
+        enabled: false,
+      },
     }),
   ].filter(Boolean),
   resolve: {

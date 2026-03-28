@@ -55,4 +55,5 @@ registerRoute(
   })
 );
 
-// Push notifications are now handled by OneSignal's service worker (OneSignalSDKWorker.js)
+// Push notifications are handled by OneSignal's service worker (OneSignalSDKWorker.js)
+// This SW only handles caching — OneSignal registers its own SW at /OneSignalSDKWorker.js
