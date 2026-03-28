@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { Checkbox } from "@/components/ui/checkbox";
-import PhoneVerificationDialog from "@/components/PhoneVerificationDialog";
+
 import RegistrationCheckoutDialog from "@/components/events/RegistrationCheckoutDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import useEmblaCarousel from "embla-carousel-react";
@@ -72,7 +72,7 @@ const EventDetail = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
+  
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   // New states
@@ -274,11 +274,6 @@ const EventDetail = () => {
     }
 
     if (isRegistered) return;
-
-    if (!profile?.phone_verified) {
-      setShowPhoneVerification(true);
-      return;
-    }
 
     if (accessData && accessData.softWarnings && accessData.softWarnings.length > 0) {
       setShowAccessWarning(true);
@@ -1464,11 +1459,6 @@ const EventDetail = () => {
         text={shareText}
       />
 
-      <PhoneVerificationDialog
-        open={showPhoneVerification}
-        onOpenChange={setShowPhoneVerification}
-        onVerified={handlePhoneVerified}
-      />
     </div>
   );
 };
