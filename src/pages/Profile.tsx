@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle } from "lucide-react";
+import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle, Settings } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -21,6 +21,7 @@ import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import ActivityProposalForm from "@/components/ActivityProposalForm";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
+import AccountSettings from "@/components/profile/AccountSettings";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -485,7 +486,8 @@ const Profile = () => {
 
           {/* Account */}
           <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Account</p>
-          <div className="space-y-1">
+          <AccountSettings />
+          <div className="space-y-1 mt-1">
             <button onClick={handleSignOut} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-destructive/5 transition-colors group w-full text-left">
               <LogOut className="h-4.5 w-4.5 text-destructive shrink-0" />
               <div className="flex-1 min-w-0">
