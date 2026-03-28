@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { Button } from "@/components/ui/button";

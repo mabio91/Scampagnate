@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef } from "react";
-import AppLayout from "@/components/layout/AppLayout";
+
 import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
 import EventCard from "@/components/events/EventCard";

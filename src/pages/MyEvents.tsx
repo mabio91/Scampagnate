@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
+
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
   CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2

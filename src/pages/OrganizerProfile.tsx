@@ -5,7 +5,7 @@ import {
   User as UserIcon, Calendar, Star, Users, ChevronRight, Lock,
   Info, Clock
 } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { useOrganizerProfile } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";

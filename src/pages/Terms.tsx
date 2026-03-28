@@ -1,4 +1,4 @@
-import AppLayout from "@/components/layout/AppLayout";
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Loader2, ArrowLeft } from "lucide-react";

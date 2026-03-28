@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventRegistrations, useEventMeetingPoints } from "@/hooks/useOrganizerEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -7,7 +7,7 @@ import { it as itLocale } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import AppLayout from "@/components/layout/AppLayout";
+
 import { useMemo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
