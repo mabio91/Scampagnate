@@ -52,8 +52,8 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
   )}`;
 
   return (
-    <Link to={`/shop/${product.id}`} className="block">
-      <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+    <Link to={`/shop/${product.id}`} className="block h-full">
+      <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
         <div className="relative aspect-square bg-muted">
           {product.image_url ? (
             <img
@@ -72,7 +72,7 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
             </Badge>
           )}
         </div>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-4 space-y-3 flex flex-col flex-1">
           <div>
             <h3 className="font-display text-sm font-bold text-foreground leading-tight">
               {displayName}
@@ -81,7 +81,7 @@ const ProductCard = ({ product }: { product: MerchProduct }) => {
               €{Number(product.price).toFixed(2)}
             </p>
           </div>
-          <p className="text-xs font-body text-muted-foreground leading-relaxed line-clamp-2">
+          <p className="text-xs font-body text-muted-foreground leading-relaxed line-clamp-2 flex-1">
             {displayDesc}
           </p>
           <Button

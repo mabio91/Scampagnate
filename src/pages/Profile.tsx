@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users } from "lucide-react";
+import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -472,6 +472,14 @@ const Profile = () => {
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
             </Link>
+            <a href="https://wa.me/393485315344" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group">
+              <MessageCircle className="h-4.5 w-4.5 text-[#25D366] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-body font-semibold text-foreground">Chatta con noi</p>
+                <p className="text-xs font-body text-muted-foreground">Scrivici su WhatsApp per assistenza</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </a>
             <ReportIssueDialog />
           </div>
 
