@@ -43,19 +43,7 @@ const LEVEL_DETAILS: Record<number, { description: string; characteristics: stri
 };
 
 export const DifficultyGuideDialog: FC<DifficultyGuideDialogProps> = ({ open, onOpenChange }) => {
-  const { data: levels, isLoading } = useQuery({
-    queryKey: ["trekking-difficulty-levels"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("trekking_difficulty_levels")
-        .select("*")
-        .order("level_number", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-    enabled: open,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: levels, isLoading } = useTrekkingDifficultyLevels();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
