@@ -68,7 +68,7 @@ export const usePushNotifications = () => {
     };
     OneSignal.User.PushSubscription.addEventListener('change', handler);
     return () => {
-      OneSignal.User.PushSubscription.addEventListener('change', handler);
+      OneSignal.User.PushSubscription.removeEventListener('change', handler);
     };
   }, [isSupported]);
 
