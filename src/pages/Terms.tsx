@@ -3,10 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Loader2, ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Terms = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromRegister = searchParams.get("from") === "register";
+
+  const handleBack = () => {
+    if (fromRegister) {
+      navigate("/auth?mode=register");
+    } else {
+      navigate(-1);
+    }
+  };
 
   const { data: page, isLoading } = useQuery({
     queryKey: ["content-page", "termini-di-servizio"],
@@ -25,7 +35,7 @@ const Terms = () => {
   return (
     <>
       <div className="px-4 py-6 space-y-6">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground text-sm">
+        <button onClick={handleBack} className="flex items-center gap-2 text-muted-foreground text-sm">
           <ArrowLeft className="h-4 w-4" /> Indietro
         </button>
 
