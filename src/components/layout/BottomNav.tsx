@@ -36,12 +36,7 @@ const BottomNav = () => {
                   : "text-muted-foreground active:text-foreground"
               }`}
             >
-              <div className="relative">
-                <item.icon className={`h-5 w-5 transition-all duration-200 ${active ? "stroke-[2.5]" : ""}`} />
-                {active && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-                )}
-              </div>
+              <item.icon className={`h-5 w-5 transition-all duration-200 ${active ? "stroke-[2.5]" : ""}`} />
               <span className={`text-[10px] font-body leading-tight transition-all duration-200 ${active ? "font-bold" : "font-medium"}`}>
                 {item.label}
               </span>
