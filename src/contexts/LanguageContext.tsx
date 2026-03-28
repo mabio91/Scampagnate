@@ -335,7 +335,7 @@ const translations = {
     // Payment/Membership Success
     verifyingPayment: "Verifica pagamento...",
     verifyingPaymentDesc: "Stiamo verificando il tuo pagamento.",
-    paymentConfirmedTitle: "Pagamento Confermato! 🎉",
+    paymentConfirmedTitle: "Pagamento Confermato!",
     paymentConfirmedDesc: "Il pagamento è stato registrato. Sei ufficialmente iscritto all'evento!",
     backToEvent: "Torna all'evento",
     goToHome: "Vai alla Home",
@@ -343,7 +343,7 @@ const translations = {
     verificationErrorDesc: "Non siamo riusciti a verificare il pagamento. Se hai già pagato, contatta il supporto.",
     paymentConfirmedToast: "Pagamento confermato!",
     paymentConfirmedToastDesc: "Il tuo pagamento è stato registrato con successo.",
-    membershipActivatedTitle: "Tessera Attivata! 🎉",
+    membershipActivatedTitle: "Tessera Attivata!",
     membershipActivatedDesc: "La tua tessera associativa Scampagnate è ora attiva. Puoi partecipare a tutti gli eventi!",
     membershipActivatedToast: "Tessera attivata!",
     membershipActivatedToastDesc: "La tua tessera associativa è ora attiva.",
