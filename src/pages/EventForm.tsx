@@ -234,7 +234,9 @@ const EventForm = () => {
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
   const [askCarAvailability, setAskCarAvailability] = useState(false);
   const [weatherOverrideCondition, setWeatherOverrideCondition] = useState("");
-  const [weatherOverrideTemp, setWeatherOverrideTemp] = useState("");
+  const [weatherOverrideTempMin, setWeatherOverrideTempMin] = useState("");
+  const [weatherOverrideTempMax, setWeatherOverrideTempMax] = useState("");
+  const [weatherOverrideTempAvg, setWeatherOverrideTempAvg] = useState("");
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
