@@ -1,12 +1,19 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { ArrowLeft, Loader2 } from "lucide-react";
 
+const ROUTE_SLUG_MAP: Record<string, string> = {
+  "/guida-difficolta-trekking": "guida-difficolta-trekking",
+};
+
 const ContentPage = () => {
-  const { slug } = useParams();
+  const { slug: paramSlug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const slug = paramSlug || ROUTE_SLUG_MAP[location.pathname];
 
   const { data: page, isLoading } = useQuery({
     queryKey: ["content-page", slug],
@@ -38,7 +45,7 @@ const ContentPage = () => {
           <>
             <h1 className="font-display text-2xl font-bold text-foreground mb-4">{page.title}</h1>
             <div
-              className="prose prose-sm dark:prose-invert max-w-none font-body"
+              className="prose prose-sm max-w-none font-body text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/85 prose-a:text-primary prose-blockquote:text-muted-foreground prose-blockquote:border-border"
               dangerouslySetInnerHTML={{ __html: page.content_html }}
             />
           </>
