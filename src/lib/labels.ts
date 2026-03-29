@@ -27,6 +27,17 @@ export const UI_LABELS = {
   cancelled: "Cancellato",
   past: "Passato",
 
+  // Card statuses
+  statusOpen: "Aperto",
+  statusWaitlist: "Waitlist",
+  statusComingSoon: "In arrivo",
+  statusJoined: "Iscritto",
+  statusClosed: "Chiuso",
+
+  // Image badges
+  badgeSoldOut: "Sold Out",
+  badgePromo: "Promo",
+
   // Urgency badges (hero only — pick highest priority)
   urgencyLastSpots: "Ultimi posti",
   urgencyAlmostFull: "Quasi completo",
