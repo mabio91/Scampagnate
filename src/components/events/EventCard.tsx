@@ -175,7 +175,7 @@ const EventCard = memo(({
             {/* Location */}
             <div className="flex items-center gap-1 text-muted-foreground text-xs font-body min-w-0">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{event.location}</span>
+              <span className="truncate">{(event as any).location_label || event.location}</span>
               {event.distance && (
                 <>
                   <span className="text-muted-foreground/50 mx-0.5">|</span>

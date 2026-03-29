@@ -696,7 +696,7 @@ const EventDetail = () => {
               <MapPin className="h-5 w-5 text-secondary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-body font-semibold text-foreground group-hover:text-secondary transition-colors">{event.location.split(',')[0]}</p>
+              <p className="text-sm font-body font-semibold text-foreground group-hover:text-secondary transition-colors">{(event as any).location_label || event.location.split(',')[0]}</p>
               <p className="text-xs font-body text-muted-foreground truncate">{event.location}</p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-3" />

@@ -183,6 +183,7 @@ const EventForm = () => {
     date: "",
     time: "",
     location: "",
+    location_label: "",
     category_id: "",
     spots_total: 20,
     reserved_spots: 0,
