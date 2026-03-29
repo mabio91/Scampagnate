@@ -44,6 +44,7 @@ const tooltipStyle = {
 const OrganizerDashboard = () => {
   const navigate = useNavigate();
   const { user, isOrganizer, isAdmin, loading } = useAuth();
+  const { toast } = useToast();
   const { data: events, isLoading } = useOrganizerEvents();
 
   // Fetch all registrations for organizer's events
@@ -223,6 +224,17 @@ const OrganizerDashboard = () => {
                           {event.spots_taken}/{event.spots_total}
                         </Badge>
                         <div className="flex gap-1 ml-1" onClick={(e) => e.preventDefault()}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/event/${event.id}`);
+                              toast({ title: "Link copiato!", description: "Puoi condividerlo con i partecipanti" });
+                            }}
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 
