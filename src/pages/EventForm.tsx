@@ -183,6 +183,7 @@ const EventForm = () => {
     date: "",
     time: "",
     location: "",
+    location_label: "",
     category_id: "",
     spots_total: 20,
     reserved_spots: 0,
@@ -279,6 +280,7 @@ const EventForm = () => {
         date: isDuplicating ? "" : event.date,
         time: isDuplicating ? "" : event.time,
         location: event.location,
+        location_label: (event as any).location_label || "",
         category_id: event.category_id || "",
         spots_total: event.spots_total,
         reserved_spots: isDuplicating ? 0 : ((event as any).reserved_spots || 0),
@@ -493,6 +495,7 @@ const EventForm = () => {
         date: form.date,
         time: form.time,
         location: form.location,
+        location_label: form.location_label || null,
         category_id: form.category_id || null,
         spots_total: form.spots_total,
         reserved_spots: form.reserved_spots,
@@ -670,6 +673,17 @@ const EventForm = () => {
                 error={validationErrors.location}
               />
               {validationErrors.location && <p className="text-xs text-destructive mt-1">Location is required</p>}
+              <div className="mt-2">
+                <Label htmlFor="location_label" className="text-xs text-muted-foreground">Custom Label <span className="text-muted-foreground/60">(optional)</span></Label>
+                <Input
+                  id="location_label"
+                  value={form.location_label}
+                  onChange={(e) => updateForm("location_label", e.target.value)}
+                  placeholder="e.g. Metro La Rustica"
+                  className="mt-1"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">Se vuoto, verrà mostrato l'indirizzo completo</p>
+              </div>
             </div>
             <div>
               <Label htmlFor="category">Category</Label>
