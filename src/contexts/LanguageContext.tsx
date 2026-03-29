@@ -129,7 +129,7 @@ const translations = {
     membershipKeepId: "Il tuo numero di tessera verrà mantenuto.",
     membershipNewText: "Per partecipare alle attività organizzate dal Gruppo Scampagnate, è richiesta la tessera associativa annuale.",
     membershipAfterPayment: "Dopo il pagamento riceverai il tuo numero di tessera personale. La tessera fisica verrà consegnata durante il tuo primo evento.",
-    membershipFeePerYear: "La quota associativa è di €10/anno e copre l'intero anno solare {year}.",
+    membershipFeePerYear: "La quota associativa è di €{fee}/anno e copre l'intero anno solare {year}.",
 
     // Payment Info
     fullPaymentOnline: "Pagamento Completo Online",
