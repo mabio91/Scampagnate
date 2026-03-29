@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizerEvents } from "@/hooks/useOrganizerEvents";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb, Ticket
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb, Ticket, Link2
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
 import ProposalsPanel from "@/components/admin/ProposalsPanel";
@@ -43,6 +44,7 @@ const tooltipStyle = {
 const OrganizerDashboard = () => {
   const navigate = useNavigate();
   const { user, isOrganizer, isAdmin, loading } = useAuth();
+  const { toast } = useToast();
   const { data: events, isLoading } = useOrganizerEvents();
 
   // Fetch all registrations for organizer's events
@@ -222,6 +224,17 @@ const OrganizerDashboard = () => {
                           {event.spots_taken}/{event.spots_total}
                         </Badge>
                         <div className="flex gap-1 ml-1" onClick={(e) => e.preventDefault()}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/event/${event.id}`);
+                              toast({ title: "Link copiato!", description: "Puoi condividerlo con i partecipanti" });
+                            }}
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 
