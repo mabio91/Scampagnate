@@ -234,7 +234,9 @@ const EventForm = () => {
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
   const [askCarAvailability, setAskCarAvailability] = useState(false);
   const [weatherOverrideCondition, setWeatherOverrideCondition] = useState("");
-  const [weatherOverrideTemp, setWeatherOverrideTemp] = useState("");
+  const [weatherOverrideTempMin, setWeatherOverrideTempMin] = useState("");
+  const [weatherOverrideTempMax, setWeatherOverrideTempMax] = useState("");
+  const [weatherOverrideTempAvg, setWeatherOverrideTempAvg] = useState("");
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
@@ -333,7 +335,13 @@ const EventForm = () => {
           // New format: { fields: [...], ask_car_availability: bool }
           setAskCarAvailability(!!af.ask_car_availability);
           if (af.weather_override_condition) setWeatherOverrideCondition(af.weather_override_condition);
-          if (af.weather_override_temp != null && af.weather_override_temp !== "") setWeatherOverrideTemp(String(af.weather_override_temp));
+          if (af.weather_override_temp_min != null && af.weather_override_temp_min !== "") setWeatherOverrideTempMin(String(af.weather_override_temp_min));
+          if (af.weather_override_temp_max != null && af.weather_override_temp_max !== "") setWeatherOverrideTempMax(String(af.weather_override_temp_max));
+          if (af.weather_override_temp_avg != null && af.weather_override_temp_avg !== "") setWeatherOverrideTempAvg(String(af.weather_override_temp_avg));
+          // Legacy: migrate old single temp to avg
+          if (af.weather_override_temp != null && af.weather_override_temp !== "" && !af.weather_override_temp_avg) {
+            setWeatherOverrideTempAvg(String(af.weather_override_temp));
+          }
           if (Array.isArray(af.fields)) {
             setAdditionalFields(
               af.fields.map((f: any) => ({
@@ -505,7 +513,9 @@ const EventForm = () => {
           fields: additionalFields.filter((f) => f.label.trim()),
           ask_car_availability: askCarAvailability,
           weather_override_condition: weatherOverrideCondition || undefined,
-          weather_override_temp: weatherOverrideTemp ? parseFloat(weatherOverrideTemp) : undefined,
+          weather_override_temp_min: weatherOverrideTempMin ? parseFloat(weatherOverrideTempMin) : undefined,
+          weather_override_temp_max: weatherOverrideTempMax ? parseFloat(weatherOverrideTempMax) : undefined,
+          weather_override_temp_avg: weatherOverrideTempAvg ? parseFloat(weatherOverrideTempAvg) : undefined,
         } as any,
         access_rules: accessRules.length > 0 ? {
           rules: accessRules,
@@ -1025,32 +1035,64 @@ const EventForm = () => {
             </div>
           </div>
 
-          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+          <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
             <Label className="text-sm font-semibold flex items-center gap-1.5">
               🌤️ Override Meteo (opzionale)
             </Label>
             <p className="text-[11px] text-muted-foreground font-body">
-              Lascia vuoto per usare la previsione automatica. Compila per sovrascrivere.
+              Lascia vuoto per usare la previsione automatica. Seleziona una condizione per sovrascrivere. Le temperature si riempiono automaticamente dal forecast se disponibile.
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Condizione</Label>
-                <Input
-                  value={weatherOverrideCondition}
-                  onChange={(e) => setWeatherOverrideCondition(e.target.value)}
-                  placeholder="es. Sereno, Nuvoloso"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Temperatura (°C)</Label>
-                <Input
-                  type="number"
-                  value={weatherOverrideTemp}
-                  onChange={(e) => setWeatherOverrideTemp(e.target.value)}
-                  placeholder="es. 22"
-                />
-              </div>
+            <div>
+              <Label className="text-xs">Condizione meteo</Label>
+              <Select value={weatherOverrideCondition} onValueChange={setWeatherOverrideCondition}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona condizione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— Nessun override —</SelectItem>
+                  <SelectItem value="sereno">☀️ Sereno</SelectItem>
+                  <SelectItem value="parzialmente_nuvoloso">🌤 Parzialmente nuvoloso</SelectItem>
+                  <SelectItem value="nuvoloso">☁️ Nuvoloso</SelectItem>
+                  <SelectItem value="pioggia_debole">🌦️ Pioggia debole</SelectItem>
+                  <SelectItem value="pioggia">🌧 Pioggia</SelectItem>
+                  <SelectItem value="temporale">⛈ Temporale</SelectItem>
+                  <SelectItem value="ventoso">🌬 Ventoso</SelectItem>
+                  <SelectItem value="neve">❄️ Neve</SelectItem>
+                  <SelectItem value="nebbia">🌫 Nebbia</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            {weatherOverrideCondition && (
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs">Temp. min (°C)</Label>
+                  <Input
+                    type="number"
+                    value={weatherOverrideTempMin}
+                    onChange={(e) => setWeatherOverrideTempMin(e.target.value)}
+                    placeholder="es. 8"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Temp. max (°C)</Label>
+                  <Input
+                    type="number"
+                    value={weatherOverrideTempMax}
+                    onChange={(e) => setWeatherOverrideTempMax(e.target.value)}
+                    placeholder="es. 22"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Temp. media (°C)</Label>
+                  <Input
+                    type="number"
+                    value={weatherOverrideTempAvg}
+                    onChange={(e) => setWeatherOverrideTempAvg(e.target.value)}
+                    placeholder="es. 15"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 

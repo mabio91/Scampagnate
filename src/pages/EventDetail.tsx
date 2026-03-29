@@ -686,6 +686,9 @@ const EventDetail = () => {
           location={event.location} 
           date={event.date} 
           overrideCondition={(event.additional_fields as any)?.weather_override_condition || null}
+          overrideTempMin={(event.additional_fields as any)?.weather_override_temp_min ?? null}
+          overrideTempMax={(event.additional_fields as any)?.weather_override_temp_max ?? null}
+          overrideTempAvg={(event.additional_fields as any)?.weather_override_temp_avg ?? null}
           overrideTemp={(event.additional_fields as any)?.weather_override_temp ?? null}
         />
 
