@@ -137,7 +137,7 @@ const RegistrationCheckoutDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-0 rounded-2xl">
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-border">
           <DialogHeader className="space-y-1">
