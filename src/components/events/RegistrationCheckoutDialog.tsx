@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
+import { useMembershipFee } from "@/hooks/useMembershipFee";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -41,6 +42,7 @@ const RegistrationCheckoutDialog = ({
   isSubmitting, isRequestingOverride, requiresApproval, isSportCategory,
 }: RegistrationCheckoutDialogProps) => {
   const { user, profile } = useAuth();
+  const { data: membershipFeeAmount = 10 } = useMembershipFee();
 
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
@@ -70,7 +72,7 @@ const RegistrationCheckoutDialog = ({
   const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
   const depositAmount = isDeposit ? Number(event.deposit) : 0;
   const displayPrice = isDeposit ? depositAmount : basePrice;
-  const membershipFee = needsMembership ? 10 : 0;
+  const membershipFee = needsMembership ? membershipFeeAmount : 0;
   const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
   const totalDueToday = discountedEventPrice + membershipFee;
   const remainingAmount = isDeposit ? Number(event.price) - depositAmount : 0;
