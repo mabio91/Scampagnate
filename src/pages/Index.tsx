@@ -316,7 +316,7 @@ const Index = () => {
                   <div className="space-y-2.5">
                     {filteredEvents.map((event, i) => {
                       const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
-                      return <EventCard key={event.id} event={event} index={i} discount={discount} />;
+                      return <EventCard key={event.id} event={event} index={i} discount={discount} isUserRegistered={!!userRegisteredEventIds?.has(event.id)} />;
                     })}
                   </div>
                 ) : (
