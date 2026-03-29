@@ -4,79 +4,29 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Check, Camera, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, BookOpen, Mountain, Lightbulb, HelpCircle, AlertTriangle, Users, MessageCircle, Settings, Gift } from "lucide-react";
+import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
 import ProfileMissions from "@/components/profile/ProfileMissions";
 import ProfileReliability from "@/components/profile/ProfileReliability";
 import LevelAvatar from "@/components/LevelAvatar";
-import { useCategories } from "@/hooks/useEvents";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import ActivityProposalForm from "@/components/ActivityProposalForm";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
-import AccountSettings from "@/components/profile/AccountSettings";
+import ProfileEditSheet from "@/components/profile/ProfileEditSheet";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [editing, setEditing] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [bio, setBio] = useState("");
-  const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [showEditSheet, setShowEditSheet] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [showProposalForm, setShowProposalForm] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { data: categories } = useCategories();
-
-  const uploadAvatar = async (file: File) => {
-    if (!user) return;
-    setUploading(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const filePath = `${user.id}/avatar.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
-        .eq("id", user.id);
-
-      if (updateError) throw updateError;
-
-      await refreshProfile();
-      toast({ title: "Foto profilo aggiornata" });
-    } catch (err: any) {
-      toast({ title: "Errore upload", description: err.message, variant: "destructive" });
-    } finally {
-      setUploading(false);
-    }
-  };
-
 
   if (!user) {
     return (
@@ -91,87 +41,24 @@ const Profile = () => {
     );
   }
 
-  const startEditing = () => {
-    setFirstName(profile?.first_name || "");
-    setLastName(profile?.last_name || "");
-    setPhone(profile?.phone || "");
-    setBio(profile?.bio || "");
-    const prefs = (profile as any)?.preferences;
-    setSelectedPreferences(Array.isArray(prefs) ? prefs : []);
-    setEditing(true);
-  };
-
-  const togglePreference = (categoryName: string) => {
-    setSelectedPreferences((prev) =>
-      prev.includes(categoryName) ? prev.filter((p) => p !== categoryName) : [...prev, categoryName]
-    );
-  };
-
-  const saveProfile = async () => {
-    setSaving(true);
-    const { error } = await supabase.from("profiles").update({
-      first_name: firstName,
-      last_name: lastName,
-      phone,
-      bio,
-      preferences: selectedPreferences as any,
-      updated_at: new Date().toISOString(),
-    }).eq("id", user.id);
-
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    } else {
-      await refreshProfile();
-      toast({ title: "Profilo aggiornato" });
-      setEditing(false);
-    }
-    setSaving(false);
-  };
-
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
-
-  const currentPreferences = Array.isArray((profile as any)?.preferences) ? (profile as any).preferences : [];
 
   return (
     <>
       <div className="px-4 py-4 scroll-smooth">
         {/* Profile header */}
         <div className="flex items-center gap-4 mb-6 animate-fade-in">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) uploadAvatar(file);
-            }}
+          <LevelAvatar
+            avatarUrl={profile?.avatar_url}
+            firstName={profile?.first_name}
+            lastName={profile?.last_name}
+            points={profile?.total_points || 0}
+            size="lg"
+            showBadge
           />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="relative group transition-transform duration-200 hover:scale-105 active:scale-95"
-          >
-            <LevelAvatar
-              avatarUrl={profile?.avatar_url}
-              firstName={profile?.first_name}
-              lastName={profile?.last_name}
-              points={profile?.total_points || 0}
-              size="lg"
-              showBadge
-            />
-            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="h-5 w-5 text-white" />
-            </div>
-            {uploading && (
-              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-          </button>
           <div className="flex-1">
             <h1 className="font-display text-xl font-bold text-foreground">
               {profile?.first_name} {profile?.last_name}
@@ -181,101 +68,14 @@ const Profile = () => {
               <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} punti
             </p>
           </div>
-          <button onClick={editing ? saveProfile : startEditing} disabled={saving} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
-            {editing ? <Check className="h-5 w-5 text-success" /> : <Edit3 className="h-5 w-5 text-muted-foreground" />}
+          <button onClick={() => setShowEditSheet(true)} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
+            <Edit3 className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
 
-        {/* Edit form */}
-        {editing && (
-          <div className="space-y-3 mb-6 p-4 rounded-xl bg-card animate-fade-in">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="font-body text-xs">Nome</Label>
-                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1" />
-              </div>
-              <div>
-                <Label className="font-body text-xs">Cognome</Label>
-                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1" />
-              </div>
-            </div>
-            <div>
-              <Label className="font-body text-xs">Telefono</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <Label className="font-body text-xs">Bio</Label>
-              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1" rows={2} />
-            </div>
-
-          </div>
-        )}
-
-        {/* Preferences display (when not editing) */}
-        {!editing && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display text-lg font-bold text-foreground">Le tue preferenze</h2>
-              <button
-                onClick={() => navigate("/profile-setup?mode=edit")}
-                className="text-xs font-body font-semibold text-primary hover:text-primary/80 transition-colors"
-              >
-                Modifica
-              </button>
-            </div>
-            {currentPreferences.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {currentPreferences.map((pref: string) => (
-                  <span key={pref} className="px-3 py-1.5 rounded-full text-xs font-body font-semibold bg-primary/10 text-primary">
-                    {pref}
-                  </span>
-                ))}
-              </div>
-            ) : profile?.onboarding_completed ? (
-              <p className="text-xs font-body text-muted-foreground">Nessuna preferenza impostata</p>
-            ) : (
-              <button
-                onClick={() => navigate("/profile-setup")}
-                className="text-xs font-body text-primary font-semibold"
-              >
-                Completa le tue preferenze →
-              </button>
-            )}
-            {/* Show summary of onboarding answers */}
-            {profile?.onboarding_completed && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {profile?.self_level && (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold bg-muted text-muted-foreground">
-                    {profile.self_level === "beginner" ? "🌱 Principiante" : profile.self_level === "intermediate" ? "🥾 Intermedio" : "💪 Avanzato"}
-                  </span>
-                )}
-                {profile?.activity_frequency && (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold bg-muted text-muted-foreground">
-                    {profile.activity_frequency === "high" ? "💪 Molto attivo" : profile.activity_frequency === "medium" ? "🙂 Attivo" : "🌿 Poco attivo"}
-                  </span>
-                )}
-                {profile?.has_car && (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-body font-semibold bg-muted text-muted-foreground">
-                    {profile.has_car === "yes" ? "🚗 Automunito" : profile.has_car === "no" ? "🚫 Non automunito" : "🤷 Preferisce non guidare"}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Profile Completeness */}
         <ProfileCompleteness
-          onCompleteProfile={() => {
-            // Check if missing profile fields → open inline edit
-            const missingProfileFields = !profile?.bio || !profile?.avatar_url || !profile?.phone || !profile?.first_name || !profile?.last_name;
-            if (missingProfileFields) {
-              startEditing();
-            } else {
-              // Only preferences missing → go to onboarding edit
-              navigate("/profile-setup?mode=edit");
-            }
-          }}
+          onCompleteProfile={() => setShowEditSheet(true)}
         />
 
         {/* Membership Status Card */}
@@ -328,7 +128,6 @@ const Profile = () => {
 
             {isMembershipActive(profile) ? (
               <>
-                {/* Active: show expiry prominently + benefits */}
                 <div className="mt-3 p-3 rounded-xl bg-success/10 border border-success/20">
                   <p className="text-sm font-body font-bold text-success">
                     Tessera attiva fino al {(() => {
@@ -357,7 +156,6 @@ const Profile = () => {
                     </p>
                   </div>
                 </div>
-                {/* Benefits */}
                 <div className="mt-3 pt-3 border-t border-primary/10">
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold mb-1.5">Benefici inclusi</p>
                   <ul className="space-y-1.5">
@@ -435,7 +233,6 @@ const Profile = () => {
         {/* Activity History Dashboard */}
         <ActivityHistory />
 
-
         {/* Help & Information */}
         <div className="mb-8 animate-fade-in">
           <h2 className="font-display text-lg font-bold text-foreground mb-4">Aiuto e informazioni</h2>
@@ -496,9 +293,7 @@ const Profile = () => {
             <ReportIssueDialog />
           </div>
 
-          {/* Account */}
-          <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Account</p>
-          <AccountSettings />
+          {/* Logout */}
           <div className="space-y-1 mt-1">
             <button onClick={handleSignOut} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-destructive/5 transition-colors group w-full text-left">
               <LogOut className="h-4.5 w-4.5 text-destructive shrink-0" />
@@ -510,6 +305,8 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      <ProfileEditSheet open={showEditSheet} onOpenChange={setShowEditSheet} />
       <DifficultyGuideDialog 
         open={showDifficultyGuide} 
         onOpenChange={setShowDifficultyGuide} 
@@ -521,6 +318,5 @@ const Profile = () => {
     </>
   );
 };
-
 
 export default Profile;
