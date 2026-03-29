@@ -700,6 +700,7 @@ export type Database = {
           id: string
           image_url: string | null
           location: string
+          location_label: string | null
           organizer_id: string | null
           organizer_name: string
           payment_type: Database["public"]["Enums"]["payment_type"]
@@ -733,6 +734,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location: string
+          location_label?: string | null
           organizer_id?: string | null
           organizer_name?: string
           payment_type?: Database["public"]["Enums"]["payment_type"]
@@ -766,6 +768,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location?: string
+          location_label?: string | null
           organizer_id?: string | null
           organizer_name?: string
           payment_type?: Database["public"]["Enums"]["payment_type"]
