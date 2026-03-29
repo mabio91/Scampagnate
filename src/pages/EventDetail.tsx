@@ -406,7 +406,6 @@ const EventDetail = () => {
     }
   };
 
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Check if within 24h cancellation window
   const registrationCreatedAt = myRegistration?.created_at ? new Date(myRegistration.created_at) : null;
