@@ -13,6 +13,7 @@ export interface EventDiscount {
 }
 
 const EventCard = memo(({ event, index, discount, showCompatibility }: { event: EventWithDetails; index: number; discount?: EventDiscount | null; showCompatibility?: boolean }) => {
+  const isAboveFold = index < 4;
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
   const spotsLeft = event.spots_total - event.spots_taken;
 
@@ -104,6 +105,7 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
               alt={event.title}
               width={112}
               height={112}
+              eager={isAboveFold}
               className="w-28 h-28 rounded-xl object-cover bg-muted"
             />
           </div>
