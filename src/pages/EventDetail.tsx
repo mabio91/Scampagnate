@@ -83,6 +83,7 @@ const EventDetail = () => {
   const [showNavigationModal, setShowNavigationModal] = useState(false);
   const [navigationLocation, setNavigationLocation] = useState("");
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Gallery carousel
   const [emblaRef, emblaApi] = useEmblaCarousel({ startIndex: galleryStartIndex });
