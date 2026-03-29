@@ -301,7 +301,7 @@ const Index = () => {
             )}
 
             {/* Event list */}
-            <div className="px-4 mt-4">
+            <div className="px-3 sm:px-4 mt-4">
               <h2 className="font-display text-lg font-bold text-foreground mb-3">
                 {hasActiveFilters ? "Risultati ricerca" : UI_LABELS.upcomingEvents}
                 {hasActiveFilters && (
