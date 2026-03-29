@@ -40,8 +40,8 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           alt={event.title}
           width={600}
           height={280}
+          eager
           className="w-full h-72 object-cover bg-muted transition-transform duration-700 group-hover:scale-105"
-          loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/95 via-foreground/40 to-foreground/5" />
 
