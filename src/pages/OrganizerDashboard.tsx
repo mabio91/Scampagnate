@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb, Ticket
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb, Ticket, Link2
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
 import ProposalsPanel from "@/components/admin/ProposalsPanel";
