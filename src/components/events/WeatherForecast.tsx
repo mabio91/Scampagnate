@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { Cloud, CloudRain, Sun, Snowflake, CloudSun, ThermometerSun, CloudDrizzle, CloudLightning, CloudFog, Wind } from "lucide-react";
+import { Cloud, CloudRain, Sun, Snowflake, CloudSun, CloudDrizzle, CloudLightning, CloudFog, Wind } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface WeatherForecastProps {
   location: string;
   date: string;
   overrideCondition?: string | null;
+  overrideTempMin?: number | null;
+  overrideTempMax?: number | null;
+  overrideTempAvg?: number | null;
+  /** @deprecated Use overrideTempAvg instead */
   overrideTemp?: number | null;
 }
 
@@ -15,6 +19,19 @@ interface DailyWeather {
   weathercode: number;
   precipitation_probability_max: number;
 }
+
+// Predefined weather conditions (keys match the dropdown in EventForm)
+const WEATHER_CONDITIONS: Record<string, { label: string; icon: typeof Sun; weatherCode: number }> = {
+  sereno: { label: "Sereno", icon: Sun, weatherCode: 0 },
+  parzialmente_nuvoloso: { label: "Parzialmente nuvoloso", icon: CloudSun, weatherCode: 2 },
+  nuvoloso: { label: "Nuvoloso", icon: Cloud, weatherCode: 3 },
+  pioggia_debole: { label: "Pioggia debole", icon: CloudDrizzle, weatherCode: 51 },
+  pioggia: { label: "Pioggia", icon: CloudRain, weatherCode: 63 },
+  temporale: { label: "Temporale", icon: CloudLightning, weatherCode: 95 },
+  ventoso: { label: "Ventoso", icon: Wind, weatherCode: 2 },
+  neve: { label: "Neve", icon: Snowflake, weatherCode: 73 },
+  nebbia: { label: "Nebbia", icon: CloudFog, weatherCode: 45 },
+};
 
 const WMO_CODES: Record<number, { label: string; labelIt: string; icon: typeof Sun }> = {
   0: { label: "Clear sky", labelIt: "Sereno", icon: Sun },
@@ -49,7 +66,6 @@ const getWeatherInfo = (code: number) => {
   return WMO_CODES[code] || { label: "Unknown", labelIt: "Sconosciuto", icon: Cloud };
 };
 
-// Determine theme colors based on weather
 const getWeatherTheme = (code: number) => {
   if (code >= 95) return { bg: "bg-purple-50/60 dark:bg-purple-950/20", iconBg: "bg-purple-100 dark:bg-purple-900/40", iconColor: "text-purple-600 dark:text-purple-400" };
   if (code >= 71 && code <= 86) return { bg: "bg-sky-50/60 dark:bg-sky-950/20", iconBg: "bg-sky-100 dark:bg-sky-900/40", iconColor: "text-sky-600 dark:text-sky-400" };
@@ -67,7 +83,7 @@ const extractGeoLocation = (location: string): string => {
   return location;
 };
 
-export const WeatherForecast = ({ location, date, overrideCondition, overrideTemp }: WeatherForecastProps) => {
+export const WeatherForecast = ({ location, date, overrideCondition, overrideTempMin, overrideTempMax, overrideTempAvg, overrideTemp }: WeatherForecastProps) => {
   const eventDate = new Date(date);
   const now = new Date();
   const daysUntil = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -110,19 +126,39 @@ export const WeatherForecast = ({ location, date, overrideCondition, overrideTem
     gcTime: 60 * 60 * 1000,
   });
 
-  // If override is provided, use it regardless of API availability
-  const hasOverride = overrideCondition || overrideTemp != null;
+  // Resolve override condition (new key-based or legacy free-text)
+  const conditionMeta = overrideCondition ? WEATHER_CONDITIONS[overrideCondition] : null;
+  const hasOverride = !!overrideCondition;
+  // Legacy single temp support
+  const legacyAvg = overrideTemp ?? null;
 
   if (!hasOverride && (!canShowForecast || isLoading || !weather)) return null;
 
-  // Determine display values (override takes priority)
-  const displayCondition = overrideCondition || (weather ? getWeatherInfo(weather.weathercode).labelIt : "");
-  const displayTempMax = overrideTemp ?? weather?.temperature_max ?? 0;
-  const displayTempMin = weather?.temperature_min ?? displayTempMax;
-  const weatherCode = weather?.weathercode ?? 2; // default partly cloudy
-  const info = getWeatherInfo(weatherCode);
-  const WeatherIcon = info.icon;
-  const theme = getWeatherTheme(weatherCode);
+  // Determine display values — override temps fall back to forecast values
+  let displayCondition: string;
+  let WeatherIcon: typeof Sun;
+  let effectiveWeatherCode: number;
+
+  if (conditionMeta) {
+    displayCondition = conditionMeta.label;
+    WeatherIcon = conditionMeta.icon;
+    effectiveWeatherCode = conditionMeta.weatherCode;
+  } else if (overrideCondition) {
+    // Legacy free-text condition
+    displayCondition = overrideCondition;
+    effectiveWeatherCode = weather?.weathercode ?? 2;
+    WeatherIcon = getWeatherInfo(effectiveWeatherCode).icon;
+  } else {
+    effectiveWeatherCode = weather?.weathercode ?? 2;
+    const info = getWeatherInfo(effectiveWeatherCode);
+    displayCondition = info.labelIt;
+    WeatherIcon = info.icon;
+  }
+
+  const displayTempMin = overrideTempMin ?? weather?.temperature_min ?? null;
+  const displayTempMax = overrideTempMax ?? weather?.temperature_max ?? null;
+  const displayTempAvg = overrideTempAvg ?? legacyAvg ?? (displayTempMin != null && displayTempMax != null ? Math.round((displayTempMin + displayTempMax) / 2) : displayTempMax);
+  const theme = getWeatherTheme(effectiveWeatherCode);
 
   return (
     <motion.div 
@@ -140,11 +176,13 @@ export const WeatherForecast = ({ location, date, overrideCondition, overrideTem
             Meteo previsto
           </p>
           <p className="text-sm font-body font-semibold text-foreground">
-            {displayCondition} · {Math.round(displayTempMax)}°C
+            {displayCondition}{displayTempAvg != null ? ` · ${Math.round(displayTempAvg)}°C` : ""}
           </p>
-          <p className="text-[11px] font-body text-muted-foreground">
-            Min {Math.round(displayTempMin)}° · Max {Math.round(displayTempMax)}°
-          </p>
+          {displayTempMin != null && displayTempMax != null && (
+            <p className="text-[11px] font-body text-muted-foreground">
+              Min {Math.round(displayTempMin)}° · Max {Math.round(displayTempMax)}°
+            </p>
+          )}
         </div>
       </div>
     </motion.div>
