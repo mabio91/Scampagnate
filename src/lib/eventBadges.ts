@@ -142,7 +142,7 @@ export function resolveEventBadges(event: EventForBadges): EventBadge[] {
       result.push({
         key,
         label: key,
-        emoji: "🏷️",
+        emoji: "",
         className: "bg-muted/90 text-foreground",
       });
     }
