@@ -198,6 +198,13 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const statusStyle = statusStyles[displayStatus] || statusStyles.registered;
   const statusLabel = t(statusLabelKeys[displayStatus] as any) || displayStatus;
   const meetingPoint = registration.meeting_point;
+
+  // 24h cancellation window check
+  const registrationCreatedAt = registration.created_at ? new Date(registration.created_at) : null;
+  const hoursSinceRegistration = registrationCreatedAt
+    ? (Date.now() - registrationCreatedAt.getTime()) / (1000 * 60 * 60)
+    : Infinity;
+  const canCancelRegistration = hoursSinceRegistration <= 24;
   const canCancel = showActions && registration.status !== "cancelled" && registration.status !== "waitlist";
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
