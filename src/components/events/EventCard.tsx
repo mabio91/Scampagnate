@@ -87,16 +87,6 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
               <DifficultyBadge difficulty={event.difficulty} className="bg-background/80 backdrop-blur-md text-foreground shadow-sm px-1.5 py-0.5 text-[10px]" showLabel={false} />
             </div>
           )}
-          {/* Event badges (top-right) */}
-          {eventBadges.length > 0 && (
-            <div className="absolute top-1 right-1 flex flex-col gap-0.5 items-end">
-              {eventBadges.map((b) => (
-                <span key={b.key} className={`px-1.5 py-0.5 rounded-md text-[9px] font-body font-bold backdrop-blur-md shadow-sm ${b.className}`}>
-                  {b.emoji ? `${b.emoji} ` : ""}{b.label}
-                </span>
-              ))}
-            </div>
-          )}
           {discount && (
             <div className="absolute bottom-1 left-1 right-1">
               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-accent/90 backdrop-blur-md text-accent-foreground text-[9px] font-body font-bold shadow-sm">
