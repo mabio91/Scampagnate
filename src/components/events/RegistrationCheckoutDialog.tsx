@@ -398,7 +398,7 @@ const RegistrationCheckoutDialog = ({
                     La tessera è valida per l'anno in corso e include copertura assicurativa base durante le attività.
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-body font-bold text-foreground">€10 / anno</span>
+                    <span className="text-sm font-body font-bold text-foreground">€{membershipFeeAmount} / anno</span>
                   </div>
                   <p className="text-[10px] font-body text-muted-foreground">
                     La tessera verrà attivata automaticamente con questo pagamento.
@@ -515,11 +515,11 @@ const RegistrationCheckoutDialog = ({
                   <span className="text-primary font-semibold flex items-center gap-1">
                     <CreditCard className="h-3 w-3" /> Quota associativa
                   </span>
-                  <span className="font-semibold text-primary">€10.00</span>
+                  <span className="font-semibold text-primary">€{membershipFeeAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-body pt-2 mt-1 border-t border-border">
                   <span className="font-bold text-foreground">Totale da pagare oggi</span>
-                  <span className="font-bold text-foreground text-base">€10.00</span>
+                  <span className="font-bold text-foreground text-base">€{membershipFeeAmount.toFixed(2)}</span>
                 </div>
               </div>
             )}
