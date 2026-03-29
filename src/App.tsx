@@ -95,6 +95,7 @@ const AnimatedRoutes = () => {
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/page/:slug" element={<ContentPage />} />
+                  <Route path="/guida-difficolta-trekking" element={<ContentPage />} />
                   <Route path="/rewards" element={<Rewards />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
