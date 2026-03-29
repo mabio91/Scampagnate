@@ -30,6 +30,7 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
   fallbackKey?: string;
   width?: number;
   height?: number;
+  eager?: boolean;
 }
 
 /**
@@ -39,8 +40,8 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
  * - Fade-in on load
  * - Supabase Storage transform support for thumbnails
  */
-const OptimizedImage = memo(({ src, fallbackKey, className = "", alt = "", width, height, ...props }: OptimizedImageProps) => {
-  const [loaded, setLoaded] = useState(false);
+const OptimizedImage = memo(({ src, fallbackKey, className = "", alt = "", width, height, eager = false, ...props }: OptimizedImageProps) => {
+  const [loaded, setLoaded] = useState(eager);
   const [error, setError] = useState(false);
 
   const resolvedSrc = error ? defaultFallback : resolveEventImageSrc(src);
@@ -64,8 +65,9 @@ const OptimizedImage = memo(({ src, fallbackKey, className = "", alt = "", width
     <img
       src={optimizedSrc}
       alt={alt}
-      loading="lazy"
-      decoding="async"
+      loading={eager ? "eager" : "lazy"}
+      decoding={eager ? "sync" : "async"}
+      fetchPriority={eager ? "high" : undefined}
       onError={handleError}
       onLoad={handleLoad}
       className={`${className} transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
