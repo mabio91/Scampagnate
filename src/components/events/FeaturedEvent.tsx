@@ -34,20 +34,20 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
-      <div className="relative mx-4 rounded-2xl overflow-hidden shadow-xl active:scale-[0.98] transition-transform duration-200">
+      <div className="relative mx-3 sm:mx-4 rounded-2xl overflow-hidden shadow-xl active:scale-[0.98] transition-transform duration-200">
         <OptimizedImage
           src={event.image_url}
           alt={event.title}
           width={600}
           height={280}
           eager
-          className="w-full h-72 object-cover bg-muted transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-56 sm:h-72 object-cover bg-muted transition-transform duration-700 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/95 via-foreground/40 to-foreground/5" />
 
         {/* Top badges row */}
-        <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-bold shadow-lg ${
+        <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 flex items-start justify-between">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-body font-bold shadow-lg ${
             isUrgent
               ? "bg-accent text-accent-foreground animate-pulse"
               : "bg-accent text-accent-foreground"
@@ -55,30 +55,30 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
             {countdown}
           </span>
           {urgencyBadge && (
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-body font-bold shadow-lg ${urgencyBadge.className}`}>
+            <span className={`inline-flex items-center px-2 sm:px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-body font-bold shadow-lg ${urgencyBadge.className}`}>
               {urgencyBadge.label}
             </span>
           )}
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
+        <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 sm:p-5 sm:pb-6">
           <span className="text-[10px] font-body font-semibold text-primary-foreground/60 uppercase tracking-widest">
             {UI_LABELS.featuredEvent}
           </span>
-          <h2 className="font-display text-xl font-bold text-primary-foreground mt-1.5 leading-tight">{event.title}</h2>
-          <div className="flex flex-wrap items-center gap-x-1 mt-2.5 text-primary-foreground/80 text-xs font-body">
+          <h2 className="font-display text-lg sm:text-xl font-bold text-primary-foreground mt-1 sm:mt-1.5 leading-tight line-clamp-2">{event.title}</h2>
+          <div className="flex flex-wrap items-center gap-x-1 mt-2 sm:mt-2.5 text-primary-foreground/80 text-[11px] sm:text-xs font-body">
             {metaParts.map((part, i) => (
               <span key={i} className="flex items-center gap-1">
-                {i === 0 && <CalendarDays className="h-3.5 w-3.5 shrink-0" />}
-                {i === 1 && <MapPin className="h-3.5 w-3.5 shrink-0" />}
-                {i === 2 && <Users className="h-3.5 w-3.5 shrink-0" />}
-                <span className={i === 1 ? "truncate max-w-[140px]" : ""}>{part}</span>
+                {i === 0 && <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />}
+                {i === 1 && <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />}
+                {i === 2 && <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />}
+                <span className={i === 1 ? "truncate max-w-[100px] sm:max-w-[140px]" : ""}>{part}</span>
                 {i < metaParts.length - 1 && <span className="mx-0.5">·</span>}
               </span>
             ))}
           </div>
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-primary-foreground font-display font-bold text-lg">
+          <div className="flex items-center justify-between mt-3 sm:mt-4">
+            <span className="text-primary-foreground font-display font-bold text-base sm:text-lg">
               {Number(event.price) === 0 ? UI_LABELS.free : `€${event.price}`}
             </span>
             <span className="flex items-center gap-1.5 text-accent text-sm font-body font-bold group-hover:gap-2.5 transition-all duration-200">
