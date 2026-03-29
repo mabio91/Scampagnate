@@ -1044,7 +1044,7 @@ const EventForm = () => {
             </p>
             <div>
               <Label className="text-xs">Condizione meteo</Label>
-              <Select value={weatherOverrideCondition} onValueChange={setWeatherOverrideCondition}>
+              <Select value={weatherOverrideCondition || "none"} onValueChange={(v) => setWeatherOverrideCondition(v === "none" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona condizione..." />
                 </SelectTrigger>
