@@ -1044,12 +1044,12 @@ const EventForm = () => {
             </p>
             <div>
               <Label className="text-xs">Condizione meteo</Label>
-              <Select value={weatherOverrideCondition} onValueChange={setWeatherOverrideCondition}>
+              <Select value={weatherOverrideCondition || "none"} onValueChange={(v) => setWeatherOverrideCondition(v === "none" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona condizione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">— Nessun override —</SelectItem>
+                  <SelectItem value="none">— Nessun override —</SelectItem>
                   <SelectItem value="sereno">☀️ Sereno</SelectItem>
                   <SelectItem value="parzialmente_nuvoloso">🌤 Parzialmente nuvoloso</SelectItem>
                   <SelectItem value="nuvoloso">☁️ Nuvoloso</SelectItem>
