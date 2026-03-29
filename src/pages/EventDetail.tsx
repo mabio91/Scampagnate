@@ -597,31 +597,48 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* Badges over hero */}
+        {/* Title over hero */}
         <div className="absolute bottom-12 left-4 right-4" style={{ opacity: heroOpacity }}>
+          {/* Status badge */}
+          {(event.status === "full" || event.status === "closed" || event.status === "cancelled" || event.status === "past") && (
+            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold mb-2 ${
+              event.status === "full" ? "bg-destructive/90 text-destructive-foreground" :
+              event.status === "cancelled" ? "bg-destructive/90 text-destructive-foreground" :
+              "bg-muted/90 text-muted-foreground"
+            }`}>
+              {event.status === "full" ? "Sold Out" : event.status === "closed" ? "Chiuso" : event.status === "cancelled" ? "Annullato" : "Passato"}
+            </span>
+          )}
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">{event.title}</h1>
+        </div>
+      </div>
+
+      {/* 16. Rounded top container overlapping the hero */}
+      <div className="relative -mt-6 bg-background rounded-t-3xl z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
+          {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
             {event.difficulty && (
               <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center hover:opacity-90 transition-opacity">
-                <DifficultyBadge difficulty={event.difficulty} className="bg-accent text-accent-foreground" />
+                <DifficultyBadge difficulty={event.difficulty} className="bg-accent/20 text-accent-foreground" />
               </button>
             )}
             {event.category && (
-              <span className="inline-block px-2.5 py-1 rounded-full bg-background/20 backdrop-blur-sm text-primary-foreground text-xs font-body font-semibold">
+              <span className="inline-block px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-body font-semibold">
                 {event.category.name}
               </span>
             )}
-            {/* Event badges */}
             {eventBadges.map((b) => (
-              <span key={b.key} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold backdrop-blur-sm border border-white/10 shadow-sm ${b.className}`}>
+              <span key={b.key} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold shadow-sm ${b.className}`}>
                 {b.emoji ? `${b.emoji} ` : ""}{b.label}
               </span>
             ))}
             {exclusivityIndicators.map((ind, idx) => (
-              <span key={idx} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold backdrop-blur-sm border border-white/10 shadow-sm ${
-                ind.variant === "members" ? "bg-primary/90 text-primary-foreground" :
-                ind.variant === "exclusive" ? "bg-gold/90 text-foreground" :
-                ind.variant === "restricted" ? "bg-warning/90 text-warning-foreground" :
-                "bg-secondary/90 text-secondary-foreground"
+              <span key={idx} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
+                ind.variant === "members" ? "bg-primary/10 text-primary" :
+                ind.variant === "exclusive" ? "bg-gold/10 text-gold" :
+                ind.variant === "restricted" ? "bg-warning/10 text-warning" :
+                "bg-secondary/10 text-secondary"
               }`}>
                 {ind.variant === "members" ? "👑 " : ind.variant === "exclusive" ? "⭐ " : ind.variant === "restricted" ? "🔒 " : "✋ "}
                 {ind.label}
@@ -630,18 +647,11 @@ const EventDetail = () => {
             {(isOrganizer || isAdmin) && event.visibility !== "public" && (
               <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
                 event.visibility === 'private' ? 'bg-amber-100/90 text-amber-800' : 'bg-slate-800/80 text-white'
-              } backdrop-blur-sm border border-white/10 shadow-sm`}>
+              }`}>
                 {event.visibility === 'private' ? '🔗 Private' : '👁️ Hidden'}
               </span>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* 16. Rounded top container overlapping the hero */}
-      <div className="relative -mt-6 bg-background rounded-t-3xl z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground leading-tight">{event.title}</h1>
         </div>
 
       <div className="max-w-lg mx-auto px-4">
