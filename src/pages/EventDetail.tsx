@@ -814,33 +814,7 @@ const EventDetail = () => {
 
 
         {/* 4. DESCRIPTION → "L'esperienza" with gradient fade */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-2">L'esperienza</h3>
-          <div className="relative">
-            <p className={`text-sm font-body text-muted-foreground leading-relaxed whitespace-pre-line ${!descriptionExpanded ? "line-clamp-6" : ""}`}>
-              {event.description}
-            </p>
-            {event.description && event.description.length > 250 && !descriptionExpanded && (
-              <>
-                <div className="absolute bottom-6 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-                <button
-                  onClick={() => setDescriptionExpanded(true)}
-                  className="relative text-sm font-body font-semibold text-primary mt-1 hover:underline"
-                >
-                  Leggi di più
-                </button>
-              </>
-            )}
-            {descriptionExpanded && event.description && event.description.length > 250 && (
-              <button
-                onClick={() => setDescriptionExpanded(false)}
-                className="text-sm font-body font-semibold text-primary mt-1 hover:underline"
-              >
-                Mostra meno
-              </button>
-            )}
-          </div>
-        </motion.div>
+        <DescriptionSection description={event.description} expanded={descriptionExpanded} onToggle={() => setDescriptionExpanded(v => !v)} />
 
         {/* Safety Warning for demanding events */}
         {user && profile && event.difficulty && parseInt(event.difficulty) >= 3 && (
