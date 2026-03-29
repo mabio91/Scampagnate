@@ -1049,7 +1049,7 @@ const EventForm = () => {
                   <SelectValue placeholder="Seleziona condizione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">— Nessun override —</SelectItem>
+                  <SelectItem value="none">— Nessun override —</SelectItem>
                   <SelectItem value="sereno">☀️ Sereno</SelectItem>
                   <SelectItem value="parzialmente_nuvoloso">🌤 Parzialmente nuvoloso</SelectItem>
                   <SelectItem value="nuvoloso">☁️ Nuvoloso</SelectItem>
