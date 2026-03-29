@@ -1,4 +1,6 @@
 import { useMemo, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 import FeaturedEvent from "@/components/events/FeaturedEvent";
 import CategoryFilter from "@/components/events/CategoryFilter";
@@ -48,7 +50,23 @@ const Index = () => {
     clearAllFilters,
   } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+
+  // Fetch user's active registrations for "Iscritto" status
+  const { data: userRegisteredEventIds } = useQuery({
+    queryKey: ["user-registered-events", user?.id],
+    queryFn: async () => {
+      if (!user) return new Set<string>();
+      const { data } = await supabase
+        .from("event_registrations")
+        .select("event_id")
+        .eq("user_id", user.id)
+        .in("status", ["registered", "paid", "waitlist"]);
+      return new Set((data || []).map((r: any) => r.event_id));
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     if (searchOpen) {
@@ -298,7 +316,7 @@ const Index = () => {
                   <div className="space-y-2.5">
                     {filteredEvents.map((event, i) => {
                       const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
-                      return <EventCard key={event.id} event={event} index={i} discount={discount} />;
+                      return <EventCard key={event.id} event={event} index={i} discount={discount} isUserRegistered={!!userRegisteredEventIds?.has(event.id)} />;
                     })}
                   </div>
                 ) : (

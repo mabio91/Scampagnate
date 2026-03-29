@@ -12,13 +12,104 @@ export interface EventDiscount {
   code: string;
 }
 
-const EventCard = memo(({ event, index, discount, showCompatibility }: { event: EventWithDetails; index: number; discount?: EventDiscount | null; showCompatibility?: boolean }) => {
+type CardStatus = "joined" | "coming_soon" | "waitlist" | "open" | "closed";
+
+const STATUS_CONFIG: Record<CardStatus, { label: string; className: string }> = {
+  joined: {
+    label: UI_LABELS.statusJoined,
+    className: "bg-primary/15 text-primary border-primary/30",
+  },
+  coming_soon: {
+    label: UI_LABELS.statusComingSoon,
+    className: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+  },
+  waitlist: {
+    label: UI_LABELS.statusWaitlist,
+    className: "bg-orange-500/15 text-orange-600 border-orange-500/30",
+  },
+  open: {
+    label: UI_LABELS.statusOpen,
+    className: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+  },
+  closed: {
+    label: UI_LABELS.statusClosed,
+    className: "bg-muted text-muted-foreground border-border/50",
+  },
+};
+
+function resolveCardStatus(event: EventWithDetails, isUserRegistered: boolean): CardStatus {
+  // Priority 1: Joined
+  if (isUserRegistered) return "joined";
+
+  // Priority 2: Coming soon (draft = not yet open for registration)
+  if (event.status === "draft") return "coming_soon";
+
+  // Priority 3: Closed (past, cancelled, closed)
+  if (event.status === "past" || event.status === "cancelled" || event.status === "closed") return "closed";
+
+  // Priority 4: Waitlist (full but still accepting waitlist)
+  if (event.status === "full") return "waitlist";
+
+  // Priority 5: Open
+  return "open";
+}
+
+type ImageBadge = "sold_out" | "promo" | null;
+
+function resolveImageBadge(event: EventWithDetails): ImageBadge {
+  // Priority 1: Sold Out (spots_taken >= spots_total)
+  if (event.spots_taken >= event.spots_total) return "sold_out";
+
+  // Priority 2: Promo (check event_badges or payment_type free as promo indicator)
+  // We check additional_fields or event for a promo flag
+  const badges = (event as any).event_badges;
+  if (Array.isArray(badges)) {
+    const hasPromo = badges.some((b: any) =>
+      typeof b === "string"
+        ? b.toLowerCase().includes("promo")
+        : b?.label?.toLowerCase()?.includes("promo")
+    );
+    if (hasPromo) return "promo";
+  }
+
+  return null;
+}
+
+const IMAGE_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
+  sold_out: {
+    label: UI_LABELS.badgeSoldOut,
+    className: "bg-destructive text-destructive-foreground",
+  },
+  promo: {
+    label: UI_LABELS.badgePromo,
+    className: "bg-amber-500 text-white",
+  },
+};
+
+const EventCard = memo(({
+  event,
+  index,
+  discount,
+  showCompatibility,
+  isUserRegistered = false,
+}: {
+  event: EventWithDetails;
+  index: number;
+  discount?: EventDiscount | null;
+  showCompatibility?: boolean;
+  isUserRegistered?: boolean;
+}) => {
   const isAboveFold = index < 4;
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
-  const spotsLeft = event.spots_total - event.spots_taken;
 
   // Fill bar color
   const fillColor = fillPercent > 80 ? "bg-destructive" : fillPercent > 50 ? "bg-warning" : "bg-success";
+
+  // Status & badge resolution
+  const cardStatus = useMemo(() => resolveCardStatus(event, isUserRegistered), [event, isUserRegistered]);
+  const imageBadge = useMemo(() => resolveImageBadge(event), [event]);
+  const statusConfig = STATUS_CONFIG[cardStatus];
+  const badgeConfig = imageBadge ? IMAGE_BADGE_CONFIG[imageBadge] : null;
 
   // Format date like "Sab, 28 Mar"
   const formattedDate = useMemo(() => {
@@ -39,7 +130,7 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
   // Format time like "08:30"
   const formattedTime = event.time?.slice(0, 5) || "";
 
-  // Stats line: distance, difficulty, duration
+  // Stats line: distance, duration
   const statsItems = useMemo(() => {
     const items: string[] = [];
     if (event.distance) items.push(event.distance);
@@ -53,21 +144,27 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
         <div className="flex gap-3 p-4">
           {/* Left content */}
           <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-            {/* Date & time row */}
-            <div className="flex items-center gap-2 text-muted-foreground text-xs font-body">
-              <span className="flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {formattedDate}
+            {/* Date & time row + status */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-body">
+                <span className="flex items-center gap-1">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {formattedDate}
+                </span>
+                {formattedTime && (
+                  <>
+                    <span className="text-muted-foreground/50">|</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formattedTime}
+                    </span>
+                  </>
+                )}
+              </div>
+              {/* Status label */}
+              <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold border ${statusConfig.className}`}>
+                {statusConfig.label}
               </span>
-              {formattedTime && (
-                <>
-                  <span className="text-muted-foreground/50">|</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {formattedTime}
-                  </span>
-                </>
-              )}
             </div>
 
             {/* Title — up to 3 lines */}
@@ -98,7 +195,7 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
             )}
           </div>
 
-          {/* Right: thumbnail image */}
+          {/* Right: thumbnail image with optional badge */}
           <div className="relative flex-shrink-0">
             <OptimizedImage
               src={event.image_url}
@@ -108,6 +205,12 @@ const EventCard = memo(({ event, index, discount, showCompatibility }: { event: 
               eager={isAboveFold}
               className="w-28 h-28 rounded-xl object-cover bg-muted"
             />
+            {/* Image badge (max 1) */}
+            {badgeConfig && (
+              <span className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold font-body shadow-sm ${badgeConfig.className}`}>
+                {badgeConfig.label}
+              </span>
+            )}
           </div>
         </div>
 
