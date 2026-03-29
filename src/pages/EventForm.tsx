@@ -27,6 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
+import { useTrekkingDifficultyLevels } from "@/hooks/useTrekkingDifficultyLevels";
 
 type PaymentType = Database["public"]["Enums"]["payment_type"];
 
@@ -162,6 +163,7 @@ const EventForm = () => {
   const navigate = useNavigate();
   const { user, isOrganizer, profile, loading: authLoading } = useAuth();
   const { data: categories } = useCategories();
+  const { data: difficultyLevels } = useTrekkingDifficultyLevels();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(isEditing || isDuplicating);
@@ -969,11 +971,11 @@ const EventForm = () => {
               <Select value={form.difficulty} onValueChange={(v) => updateForm("difficulty", v)}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">🟢 Livello 1 - Introduzione</SelectItem>
-                  <SelectItem value="2">🟢 Livello 2 - Facile</SelectItem>
-                  <SelectItem value="3">🟡 Livello 3 - Intermedio</SelectItem>
-                  <SelectItem value="4">🟠 Livello 4 - Impegnativo</SelectItem>
-                  <SelectItem value="5">🔴 Livello 5 - Avanzato</SelectItem>
+                  {(difficultyLevels || []).map((lvl) => (
+                    <SelectItem key={lvl.id} value={String(lvl.level_number)}>
+                      {lvl.icon} Livello {lvl.level_number} – {lvl.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
