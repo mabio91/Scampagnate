@@ -405,15 +405,27 @@ const EventDetail = () => {
     }
   };
 
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  // Check if within 24h cancellation window
+  const registrationCreatedAt = myRegistration?.created_at ? new Date(myRegistration.created_at) : null;
+  const hoursSinceRegistration = registrationCreatedAt
+    ? (Date.now() - registrationCreatedAt.getTime()) / (1000 * 60 * 60)
+    : Infinity;
+  const canCancelRegistration = hoursSinceRegistration <= 24;
+
+  const handleCancelClick = () => {
+    setShowCancelDialog(true);
+  };
+
   const handleCancel = async () => {
     try {
       const result = await cancelMutation.mutateAsync(event.id);
-      if (result?.refunded) {
+      setShowCancelDialog(false);
+      if (result?.reason === "cancellation_window_expired") {
+        toast({ title: "Impossibile annullare", description: "Sono trascorse più di 24 ore dalla registrazione. Non è più possibile annullare l'iscrizione.", variant: "destructive" });
+      } else if (result?.refunded) {
         toast({ title: "Iscrizione annullata", description: "Il rimborso è stato elaborato automaticamente. Riceverai l'accredito entro 5-10 giorni lavorativi." });
-      } else if (result?.reason === "non_refundable") {
-        toast({ title: "Iscrizione annullata", description: "Questo evento ha una politica non rimborsabile. Nessun rimborso sarà elaborato." });
-      } else if (result?.reason === "outside_window") {
-        toast({ title: "Iscrizione annullata", description: "Il periodo per il rimborso è scaduto. Nessun rimborso sarà elaborato." });
       } else {
         toast({ title: "Iscrizione annullata", description: "La tua iscrizione è stata annullata." });
       }
