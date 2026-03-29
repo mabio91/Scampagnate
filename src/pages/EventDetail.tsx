@@ -46,6 +46,45 @@ import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
 
+const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [isClamped, setIsClamped] = useState(false);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) {
+      setIsClamped(el.scrollHeight > el.clientHeight + 2);
+    }
+  }, [description]);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
+      <h3 className="font-display text-lg font-bold text-foreground mb-2">L'esperienza</h3>
+      <div className="relative">
+        <p
+          ref={textRef}
+          className={`text-sm font-body text-muted-foreground leading-relaxed whitespace-pre-line ${!expanded ? "line-clamp-6" : ""}`}
+        >
+          {description}
+        </p>
+        {isClamped && !expanded && (
+          <>
+            <div className="absolute bottom-6 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+            <button onClick={onToggle} className="relative text-sm font-body font-semibold text-primary mt-1 hover:underline">
+              Leggi di più
+            </button>
+          </>
+        )}
+        {expanded && isClamped && (
+          <button onClick={onToggle} className="text-sm font-body font-semibold text-primary mt-1 hover:underline">
+            Mostra meno
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
 const EventDetail = () => {
   const { id } = useParams();
   const { t, language } = useLanguage();
