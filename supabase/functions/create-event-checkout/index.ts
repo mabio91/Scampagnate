@@ -63,7 +63,18 @@ serve(async (req) => {
       return new Date() < expiry;
     })();
 
-    const membershipFeeCents = hasActiveMembership ? 0 : 1000;
+    // Fetch membership fee from platform_settings
+    let membershipFeeEuros = 10; // fallback
+    const { data: feeSetting } = await supabaseAdmin
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "membership_fee")
+      .single();
+    if (feeSetting?.value) {
+      const parsed = Number(feeSetting.value);
+      if (!isNaN(parsed) && parsed >= 0) membershipFeeEuros = parsed;
+    }
+    const membershipFeeCents = hasActiveMembership ? 0 : Math.round(membershipFeeEuros * 100);
 
     // Check if registration has a price option
     let priceOptionName = "";
