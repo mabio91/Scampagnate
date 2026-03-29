@@ -1,20 +1,10 @@
 import { memo, useMemo } from "react";
-import { CalendarDays, MapPin, Users, Ticket, Crown, Star, Lock, Hand } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
-import { getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { UI_LABELS } from "@/lib/labels";
-import { useEventFitScore } from "@/hooks/useEventFitScore";
-import { resolveEventBadges } from "@/lib/eventBadges";
-
-const exclusivityIcons: Record<string, typeof Crown> = {
-  members: Crown,
-  exclusive: Star,
-  restricted: Lock,
-  community: Hand,
-};
 
 export interface EventDiscount {
   discount_type: string;
@@ -24,154 +14,126 @@ export interface EventDiscount {
 
 const EventCard = memo(({ event, index, discount, showCompatibility }: { event: EventWithDetails; index: number; discount?: EventDiscount | null; showCompatibility?: boolean }) => {
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
-  const indicators = getExclusivityIndicators(event.access_rules as AccessRulesConfig | null);
   const spotsLeft = event.spots_total - event.spots_taken;
-
-  const eventBadges = useMemo(() => resolveEventBadges({
-    price: Number(event.price),
-    spots_taken: event.spots_taken,
-    spots_total: event.spots_total,
-    status: event.status,
-    access_rules: event.access_rules,
-    event_badges: (event as any).event_badges,
-  }), [event.price, event.spots_taken, event.spots_total, event.status, event.access_rules, (event as any).event_badges]);
-
-  const fitScore = useEventFitScore(
-    showCompatibility ? event.access_rules : null,
-    showCompatibility ? { difficulty: event.difficulty, category: event.category } : null,
-  );
-
-  // Status badge
-  const statusLabel = useMemo(() => {
-    if (fillPercent > 80 && event.status !== "full" && event.status !== "closed" && event.status !== "cancelled" && event.status !== "past") {
-      return { label: UI_LABELS.almostFull, className: "bg-warning/10 text-warning" };
-    }
-    const map: Record<string, { label: string; className: string }> = {
-      draft: { label: UI_LABELS.draft, className: "bg-muted text-muted-foreground" },
-      published: { label: UI_LABELS.open, className: "bg-success/10 text-success" },
-      full: { label: UI_LABELS.full, className: "bg-destructive/10 text-destructive" },
-      closed: { label: UI_LABELS.closed, className: "bg-muted text-muted-foreground" },
-      cancelled: { label: UI_LABELS.cancelled, className: "bg-destructive/10 text-destructive" },
-      past: { label: UI_LABELS.past, className: "bg-muted text-muted-foreground" },
-    };
-    return map[event.status || "published"] || map.published;
-  }, [event.status, fillPercent]);
 
   // Fill bar color
   const fillColor = fillPercent > 80 ? "bg-destructive" : fillPercent > 50 ? "bg-warning" : "bg-success";
 
-  // Price display
-  const priceDisplay = useMemo(() => {
-    if (Number(event.price) === 0) return UI_LABELS.free;
-    const prices = event.price_options;
-    if (prices && prices.length > 1) {
-      const min = Math.min(...prices.map(p => p.price));
-      return UI_LABELS.priceFrom(min);
-    }
-    return `€${event.price}`;
-  }, [event.price, event.price_options]);
+  // Format date like "Sab, 28 Mar"
+  const formattedDate = useMemo(() => {
+    const d = new Date(event.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDay = new Date(d);
+    eventDay.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((eventDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return UI_LABELS.today;
+    if (diffDays === 1) return UI_LABELS.tomorrow;
+
+    return d.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })
+      .replace(/^\w/, c => c.toUpperCase());
+  }, [event.date]);
+
+  // Format time like "08:30"
+  const formattedTime = event.time?.slice(0, 5) || "";
+
+  // Stats line: distance, difficulty, duration
+  const statsItems = useMemo(() => {
+    const items: string[] = [];
+    if (event.distance) items.push(event.distance);
+    if (event.duration) items.push(event.duration);
+    return items;
+  }, [event.distance, event.duration]);
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
-      <div className="flex gap-3 p-3 rounded-2xl bg-card border border-transparent hover:border-border/50 hover:shadow-md active:scale-[0.98] transition-all duration-200">
-        <div className="relative flex-shrink-0">
-          <OptimizedImage
-            src={event.image_url}
-            alt={event.title}
-            width={96}
-            height={96}
-            className="w-24 h-24 rounded-xl object-cover bg-muted transition-transform duration-300 group-hover:scale-[1.03]"
-          />
-          {event.difficulty && (
-            <div className="absolute top-1 left-1">
-              <DifficultyBadge difficulty={event.difficulty} className="bg-background/80 backdrop-blur-md text-foreground shadow-sm px-1.5 py-0.5 text-[10px]" showLabel={false} />
-            </div>
-          )}
-          {discount && (
-            <div className="absolute bottom-1 left-1 right-1">
-              <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-accent/90 backdrop-blur-md text-accent-foreground text-[9px] font-body font-bold shadow-sm">
-                <Ticket className="h-2.5 w-2.5" />
-                {discount.discount_type === "percentage" ? `-${discount.discount_value}%` : `-€${discount.discount_value}`}
+      <div className="bg-card rounded-2xl border border-border/40 hover:border-border/60 hover:shadow-md active:scale-[0.98] transition-all duration-200 overflow-hidden">
+        <div className="flex gap-3 p-4">
+          {/* Left content */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            {/* Date & time row */}
+            <div className="flex items-center gap-2 text-muted-foreground text-xs font-body">
+              <span className="flex items-center gap-1">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {formattedDate}
               </span>
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0 py-0.5">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-base font-bold text-foreground truncate">{event.title}</h3>
-            <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold ${statusLabel.className}`}>
-              {statusLabel.label}
-            </span>
-          </div>
-
-          {(indicators.length > 0 || (spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full")) && (
-            <div className="flex flex-wrap items-center gap-1 mt-1">
-              {indicators.map((ind, idx) => {
-                const Icon = exclusivityIcons[ind.variant] || Star;
-                return (
-                  <span key={idx} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-body font-bold ${
-                    ind.variant === "members" ? "bg-primary/10 text-primary" :
-                    ind.variant === "exclusive" ? "bg-gold/10 text-gold" :
-                    ind.variant === "restricted" ? "bg-warning/10 text-warning" :
-                    "bg-secondary/10 text-secondary"
-                  }`}>
-                    <Icon className="h-2.5 w-2.5" />
-                    {ind.label}
+              {formattedTime && (
+                <>
+                  <span className="text-muted-foreground/50">|</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {formattedTime}
                   </span>
-                );
-              })}
-              {spotsLeft > 0 && spotsLeft <= 5 && event.status !== "full" && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive text-[9px] font-body font-bold">
-                  🔥 {spotsLeft} posti rimasti
-                </span>
+                </>
               )}
             </div>
-          )}
 
-          {/* Compatibility badge */}
-          {showCompatibility && !fitScore.hidden && !fitScore.profileIncomplete && (
-            <div className="mt-1">
-              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-body font-bold ${
-                fitScore.color === "green" ? "bg-success/10 text-success" :
-                fitScore.color === "amber" ? "bg-warning/10 text-warning" :
-                "bg-destructive/10 text-destructive"
-              }`}>
-                {fitScore.labelDisplay}
-              </span>
-            </div>
-          )}
+            {/* Title — up to 3 lines */}
+            <h3 className="font-display text-base font-bold text-foreground line-clamp-3 leading-snug">
+              {event.title}
+            </h3>
 
-          <div className="flex items-center gap-3 mt-1.5 text-muted-foreground text-xs font-body">
-            <span className="flex items-center gap-1">
-              <CalendarDays className="h-3 w-3" />
-              {new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
-            </span>
-            <span className="flex items-center gap-1 min-w-0">
-              <MapPin className="h-3 w-3 shrink-0" />
+            {/* Location */}
+            <div className="flex items-center gap-1 text-muted-foreground text-xs font-body min-w-0">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{event.location}</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between mt-2.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-body">
-              <Users className="h-3 w-3" />
-              <span>{event.spots_taken}/{event.spots_total}</span>
-              <div className="w-12 h-1.5 rounded-full bg-muted ml-1 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${fillColor} transition-all duration-500 ease-out`}
-                  style={{ width: `${fillPercent}%` }}
-                />
+              {event.distance && (
+                <>
+                  <span className="text-muted-foreground/50 mx-0.5">|</span>
+                  <span className="shrink-0">{event.distance}</span>
+                </>
+              )}
+            </div>
+
+            {/* Category badge */}
+            {event.category && (
+              <div className="mt-0.5">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-border/60 bg-muted/30 text-xs font-body font-medium text-foreground">
+                  {event.category.icon && <span className="text-sm">{event.category.icon}</span>}
+                  {event.category.name}
+                </span>
               </div>
-            </div>
-            <span className="font-body font-bold text-sm text-foreground">
-              {priceDisplay}
-            </span>
+            )}
           </div>
-          {/* Stats line for outdoor events */}
-          {event.distance && (
-            <div className="mt-1.5 text-[11px] text-muted-foreground/70 font-body">
-              {[event.distance, event.elevation, event.duration].filter(Boolean).join(" · ")}
+
+          {/* Right: thumbnail image */}
+          <div className="relative flex-shrink-0">
+            <OptimizedImage
+              src={event.image_url}
+              alt={event.title}
+              width={112}
+              height={112}
+              className="w-28 h-28 rounded-xl object-cover bg-muted"
+            />
+          </div>
+        </div>
+
+        {/* Bottom section: attributes + participants */}
+        <div className="px-4 pb-3 flex items-center justify-between gap-2">
+          {/* Attributes: difficulty, duration */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {event.difficulty && (
+              <DifficultyBadge difficulty={event.difficulty} className="bg-muted/50 text-foreground text-[10px] px-2 py-0.5" showLabel={false} />
+            )}
+            {statsItems.length > 0 && (
+              <span className="text-[11px] text-muted-foreground font-body">
+                {statsItems.join(" · ")}
+              </span>
+            )}
+          </div>
+
+          {/* Participants bar */}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-body shrink-0">
+            <Users className="h-3.5 w-3.5" />
+            <span>{event.spots_taken}/{event.spots_total}</span>
+            <div className="w-10 h-1.5 rounded-full bg-muted ml-0.5 overflow-hidden">
+              <div
+                className={`h-full rounded-full ${fillColor} transition-all duration-500 ease-out`}
+                style={{ width: `${fillPercent}%` }}
+              />
             </div>
-          )}
+          </div>
         </div>
       </div>
     </Link>
