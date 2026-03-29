@@ -5,7 +5,7 @@ import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
   CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2
 } from "lucide-react";
-import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ShareSheet from "@/components/events/ShareSheet";
