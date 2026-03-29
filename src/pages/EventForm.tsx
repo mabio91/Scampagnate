@@ -27,6 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
+import { useTrekkingDifficultyLevels } from "@/hooks/useTrekkingDifficultyLevels";
 
 type PaymentType = Database["public"]["Enums"]["payment_type"];
 
