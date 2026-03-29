@@ -1045,10 +1045,63 @@ const EventDetail = () => {
           )}
 
           {isRegistered && (
-            <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
+            <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
               {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
             </Button>
           )}
+
+          {/* Cancel Confirmation Dialog */}
+          <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <DialogContent className="max-w-xs">
+              <DialogHeader>
+                <DialogTitle className="font-display">
+                  {canCancelRegistration ? "Annulla iscrizione" : "Impossibile annullare"}
+                </DialogTitle>
+                <DialogDescription className="font-body text-sm">
+                  {canCancelRegistration ? (
+                    <>
+                      Sei sicuro di voler annullare la tua iscrizione a <strong>{event.title}</strong>?
+                      {myRegistration?.payment_status === "paid" && (
+                        <span className="block mt-2 text-xs text-green-600 font-semibold">
+                          💰 Il rimborso verrà elaborato automaticamente entro 5-10 giorni lavorativi.
+                        </span>
+                      )}
+                      <span className="block mt-2 text-xs text-muted-foreground">
+                        ⏱ Hai tempo fino a 24 ore dalla registrazione per annullare.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="block mb-2">
+                        Sono trascorse più di 24 ore dalla tua registrazione.
+                      </span>
+                      <span className="block text-destructive font-semibold">
+                        Non è più possibile annullare l'iscrizione né ottenere un rimborso.
+                      </span>
+                      <span className="block mt-2 text-xs text-muted-foreground">
+                        La politica di cancellazione prevede un limite di 24 ore dalla registrazione.
+                      </span>
+                    </>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 font-body" onClick={() => setShowCancelDialog(false)}>
+                  {canCancelRegistration ? "Mantieni" : "Ho capito"}
+                </Button>
+                {canCancelRegistration && (
+                  <Button
+                    variant="destructive"
+                    className="flex-1 font-body"
+                    onClick={handleCancel}
+                    disabled={cancelMutation.isPending}
+                  >
+                    {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla"}
+                  </Button>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </motion.div>
       </div>
       </div> {/* end rounded top container */}
