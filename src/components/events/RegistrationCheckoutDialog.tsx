@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
+import { useMembershipFee } from "@/hooks/useMembershipFee";
 import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -41,6 +42,7 @@ const RegistrationCheckoutDialog = ({
   isSubmitting, isRequestingOverride, requiresApproval, isSportCategory,
 }: RegistrationCheckoutDialogProps) => {
   const { user, profile } = useAuth();
+  const { data: membershipFeeAmount = 10 } = useMembershipFee();
 
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
@@ -70,7 +72,7 @@ const RegistrationCheckoutDialog = ({
   const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
   const depositAmount = isDeposit ? Number(event.deposit) : 0;
   const displayPrice = isDeposit ? depositAmount : basePrice;
-  const membershipFee = needsMembership ? 10 : 0;
+  const membershipFee = needsMembership ? membershipFeeAmount : 0;
   const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
   const totalDueToday = discountedEventPrice + membershipFee;
   const remainingAmount = isDeposit ? Number(event.price) - depositAmount : 0;
@@ -396,7 +398,7 @@ const RegistrationCheckoutDialog = ({
                     La tessera è valida per l'anno in corso e include copertura assicurativa base durante le attività.
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-body font-bold text-foreground">€10 / anno</span>
+                    <span className="text-sm font-body font-bold text-foreground">€{membershipFeeAmount} / anno</span>
                   </div>
                   <p className="text-[10px] font-body text-muted-foreground">
                     La tessera verrà attivata automaticamente con questo pagamento.
@@ -513,11 +515,11 @@ const RegistrationCheckoutDialog = ({
                   <span className="text-primary font-semibold flex items-center gap-1">
                     <CreditCard className="h-3 w-3" /> Quota associativa
                   </span>
-                  <span className="font-semibold text-primary">€10.00</span>
+                  <span className="font-semibold text-primary">€{membershipFeeAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-body pt-2 mt-1 border-t border-border">
                   <span className="font-bold text-foreground">Totale da pagare oggi</span>
-                  <span className="font-bold text-foreground text-base">€10.00</span>
+                  <span className="font-bold text-foreground text-base">€{membershipFeeAmount.toFixed(2)}</span>
                 </div>
               </div>
             )}
