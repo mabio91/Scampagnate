@@ -17,7 +17,7 @@ interface ProfileCompletenessProps {
 }
 
 const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) => {
-  const { profile, user, refreshProfile } = useAuth();
+  const { profile, user } = useAuth();
   const { toast } = useToast();
   const pointsAwardedRef = useRef(false);
 
@@ -45,25 +45,25 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
     const awardPoints = async () => {
       try {
         // Check if already awarded in DB (single source of truth)
-        const { data: existing } = await supabase
+        const { count: existingCount, error: existingError } = await supabase
           .from("points_history")
-          .select("id")
+          .select("id", { head: true, count: "exact" })
           .eq("user_id", user.id)
           .eq("type", "profile_complete")
-          .maybeSingle();
+          .limit(1);
 
-        if (existing || cancelled) return;
+        if (cancelled || existingError || (existingCount ?? 0) > 0) return;
 
-        await supabase.rpc("add_user_points", {
+        const { error: awardError } = await supabase.rpc("add_user_points", {
           p_user_id: user.id,
           p_value: 10,
           p_type: "profile_complete",
           p_description: "Profilo completato al 100%",
         });
 
-        if (!cancelled) {
-          toast({ title: "Profilo completato! +10 punti 🎉" });
-        }
+        if (cancelled || awardError) return;
+
+        toast({ title: "Profilo completato! +10 punti 🎉" });
       } catch (e) {
         // Silent fail - points not critical
       }
