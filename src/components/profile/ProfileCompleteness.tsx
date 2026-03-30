@@ -36,14 +36,15 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
   const completedCount = fields.filter(f => f.completed).length;
   const percentage = fields.length > 0 ? Math.round((completedCount / fields.length) * 100) : 0;
 
-  // Award points when profile reaches 100%
+  // Award points when profile reaches 100% — only once ever
   useEffect(() => {
     if (percentage !== 100 || !user || pointsAwardedRef.current) return;
     pointsAwardedRef.current = true;
 
+    let cancelled = false;
     const awardPoints = async () => {
       try {
-        // Check if already awarded
+        // Check if already awarded in DB (single source of truth)
         const { data: existing } = await supabase
           .from("points_history")
           .select("id")
@@ -51,7 +52,7 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
           .eq("type", "profile_complete")
           .maybeSingle();
 
-        if (existing) return;
+        if (existing || cancelled) return;
 
         await supabase.rpc("add_user_points", {
           p_user_id: user.id,
@@ -60,13 +61,15 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
           p_description: "Profilo completato al 100%",
         });
 
-        await refreshProfile();
-        toast({ title: "Profilo completato! +10 punti 🎉" });
+        if (!cancelled) {
+          toast({ title: "Profilo completato! +10 punti 🎉" });
+        }
       } catch (e) {
         // Silent fail - points not critical
       }
     };
     awardPoints();
+    return () => { cancelled = true; };
   }, [percentage, user]);
 
   if (!profile) return null;
