@@ -550,7 +550,7 @@ const ProfileSetup = () => {
                 {/* Interests */}
                 <div ref={interestsSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.interests ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
                   <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
-                    Quali esperienze ti attirano di più?
+                    Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {step3Errors.interests && <span className="text-destructive text-xs font-normal">— Seleziona almeno 1 opzione</span>}
                   </Label>
                   <p className="text-xs text-muted-foreground font-body">Seleziona fino a 3 opzioni.</p>
                   <div className="grid grid-cols-2 gap-2">
