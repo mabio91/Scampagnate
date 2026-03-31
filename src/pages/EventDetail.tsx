@@ -783,10 +783,10 @@ const EventDetail = () => {
             <div className="flex-shrink-0">
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
               <button
-                onClick={() => canViewParticipants && navigate(`/event/${event.id}/participants`)}
+                onClick={() => navigate(`/event/${event.id}/participants`)}
                 className="flex items-center"
               >
-                {canViewParticipants && participants && participants.length > 0 ? (
+                {participants && participants.length > 0 ? (
                   <div className="flex items-center">
                     <div className="flex -space-x-2.5">
                       {participants.slice(0, 3).map((p: any, idx: number) => (

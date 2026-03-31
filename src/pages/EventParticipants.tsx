@@ -313,26 +313,72 @@ const EventParticipants = () => {
   // --- Guest / not logged in ---
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background relative">
         <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft className="h-5 w-5 text-foreground" /></button>
           <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
+        </div>
+
+        <div className="max-w-lg mx-auto px-4 py-4 pb-64">
+          {/* Organizer */}
+          {event?.organizer_id && (
+            <div className="mb-6">
+              <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Organizzatore</p>
+              <div className="flex items-center gap-4">
+                <LevelAvatar
+                  avatarUrl={organizerProfile?.avatar_url}
+                  firstName={organizerProfile?.first_name || event.organizer_name}
+                  points={0}
+                  size="md"
+                  showBadge={false}
+                />
+                <p className="text-sm font-body font-semibold text-foreground">
+                  {organizerProfile?.first_name || event.organizer_name}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="border-t border-border" />
+
+          {/* Blurred participants */}
           {participants && participants.length > 0 && (
-            <span className="ml-auto text-xs font-body text-muted-foreground">
-              {participants.length} iscritti
-            </span>
+            <div className="mt-4">
+              <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Chi c'è?</p>
+              <div className="select-none">
+                {participants.map((p: any) => (
+                  <div key={p.id} className="flex items-center gap-4 py-3.5 border-b border-border last:border-0">
+                    <div className="blur-[6px] pointer-events-none">
+                      {p.profiles?.avatar_url ? (
+                        <img src={p.profiles.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <span className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
+                          {p.profiles?.first_name?.[0] || "?"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 blur-[6px] pointer-events-none">
+                      <p className="text-sm font-body font-semibold text-foreground truncate">
+                        {p.profiles?.first_name || "Utente"}
+                      </p>
+                      <p className="text-xs font-body text-muted-foreground">Membro</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-        <div className="px-4 py-16 text-center max-w-sm mx-auto">
-          <UserIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+
+        {/* Fixed bottom CTA */}
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-6 py-6 text-center z-20">
           <p className="text-base font-body font-semibold text-foreground mb-1">
             Ti stai perdendo qualcosa!
           </p>
-          <p className="text-sm font-body text-muted-foreground mb-6">
+          <p className="text-sm font-body text-muted-foreground mb-4">
             Accedi e completa il profilo per scoprire chi partecipa.
           </p>
-          <Button onClick={() => navigate("/auth")} className="gap-2">
-            <LogIn className="h-4 w-4" />
+          <Button onClick={() => navigate("/auth")} className="w-full gap-2" size="lg">
             Accedi
           </Button>
         </div>
