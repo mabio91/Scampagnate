@@ -33,7 +33,7 @@ export interface EventWithDetails {
   access_rules: any;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
-  price_options?: { id: string; name: string; price: number; sort_order: number }[];
+  price_options?: { id: string; name: string; price: number; sort_order: number; original_price: number | null; eligible_group: string; is_promotional: boolean; promo_start: string | null; promo_end: string | null }[];
 }
 
 export const useEvents = (categoryName?: string | null) => {
