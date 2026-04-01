@@ -16,19 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Lightbulb, Rocket } from "lucide-react";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityProposalFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const CATEGORIES = [
-  { value: "trekking", label: "Trekking" },
-  { value: "social", label: "Aperitivo / Social" },
-  { value: "sport", label: "Sport" },
-  { value: "weekend", label: "Weekend / Viaggio" },
-  { value: "special", label: "Esperienza speciale" },
-] as const;
 
 const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps) => {
   const { user, profile } = useAuth();
