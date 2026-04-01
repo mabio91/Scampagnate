@@ -3,8 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
-  CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2
+  CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2, Zap
 } from "lucide-react";
+
+import { supabase } from "@/integrations/supabase/client";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -188,15 +190,32 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const event = registration.events;
   const { toast } = useToast();
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const cancelMutation = useCancelRegistration();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const navigate = useNavigate();
 
   if (!event) return null;
 
-  const displayStatus = isPast ? "past" : registration.status;
-  const statusStyle = statusStyles[displayStatus] || statusStyles.registered;
-  const statusLabel = t(statusLabelKeys[displayStatus] as any) || displayStatus;
+  // Waitlist spot availability detection
+  const isWaitlisted = registration.status === "waitlist";
+  const hasSpotAvailable = isWaitlisted && event.spots_total > 0 && event.spots_taken < event.spots_total;
+  const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
+
+  // Dynamic status display
+  let displayStatus = isPast ? "past" : registration.status;
+  let statusLabel = t(statusLabelKeys[displayStatus] as any) || displayStatus;
+  let statusStyle = statusStyles[displayStatus] || statusStyles.registered;
+
+  // Override for waitlist with spot available
+  if (hasSpotAvailable && !isPast) {
+    displayStatus = "spot_available";
+    statusLabel = "Posto disponibile";
+    statusStyle = "bg-success/10 text-success";
+  }
+
   const meetingPoint = registration.meeting_point;
 
   // 24h cancellation window check
@@ -205,7 +224,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     ? (Date.now() - registrationCreatedAt.getTime()) / (1000 * 60 * 60)
     : Infinity;
   const canCancelRegistration = hoursSinceRegistration <= 24;
-  const canCancel = showActions && registration.status !== "cancelled" && registration.status !== "waitlist";
+  const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
   const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US")}`;
@@ -224,6 +243,40 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       }
     } catch (err: any) {
       toast({ title: t("error"), description: err.message, variant: "destructive" });
+    }
+  };
+
+  // Handle "Completa prenotazione" for waitlisted users when spot is available
+  const handleCompleteBooking = async () => {
+    if (!user) return;
+    
+    if (needsOnlinePayment) {
+      setPaymentLoading(true);
+      try {
+        const body: any = { eventId: event.id, registrationId: registration.id };
+        const regPriceOptionId = registration.price_option_id;
+        if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
+        
+        const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+        if (error) throw error;
+        if (data?.free) {
+          toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
+          setPaymentLoading(false);
+          window.location.reload();
+          return;
+        }
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error("No checkout URL returned");
+        }
+      } catch (err: any) {
+        toast({ title: "Errore", description: err.message, variant: "destructive" });
+        setPaymentLoading(false);
+      }
+    } else {
+      // Free/location events — navigate to event detail to complete
+      navigate(`/event/${event.id}`);
     }
   };
 
@@ -272,7 +325,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
         {/* Quick Actions */}
         {(showActions || isPast) && registration.status !== "cancelled" && (
-          <div className="flex items-center gap-2 px-3 pb-3 pt-1">
+          <div className="flex items-center gap-2 px-3 pb-3 pt-1 flex-wrap">
             <button onClick={shareEvent} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all">
               <Share2 className="h-3.5 w-3.5" /> {t("share")}
             </button>
@@ -294,6 +347,20 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Waitlist spot available → "Completa prenotazione" CTA */}
+            {hasSpotAvailable && (
+              <button
+                onClick={handleCompleteBooking}
+                disabled={paymentLoading}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-body font-semibold hover:bg-primary/90 active:scale-95 transition-all ml-auto"
+              >
+                {paymentLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                Completa prenotazione
+              </button>
+            )}
+
+            {/* Cancel button — only show when not in "spot available" state */}
             {canCancel && (
               <button
                 onClick={() => setShowCancelDialog(true)}

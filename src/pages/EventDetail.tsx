@@ -313,6 +313,12 @@ const EventDetail = () => {
     }
     if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return;
 
+    // Waitlisted user with spot available → go directly to payment/checkout
+    if (waitlistSpotAvailable) {
+      handleWaitlistBooking();
+      return;
+    }
+
     // Check hard access rules BEFORE any payment or registration flow
     if (accessData && !accessData.hasAccess) {
       setShowAccessWarning(true);
@@ -338,6 +344,50 @@ const EventDetail = () => {
     }
 
     setShowRegisterDialog(true);
+  };
+
+  // Handle waitlist user completing booking when spot becomes available
+  const handleWaitlistBooking = async () => {
+    if (!myRegistration) return;
+    const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
+    
+    if (needsOnlinePayment) {
+      setPaymentLoading(true);
+      try {
+        const body: any = { eventId: event.id, registrationId: myRegistration.id };
+        const regPriceOptionId = (myRegistration as any).price_option_id;
+        if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
+        
+        const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+        if (error) throw error;
+        if (data?.free) {
+          toast({ title: "Prenotazione completata!", description: "Il posto è tuo!" });
+          setPaymentLoading(false);
+          window.location.reload();
+          return;
+        }
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error("No checkout URL returned");
+        }
+      } catch (err: any) {
+        toast({ title: "Errore", description: err.message, variant: "destructive" });
+        setPaymentLoading(false);
+      }
+    } else {
+      // Free/location event — update status directly
+      try {
+        await supabase.from("event_registrations")
+          .update({ status: "registered" as any, payment_status: event.payment_type === "location" ? "pay_on_location" : "not_required" })
+          .eq("id", myRegistration.id)
+          .eq("user_id", user!.id);
+        toast({ title: "Prenotazione completata!", description: "Il posto è tuo!" });
+        window.location.reload();
+      } catch (err: any) {
+        toast({ title: "Errore", description: err.message, variant: "destructive" });
+      }
+    }
   };
 
 
@@ -491,9 +541,13 @@ const EventDetail = () => {
     }
   };
 
-  const needsPayment = isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "paid" || event.payment_type === "deposit") && myRegistration?.payment_status !== "paid";
+   const needsPayment = isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "paid" || event.payment_type === "deposit") && myRegistration?.payment_status !== "paid";
   const isPendingApproval = isRegistered && myRegistration?.status === "pending_approval";
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
+
+  // Detect if a spot has become available for a waitlisted user
+  const remainingSpots = event.spots_total - event.spots_taken;
+  const waitlistSpotAvailable = isOnWaitlist && remainingSpots > 0;
 
   // CTA PRIORITY ORDER (from highest to lowest)
   // Check if user is blocked by hard access rules
@@ -506,9 +560,11 @@ const EventDetail = () => {
     if (event.status === "closed") return "Iscrizioni chiuse";
     if (isEventPast || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Evento chiuso";
     if (!user) return "Partecipa";
+    // Waitlisted user with spot available → "Completa prenotazione"
+    if (waitlistSpotAvailable) return "Completa prenotazione";
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Registrato ✓";
     if (isPendingApproval) return "In attesa di approvazione";
-    if (isOnWaitlist) return "Lista d'attesa";
+    if (isOnWaitlist) return "In lista d'attesa";
     // Block CTA if user doesn't meet hard requirements (even if they have a pending payment)
     if (isBlockedByAccessRules) return "Requisiti non soddisfatti";
     if (needsPayment) return "Paga ora";
@@ -519,6 +575,7 @@ const EventDetail = () => {
   const getCTAClass = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "bg-muted text-muted-foreground cursor-not-allowed";
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
+    if (waitlistSpotAvailable) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-green-600 text-white";
     if (isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
@@ -605,7 +662,7 @@ const EventDetail = () => {
     return items;
   };
 
-  const remainingSpots = event.spots_total - event.spots_taken;
+  // remainingSpots already computed above
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-36">
@@ -1235,8 +1292,8 @@ const EventDetail = () => {
               paymentLoading ||
               isEventPast ||
               event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" ||
-              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) ||
-              isBlockedByAccessRules
+              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
+              (isBlockedByAccessRules && !waitlistSpotAvailable)
             }
           >
             {paymentLoading ? (
