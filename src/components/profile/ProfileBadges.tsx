@@ -156,9 +156,9 @@ const ProfileBadges = () => {
       {/* Section 2: Prossimi badge */}
       {nextBadges.length > 0 && (
         <div className="mb-4">
-          <h3 className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">Prossimi badge</h3>
+          <h3 className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">Prossimo badge</h3>
           <div className="space-y-2">
-            {nextBadges.map((badge) => (
+            {nextBadges.slice(0, 1).map((badge) => (
               <button
                 key={badge.id}
                 onClick={() => badge.dbBadge && setSelectedBadge(badge.dbBadge)}

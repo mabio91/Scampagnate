@@ -61,7 +61,7 @@ const ReportIssueDialog = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group w-full text-left">
-          <AlertTriangle className="h-4.5 w-4.5 text-destructive shrink-0" />
+          <AlertTriangle className="h-[18px] w-[18px] text-destructive/70 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-body font-semibold text-foreground">Segnala un problema</p>
             <p className="text-xs font-body text-muted-foreground">Aiutaci a migliorare l'esperienza</p>

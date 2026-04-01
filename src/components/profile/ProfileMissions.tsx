@@ -93,7 +93,7 @@ const ProfileMissions = () => {
   return (
     <div className="mb-6 animate-fade-in">
       <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-        <Target className="h-5 w-5 text-secondary" /> Obiettivi
+        <Target className="h-5 w-5 text-secondary" /> Missioni
       </h2>
 
       {missionsToShow.length > 0 ? (
@@ -116,11 +116,11 @@ const ProfileMissions = () => {
                     : "bg-card border-border hover:border-primary/20"
                 }`}
               >
-                {/* Reward pill */}
-                {hasReward && !mission.completed && (
+                {/* Reward pill - only for non-badge rewards */}
+                {hasReward && !mission.completed && mission.reward_type !== "badge" && (
                   <div className="flex justify-end mb-1">
                     <span className="text-[9px] font-display font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {mission.reward_type === "coupon" ? "Coupon" : mission.reward_type === "badge" ? "Badge" : "Reward"}
+                      {mission.reward_type === "coupon" ? "Coupon" : "Reward"}
                     </span>
                   </div>
                 )}
@@ -169,10 +169,10 @@ const ProfileMissions = () => {
                           +{mission.rewardPoints} punti
                         </span>
                       </div>
-                      {hasReward && (
+                      {hasReward && mission.reward_type !== "badge" && (
                         <span className="text-[10px] font-body font-semibold text-primary flex items-center gap-0.5">
-                          {mission.reward_type === "coupon" ? "🎟️" : mission.reward_type === "badge" ? "🏅" : "🎁"}
-                          {mission.reward_type === "coupon" ? "Coupon" : mission.reward_type === "badge" ? "Badge" : "Reward"}
+                          {mission.reward_type === "coupon" ? "🎟️" : "🎁"}
+                          {mission.reward_type === "coupon" ? "Coupon" : "Reward"}
                         </span>
                       )}
                       {mission.type !== "one_time" && (
@@ -197,8 +197,8 @@ const ProfileMissions = () => {
       ) : (
         <EmptyState
           icon={Target}
-          title="Nessun obiettivo attivo"
-          description="I nuovi obiettivi saranno presto disponibili"
+          title="Nessuna missione attiva"
+          description="Le nuove missioni saranno presto disponibili"
           compact
         />
       )}
