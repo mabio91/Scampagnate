@@ -62,7 +62,7 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
       <h3 className="font-display text-lg font-bold text-foreground mb-2">L'esperienza</h3>
       <div className="relative">
         <div
-          ref={textRef as any}
+          ref={textRef}
           className={`text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed whitespace-pre-line [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_del]:line-through ${!expanded ? "line-clamp-6" : ""}`}
           dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, '<br/>') }}
         />
