@@ -1004,31 +1004,107 @@ const EventDetail = () => {
           );
         })()}
 
-        {/* 8. MEETING POINTS – compact */}
+        {/* 8. MEETING POINTS – collapsible */}
         {event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
-            <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("meetingPoints")}</h3>
-            <div className="space-y-2">
-              {event.meeting_points.map((mp: any) => (
-                <button
-                  key={mp.id}
-                  onClick={() => { setNavigationLocation(mp.location); setShowNavigationModal(true); }}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 w-full text-left hover:bg-muted transition-colors group"
-                >
-                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center">
-                    <MapPin className="h-4 w-4 text-secondary" />
+            <Collapsible open={meetingPointsOpen} onOpenChange={setMeetingPointsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                <h3 className="font-display text-lg font-bold text-foreground">{t("meetingPoints")}</h3>
+                <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${meetingPointsOpen ? "rotate-180" : ""}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3">
+                <div className="space-y-2">
+                  {event.meeting_points.map((mp: any) => (
+                    <button
+                      key={mp.id}
+                      onClick={() => { setNavigationLocation(mp.location); setShowNavigationModal(true); }}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 w-full text-left hover:bg-muted transition-colors group"
+                    >
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center">
+                        <MapPin className="h-4 w-4 text-secondary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
+                        <p className="text-xs font-body text-muted-foreground truncate">{mp.location}</p>
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <p className="text-sm font-body font-bold text-foreground">{mp.time?.slice(0, 5)}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </motion.div>
+        )}
+
+        {/* REGOLE & INFO – collapsible, dynamic based on cancellation policy */}
+        {(() => {
+          const { policyType } = parseCancellationPolicy(event.cancellation_policy);
+          const isFlexible = policyType === "flexible" || policyType === "moderate";
+          const windowHours = policyType === "moderate" ? "48h" : "24h";
+
+          const closingSentences = [
+            "✨ Porta leggerezza, al resto pensiamo noi",
+            "✨ Una community che arriva per i sentieri… e resta per le persone",
+            "✨ Il difficile è venire. Poi non vorrai più andare via",
+            "✨ Fidati: sarà una di quelle giornate che ricordi",
+            "✨ Vieni con lo spirito giusto — il resto viene da sé",
+            "✨ Qui si conoscono persone, non solo posti",
+          ];
+          const randomClosing = closingSentences[Math.floor(Math.random() * closingSentences.length)];
+
+          const bullets = isFlexible
+            ? [
+                { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
+                { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${windowHours} prima e ricevere il rimborso completo` },
+                { icon: "❌", text: "Dopo questo termine non è più possibile rimborsare (organizziamo tutto in anticipo)" },
+                { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
+                { icon: "", text: randomClosing },
+              ]
+            : [
+                { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
+                { icon: "❌", text: "Questo evento non è rimborsabile" },
+                { icon: "💡", text: "Organizziamo tutto in anticipo per garantire l'esperienza" },
+                { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
+                { icon: "", text: randomClosing },
+              ];
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="py-4 border-b border-border">
+              <Collapsible open={rulesOpen} onOpenChange={setRulesOpen}>
+                <CollapsibleTrigger className="flex items-start justify-between w-full group text-left">
+                  <div>
+                    <h3 className="font-display text-lg font-bold text-foreground">Regole & Info</h3>
+                    {isFlexible && (
+                      <p className="text-xs font-body text-muted-foreground mt-0.5">
+                        Cancellazione gratuita fino a {windowHours} →
+                      </p>
+                    )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
-                    <p className="text-xs font-body text-muted-foreground truncate">{mp.location}</p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <p className="text-sm font-body font-bold text-foreground">{mp.time?.slice(0, 5)}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 mt-1 ${rulesOpen ? "rotate-180" : ""}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <ul className="space-y-2.5">
+                    {bullets.map((b, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed">
+                        {b.icon && <span className="shrink-0">{b.icon}</span>}
+                        <span>{b.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+            </motion.div>
+          );
+        })()}
+
+        {/* Event Fit Score — "Quanto fa per te" */}
+        {user && !accessData?.failedRules?.length && !fitScore.hidden && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="py-4 border-b border-border">
+            <h3 className="font-display text-lg font-bold text-foreground mb-3">Quanto fa per te</h3>
+            <EventFitScore fitScore={fitScore} />
           </motion.div>
         )}
 
