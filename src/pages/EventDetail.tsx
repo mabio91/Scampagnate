@@ -601,7 +601,7 @@ const EventDetail = () => {
   const remainingSpots = event.spots_total - event.spots_taken;
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
+    <div className="min-h-screen min-h-[100dvh] bg-background pb-36">
       {/* 17. STICKY HEADER ON SCROLL */}
       <div
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-safe ${
