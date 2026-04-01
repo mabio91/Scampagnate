@@ -1483,37 +1483,37 @@ const EventDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Fit Score Warning Dialog (score < 30) */}
+      {/* Fit Score Warning Dialog (score < 60) */}
       <Dialog open={showFitScoreWarning} onOpenChange={setShowFitScoreWarning}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              Attenzione
+            <DialogTitle className="font-display flex items-center gap-2 text-foreground">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Sei sicuro sia l'evento giusto per te?
             </DialogTitle>
-            <DialogDescription className="font-body text-sm leading-relaxed">
-              La tua compatibilità con questo evento è molto bassa ({fitScore.score}%). 
-              Questo evento potrebbe essere significativamente troppo impegnativo per il tuo livello attuale.
-              Sei sicuro di voler procedere con l'iscrizione?
-            </DialogDescription>
           </DialogHeader>
+          <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+            <p className="font-body text-sm leading-relaxed text-muted-foreground">
+              Questo evento è più impegnativo rispetto al tuo livello attuale.
+              Richiede buona preparazione fisica ed esperienza.
+            </p>
+          </div>
           <div className="flex flex-col gap-2 mt-2">
             <Button
               onClick={() => {
                 setShowFitScoreWarning(false);
                 setShowRegisterDialog(true);
               }}
-              variant="destructive"
               className="w-full font-body h-12"
             >
-              Procedi comunque
+              👉 Partecipa comunque
             </Button>
             <Button
               variant="ghost"
               className="w-full font-body text-muted-foreground text-xs h-10"
               onClick={() => setShowFitScoreWarning(false)}
             >
-              Annulla
+              👉 Chiudi
             </Button>
           </div>
         </DialogContent>
