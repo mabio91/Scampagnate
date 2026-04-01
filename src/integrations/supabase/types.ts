@@ -1411,6 +1411,42 @@ export type Database = {
           },
         ]
       }
+      user_consents: {
+        Row: {
+          consent_type: string
+          created_at: string | null
+          granted: boolean
+          granted_at: string | null
+          id: string
+          revoked_at: string | null
+          updated_at: string | null
+          user_id: string
+          version: string | null
+        }
+        Insert: {
+          consent_type: string
+          created_at?: string | null
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          updated_at?: string | null
+          user_id: string
+          version?: string | null
+        }
+        Update: {
+          consent_type?: string
+          created_at?: string | null
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       user_missions: {
         Row: {
           completed: boolean
