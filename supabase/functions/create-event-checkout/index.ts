@@ -33,6 +33,17 @@ serve(async (req) => {
     const { eventId, registrationId, discountCodeId, priceOptionId } = await req.json();
     if (!eventId || !registrationId) throw new Error("Event ID and Registration ID required");
 
+    // Clean up any stale pending registrations (older than 30 min) for this user+event
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    await supabaseAdmin
+      .from("event_registrations")
+      .delete()
+      .eq("event_id", eventId)
+      .eq("user_id", user.id)
+      .eq("payment_status", "pending")
+      .neq("id", registrationId)
+      .lt("created_at", thirtyMinAgo);
+
     // Fetch event details using admin client to bypass RLS
     const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
