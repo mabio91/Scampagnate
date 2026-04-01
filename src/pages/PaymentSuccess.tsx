@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const PaymentSuccess = () => {
@@ -13,8 +13,9 @@ const PaymentSuccess = () => {
   const { toast } = useToast();
   const { refreshProfile } = useAuth();
   const { t } = useLanguage();
-  const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
+  const [status, setStatus] = useState<"verifying" | "success" | "spot_taken" | "error">("verifying");
   const [eventId, setEventId] = useState<string | null>(null);
+  const [spotTakenMessage, setSpotTakenMessage] = useState("");
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -32,8 +33,24 @@ const PaymentSuccess = () => {
           body: { sessionId },
         });
 
-        if (error || !data?.success) {
-          throw new Error(data?.error || error?.message || "Verification failed");
+        if (error) throw new Error(error.message || "Verification failed");
+
+        // Handle spot taken / auto-refund
+        if (data?.spot_taken && data?.auto_refunded) {
+          await refreshProfile();
+          setSpotTakenMessage(data.message || "Il posto è stato preso da un altro partecipante. Ti abbiamo rimborsato automaticamente.");
+          setStatus("spot_taken");
+          return;
+        }
+
+        if (data?.auto_refunded && !data?.success) {
+          setSpotTakenMessage(data.error || data.message || "Rimborso automatico elaborato.");
+          setStatus("spot_taken");
+          return;
+        }
+
+        if (!data?.success) {
+          throw new Error(data?.error || "Verification failed");
         }
 
         await refreshProfile();
@@ -80,6 +97,32 @@ const PaymentSuccess = () => {
                 className="w-full font-body"
               >
                 {t("myEvents")}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {status === "spot_taken" && (
+          <>
+            <AlertTriangle className="h-16 w-16 mx-auto text-warning" />
+            <h1 className="font-display text-2xl font-bold text-foreground">Posto già assegnato</h1>
+            <p className="text-sm font-body text-muted-foreground">{spotTakenMessage}</p>
+            <p className="text-xs font-body text-muted-foreground">Resti in lista d'attesa e verrai notificato se si libera un altro posto.</p>
+            <div className="space-y-3 pt-4">
+              {eventId && (
+                <Button
+                  onClick={() => navigate(`/event/${eventId}`)}
+                  className="w-full bg-primary text-primary-foreground font-body font-semibold"
+                >
+                  Torna all'evento
+                </Button>
+              )}
+              <Button
+                onClick={() => navigate("/my-events")}
+                variant="outline"
+                className="w-full font-body"
+              >
+                I miei eventi
               </Button>
             </div>
           </>
