@@ -570,6 +570,15 @@ const EventForm = () => {
         const { data, error } = await supabase.from("events").insert(eventData).select("id").single();
         if (error) throw error;
         eventId = data.id;
+
+        // Mark proposal as converted if created from one
+        const proposalId = searchParams.get("proposal_id");
+        if (proposalId) {
+          await supabase
+            .from("activity_proposals" as any)
+            .update({ status: "converted", updated_at: new Date().toISOString() } as any)
+            .eq("id", proposalId);
+        }
       }
 
       // Handle meeting points
