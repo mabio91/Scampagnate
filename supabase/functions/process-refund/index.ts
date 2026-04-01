@@ -8,7 +8,59 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const CANCELLATION_WINDOW_HOURS = 24;
+/**
+ * Calculate refund eligibility based on cancellation policy and event start time.
+ * 
+ * Policies:
+ * - flexible  → 100% refund if >= 24h before event start
+ * - moderate  → 100% refund if >= 48h before event start
+ * - non_refundable / strict / rigida → 0% always
+ */
+function calculateRefundEligibility(
+  cancellationPolicy: string | null,
+  eventDate: string,
+  eventTime: string,
+  now: Date
+): { eligible: boolean; refundPercentage: number; policy: string; hoursUntilEvent: number } {
+  // Build event start datetime
+  const eventStart = new Date(`${eventDate}T${eventTime}`);
+  const hoursUntilEvent = (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  // Parse policy — handle all known formats
+  const rawPolicy = (cancellationPolicy || "").toLowerCase().split(":")[0];
+  
+  let resolvedPolicy: string;
+  let requiredHours: number;
+
+  switch (rawPolicy) {
+    case "flexible":
+    case "flessibile":
+      resolvedPolicy = "flexible";
+      requiredHours = 24;
+      break;
+    case "moderate":
+    case "moderata":
+      resolvedPolicy = "moderate";
+      requiredHours = 48;
+      break;
+    case "non_refundable":
+    case "strict":
+    case "rigida":
+      resolvedPolicy = "non_refundable";
+      requiredHours = Infinity; // never eligible
+      break;
+    default:
+      // Default to flexible if no policy set
+      resolvedPolicy = "flexible";
+      requiredHours = 24;
+      break;
+  }
+
+  const eligible = requiredHours !== Infinity && hoursUntilEvent >= requiredHours;
+  const refundPercentage = eligible ? 100 : 0;
+
+  return { eligible, refundPercentage, policy: resolvedPolicy, hoursUntilEvent };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -48,92 +100,159 @@ serve(async (req) => {
     if (regError) throw new Error("Failed to fetch registration");
     if (!registration) {
       return new Response(
-        JSON.stringify({ refunded: false, reason: "no_registration" }),
+        JSON.stringify({ refunded: false, cancelled: false, reason: "no_registration" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    // Check 24-hour cancellation window from registration time
-    const registeredAt = new Date(registration.created_at);
+    // Get event details for cancellation policy + start datetime
+    const { data: event, error: eventError } = await supabaseAdmin
+      .from("events")
+      .select("cancellation_policy, date, time, title")
+      .eq("id", eventId)
+      .single();
+
+    if (eventError || !event) throw new Error("Failed to fetch event");
+
     const now = new Date();
-    const hoursSinceRegistration = (now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60);
 
-    if (hoursSinceRegistration > CANCELLATION_WINDOW_HOURS) {
-      // Cannot cancel after 24 hours
-      return new Response(
-        JSON.stringify({
-          refunded: false,
-          cancelled: false,
-          reason: "cancellation_window_expired",
-          hours_since_registration: Math.round(hoursSinceRegistration),
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-      );
-    }
+    // Waitlist users can always cancel (no payment involved typically)
+    const isWaitlist = registration.status === "waitlist";
 
-    // Cancel the registration (within 24h window)
+    // Calculate refund eligibility based on cancellation policy
+    const refundCalc = calculateRefundEligibility(
+      event.cancellation_policy,
+      event.date,
+      event.time,
+      now
+    );
+
+    // Always cancel the registration regardless of refund eligibility
     await supabaseAdmin
       .from("event_registrations")
       .update({ status: "cancelled" })
       .eq("id", registration.id);
 
-    // If no payment was made, just cancel without refund
-    if (registration.payment_status !== "paid" || !registration.stripe_payment_intent_id) {
+    // If waitlist or no payment was made → just cancel, no refund needed
+    if (isWaitlist || registration.payment_status !== "paid" || !registration.stripe_payment_intent_id) {
       await supabaseAdmin.from("notifications").insert({
         user_id: user.id,
         type: "cancellation",
         title: "Iscrizione annullata",
-        message: "La tua iscrizione è stata annullata con successo.",
+        message: isWaitlist
+          ? "Sei stato rimosso dalla lista d'attesa."
+          : "La tua iscrizione è stata annullata con successo.",
         event_id: eventId,
       });
 
       return new Response(
-        JSON.stringify({ refunded: false, reason: "no_payment", cancelled: true }),
+        JSON.stringify({
+          refunded: false,
+          cancelled: true,
+          reason: isWaitlist ? "waitlist_cancelled" : "no_payment",
+          policy: refundCalc.policy,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    // Process refund (within 24h and payment exists)
+    // Payment exists — check refund eligibility
+    if (!refundCalc.eligible) {
+      // No refund allowed — booking cancelled, spot released, no money back
+      await supabaseAdmin.from("notifications").insert({
+        user_id: user.id,
+        type: "cancellation",
+        title: "Iscrizione annullata",
+        message: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso.",
+        event_id: eventId,
+      });
+
+      return new Response(
+        JSON.stringify({
+          refunded: false,
+          cancelled: true,
+          reason: "no_refund_policy",
+          policy: refundCalc.policy,
+          refund_percentage: 0,
+          hours_until_event: Math.round(refundCalc.hoursUntilEvent),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    // Refund is eligible — process via Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
     try {
+      // Prevent double refunds by checking current payment status
+      const { data: freshReg } = await supabaseAdmin
+        .from("event_registrations")
+        .select("payment_status")
+        .eq("id", registration.id)
+        .single();
+
+      if (freshReg?.payment_status === "refunded") {
+        return new Response(
+          JSON.stringify({ refunded: true, cancelled: true, reason: "already_refunded", policy: refundCalc.policy }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+
       await stripe.refunds.create({
         payment_intent: registration.stripe_payment_intent_id,
       });
 
-      // Update payment status
+      // Update payment status to refunded
       await supabaseAdmin
         .from("event_registrations")
         .update({ payment_status: "refunded" })
         .eq("id", registration.id);
 
-      // Send notification
+      // Send success notification
       await supabaseAdmin.from("notifications").insert({
         user_id: user.id,
         type: "refund",
         title: "Rimborso elaborato",
-        message: "Il tuo rimborso è stato elaborato automaticamente. Riceverai l'accredito entro 5-10 giorni lavorativi.",
+        message: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni, secondo i tempi previsti dal tuo metodo di pagamento.",
         event_id: eventId,
       });
 
       return new Response(
-        JSON.stringify({ refunded: true, cancelled: true }),
+        JSON.stringify({
+          refunded: true,
+          cancelled: true,
+          policy: refundCalc.policy,
+          refund_percentage: refundCalc.refundPercentage,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     } catch (stripeError: any) {
       console.error("Stripe refund error:", stripeError);
+
+      // Mark as refund_failed
+      await supabaseAdmin
+        .from("event_registrations")
+        .update({ payment_status: "refund_failed" })
+        .eq("id", registration.id);
+
       await supabaseAdmin.from("notifications").insert({
         user_id: user.id,
         type: "refund_error",
-        title: "Errore rimborso",
-        message: "Si è verificato un errore durante il rimborso. Contatta l'organizzatore per assistenza.",
+        title: "Verifica rimborso in corso",
+        message: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile.",
         event_id: eventId,
       });
 
       return new Response(
-        JSON.stringify({ refunded: false, cancelled: true, reason: "stripe_error", error: stripeError.message }),
+        JSON.stringify({
+          refunded: false,
+          cancelled: true,
+          reason: "stripe_error",
+          policy: refundCalc.policy,
+          error: stripeError.message,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }

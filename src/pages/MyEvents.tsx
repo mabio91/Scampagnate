@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
   CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2, Zap
 } from "lucide-react";
+import { getRefundInfo } from "@/lib/cancellationPolicy";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -221,12 +222,13 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   const meetingPoint = registration.meeting_point;
 
-  // 24h cancellation window check
-  const registrationCreatedAt = registration.created_at ? new Date(registration.created_at) : null;
-  const hoursSinceRegistration = registrationCreatedAt
-    ? (Date.now() - registrationCreatedAt.getTime()) / (1000 * 60 * 60)
-    : Infinity;
-  const canCancelRegistration = hoursSinceRegistration <= 24;
+  // Policy-based refund info
+  const refundInfo = useMemo(() => {
+    if (!event.date || !event.time) return null;
+    return getRefundInfo(event.cancellation_policy, event.date, event.time);
+  }, [event.cancellation_policy, event.date, event.time]);
+
+  const hasPaidPayment = registration.payment_status === "paid";
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
@@ -237,10 +239,12 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     try {
       const result = await cancelMutation.mutateAsync(event.id);
       setShowCancelDialog(false);
-      if (result?.reason === "cancellation_window_expired") {
-        toast({ title: t("error"), description: "Sono trascorse più di 24 ore dalla registrazione. Non è più possibile annullare.", variant: "destructive" });
-      } else if (result?.refunded) {
-        toast({ title: t("registrationCancelled"), description: "Rimborso elaborato automaticamente. Riceverai l'accredito entro 5-10 giorni lavorativi." });
+      if (result?.refunded) {
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni." });
+      } else if (result?.reason === "no_refund_policy") {
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso." });
+      } else if (result?.reason === "stripe_error") {
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile." });
       } else {
         toast({ title: t("registrationCancelled"), description: t("registrationCancelledDesc") });
       }
@@ -380,48 +384,35 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
          <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle className="font-display">
-              {canCancelRegistration ? t("cancelRegistrationTitle") : "Impossibile annullare"}
-            </DialogTitle>
+            <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              {canCancelRegistration ? (
-                <>
-                  {t("cancelRegistrationText", { title: event.title })}
-                  {registration.payment_status === "paid" && (
-                    <span className="block mt-2 text-xs text-green-600 font-semibold">
-                      💰 Il rimborso verrà elaborato automaticamente entro 5-10 giorni lavorativi.
-                    </span>
-                  )}
-                  <span className="block mt-2 text-xs text-muted-foreground">
-                    ⏱ Hai tempo fino a 24 ore dalla registrazione per annullare.
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="block mb-2">
-                    Sono trascorse più di 24 ore dalla tua registrazione.
-                  </span>
-                  <span className="block text-destructive font-semibold">
-                    Non è più possibile annullare l'iscrizione né ottenere un rimborso.
-                  </span>
-                </>
+              {t("cancelRegistrationText", { title: event.title })}
+              {hasPaidPayment && refundInfo && (
+                <span className={`block mt-2 text-xs font-semibold ${refundInfo.refundEligible ? "text-green-600" : "text-muted-foreground"}`}>
+                  {refundInfo.refundEligible
+                    ? "💰 Riceverai il rimborso completo nei prossimi giorni."
+                    : `⚠️ ${refundInfo.message}`}
+                </span>
+              )}
+              {refundInfo && (
+                <span className="block mt-1 text-[11px] text-muted-foreground">
+                  Policy: {refundInfo.policyLabel}
+                </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 font-body" onClick={() => setShowCancelDialog(false)}>
-              {canCancelRegistration ? t("keep") : "Ho capito"}
+              {t("keep")}
             </Button>
-            {canCancelRegistration && (
-              <Button
-                variant="destructive"
-                className="flex-1 font-body"
-                onClick={handleCancel}
-                disabled={cancelMutation.isPending}
-              >
-                {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("cancelling")}...</> : t("cancelRegistration")}
-              </Button>
-            )}
+            <Button
+              variant="destructive"
+              className="flex-1 font-body"
+              onClick={handleCancel}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("cancelling")}...</> : t("cancelRegistration")}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
