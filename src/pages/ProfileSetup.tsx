@@ -292,17 +292,61 @@ const ProfileSetup = () => {
   if (!user || !profile) return null;
 
   if (showSuccess) {
+    // Confetti dots with app colors
+    const confettiColors = [
+      "hsl(150 40% 22%)",   // primary (green)
+      "hsl(30 60% 50%)",    // secondary (orange)
+      "hsl(25 80% 55%)",    // accent
+      "hsl(0 84% 60%)",     // destructive (red)
+      "hsl(150 30% 12%)",   // foreground (dark green)
+      "hsl(40 25% 95%)",    // card (cream)
+    ];
+    const confettiDots = Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      size: Math.random() * 6 + 3,
+      color: confettiColors[i % confettiColors.length],
+      delay: Math.random() * 2,
+      duration: Math.random() * 3 + 3,
+      drift: (Math.random() - 0.5) * 60,
+    }));
+
     return (
-      <div className="min-h-screen min-h-[100dvh] bg-background flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen min-h-[100dvh] bg-background flex flex-col items-center justify-center px-4 overflow-hidden relative">
+        {/* Confetti snow-fall dots */}
+        {confettiDots.map((dot) => (
+          <motion.div
+            key={dot.id}
+            initial={{ y: -20, x: `${dot.x}vw`, opacity: 0 }}
+            animate={{
+              y: "110vh",
+              x: `${dot.x + dot.drift}vw`,
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: dot.duration,
+              delay: dot.delay,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            className="absolute top-0 rounded-full pointer-events-none"
+            style={{
+              width: dot.size,
+              height: dot.size,
+              backgroundColor: dot.color,
+            }}
+          />
+        ))}
+
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", duration: 0.6 }}
-          className="text-center space-y-6 max-w-sm"
+          className="text-center space-y-6 max-w-sm relative z-10"
         >
           <motion.div
-            initial={{ rotate: -20 }}
-            animate={{ rotate: 0 }}
+            initial={{ rotate: -20, scale: 0 }}
+            animate={{ rotate: 0, scale: 1 }}
             transition={{ type: "spring", delay: 0.2 }}
           >
             <PartyPopper className="h-16 w-16 mx-auto text-primary" />
