@@ -18,6 +18,7 @@ import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog
 import ActivityProposalForm from "@/components/ActivityProposalForm";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
 import ProfileEditSheet from "@/components/profile/ProfileEditSheet";
+import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -257,6 +258,9 @@ const Profile = () => {
 
         {/* Activity History Dashboard */}
         <ActivityHistory />
+
+        {/* Consensi & Privacy */}
+        <ConsentPrivacySection />
 
         {/* Help & Information */}
         <div className="mb-8 animate-fade-in">
