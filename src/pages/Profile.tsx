@@ -6,7 +6,7 @@ import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift } from "lucide-react";
+import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
