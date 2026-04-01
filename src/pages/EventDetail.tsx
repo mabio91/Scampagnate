@@ -1312,8 +1312,9 @@ const EventDetail = () => {
             disabled={
               paymentLoading ||
               isEventPast ||
-              event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" ||
+              event.status === "closed" || event.status === "cancelled" || event.status === "past" ||
               (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
+              (!!user && isOnWaitlist && !waitlistSpotAvailable) ||
               (isBlockedByAccessRules && !waitlistSpotAvailable)
             }
           >
