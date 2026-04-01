@@ -1126,9 +1126,13 @@ const EventDetail = () => {
               ) : (
                 <p className="text-lg font-display font-bold text-foreground">{getPriceDisplay()}</p>
               )}
-              <span className="text-xs font-body text-muted-foreground">·</span>
-              <span className="text-xs font-body text-muted-foreground">{remainingSpots > 0 ? `${remainingSpots} posti disponibili` : "Sold out"}</span>
             </div>
+            <span className="text-xs font-body text-muted-foreground">{remainingSpots > 0 ? `${remainingSpots} posti disponibili` : "Sold out"}</span>
+            {event.spots_total > 0 && (event.spots_taken / event.spots_total) > 0.7 && remainingSpots > 0 && (
+              <span className="text-[11px] font-body font-bold text-white bg-black dark:bg-white dark:text-black px-2 py-0.5 rounded-full">
+                🔥 ULTIMI POSTI RIMASTI!
+              </span>
+            )}
             {/* Registration deadline (if applicable) */}
             {event.additional_fields && (event.additional_fields as any).registration_deadline && (
               <p className="text-[10px] font-body text-muted-foreground">

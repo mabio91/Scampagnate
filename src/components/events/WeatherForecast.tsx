@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Cloud, CloudRain, Sun, Snowflake, CloudSun, CloudDrizzle, CloudLightning, CloudFog, Wind } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface WeatherForecastProps {
   location: string;
@@ -20,7 +19,6 @@ interface DailyWeather {
   precipitation_probability_max: number;
 }
 
-// Predefined weather conditions (keys match the dropdown in EventForm)
 const WEATHER_CONDITIONS: Record<string, { label: string; icon: typeof Sun; weatherCode: number }> = {
   sereno: { label: "Sereno", icon: Sun, weatherCode: 0 },
   parzialmente_nuvoloso: { label: "Parzialmente nuvoloso", icon: CloudSun, weatherCode: 2 },
@@ -64,15 +62,6 @@ const WMO_CODES: Record<number, { label: string; labelIt: string; icon: typeof S
 
 const getWeatherInfo = (code: number) => {
   return WMO_CODES[code] || { label: "Unknown", labelIt: "Sconosciuto", icon: Cloud };
-};
-
-const getWeatherTheme = (code: number) => {
-  if (code >= 95) return { bg: "bg-purple-50/60 dark:bg-purple-950/20", iconBg: "bg-purple-100 dark:bg-purple-900/40", iconColor: "text-purple-600 dark:text-purple-400" };
-  if (code >= 71 && code <= 86) return { bg: "bg-sky-50/60 dark:bg-sky-950/20", iconBg: "bg-sky-100 dark:bg-sky-900/40", iconColor: "text-sky-600 dark:text-sky-400" };
-  if (code >= 51) return { bg: "bg-blue-50/60 dark:bg-blue-950/20", iconBg: "bg-blue-100 dark:bg-blue-900/40", iconColor: "text-blue-600 dark:text-blue-400" };
-  if (code >= 45) return { bg: "bg-gray-50/60 dark:bg-gray-800/20", iconBg: "bg-gray-100 dark:bg-gray-800/40", iconColor: "text-gray-500 dark:text-gray-400" };
-  if (code >= 2) return { bg: "bg-slate-50/60 dark:bg-slate-800/20", iconBg: "bg-slate-100 dark:bg-slate-800/40", iconColor: "text-slate-500 dark:text-slate-400" };
-  return { bg: "bg-amber-50/60 dark:bg-amber-950/20", iconBg: "bg-amber-100 dark:bg-amber-900/40", iconColor: "text-amber-600 dark:text-amber-400" };
 };
 
 const extractGeoLocation = (location: string): string => {
@@ -126,31 +115,25 @@ export const WeatherForecast = ({ location, date, overrideCondition, overrideTem
     gcTime: 60 * 60 * 1000,
   });
 
-  // Resolve override condition (new key-based or legacy free-text)
   const conditionMeta = overrideCondition ? WEATHER_CONDITIONS[overrideCondition] : null;
   const hasOverride = !!overrideCondition;
-  // Legacy single temp support
   const legacyAvg = overrideTemp ?? null;
 
   if (!hasOverride && (!canShowForecast || isLoading || !weather)) return null;
 
-  // Determine display values — override temps fall back to forecast values
   let displayCondition: string;
   let WeatherIcon: typeof Sun;
-  let effectiveWeatherCode: number;
 
   if (conditionMeta) {
     displayCondition = conditionMeta.label;
     WeatherIcon = conditionMeta.icon;
-    effectiveWeatherCode = conditionMeta.weatherCode;
   } else if (overrideCondition) {
-    // Legacy free-text condition
     displayCondition = overrideCondition;
-    effectiveWeatherCode = weather?.weathercode ?? 2;
-    WeatherIcon = getWeatherInfo(effectiveWeatherCode).icon;
+    const effectiveCode = weather?.weathercode ?? 2;
+    WeatherIcon = getWeatherInfo(effectiveCode).icon;
   } else {
-    effectiveWeatherCode = weather?.weathercode ?? 2;
-    const info = getWeatherInfo(effectiveWeatherCode);
+    const effectiveCode = weather?.weathercode ?? 2;
+    const info = getWeatherInfo(effectiveCode);
     displayCondition = info.labelIt;
     WeatherIcon = info.icon;
   }
@@ -158,33 +141,23 @@ export const WeatherForecast = ({ location, date, overrideCondition, overrideTem
   const displayTempMin = overrideTempMin ?? weather?.temperature_min ?? null;
   const displayTempMax = overrideTempMax ?? weather?.temperature_max ?? null;
   const displayTempAvg = overrideTempAvg ?? legacyAvg ?? (displayTempMin != null && displayTempMax != null ? Math.round((displayTempMin + displayTempMax) / 2) : displayTempMax);
-  const theme = getWeatherTheme(effectiveWeatherCode);
+
+  // Build inline text parts
+  const parts: string[] = [];
+  parts.push(displayCondition);
+  if (displayTempAvg != null) parts[0] += ` ${Math.round(displayTempAvg)}°`;
+  if (displayTempMin != null && displayTempMax != null) {
+    parts.push(`Min ${Math.round(displayTempMin)}° Max ${Math.round(displayTempMax)}°`);
+  }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ delay: 0.08 }} 
-      className="py-3"
-    >
-      <div className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl ${theme.bg}`}>
-        <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${theme.iconBg}`}>
-          <WeatherIcon className={`h-5 w-5 ${theme.iconColor}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-body font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">
-            Meteo previsto
-          </p>
-          <p className="text-sm font-body font-semibold text-foreground">
-            {displayCondition}{displayTempAvg != null ? ` · ${Math.round(displayTempAvg)}°C` : ""}
-          </p>
-          {displayTempMin != null && displayTempMax != null && (
-            <p className="text-[11px] font-body text-muted-foreground">
-              Min {Math.round(displayTempMin)}° · Max {Math.round(displayTempMax)}°
-            </p>
-          )}
-        </div>
+    <div className="flex items-center gap-3 py-2">
+      <div className="w-10 h-10 flex items-center justify-center shrink-0">
+        <WeatherIcon className="h-5 w-5 text-muted-foreground" />
       </div>
-    </motion.div>
+      <p className="text-xs font-body text-muted-foreground">
+        {parts.join(" · ")}
+      </p>
+    </div>
   );
 };
