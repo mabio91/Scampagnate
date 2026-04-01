@@ -111,18 +111,17 @@ const successParticleColors = [
   "hsl(var(--secondary))",
   "hsl(var(--accent))",
   "hsl(var(--gold))",
-  "hsl(var(--foreground))",
+  "hsl(var(--destructive))",
 ];
 
-const successConfettiPieces = Array.from({ length: 24 }, (_, index) => ({
+const successConfettiPieces = Array.from({ length: 36 }, (_, index) => ({
   id: index,
-  left: 4 + ((index * 11) % 92),
-  delay: (index % 6) * 0.18,
-  duration: 4.4 + (index % 5) * 0.35,
-  drift: (index % 2 === 0 ? 1 : -1) * (18 + (index % 4) * 6),
-  rotate: (index % 2 === 0 ? 1 : -1) * (140 + (index % 3) * 40),
-  width: 6 + (index % 3) * 2,
-  height: 10 + (index % 4) * 2,
+  left: 2 + ((index * 7 + 3) % 96),
+  delay: (index % 8) * 0.35,
+  duration: 3.5 + (index % 5) * 0.6,
+  drift: (index % 2 === 0 ? 1 : -1) * (10 + (index % 4) * 8),
+  rotate: (index % 2 === 0 ? 1 : -1) * (120 + (index % 3) * 60),
+  size: 7 + (index % 4) * 3,
   color: successParticleColors[index % successParticleColors.length],
 }));
 
@@ -339,9 +338,9 @@ const ProfileSetup = () => {
             <motion.div
               key={piece.id}
               aria-hidden="true"
-              initial={{ y: "-12vh", x: 0, opacity: 0, rotate: 0 }}
+              initial={{ y: -20, opacity: 0, rotate: 0 }}
               animate={{
-                y: "112vh",
+                y: ["0vh", "105vh"],
                 x: piece.drift,
                 opacity: [0, 1, 1, 0],
                 rotate: piece.rotate,
@@ -352,12 +351,14 @@ const ProfileSetup = () => {
                 repeat: Infinity,
                 ease: "linear",
               }}
-              className="absolute top-0 rounded-full shadow-sm"
+              className="absolute rounded-full"
               style={{
                 left: `${piece.left}%`,
-                width: piece.width,
-                height: piece.height,
+                top: -20,
+                width: piece.size,
+                height: piece.size,
                 backgroundColor: piece.color,
+                boxShadow: `0 0 4px ${piece.color}`,
               }}
             />
           ))}
