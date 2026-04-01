@@ -1217,51 +1217,35 @@ const EventDetail = () => {
           <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
             <DialogContent className="max-w-xs">
               <DialogHeader>
-                <DialogTitle className="font-display">
-                  {canCancelRegistration ? "Annulla iscrizione" : "Impossibile annullare"}
-                </DialogTitle>
+                <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
                 <DialogDescription className="font-body text-sm">
-                  {canCancelRegistration ? (
-                    <>
-                      Sei sicuro di voler annullare la tua iscrizione a <strong>{event.title}</strong>?
-                      {myRegistration?.payment_status === "paid" && (
-                        <span className="block mt-2 text-xs text-green-600 font-semibold">
-                          💰 Il rimborso verrà elaborato automaticamente entro 5-10 giorni lavorativi.
-                        </span>
-                      )}
-                      <span className="block mt-2 text-xs text-muted-foreground">
-                        ⏱ Hai tempo fino a 24 ore dalla registrazione per annullare.
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="block mb-2">
-                        Sono trascorse più di 24 ore dalla tua registrazione.
-                      </span>
-                      <span className="block text-destructive font-semibold">
-                        Non è più possibile annullare l'iscrizione né ottenere un rimborso.
-                      </span>
-                      <span className="block mt-2 text-xs text-muted-foreground">
-                        La politica di cancellazione prevede un limite di 24 ore dalla registrazione.
-                      </span>
-                    </>
+                  Sei sicuro di voler annullare la tua iscrizione a <strong>{event.title}</strong>?
+                  {hasPaidPayment && refundInfo && (
+                    <span className={`block mt-2 text-xs font-semibold ${refundInfo.refundEligible ? "text-green-600" : "text-muted-foreground"}`}>
+                      {refundInfo.refundEligible
+                        ? "💰 Riceverai il rimborso completo nei prossimi giorni."
+                        : `⚠️ ${refundInfo.message}`}
+                    </span>
+                  )}
+                  {refundInfo && (
+                    <span className="block mt-1 text-[11px] text-muted-foreground">
+                      Policy: {refundInfo.policyLabel}
+                    </span>
                   )}
                 </DialogDescription>
               </DialogHeader>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 font-body" onClick={() => setShowCancelDialog(false)}>
-                  {canCancelRegistration ? "Mantieni" : "Ho capito"}
+                  Mantieni
                 </Button>
-                {canCancelRegistration && (
-                  <Button
-                    variant="destructive"
-                    className="flex-1 font-body"
-                    onClick={handleCancel}
-                    disabled={cancelMutation.isPending}
-                  >
-                    {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla"}
-                  </Button>
-                )}
+                <Button
+                  variant="destructive"
+                  className="flex-1 font-body"
+                  onClick={handleCancel}
+                  disabled={cancelMutation.isPending}
+                >
+                  {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
