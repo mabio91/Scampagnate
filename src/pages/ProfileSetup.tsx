@@ -146,6 +146,19 @@ const ProfileSetup = () => {
     isEditMode ? (profile?.event_motivation || "") : ""
   );
 
+  // Sync fields when profile loads (fixes blank fields when navigating in edit mode)
+  useEffect(() => {
+    if (isEditMode && profile) {
+      setPhone(profile.phone || "");
+      setTrekkingExp(profile.trekking_experience || "");
+      setSelfLevel(profile.self_level || "");
+      setActivityFreq(profile.activity_frequency || "");
+      setHasCar(profile.has_car || "");
+      setInterests(profile.interests ? (profile.interests as string[]) : []);
+      setEventMotivation(profile.event_motivation || "");
+    }
+  }, [isEditMode, profile]);
+
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
