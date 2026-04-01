@@ -296,7 +296,7 @@ const Profile = () => {
           {/* Logout */}
           <div className="space-y-1 mt-1">
             <button onClick={handleSignOut} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-destructive/5 transition-colors group w-full text-left">
-              <LogOut className="h-4.5 w-4.5 text-destructive shrink-0" />
+              <LogOut className="h-[18px] w-[18px] text-destructive/70 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-body font-semibold text-destructive">Esci</p>
                 <p className="text-xs font-body text-muted-foreground">Termina la sessione</p>

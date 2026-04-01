@@ -169,10 +169,10 @@ const ProfileMissions = () => {
                           +{mission.rewardPoints} punti
                         </span>
                       </div>
-                      {hasReward && (
+                      {hasReward && mission.reward_type !== "badge" && (
                         <span className="text-[10px] font-body font-semibold text-primary flex items-center gap-0.5">
-                          {mission.reward_type === "coupon" ? "🎟️" : mission.reward_type === "badge" ? "🏅" : "🎁"}
-                          {mission.reward_type === "coupon" ? "Coupon" : mission.reward_type === "badge" ? "Badge" : "Reward"}
+                          {mission.reward_type === "coupon" ? "🎟️" : "🎁"}
+                          {mission.reward_type === "coupon" ? "Coupon" : "Reward"}
                         </span>
                       )}
                       {mission.type !== "one_time" && (
