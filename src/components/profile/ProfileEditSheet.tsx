@@ -22,6 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Camera, Mail, Lock, Link2, Eye, EyeOff, Loader2, CheckCircle2, ChevronRight, Settings } from "lucide-react";
+import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import LevelAvatar from "@/components/LevelAvatar";
 
 interface ProfileEditSheetProps {
@@ -335,6 +336,9 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 </button>
               </div>
             </div>
+
+            {/* CONSENSI & PRIVACY SECTION */}
+            <ConsentPrivacySection />
           </div>
         </SheetContent>
       </Sheet>
