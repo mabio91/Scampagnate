@@ -1446,6 +1446,11 @@ const EventDetail = () => {
                   throw new Error("No checkout URL returned");
                 }
               } catch (err: any) {
+                // Checkout failed — clean up the pending registration
+                await supabase.from("event_registrations")
+                  .update({ status: "cancelled" as any })
+                  .eq("id", result.registrationId)
+                  .eq("user_id", user!.id);
                 toast({ title: "Errore pagamento", description: err.message, variant: "destructive" });
                 setPaymentLoading(false);
               }
