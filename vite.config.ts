@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         short_name: "Scampagnate",
         description: "Scopri e partecipa a eventi outdoor, sport, aperitivi e esperienze culturali con la community Scampagnate.",
         theme_color: "#2d4a33",
-        background_color: "#f7f5f0",
+        background_color: "#2d4a33",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
