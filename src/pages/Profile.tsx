@@ -11,7 +11,7 @@ import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
 import ProfileMissions from "@/components/profile/ProfileMissions";
-import ProfileReliability from "@/components/profile/ProfileReliability";
+
 import LevelAvatar from "@/components/LevelAvatar";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
