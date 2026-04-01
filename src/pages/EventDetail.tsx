@@ -1292,8 +1292,8 @@ const EventDetail = () => {
               paymentLoading ||
               isEventPast ||
               event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" ||
-              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) ||
-              isBlockedByAccessRules
+              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
+              (isBlockedByAccessRules && !waitlistSpotAvailable)
             }
           >
             {paymentLoading ? (
