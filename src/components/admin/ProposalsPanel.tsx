@@ -21,6 +21,7 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
 const ProposalsPanel = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: proposals, isLoading } = useQuery({
     queryKey: ["activity-proposals"],
