@@ -16,19 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Lightbulb, Rocket } from "lucide-react";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { useQuery } from "@tanstack/react-query";
 
 interface ActivityProposalFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const CATEGORIES = [
-  { value: "trekking", label: "Trekking" },
-  { value: "social", label: "Aperitivo / Social" },
-  { value: "sport", label: "Sport" },
-  { value: "weekend", label: "Weekend / Viaggio" },
-  { value: "special", label: "Esperienza speciale" },
-] as const;
 
 const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps) => {
   const { user, profile } = useAuth();
@@ -39,13 +32,23 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
 
   const userName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : "";
 
+  const { data: categories } = useQuery({
+    queryKey: ["event-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("event_categories").select("id, name, icon").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [activityTitle, setActivityTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [locationLabel, setLocationLabel] = useState("");
   const [suggestedDate, setSuggestedDate] = useState("");
   const [suggestedTime, setSuggestedTime] = useState("");
   const [maxParticipants, setMaxParticipants] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -54,10 +57,11 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
     setActivityTitle("");
     setDescription("");
     setLocation("");
+    setLocationLabel("");
     setSuggestedDate("");
     setSuggestedTime("");
     setMaxParticipants("");
-    setCategory("");
+    setCategoryId("");
     setSubmitted(false);
     setErrors({});
   };
@@ -67,7 +71,7 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
     if (!activityTitle.trim()) newErrors.title = true;
     if (!description.trim()) newErrors.description = true;
     if (!location.trim()) newErrors.location = true;
-    if (!category) newErrors.category = true;
+    if (!categoryId) newErrors.category = true;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -81,16 +85,19 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
 
     setSubmitting(true);
     try {
+      const selectedCat = categories?.find(c => c.id === categoryId);
       const { error } = await supabase.from("activity_proposals" as any).insert({
         proposer_name: userName,
         proposer_id: user?.id || null,
         activity_title: activityTitle.trim(),
         description: description.trim(),
         location: location.trim(),
+        location_label: locationLabel.trim() || null,
         suggested_date: suggestedDate || null,
         suggested_time: suggestedTime || null,
         max_participants: maxParticipants ? parseInt(maxParticipants) : null,
-        category: category || null,
+        category: selectedCat?.name || null,
+        category_id: categoryId || null,
       } as any);
       if (error) throw error;
       setSubmitted(true);
@@ -208,6 +215,17 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
               {errors.location && <p className="text-xs text-destructive mt-1">Campo obbligatorio</p>}
             </div>
 
+            <div>
+              <Label className="font-body text-sm font-semibold">Nome del luogo (facoltativo)</Label>
+              <Input
+                value={locationLabel}
+                onChange={e => setLocationLabel(e.target.value)}
+                placeholder="es. Metro La Rustica"
+                className="mt-1"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Se vuoto, verrà mostrato l'indirizzo completo</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="font-body text-sm font-semibold">Data (opzionale)</Label>
@@ -241,18 +259,18 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
                 Che tipo di esperienza è? <span className="text-destructive">*</span>
               </Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {CATEGORIES.map(cat => (
+                {(categories || []).map(cat => (
                   <button
-                    key={cat.value}
+                    key={cat.id}
                     type="button"
-                    onClick={() => { setCategory(cat.value); setErrors(p => ({ ...p, category: false })); }}
+                    onClick={() => { setCategoryId(cat.id); setErrors(p => ({ ...p, category: false })); }}
                     className={`px-3 py-1.5 rounded-full text-xs font-body font-medium transition-all active:scale-95 ${
-                      category === cat.value
+                      categoryId === cat.id
                         ? "bg-primary text-primary-foreground shadow-md"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    } ${errors.category && !category ? "ring-1 ring-destructive" : ""}`}
+                    } ${errors.category && !categoryId ? "ring-1 ring-destructive" : ""}`}
                   >
-                    {cat.label}
+                    {cat.icon} {cat.name}
                   </button>
                 ))}
               </div>

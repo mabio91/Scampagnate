@@ -18,10 +18,12 @@ export type Database = {
         Row: {
           activity_title: string
           category: string | null
+          category_id: string | null
           created_at: string
           description: string
           id: string
           location: string
+          location_label: string | null
           max_participants: number | null
           proposer_id: string | null
           proposer_name: string
@@ -33,10 +35,12 @@ export type Database = {
         Insert: {
           activity_title: string
           category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string
           id?: string
           location?: string
+          location_label?: string | null
           max_participants?: number | null
           proposer_id?: string | null
           proposer_name?: string
@@ -48,10 +52,12 @@ export type Database = {
         Update: {
           activity_title?: string
           category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string
           id?: string
           location?: string
+          location_label?: string | null
           max_participants?: number | null
           proposer_id?: string | null
           proposer_name?: string
@@ -60,7 +66,15 @@ export type Database = {
           suggested_time?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "activity_proposals_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "event_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_action_log: {
         Row: {

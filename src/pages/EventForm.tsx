@@ -245,6 +245,29 @@ const EventForm = () => {
       loadEvent(id);
     } else if (isDuplicating) {
       loadEvent(duplicateId);
+    } else {
+      // Pre-fill from query params (e.g. proposal conversion)
+      const title = searchParams.get("title");
+      const description = searchParams.get("description");
+      const location = searchParams.get("location");
+      const locationLabel = searchParams.get("location_label");
+      const date = searchParams.get("date");
+      const time = searchParams.get("time");
+      const spotsTotal = searchParams.get("spots_total");
+      const categoryId = searchParams.get("category_id");
+      if (title || description || location) {
+        setForm(prev => ({
+          ...prev,
+          ...(title && { title }),
+          ...(description && { description }),
+          ...(location && { location }),
+          ...(locationLabel && { location_label: locationLabel }),
+          ...(date && { date }),
+          ...(time && { time }),
+          ...(spotsTotal && { spots_total: parseInt(spotsTotal) }),
+          ...(categoryId && { category_id: categoryId }),
+        }));
+      }
     }
   }, [id, duplicateId]);
 
@@ -547,6 +570,15 @@ const EventForm = () => {
         const { data, error } = await supabase.from("events").insert(eventData).select("id").single();
         if (error) throw error;
         eventId = data.id;
+
+        // Mark proposal as converted if created from one
+        const proposalId = searchParams.get("proposal_id");
+        if (proposalId) {
+          await supabase
+            .from("activity_proposals" as any)
+            .update({ status: "converted", updated_at: new Date().toISOString() } as any)
+            .eq("id", proposalId);
+        }
       }
 
       // Handle meeting points
