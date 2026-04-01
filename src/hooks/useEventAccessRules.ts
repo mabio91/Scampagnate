@@ -17,6 +17,7 @@ export interface AccessRule {
     | "interests";
   value?: number | string;
   badge_id?: string;
+  badge_ids?: string[]; // multi-badge support
   badge_name?: string;
   message?: string;
   enforcement?: "hard" | "soft"; // hard = blocking, soft = advisory only
