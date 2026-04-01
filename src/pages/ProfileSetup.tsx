@@ -106,6 +106,39 @@ const slideVariants = {
   }),
 };
 
+const successParticleColors = [
+  "hsl(var(--primary))",
+  "hsl(var(--secondary))",
+  "hsl(var(--accent))",
+  "hsl(var(--gold))",
+  "hsl(var(--foreground))",
+];
+
+const successConfettiPieces = Array.from({ length: 24 }, (_, index) => ({
+  id: index,
+  left: 4 + ((index * 11) % 92),
+  delay: (index % 6) * 0.18,
+  duration: 4.4 + (index % 5) * 0.35,
+  drift: (index % 2 === 0 ? 1 : -1) * (18 + (index % 4) * 6),
+  rotate: (index % 2 === 0 ? 1 : -1) * (140 + (index % 3) * 40),
+  width: 6 + (index % 3) * 2,
+  height: 10 + (index % 4) * 2,
+  color: successParticleColors[index % successParticleColors.length],
+}));
+
+const successBurstPieces = Array.from({ length: 10 }, (_, index) => {
+  const angle = (Math.PI * 2 * index) / 10;
+  const radius = 36 + (index % 3) * 10;
+
+  return {
+    id: index,
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+    delay: index * 0.08,
+    color: successParticleColors[index % successParticleColors.length],
+  };
+});
+
 const ProfileSetup = () => {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -292,51 +325,43 @@ const ProfileSetup = () => {
   if (!user || !profile) return null;
 
   if (showSuccess) {
-    // Confetti dots with app colors
-    const confettiColors = [
-      "hsl(150 40% 22%)",   // primary (green)
-      "hsl(30 60% 50%)",    // secondary (orange)
-      "hsl(25 80% 55%)",    // accent
-      "hsl(0 84% 60%)",     // destructive (red)
-      "hsl(150 30% 12%)",   // foreground (dark green)
-      "hsl(40 25% 95%)",    // card (cream)
-    ];
-    const confettiDots = Array.from({ length: 40 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      size: Math.random() * 6 + 3,
-      color: confettiColors[i % confettiColors.length],
-      delay: Math.random() * 2,
-      duration: Math.random() * 3 + 3,
-      drift: (Math.random() - 0.5) * 60,
-    }));
-
     return (
-      <div className="min-h-screen min-h-[100dvh] bg-background flex flex-col items-center justify-center px-4 overflow-hidden relative">
-        {/* Confetti snow-fall dots */}
-        {confettiDots.map((dot) => (
+      <div className="relative min-h-screen min-h-[100dvh] overflow-hidden bg-background px-4 flex flex-col items-center justify-center isolate">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <motion.div
-            key={dot.id}
-            initial={{ y: -20, x: `${dot.x}vw`, opacity: 0 }}
-            animate={{
-              y: "110vh",
-              x: `${dot.x + dot.drift}vw`,
-              opacity: [0, 1, 1, 0],
-            }}
-            transition={{
-              duration: dot.duration,
-              delay: dot.delay,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-            className="absolute top-0 rounded-full pointer-events-none"
-            style={{
-              width: dot.size,
-              height: dot.size,
-              backgroundColor: dot.color,
-            }}
+            aria-hidden="true"
+            animate={{ scale: [0.9, 1.1, 0.95], opacity: [0.2, 0.35, 0.2] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
           />
-        ))}
+
+          {successConfettiPieces.map((piece) => (
+            <motion.div
+              key={piece.id}
+              aria-hidden="true"
+              initial={{ y: "-12vh", x: 0, opacity: 0, rotate: 0 }}
+              animate={{
+                y: "112vh",
+                x: piece.drift,
+                opacity: [0, 1, 1, 0],
+                rotate: piece.rotate,
+              }}
+              transition={{
+                duration: piece.duration,
+                delay: piece.delay,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              className="absolute top-0 rounded-full shadow-sm"
+              style={{
+                left: `${piece.left}%`,
+                width: piece.width,
+                height: piece.height,
+                backgroundColor: piece.color,
+              }}
+            />
+          ))}
+        </div>
 
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -344,13 +369,56 @@ const ProfileSetup = () => {
           transition={{ type: "spring", duration: 0.6 }}
           className="text-center space-y-6 max-w-sm relative z-10"
         >
-          <motion.div
-            initial={{ rotate: -20, scale: 0 }}
-            animate={{ rotate: 0, scale: 1 }}
-            transition={{ type: "spring", delay: 0.2 }}
-          >
-            <PartyPopper className="h-16 w-16 mx-auto text-primary" />
-          </motion.div>
+          <div className="relative mx-auto flex h-28 w-28 items-center justify-center">
+            <motion.div
+              aria-hidden="true"
+              animate={{ scale: [0.92, 1.08, 0.92], opacity: [0.2, 0.4, 0.2] }}
+              transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 rounded-full bg-accent/15"
+            />
+            <motion.div
+              aria-hidden="true"
+              animate={{ scale: [0.8, 1.25], opacity: [0.45, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+              className="absolute inset-2 rounded-full border border-primary/25"
+            />
+
+            {successBurstPieces.map((piece) => (
+              <motion.div
+                key={piece.id}
+                aria-hidden="true"
+                initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
+                animate={{
+                  x: [0, piece.x],
+                  y: [0, piece.y],
+                  opacity: [0, 1, 0],
+                  scale: [0, 1, 0.4],
+                }}
+                transition={{
+                  duration: 1.8,
+                  delay: piece.delay,
+                  repeat: Infinity,
+                  repeatDelay: 0.5,
+                  ease: "easeOut",
+                }}
+                className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ backgroundColor: piece.color }}
+              />
+            ))}
+
+            <motion.div
+              initial={{ rotate: -20, scale: 0 }}
+              animate={{ rotate: [0, -10, 8, 0], scale: [1, 1.08, 1] }}
+              transition={{
+                initial: { type: "spring", delay: 0.2 },
+                rotate: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
+                scale: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
+              }}
+              className="relative flex h-20 w-20 items-center justify-center rounded-full border border-border bg-card shadow-sm"
+            >
+              <PartyPopper className="h-14 w-14 text-primary" />
+            </motion.div>
+          </div>
           <div className="space-y-2">
             <h1 className="font-display text-2xl font-bold text-foreground">Perfetto!</h1>
             <p className="text-muted-foreground font-body">
