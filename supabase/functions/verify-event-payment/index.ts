@@ -60,7 +60,11 @@ serve(async (req) => {
 
     if (!registrationId) throw new Error("Registration ID not found in session");
 
-    // Check if registration still exists and is in pending state
+    const stripePaymentIntentId = typeof session.payment_intent === 'string' 
+      ? session.payment_intent 
+      : session.payment_intent?.id || null;
+
+    // Check if registration still exists
     const { data: reg, error: regError } = await supabaseAdmin
       .from("event_registrations")
       .select("id, status, payment_status, event_id")
@@ -69,7 +73,22 @@ serve(async (req) => {
       .single();
 
     if (regError || !reg) {
-      throw new Error("Registration not found — it may have been cleaned up. Please contact support.");
+      // Registration was cleaned up — auto-refund
+      if (stripePaymentIntentId) {
+        try {
+          await stripe.refunds.create({ payment_intent: stripePaymentIntentId });
+        } catch (e) {
+          console.error("Refund error for missing registration:", e);
+        }
+      }
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "La registrazione non è più disponibile. Ti abbiamo rimborsato automaticamente.",
+          auto_refunded: true 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
     }
 
     // Already paid — idempotent
@@ -80,48 +99,67 @@ serve(async (req) => {
       );
     }
 
-    // Check if spots are still available before confirming
+    // CRITICAL: Check if spots are available (race condition protection)
     const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
-      .select("spots_total, spots_taken, status")
+      .select("spots_total, spots_taken, status, title")
       .eq("id", reg.event_id)
       .single();
 
     if (eventError || !event) throw new Error("Event not found");
 
     const spotsAvailable = event.spots_total - event.spots_taken;
-    if (spotsAvailable <= 0 && event.status === "full") {
-      // Event is full — put user on waitlist instead
-      const stripePaymentIntentId = typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : session.payment_intent?.id || null;
 
+    if (spotsAvailable <= 0) {
+      // RACE CONDITION: Another user got the spot first
+      // Auto-refund this payment
+      if (stripePaymentIntentId) {
+        try {
+          await stripe.refunds.create({ payment_intent: stripePaymentIntentId });
+          console.log(`Auto-refunded payment ${stripePaymentIntentId} — spot taken by another user`);
+        } catch (refundErr) {
+          console.error("Auto-refund error:", refundErr);
+        }
+      }
+
+      // Keep registration as waitlist (user stays in line)
       await supabaseAdmin
         .from("event_registrations")
-        .update({
-          payment_status: "paid",
+        .update({ 
+          payment_status: "refunded",
           status: "waitlist",
           stripe_payment_intent_id: stripePaymentIntentId,
         })
         .eq("id", registrationId)
         .eq("user_id", user.id);
 
+      // Notify user
+      await supabaseAdmin.from("notifications").insert({
+        user_id: user.id,
+        type: "waitlist_spot_lost",
+        title: "Posto già assegnato",
+        message: `Il posto per "${event.title}" è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente. Resti in lista d'attesa.`,
+        event_id: reg.event_id,
+      });
+
+      // Activate membership if included (they still paid for it)
       if (membershipIncluded) {
         await supabaseAdmin.rpc("activate_membership", { user_id_param: user.id });
       }
 
       return new Response(
-        JSON.stringify({ success: true, eventId: eventId || null, waitlisted: true }),
+        JSON.stringify({ 
+          success: false, 
+          spot_taken: true,
+          auto_refunded: true,
+          eventId: eventId || null,
+          message: "Il posto è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente."
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    // Store the Stripe payment intent ID for potential refunds
-    const stripePaymentIntentId = typeof session.payment_intent === 'string' 
-      ? session.payment_intent 
-      : session.payment_intent?.id || null;
-
-    // Update registration payment status to paid
+    // Spot is available — confirm registration
     const { error: updateError } = await supabaseAdmin
       .from("event_registrations")
       .update({ 
@@ -141,10 +179,8 @@ serve(async (req) => {
       const { error: membershipError } = await supabaseAdmin.rpc("activate_membership", {
         user_id_param: user.id,
       });
-
       if (membershipError) {
         console.error("Membership activation error:", membershipError);
-        throw new Error("Payment verified but failed to activate membership");
       }
     }
 
@@ -158,10 +194,7 @@ serve(async (req) => {
       .neq("id", registrationId);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        eventId: eventId || null 
-      }),
+      JSON.stringify({ success: true, eventId: eventId || null }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
