@@ -93,6 +93,16 @@ const EventDetail = () => {
   const { toast } = useToast();
   const { data: event, isLoading } = useEvent(id!);
   const { data: participants } = useEventParticipants(id!);
+  
+  // Fallback avatars for anonymous users (RLS blocks event_registrations for anon)
+  const { data: publicAvatars } = useQuery({
+    queryKey: ["event-public-avatars", id],
+    enabled: !!id && !user && (!participants || participants.length === 0),
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_event_participant_avatars", { p_event_id: id! });
+      return data || [];
+    },
+  });
   const { data: myRegistration } = useMyRegistration(id!);
   const { data: savedEvents } = useSavedEvents();
   const registerMutation = useRegisterForEvent();
