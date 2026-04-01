@@ -60,12 +60,68 @@ serve(async (req) => {
 
     if (!registrationId) throw new Error("Registration ID not found in session");
 
+    // Check if registration still exists and is in pending state
+    const { data: reg, error: regError } = await supabaseAdmin
+      .from("event_registrations")
+      .select("id, status, payment_status, event_id")
+      .eq("id", registrationId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (regError || !reg) {
+      throw new Error("Registration not found — it may have been cleaned up. Please contact support.");
+    }
+
+    // Already paid — idempotent
+    if (reg.payment_status === "paid") {
+      return new Response(
+        JSON.stringify({ success: true, eventId: eventId || null }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    // Check if spots are still available before confirming
+    const { data: event, error: eventError } = await supabaseAdmin
+      .from("events")
+      .select("spots_total, spots_taken, status")
+      .eq("id", reg.event_id)
+      .single();
+
+    if (eventError || !event) throw new Error("Event not found");
+
+    const spotsAvailable = event.spots_total - event.spots_taken;
+    if (spotsAvailable <= 0 && event.status === "full") {
+      // Event is full — put user on waitlist instead
+      const stripePaymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id || null;
+
+      await supabaseAdmin
+        .from("event_registrations")
+        .update({
+          payment_status: "paid",
+          status: "waitlist",
+          stripe_payment_intent_id: stripePaymentIntentId,
+        })
+        .eq("id", registrationId)
+        .eq("user_id", user.id);
+
+      if (membershipIncluded) {
+        await supabaseAdmin.rpc("activate_membership", { user_id_param: user.id });
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, eventId: eventId || null, waitlisted: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
     // Store the Stripe payment intent ID for potential refunds
     const stripePaymentIntentId = typeof session.payment_intent === 'string' 
       ? session.payment_intent 
       : session.payment_intent?.id || null;
 
-    // Update registration payment status to paid using service role (bypasses RLS)
+    // Update registration payment status to paid
     const { error: updateError } = await supabaseAdmin
       .from("event_registrations")
       .update({ 
@@ -91,6 +147,15 @@ serve(async (req) => {
         throw new Error("Payment verified but failed to activate membership");
       }
     }
+
+    // Clean up any other stale pending registrations for the same user+event
+    await supabaseAdmin
+      .from("event_registrations")
+      .delete()
+      .eq("event_id", reg.event_id)
+      .eq("user_id", user.id)
+      .eq("payment_status", "pending")
+      .neq("id", registrationId);
 
     return new Response(
       JSON.stringify({ 
