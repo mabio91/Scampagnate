@@ -239,10 +239,12 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     try {
       const result = await cancelMutation.mutateAsync(event.id);
       setShowCancelDialog(false);
-      if (result?.reason === "cancellation_window_expired") {
-        toast({ title: t("error"), description: "Sono trascorse più di 24 ore dalla registrazione. Non è più possibile annullare.", variant: "destructive" });
-      } else if (result?.refunded) {
-        toast({ title: t("registrationCancelled"), description: "Rimborso elaborato automaticamente. Riceverai l'accredito entro 5-10 giorni lavorativi." });
+      if (result?.refunded) {
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni." });
+      } else if (result?.reason === "no_refund_policy") {
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso." });
+      } else if (result?.reason === "stripe_error") {
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile." });
       } else {
         toast({ title: t("registrationCancelled"), description: t("registrationCancelledDesc") });
       }
