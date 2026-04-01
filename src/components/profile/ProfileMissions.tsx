@@ -116,11 +116,11 @@ const ProfileMissions = () => {
                     : "bg-card border-border hover:border-primary/20"
                 }`}
               >
-                {/* Reward pill */}
-                {hasReward && !mission.completed && (
+                {/* Reward pill - only for non-badge rewards */}
+                {hasReward && !mission.completed && mission.reward_type !== "badge" && (
                   <div className="flex justify-end mb-1">
                     <span className="text-[9px] font-display font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {mission.reward_type === "coupon" ? "Coupon" : mission.reward_type === "badge" ? "Badge" : "Reward"}
+                      {mission.reward_type === "coupon" ? "Coupon" : "Reward"}
                     </span>
                   </div>
                 )}
