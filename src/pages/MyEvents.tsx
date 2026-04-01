@@ -25,27 +25,47 @@ import {
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
 
+// Status styles for My Events cards — using spec-defined labels
 const statusStyles: Record<string, string> = {
-  registered: "bg-success/10 text-success",
-  paid: "bg-success/10 text-success",
-  waitlist: "bg-warning/10 text-warning",
-  cancelled: "bg-destructive/10 text-destructive",
-  attended: "bg-primary/10 text-primary",
-  no_show: "bg-destructive/10 text-destructive",
-  past: "bg-muted text-muted-foreground",
-  pending_approval: "bg-warning/10 text-warning",
+  iscritto: "bg-success/10 text-success",
+  in_attesa: "bg-warning/10 text-warning",
+  posto_disponibile: "bg-success/10 text-success",
+  partecipato: "bg-primary/10 text-primary",
 };
 
-const statusLabelKeys: Record<string, string> = {
-  registered: "registered",
-  paid: "statusPaid",
-  waitlist: "onWaitlist",
-  cancelled: "cancelled",
-  attended: "attended",
-  no_show: "noShow",
-  past: "past",
-  pending_approval: "approvalPending",
+const statusLabels: Record<string, string> = {
+  iscritto: "Iscritto",
+  in_attesa: "In attesa",
+  posto_disponibile: "Posto disponibile",
+  partecipato: "Partecipato",
 };
+
+/**
+ * Resolve user-facing status label for My Events cards.
+ * Priority: Partecipato > Iscritto > Posto disponibile > In attesa
+ */
+function resolveMyEventStatus(registration: any, isPast: boolean): string {
+  const event = registration.events;
+  if (!event) return "iscritto";
+  
+  // Past event + checked in → Partecipato
+  if (isPast && registration.checked_in) return "partecipato";
+  
+  // Iscritto (registered/paid with confirmed payment or free)
+  if (registration.status === "registered" || registration.status === "paid" || registration.status === "attended") {
+    return "iscritto";
+  }
+  
+  // Waitlist with spot available → Posto disponibile
+  if (registration.status === "waitlist" && event.spots_total > 0 && event.spots_taken < event.spots_total) {
+    return "posto_disponibile";
+  }
+  
+  // Waitlist → In attesa
+  if (registration.status === "waitlist") return "in_attesa";
+  
+  return "iscritto";
+}
 
 const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {
   const startDate = parseEventDateTime(event.date, event.time);
