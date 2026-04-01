@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,6 +76,12 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     if (val) initFields();
     onOpenChange(val);
   };
+
+  useEffect(() => {
+    if (open && profile && !hasChanges) {
+      initFields();
+    }
+  }, [open, profile?.first_name, profile?.last_name, profile?.phone, profile?.bio, hasChanges]);
 
   const markChanged = () => setHasChanges(true);
 
