@@ -904,18 +904,23 @@ export type Database = {
       }
       missions: {
         Row: {
+          auto_generate_coupon: boolean
           category: string | null
+          category_filter: string[] | null
           created_at: string
           description: string
           expires_at: string | null
           icon: string
           id: string
           is_active: boolean
+          max_completions_per_user: number | null
+          notify_on_progress: boolean
           reset_on_failure: boolean
           reward_badge_id: string | null
           reward_points: number
           reward_type: string
           reward_value: string | null
+          starts_at: string | null
           streak_count: number | null
           target_action: string
           target_value: number
@@ -924,18 +929,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_generate_coupon?: boolean
           category?: string | null
+          category_filter?: string[] | null
           created_at?: string
           description?: string
           expires_at?: string | null
           icon?: string
           id?: string
           is_active?: boolean
+          max_completions_per_user?: number | null
+          notify_on_progress?: boolean
           reset_on_failure?: boolean
           reward_badge_id?: string | null
           reward_points?: number
           reward_type?: string
           reward_value?: string | null
+          starts_at?: string | null
           streak_count?: number | null
           target_action?: string
           target_value?: number
@@ -944,18 +954,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_generate_coupon?: boolean
           category?: string | null
+          category_filter?: string[] | null
           created_at?: string
           description?: string
           expires_at?: string | null
           icon?: string
           id?: string
           is_active?: boolean
+          max_completions_per_user?: number | null
+          notify_on_progress?: boolean
           reset_on_failure?: boolean
           reward_badge_id?: string | null
           reward_points?: number
           reward_type?: string
           reward_value?: string | null
+          starts_at?: string | null
           streak_count?: number | null
           target_action?: string
           target_value?: number
@@ -1404,6 +1419,7 @@ export type Database = {
           id: string
           mission_id: string
           progress: number
+          reward_details: Json | null
           user_id: string
         }
         Insert: {
@@ -1413,6 +1429,7 @@ export type Database = {
           id?: string
           mission_id: string
           progress?: number
+          reward_details?: Json | null
           user_id: string
         }
         Update: {
@@ -1422,6 +1439,7 @@ export type Database = {
           id?: string
           mission_id?: string
           progress?: number
+          reward_details?: Json | null
           user_id?: string
         }
         Relationships: [
