@@ -68,8 +68,8 @@ const Auth = () => {
         navigate("/");
       }
     } else {
-      if (!acceptPrivacy) {
-        setPrivacyError(true);
+      if (!acceptTerms || !acceptAge) {
+        setConsentError(true);
         setLoading(false);
         return;
       }
@@ -77,7 +77,21 @@ const Auth = () => {
       if (error) {
         toast({ title: t("error"), description: error.message, variant: "destructive" });
       } else {
-        // Welcome email is sent automatically via DB trigger on profile creation
+        // Save consents after successful signup
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            await saveRegistrationConsents(newUser.id, {
+              terms: true,
+              age: true,
+              marketing: acceptMarketing,
+              media: acceptMedia,
+            });
+          }
+        } catch (e) {
+          // Non-blocking — consents will be saved but don't block registration
+          console.warn("Failed to save consents:", e);
+        }
         toast({ title: t("welcomeBack"), description: t("accountCreated") });
         navigate("/");
       }
