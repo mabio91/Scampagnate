@@ -68,10 +68,15 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
   const { data: notifications, isLoading } = useNotifications();
   const markAllAsRead = useMarkAllAsRead();
   const hasUnread = notifications?.some((n) => !n.read);
-  const { isSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
+  const { isSupported, canManagePush, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, errorMessage: pushError } = usePushNotifications();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   const handlePushToggle = async () => {
+    if (!canManagePush && pushError) {
+      toast.error(pushError);
+      return;
+    }
+
     if (isSubscribed) {
       await unsubscribe();
       toast.success("Notifiche push disattivate");
@@ -80,7 +85,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
       if (success) {
         toast.success("Notifiche push attivate!");
       } else {
-        toast.error("Non è stato possibile attivare le notifiche push");
+        toast.error(pushError || "Non è stato possibile attivare le notifiche push");
       }
     }
   };
