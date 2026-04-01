@@ -23,9 +23,9 @@ export const CANCELLATION_POLICIES: Record<PolicyType, PolicyDefinition> = {
     icon: CheckCircle2,
     description: "Full refund up to 24 hours before the event.",
     descriptionIt: "Rimborso completo fino a 24 ore prima dell'evento.",
-    colorClass: "text-green-600",
-    bgClass: "bg-green-50",
-    borderClass: "border-green-200",
+    colorClass: "text-green-600 dark:text-green-400",
+    bgClass: "bg-green-50 dark:bg-green-950/30",
+    borderClass: "border-green-200 dark:border-green-800",
   },
   moderate: {
     type: "moderate",
