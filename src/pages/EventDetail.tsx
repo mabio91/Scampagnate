@@ -331,8 +331,8 @@ const EventDetail = () => {
       return;
     }
 
-    // Fit score < 60 requires explicit confirmation
-    if (fitScore && !fitScore.hidden && !fitScore.profileIncomplete && fitScore.score < 60) {
+    // Fit score < 50 requires explicit confirmation
+    if (fitScore && !fitScore.hidden && !fitScore.profileIncomplete && fitScore.score < 50) {
       setShowFitScoreWarning(true);
       return;
     }
