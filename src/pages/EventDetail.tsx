@@ -311,7 +311,12 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return;
+    // "In arrivo" → show informational toast, don't start booking
+    if (event.status === "draft") {
+      toast({ title: "In arrivo", description: "Le prenotazioni apriranno a breve.\nTorna presto per assicurarti un posto." });
+      return;
+    }
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "past") return;
 
     // Waitlisted user with spot available → go directly to payment/checkout
     if (waitlistSpotAvailable) {
@@ -570,15 +575,17 @@ const EventDetail = () => {
     : null;
 
   const getCTALabel = () => {
-    if (event.status === "closed") return "Iscrizioni chiuse";
-    if (isEventPast || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Evento chiuso";
+    if (event.status === "closed") return "Chiuso";
+    if (isEventPast || event.status === "cancelled" || event.status === "past") return "Chiuso";
+    if (event.status === "draft") return "Partecipa"; // shown as disabled/inactive
     if (!user) return "Partecipa";
     // Waitlisted user with spot available → "Completa prenotazione"
     if (waitlistSpotAvailable) return "Completa prenotazione";
-    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Registrato ✓";
+    // Already registered → "Iscritto" (disabled, informational)
+    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Iscritto ✓";
     if (isPendingApproval) return "In attesa di approvazione";
-    if (isOnWaitlist) return "In lista d'attesa";
-    // Block CTA if user doesn't meet hard requirements (even if they have a pending payment)
+    // On waitlist with no spot → no action CTA, show informational
+    if (isOnWaitlist) return "Sei in lista d'attesa";
     if (isBlockedByAccessRules) return "Requisiti non soddisfatti";
     if (needsPayment) return "Paga ora";
     if (event.status === "full") return "Lista d'attesa";
@@ -586,12 +593,13 @@ const EventDetail = () => {
   };
 
   const getCTAClass = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "past") return "bg-muted text-muted-foreground cursor-not-allowed";
+    if (event.status === "draft") return "bg-muted text-muted-foreground cursor-not-allowed opacity-60"; // "In arrivo" disabled style
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (waitlistSpotAvailable) return "bg-primary text-primary-foreground hover:bg-primary/90";
-    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-green-600 text-white";
+    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-success/20 text-success cursor-default";
     if (isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
-    if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
+    if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30 cursor-default";
     if (isBlockedByAccessRules) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
@@ -1304,8 +1312,9 @@ const EventDetail = () => {
             disabled={
               paymentLoading ||
               isEventPast ||
-              event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past" ||
+              event.status === "closed" || event.status === "cancelled" || event.status === "past" ||
               (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
+              (!!user && isOnWaitlist && !waitlistSpotAvailable) ||
               (isBlockedByAccessRules && !waitlistSpotAvailable)
             }
           >

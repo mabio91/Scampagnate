@@ -25,27 +25,47 @@ import {
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
 
+// Status styles for My Events cards — using spec-defined labels
 const statusStyles: Record<string, string> = {
-  registered: "bg-success/10 text-success",
-  paid: "bg-success/10 text-success",
-  waitlist: "bg-warning/10 text-warning",
-  cancelled: "bg-destructive/10 text-destructive",
-  attended: "bg-primary/10 text-primary",
-  no_show: "bg-destructive/10 text-destructive",
-  past: "bg-muted text-muted-foreground",
-  pending_approval: "bg-warning/10 text-warning",
+  iscritto: "bg-success/10 text-success",
+  in_attesa: "bg-warning/10 text-warning",
+  posto_disponibile: "bg-success/10 text-success",
+  partecipato: "bg-primary/10 text-primary",
 };
 
-const statusLabelKeys: Record<string, string> = {
-  registered: "registered",
-  paid: "statusPaid",
-  waitlist: "onWaitlist",
-  cancelled: "cancelled",
-  attended: "attended",
-  no_show: "noShow",
-  past: "past",
-  pending_approval: "approvalPending",
+const statusLabels: Record<string, string> = {
+  iscritto: "Iscritto",
+  in_attesa: "In attesa",
+  posto_disponibile: "Posto disponibile",
+  partecipato: "Partecipato",
 };
+
+/**
+ * Resolve user-facing status label for My Events cards.
+ * Priority: Partecipato > Iscritto > Posto disponibile > In attesa
+ */
+function resolveMyEventStatus(registration: any, isPast: boolean): string {
+  const event = registration.events;
+  if (!event) return "iscritto";
+  
+  // Past event + checked in → Partecipato
+  if (isPast && registration.checked_in) return "partecipato";
+  
+  // Iscritto (registered/paid with confirmed payment or free)
+  if (registration.status === "registered" || registration.status === "paid" || registration.status === "attended") {
+    return "iscritto";
+  }
+  
+  // Waitlist with spot available → Posto disponibile
+  if (registration.status === "waitlist" && event.spots_total > 0 && event.spots_taken < event.spots_total) {
+    return "posto_disponibile";
+  }
+  
+  // Waitlist → In attesa
+  if (registration.status === "waitlist") return "in_attesa";
+  
+  return "iscritto";
+}
 
 const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {
   const startDate = parseEventDateTime(event.date, event.time);
@@ -106,10 +126,10 @@ const MyEvents = () => {
   }
 
   const now = new Date();
+  // Only show active registrations (not cancelled) — spec: cancelled events disappear from My Events
   const active = registrations?.filter((r: any) => r.status !== "cancelled") || [];
   const upcoming = active.filter((r: any) => new Date(r.events?.date) >= now);
   const past = active.filter((r: any) => new Date(r.events?.date) < now);
-  const cancelled = registrations?.filter((r: any) => r.status === "cancelled") || [];
 
   return (
     <>
@@ -137,16 +157,6 @@ const MyEvents = () => {
                 {upcoming.map((r: any) => (
                   <EventRegistrationCard key={r.id} registration={r} showActions />
                 ))}
-              </div>
-            )}
-            {cancelled.length > 0 && (
-              <div className="mt-6">
-                <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("cancelled")} ({cancelled.length})</p>
-                <div className="space-y-2">
-                  {cancelled.map((r: any) => (
-                    <EventRegistrationCard key={r.id} registration={r} />
-                  ))}
-                </div>
               </div>
             )}
           </TabsContent>
@@ -199,22 +209,15 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   if (!event) return null;
 
+  // Resolve status using centralized logic
+  const resolvedStatus = resolveMyEventStatus(registration, !!isPast);
+  const statusLabel = statusLabels[resolvedStatus] || resolvedStatus;
+  const statusStyle = statusStyles[resolvedStatus] || statusStyles.iscritto;
+
   // Waitlist spot availability detection
   const isWaitlisted = registration.status === "waitlist";
-  const hasSpotAvailable = isWaitlisted && event.spots_total > 0 && event.spots_taken < event.spots_total;
+  const hasSpotAvailable = resolvedStatus === "posto_disponibile";
   const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
-
-  // Dynamic status display
-  let displayStatus = isPast ? "past" : registration.status;
-  let statusLabel = t(statusLabelKeys[displayStatus] as any) || displayStatus;
-  let statusStyle = statusStyles[displayStatus] || statusStyles.registered;
-
-  // Override for waitlist with spot available
-  if (hasSpotAvailable && !isPast) {
-    displayStatus = "spot_available";
-    statusLabel = "Posto disponibile";
-    statusStyle = "bg-success/10 text-success";
-  }
 
   const meetingPoint = registration.meeting_point;
 
