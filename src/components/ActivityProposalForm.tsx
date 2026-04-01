@@ -86,16 +86,19 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
 
     setSubmitting(true);
     try {
+      const selectedCat = categories?.find(c => c.id === categoryId);
       const { error } = await supabase.from("activity_proposals" as any).insert({
         proposer_name: userName,
         proposer_id: user?.id || null,
         activity_title: activityTitle.trim(),
         description: description.trim(),
         location: location.trim(),
+        location_label: locationLabel.trim() || null,
         suggested_date: suggestedDate || null,
         suggested_time: suggestedTime || null,
         max_participants: maxParticipants ? parseInt(maxParticipants) : null,
-        category: category || null,
+        category: selectedCat?.name || null,
+        category_id: categoryId || null,
       } as any);
       if (error) throw error;
       setSubmitted(true);
