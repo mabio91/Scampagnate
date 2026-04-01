@@ -61,12 +61,11 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
       <h3 className="font-display text-lg font-bold text-foreground mb-2">L'esperienza</h3>
       <div className="relative">
-        <p
-          ref={textRef}
-          className={`text-sm font-body text-muted-foreground leading-relaxed whitespace-pre-line ${!expanded ? "line-clamp-6" : ""}`}
-        >
-          {description}
-        </p>
+        <div
+          ref={textRef as any}
+          className={`text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed whitespace-pre-line [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_del]:line-through ${!expanded ? "line-clamp-6" : ""}`}
+          dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, '<br/>') }}
+        />
         {isClamped && !expanded && (
           <>
             <div className="absolute bottom-6 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent pointer-events-none" />
