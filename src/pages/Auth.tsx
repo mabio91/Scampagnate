@@ -28,9 +28,12 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptAge, setAcceptAge] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
+  const [acceptMedia, setAcceptMedia] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
-  const [privacyError, setPrivacyError] = useState(false);
+  const [consentError, setConsentError] = useState(false);
 
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
