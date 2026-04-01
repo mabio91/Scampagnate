@@ -1219,8 +1219,9 @@ const EventDetail = () => {
             {organizerProfile?.phone && (
               <>
                 <Button
+                  variant="outline"
                   asChild
-                  className="w-full justify-start font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none"
+                  className="w-full justify-start font-body"
                 >
                   <a
                     href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}`}
