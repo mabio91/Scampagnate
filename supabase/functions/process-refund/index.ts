@@ -42,7 +42,7 @@ serve(async (req) => {
       .select("id, payment_status, stripe_payment_intent_id, status, created_at")
       .eq("event_id", eventId)
       .eq("user_id", user.id)
-      .in("status", ["registered", "paid"])
+      .in("status", ["registered", "paid", "waitlist"])
       .maybeSingle();
 
     if (regError) throw new Error("Failed to fetch registration");
