@@ -33,13 +33,23 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
 
   const userName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : "";
 
+  const { data: categories } = useQuery({
+    queryKey: ["event-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("event_categories").select("id, name, icon").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [activityTitle, setActivityTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [locationLabel, setLocationLabel] = useState("");
   const [suggestedDate, setSuggestedDate] = useState("");
   const [suggestedTime, setSuggestedTime] = useState("");
   const [maxParticipants, setMaxParticipants] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, boolean>>({});
