@@ -156,6 +156,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
       </div>
     </div>
   );
-};
+});
 
+NotificationPanel.displayName = "NotificationPanel";
 export default NotificationPanel;
