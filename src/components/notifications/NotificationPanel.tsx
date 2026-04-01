@@ -60,9 +60,11 @@ const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notificat
       )}
     </button>
   );
-};
+});
 
-const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
+NotificationItem.displayName = "NotificationItem";
+
+const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({ onClose }, ref) => {
   const { data: notifications, isLoading } = useNotifications();
   const markAllAsRead = useMarkAllAsRead();
   const hasUnread = notifications?.some((n) => !n.read);
