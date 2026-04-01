@@ -56,7 +56,7 @@ const RegistrationCheckoutDialog = ({
   const hasPriceOptions = event.price_options && event.price_options.length > 0;
   const hasEquipment = event.equipment_list && Array.isArray(event.equipment_list);
   const hasMandatoryEquipment = hasEquipment && (event.equipment_list as any[]).some((item: any) => item.is_mandatory);
-  const carEnabled = event.additional_fields && (event.additional_fields as any).car_availability_enabled;
+  const carEnabled = event.additional_fields && ((event.additional_fields as any).car_availability_enabled || (event.additional_fields as any).ask_car_availability);
   const needsMembership = !isMembershipActive(profile);
   const membershipActive = isMembershipActive(profile);
   const membershipExpired = isMembershipExpired(profile);
