@@ -16,7 +16,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Navigation routing (SPA fallback) — deny OAuth and API routes
 const navigationRoute = new NavigationRoute(
   createHandlerBoundToURL('/index.html'),
-  { denylist: [/^\/~oauth/, /^\/api\//, /^\/auth\//] }
+  { denylist: [/^\/~oauth/, /^\/api\//, /^\/auth\//, /^\/push\//] }
 );
 registerRoute(navigationRoute);
 
