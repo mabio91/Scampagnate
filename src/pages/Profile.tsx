@@ -27,6 +27,8 @@ const Profile = () => {
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [showProposalForm, setShowProposalForm] = useState(false);
+  const [showPointsInfo, setShowPointsInfo] = useState(false);
+  const [showProposalForm, setShowProposalForm] = useState(false);
 
   if (!user) {
     return (
