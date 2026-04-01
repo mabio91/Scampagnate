@@ -222,12 +222,13 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   const meetingPoint = registration.meeting_point;
 
-  // 24h cancellation window check
-  const registrationCreatedAt = registration.created_at ? new Date(registration.created_at) : null;
-  const hoursSinceRegistration = registrationCreatedAt
-    ? (Date.now() - registrationCreatedAt.getTime()) / (1000 * 60 * 60)
-    : Infinity;
-  const canCancelRegistration = hoursSinceRegistration <= 24;
+  // Policy-based refund info
+  const refundInfo = useMemo(() => {
+    if (!event.date || !event.time) return null;
+    return getRefundInfo(event.cancellation_policy, event.date, event.time);
+  }, [event.cancellation_policy, event.date, event.time]);
+
+  const hasPaidPayment = registration.payment_status === "paid";
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
