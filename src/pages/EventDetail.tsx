@@ -601,7 +601,7 @@ const EventDetail = () => {
   const remainingSpots = event.spots_total - event.spots_taken;
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background pb-28">
+    <div className="min-h-screen min-h-[100dvh] bg-background pb-36">
       {/* 17. STICKY HEADER ON SCROLL */}
       <div
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-safe ${
@@ -1186,8 +1186,16 @@ const EventDetail = () => {
       </div> {/* end rounded top container */}
 
       {/* 12. STICKY BOTTOM BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border p-3 pb-safe z-50">
-        <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50">
+        {/* Blocking message above the bar */}
+        {isBlockedByAccessRules && (
+          <div className="px-4 py-2 bg-destructive/10 border-b border-destructive/20">
+            <p className="text-xs text-destructive font-body text-center leading-tight">
+              {blockingMessage}
+            </p>
+          </div>
+        )}
+        <div className="max-w-lg mx-auto flex items-center justify-between gap-3 p-3 pb-safe">
           <div className="min-w-0 flex-1">
             {/* Price display */}
             <div className="flex items-baseline gap-1.5">
@@ -1213,11 +1221,6 @@ const EventDetail = () => {
               </p>
             )}
           </div>
-          {isBlockedByAccessRules && (
-            <p className="text-xs text-destructive font-body text-center max-w-[280px] leading-tight">
-              {blockingMessage}
-            </p>
-          )}
           <Button
             onClick={handleCTA}
             className={`px-6 py-3 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
