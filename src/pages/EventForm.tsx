@@ -890,7 +890,10 @@ const EventForm = () => {
             {(form.payment_type !== "free") && (
               <div>
                 <Label htmlFor="price">Prezzo totale (€)</Label>
-                <Input id="price" type="number" min={0} step={0.01} value={form.price || ""} onChange={(e) => updateForm("price", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
+                <Input id="price" type="number" min={0} step={0.01} value={form.price || ""} onChange={(e) => updateForm("price", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} disabled={priceOptions.filter(o => o.name.trim()).length > 0} className={priceOptions.filter(o => o.name.trim()).length > 0 ? "opacity-50" : ""} />
+                {priceOptions.filter(o => o.name.trim()).length > 0 && (
+                  <p className="text-[11px] text-muted-foreground font-body mt-1">Il prezzo è gestito dalle fasce di prezzo sottostanti.</p>
+                )}
               </div>
             )}
             {form.payment_type === "deposit" && (

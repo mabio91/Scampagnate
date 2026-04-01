@@ -33,7 +33,7 @@ export interface EventWithDetails {
   access_rules: any;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
-  price_options?: { id: string; name: string; price: number; sort_order: number }[];
+  price_options?: { id: string; name: string; price: number; sort_order: number; original_price: number | null; eligible_group: string; is_promotional: boolean; promo_start: string | null; promo_end: string | null }[];
 }
 
 export const useEvents = (categoryName?: string | null) => {
@@ -43,7 +43,7 @@ export const useEvents = (categoryName?: string | null) => {
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order)")
+        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
         .order("date", { ascending: true });
 
       if (categoryName) {
@@ -89,7 +89,7 @@ export const useEvent = (id: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("*, event_categories(name, icon), event_meeting_points(*), event_price_options(id, name, price, sort_order)")
+        .select("*, event_categories(name, icon), event_meeting_points(*), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
         .eq("id", id)
         .single();
       if (error) throw error;
