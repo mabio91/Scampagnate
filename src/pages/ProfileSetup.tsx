@@ -410,7 +410,7 @@ const ProfileSetup = () => {
               initial={{ rotate: -20, scale: 0 }}
               animate={{ rotate: [0, -10, 8, 0], scale: [1, 1.08, 1] }}
               transition={{
-                initial: { type: "spring", delay: 0.2 },
+                delay: 0.2,
                 rotate: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
                 scale: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
               }}
