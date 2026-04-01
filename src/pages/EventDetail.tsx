@@ -796,32 +796,41 @@ const EventDetail = () => {
                 onClick={() => navigate(`/event/${event.id}/participants`)}
                 className="flex items-center"
               >
-                {participants && participants.length > 0 ? (
-                  <div className="flex items-center">
-                    <div className="flex -space-x-2.5">
-                      {participants.slice(0, 3).map((p: any, idx: number) => (
-                        <div key={p.id} className="relative" style={{ zIndex: 3 - idx }}>
-                          {p.profiles?.avatar_url ? (
-                            <img src={p.profiles.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-background" />
-                          ) : (
-                            <span className="w-9 h-9 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-semibold text-primary">
-                              {p.profiles?.first_name?.[0] || "?"}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                {(() => {
+                  const avatarList = participants && participants.length > 0
+                    ? participants.slice(0, 3).map((p: any) => ({ id: p.id, avatar_url: p.profiles?.avatar_url, first_name: p.profiles?.first_name }))
+                    : publicAvatars && publicAvatars.length > 0
+                    ? (publicAvatars as any[]).slice(0, 3).map((p: any) => ({ id: p.user_id, avatar_url: p.avatar_url, first_name: p.first_name }))
+                    : [];
+                  const totalCount = participants && participants.length > 0 ? participants.length : event.spots_taken;
+
+                  return avatarList.length > 0 ? (
+                    <div className="flex items-center">
+                      <div className="flex -space-x-2.5">
+                        {avatarList.map((p: any, idx: number) => (
+                          <div key={p.id} className="relative" style={{ zIndex: 3 - idx }}>
+                            {p.avatar_url ? (
+                              <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-background" />
+                            ) : (
+                              <span className="w-9 h-9 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-semibold text-primary">
+                                {p.first_name?.[0] || "?"}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {totalCount > 3 && (
+                        <span className="w-9 h-9 -ml-2.5 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-body font-bold text-muted-foreground z-0">
+                          +{totalCount - 3}
+                        </span>
+                      )}
                     </div>
-                    {participants.length > 3 && (
-                      <span className="w-9 h-9 -ml-2.5 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-body font-bold text-muted-foreground z-0">
-                        +{participants.length - 3}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-xs font-body text-muted-foreground">
-                    {event.spots_taken > 0 ? `${event.spots_taken} iscritti` : "Nessun iscritto"}
-                  </span>
-                )}
+                  ) : (
+                    <span className="text-xs font-body text-muted-foreground">
+                      {event.spots_taken > 0 ? `${event.spots_taken} iscritti` : "Nessun iscritto"}
+                    </span>
+                  );
+                })()}
               </button>
             </div>
           </div>
