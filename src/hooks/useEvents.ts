@@ -43,7 +43,7 @@ export const useEvents = (categoryName?: string | null) => {
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order)")
+        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
         .order("date", { ascending: true });
 
       if (categoryName) {
