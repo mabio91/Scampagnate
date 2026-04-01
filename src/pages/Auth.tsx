@@ -14,6 +14,67 @@ import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog
 import { saveRegistrationConsents } from "@/hooks/useUserConsents";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+/** Reusable consent checkbox for registration */
+const ConsentCheckbox = ({
+  checked, onChange, label, description, error, required,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: React.ReactNode;
+  description?: string;
+  error?: boolean;
+  required?: boolean;
+}) => (
+  <motion.div
+    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer select-none transition-colors duration-200 ${
+      checked
+        ? "border-success/50 bg-success/5"
+        : error
+        ? "border-destructive bg-destructive/5"
+        : "border-border hover:bg-muted/50"
+    }`}
+    onClick={() => onChange(!checked)}
+    animate={checked ? { scale: [0.97, 1] } : {}}
+    transition={{ duration: 0.2, ease: "easeOut" }}
+  >
+    <motion.div
+      className={`flex items-center justify-center h-5 w-5 rounded border-2 shrink-0 mt-0.5 transition-colors duration-200 ${
+        checked
+          ? "bg-success border-success"
+          : error
+          ? "border-destructive"
+          : "border-muted-foreground/40"
+      }`}
+      animate={checked ? { scale: [0.8, 1.1, 1] } : {}}
+      transition={{ duration: 0.25 }}
+    >
+      <AnimatePresence>
+        {checked && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Check className="h-3.5 w-3.5 text-white" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+    <div className="flex-1 min-w-0">
+      <span className="text-xs font-body text-foreground leading-snug block">
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </span>
+      {description && (
+        <span className="text-[11px] font-body text-muted-foreground leading-snug mt-0.5 block">
+          {description}
+        </span>
+      )}
+    </div>
+  </motion.div>
+);
+
 const Auth = () => {
   const location = useLocation();
   const [isLogin, setIsLogin] = useState(() => {
