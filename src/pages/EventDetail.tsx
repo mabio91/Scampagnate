@@ -1036,32 +1036,7 @@ const EventDetail = () => {
           </motion.div>
         )}
 
-        {/* 11. PAYMENT SECTION (SIMPLIFIED) */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-3">Prezzo</h3>
-          <div className="flex items-center gap-3">
-            <p className="text-2xl font-display font-bold text-foreground">{getPriceDisplay()}</p>
-            {getCancellationLabel() && (
-              <span className="text-xs font-body text-muted-foreground px-2 py-1 rounded-full bg-muted">
-                {getCancellationLabel()}
-              </span>
-            )}
-          </div>
-          {/* Optional included items */}
-          {getIncludedItems().length > 0 && (
-            <ul className="mt-2 space-y-1">
-              {getIncludedItems().map((item: string, idx: number) => (
-                <li key={idx} className="text-xs font-body text-muted-foreground flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          )}
-          {event.payment_type === "location" && Number(event.price) > 0 && (
-            <p className="text-xs font-body text-muted-foreground mt-1">Da saldare in loco</p>
-          )}
-        </motion.div>
+        {/* Price section removed — price only shown in bottom sticky bar */}
 
         {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
