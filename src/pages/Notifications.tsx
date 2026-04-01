@@ -109,7 +109,7 @@ const Notifications = () => {
   const markAllAsRead = useMarkAllAsRead();
   const hasUnread = notifications?.some((n) => !n.read);
   const navigate = useNavigate();
-  const { isSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
+  const { isSupported, canManagePush, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, errorMessage: pushError } = usePushNotifications();
   const { language, t } = useLanguage();
   const locale = language === "it" ? itLocale : enUS;
 
@@ -137,6 +137,11 @@ const Notifications = () => {
   }, [notifications, language]);
 
   const handlePushToggle = async () => {
+    if (!canManagePush && pushError) {
+      toast.error(pushError);
+      return;
+    }
+
     if (isSubscribed) {
       await unsubscribe();
       toast.success(language === "it" ? "Notifiche push disattivate" : "Push notifications disabled");
@@ -145,7 +150,7 @@ const Notifications = () => {
       if (success) {
         toast.success(language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!");
       } else {
-        toast.error(language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications");
+        toast.error(pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"));
       }
     }
   };
