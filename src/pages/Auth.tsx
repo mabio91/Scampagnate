@@ -11,6 +11,7 @@ import logo from "@/assets/logo.png";
 import { Eye, EyeOff, ArrowLeft, Check, X, Loader2, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
+import { saveRegistrationConsents } from "@/hooks/useUserConsents";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Auth = () => {
