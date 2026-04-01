@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
   CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2, Zap
 } from "lucide-react";
+import { getRefundInfo } from "@/lib/cancellationPolicy";
 
 import { supabase } from "@/integrations/supabase/client";
 
