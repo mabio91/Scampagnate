@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { CalendarDays, MapPin, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { UI_LABELS } from "@/lib/labels";
@@ -24,20 +25,13 @@ function resolveHeroBadge(event: EventWithDetails): HeroBadge {
   return null;
 }
 
-const HERO_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
-  sold_out: {
-    label: "SOLD OUT",
-    className: "bg-destructive text-destructive-foreground",
-  },
-  promo: {
-    label: "Promo",
-    className: "bg-amber-500 text-white",
-  },
-  top: {
-    label: "Evento top",
-    className: "bg-primary text-primary-foreground",
-  },
+const HERO_BADGE_LABEL: Record<string, string> = {
+  sold_out: "SOLD OUT",
+  promo: "Promo",
+  top: "Evento top",
 };
+
+const BADGE_CLASS = "inline-flex items-center px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-body font-semibold text-white bg-black/50 backdrop-blur-sm shadow-lg";
 
 const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
   const getCountdown = (dateStr: string) => {
@@ -49,7 +43,6 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
   };
 
   const countdown = getCountdown(event.date);
-  const isUrgent = countdown === UI_LABELS.today || countdown === UI_LABELS.tomorrow;
   const heroBadge = useMemo(() => resolveHeroBadge(event), [event]);
   const isSoldOut = event.spots_taken >= event.spots_total;
 
@@ -69,8 +62,8 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           className="w-full h-60 sm:h-72 object-cover bg-muted transition-transform duration-700 group-hover:scale-105"
         />
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5" />
+        {/* Gradient overlay — bottom to top */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
 
         {/* Diagonal SOLD OUT ribbon */}
         {isSoldOut && (
@@ -81,50 +74,48 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           </div>
         )}
 
-        {/* Top row: countdown left, badge right */}
-        <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 flex items-start justify-between">
-          {/* Countdown pill */}
-          <span className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-body font-bold shadow-lg ${
-            isUrgent
-              ? "bg-accent text-accent-foreground animate-pulse"
-              : "bg-accent text-accent-foreground"
-          }`}>
+        {/* Top badges — attached to corners */}
+        <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-3 sm:p-4">
+          {/* Time badge — top-left */}
+          <span className={BADGE_CLASS}>
             {countdown}
           </span>
 
-          {/* Top-right badge — premium rectangular with selective rounded corners */}
+          {/* Event badge — top-right */}
           {heroBadge && !isSoldOut && (
-            <span className={`inline-flex items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-bl-xl rounded-tr-xl text-[10px] sm:text-[11px] font-body font-bold shadow-lg ${HERO_BADGE_CONFIG[heroBadge].className}`}>
-              {HERO_BADGE_CONFIG[heroBadge].label}
+            <span className={BADGE_CLASS}>
+              {HERO_BADGE_LABEL[heroBadge]}
             </span>
           )}
         </div>
 
-        {/* Bottom content */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 sm:p-5 sm:pb-6">
-          {/* Title — max 3 lines, dominant */}
-          <h2 className="font-display text-xl sm:text-2xl font-bold text-white mt-1 leading-tight line-clamp-3 drop-shadow-md">
-            {event.title}
-          </h2>
+        {/* Bottom content — as low as possible */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 pb-4 sm:p-5 sm:pb-5 flex items-end justify-between gap-3">
+          {/* Left: date + title */}
+          <div className="flex-1 min-w-0">
+            {/* Date & Location — single line */}
+            <div className="flex items-center gap-1.5 text-white/80 text-[11px] sm:text-xs font-body mb-1.5">
+              <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+              <span className="truncate">
+                {dateStr} · {locationLabel}
+              </span>
+            </div>
 
-          {/* Date + Location row */}
-          <div className="flex items-center gap-3 mt-2.5 sm:mt-3 text-white/80 text-[12px] sm:text-sm font-body">
-            <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-              {dateStr}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-              <span className="truncate max-w-[140px] sm:max-w-[200px]">{locationLabel}</span>
-            </span>
+            {/* Title — max 2 lines, main focus */}
+            <motion.h2
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
+              className="font-display text-xl sm:text-2xl font-bold text-white leading-tight line-clamp-2 drop-shadow-md"
+            >
+              {event.title}
+            </motion.h2>
           </div>
 
-          {/* CTA */}
+          {/* CTA arrow — bottom-right, visual hint only */}
           {!isSoldOut && (
-            <div className="mt-3 sm:mt-4">
-              <span className="inline-flex items-center gap-1.5 text-accent text-sm font-body font-bold group-hover:gap-2.5 transition-all duration-200">
-                Scopri evento <ArrowRight className="h-4 w-4" />
-              </span>
+            <div className="shrink-0 mb-0.5">
+              <ArrowRight className="h-5 w-5 text-white/85 group-hover:translate-x-0.5 transition-transform duration-200" />
             </div>
           )}
         </div>
