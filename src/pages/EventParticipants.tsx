@@ -6,8 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { EventFitScoreCompact } from "@/components/events/EventFitScore";
 import LevelAvatar from "@/components/LevelAvatar";
+import { BadgeIcon } from "@/components/BadgeIcon";
 import { useCommunityLevel, type CommunityLevel } from "@/hooks/useCommunityLevel";
 import type { FitScoreResult } from "@/hooks/useEventFitScore";
 import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
@@ -116,7 +116,24 @@ function calcReliabilityLabel(registrations: any[]): string {
   return "Da migliorare";
 }
 
-// --- Standard participant row (user-facing) ---
+// --- Level badge pill ---
+const LevelBadgePill = ({ level }: { level: CommunityLevel | null | undefined }) => {
+  if (!level) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-body font-medium"
+      style={{
+        backgroundColor: `${level.color}18`,
+        color: level.color,
+      }}
+    >
+      <BadgeIcon icon={level.icon} className="h-3 w-3" />
+      {level.name}
+    </span>
+  );
+};
+
+// --- Standard participant row ---
 const ParticipantRow = ({
   avatarUrl,
   firstName,
@@ -129,7 +146,7 @@ const ParticipantRow = ({
   level?: CommunityLevel | null;
 }) => {
   return (
-    <div className="flex items-center gap-4 py-3.5 border-b border-border last:border-0">
+    <div className="flex items-center gap-3 py-3">
       <LevelAvatar
         avatarUrl={avatarUrl}
         firstName={firstName}
@@ -138,15 +155,11 @@ const ParticipantRow = ({
         size="md"
         showBadge
       />
-      <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
         <p className="text-sm font-body font-semibold text-foreground truncate">
           {firstName || "Utente"}
         </p>
-        {level && (
-          <p className="text-xs font-body text-muted-foreground">
-            {level.name}
-          </p>
-        )}
+        <LevelBadgePill level={level} />
       </div>
     </div>
   );
@@ -171,7 +184,7 @@ const AdminParticipantRow = ({
   completedEvents: number;
 }) => {
   return (
-    <div className="flex items-center gap-4 py-4 border-b border-border last:border-0">
+    <div className="flex items-center gap-3 py-3">
       <LevelAvatar
         avatarUrl={avatarUrl}
         firstName={firstName}
@@ -181,15 +194,13 @@ const AdminParticipantRow = ({
         showBadge
       />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-body font-semibold text-foreground truncate">
-          {firstName || "Utente"}
-        </p>
-        {level && (
-          <p className="text-xs font-body text-muted-foreground mb-1">
-            {level.name}
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-body font-semibold text-foreground truncate">
+            {firstName || "Utente"}
           </p>
-        )}
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+          <LevelBadgePill level={level} />
+        </div>
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
           {fitScore && !fitScore.hidden && (
             <span className={`text-[11px] font-body ${
               fitScore.color === "green" ? "text-green-600 dark:text-green-400" :
@@ -241,12 +252,6 @@ const EventParticipants = () => {
     enabled: participantIds.length > 0,
   });
 
-  // Fetch community levels for all participants in one batch
-  const participantPoints = useMemo(() => {
-    if (!fullProfiles) return [];
-    return participantIds.map((uid: string) => fullProfiles[uid]?.total_points || 0);
-  }, [fullProfiles, participantIds]);
-
   // Fetch all registrations for reliability + completed events (org/admin only)
   const { data: allRegistrations } = useQuery({
     queryKey: ["participant-registrations-admin", participantIds],
@@ -276,13 +281,33 @@ const EventParticipants = () => {
     enabled: !!event?.organizer_id,
   });
 
+  // Fetch organizer's points for level badge
+  const { data: organizerFullProfile } = useQuery({
+    queryKey: ["organizer-full-profile", event?.organizer_id],
+    queryFn: async () => {
+      if (!event?.organizer_id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("total_points")
+        .eq("id", event.organizer_id)
+        .single();
+      return data;
+    },
+    enabled: !!event?.organizer_id,
+  });
+
+  const organizerPoints = organizerFullProfile?.total_points || 0;
+  const { data: organizerLevel } = useCommunityLevel(organizerPoints);
+
   const accessRules = (event?.access_rules as AccessRulesConfig | null)?.rules || [];
+
+  const totalParticipants = participants?.length || event?.spots_taken || 0;
 
   // --- Loading ---
   if (eventLoading || participantsLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
+        <div className="sticky top-0 bg-background z-10 px-4 py-3 flex items-center gap-3">
           <Skeleton className="w-8 h-8 rounded-full" />
           <Skeleton className="h-6 w-32" />
         </div>
@@ -314,54 +339,66 @@ const EventParticipants = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background relative">
-        <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
+        {/* Header */}
+        <div className="sticky top-0 bg-background z-10 px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft className="h-5 w-5 text-foreground" /></button>
           <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
+          {totalParticipants > 0 && (
+            <span className="ml-auto text-xs font-body text-muted-foreground">
+              {totalParticipants} {totalParticipants === 1 ? "persona sta partecipando" : "persone stanno partecipando"}
+            </span>
+          )}
         </div>
 
         <div className="max-w-lg mx-auto px-4 py-4 pb-64">
           {/* Organizer */}
           {event?.organizer_id && (
             <div className="mb-6">
-              <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Organizzatore</p>
-              <div className="flex items-center gap-4">
+              <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Organizzatore</p>
+              <div className="flex items-center gap-3">
                 <LevelAvatar
                   avatarUrl={organizerProfile?.avatar_url}
                   firstName={organizerProfile?.first_name || event.organizer_name}
-                  points={0}
+                  points={organizerPoints}
+                  level={organizerLevel}
                   size="md"
-                  showBadge={false}
+                  showBadge
                 />
-                <p className="text-sm font-body font-semibold text-foreground">
-                  {organizerProfile?.first_name || event.organizer_name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-body font-semibold text-foreground">
+                    {organizerProfile?.first_name || event.organizer_name}
+                  </p>
+                  <LevelBadgePill level={organizerLevel} />
+                </div>
               </div>
             </div>
           )}
 
-          <div className="border-t border-border" />
-
           {/* Blurred participants */}
           {participants && participants.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Chi c'è?</p>
+            <div className="mt-5">
+              <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Chi ci sarà</p>
               <div className="select-none">
                 {participants.map((p: any) => (
-                  <div key={p.id} className="flex items-center gap-4 py-3.5 border-b border-border last:border-0">
+                  <div key={p.id} className="flex items-center gap-3 py-3">
                     <div className="blur-[6px] pointer-events-none">
                       {p.profiles?.avatar_url ? (
-                        <img src={p.profiles.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                        <img src={p.profiles.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover" />
                       ) : (
-                        <span className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
+                        <span className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
                           {p.profiles?.first_name?.[0] || "?"}
                         </span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0 blur-[6px] pointer-events-none">
-                      <p className="text-sm font-body font-semibold text-foreground truncate">
-                        {p.profiles?.first_name || "Utente"}
-                      </p>
-                      <p className="text-xs font-body text-muted-foreground">Membro</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-body font-semibold text-foreground truncate">
+                          {p.profiles?.first_name || "Utente"}
+                        </p>
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-body font-medium bg-muted text-muted-foreground">
+                          Membro
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -386,23 +423,7 @@ const EventParticipants = () => {
     );
   }
 
-  // --- Logged in but not registered / not organizer / not admin ---
-  const myRegistration = participants?.find((p: any) => p.user_id === user.id);
-  const canView = !!myRegistration || user.id === event.organizer_id || isAdmin;
-
-  if (!canView) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft className="h-5 w-5 text-foreground" /></button>
-          <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
-        </div>
-        <div className="px-4 py-12 text-center">
-          <p className="text-muted-foreground font-body text-sm">Iscriviti all'evento per vedere i partecipanti</p>
-        </div>
-      </div>
-    );
-  }
+  // --- Logged in: ALL users can see the list (no registration gate) ---
 
   // Helper: get completed events count from registrations
   const getCompletedEvents = (userId: string) => {
@@ -417,14 +438,15 @@ const EventParticipants = () => {
   // --- Full participant list ---
   return (
     <div className="min-h-screen bg-background pb-8">
-      <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3 flex items-center gap-3">
+      {/* Header */}
+      <div className="sticky top-0 bg-background z-10 px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
-        {participants && participants.length > 0 && (
+        {totalParticipants > 0 && (
           <span className="ml-auto text-xs font-body text-muted-foreground">
-            {participants.length} iscritti
+            {totalParticipants} {totalParticipants === 1 ? "persona sta partecipando" : "persone stanno partecipando"}
           </span>
         )}
       </div>
@@ -432,30 +454,32 @@ const EventParticipants = () => {
       <div className="max-w-lg mx-auto px-4 py-4">
         {/* Organizer */}
         <div className="mb-6">
-          <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Organizzatore</p>
+          <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Organizzatore</p>
           <Link
             to={`/organizer/${event.organizer_id}`}
-            className="flex items-center gap-4"
+            className="flex items-center gap-3 rounded-lg py-2 -mx-2 px-2 transition-colors active:bg-muted/50"
           >
             <LevelAvatar
               avatarUrl={organizerProfile?.avatar_url}
               firstName={organizerProfile?.first_name || event.organizer_name}
-              points={fullProfiles?.[event.organizer_id || ""]?.total_points || 0}
+              points={organizerPoints}
+              level={organizerLevel}
               size="md"
               showBadge
             />
-            <p className="text-sm font-body font-semibold text-foreground">
-              {organizerProfile?.first_name || event.organizer_name}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-body font-semibold text-foreground">
+                {organizerProfile?.first_name || event.organizer_name}
+              </p>
+              <LevelBadgePill level={organizerLevel} />
+            </div>
           </Link>
         </div>
 
-        <div className="border-t border-border" />
-
         {/* Participants */}
         {participants && participants.length > 0 ? (
-          <div className="mt-4">
-            <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wide mb-3">Chi c'è?</p>
+          <div className="mt-2">
+            <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Chi ci sarà</p>
             <div>
               {participants.map((p: any) => {
                 const pProfile = fullProfiles?.[p.user_id];
@@ -467,7 +491,7 @@ const EventParticipants = () => {
                     : null;
 
                   return (
-                    <AdminParticipantRow
+                    <AdminParticipantRowWithLevel
                       key={p.id}
                       avatarUrl={p.profiles?.avatar_url}
                       firstName={p.profiles?.first_name}
@@ -518,6 +542,36 @@ const ParticipantRowWithLevel = ({
       firstName={firstName}
       points={points}
       level={level}
+    />
+  );
+};
+
+// Wrapper that fetches level for admin view
+const AdminParticipantRowWithLevel = ({
+  avatarUrl,
+  firstName,
+  points,
+  fitScore,
+  reliabilityLabel,
+  completedEvents,
+}: {
+  avatarUrl?: string | null;
+  firstName?: string;
+  points: number;
+  fitScore: FitScoreResult | null;
+  reliabilityLabel: string;
+  completedEvents: number;
+}) => {
+  const { data: level } = useCommunityLevel(points);
+  return (
+    <AdminParticipantRow
+      avatarUrl={avatarUrl}
+      firstName={firstName}
+      points={points}
+      level={level}
+      fitScore={fitScore}
+      reliabilityLabel={reliabilityLabel}
+      completedEvents={completedEvents}
     />
   );
 };
