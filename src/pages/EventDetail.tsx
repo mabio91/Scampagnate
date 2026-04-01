@@ -749,18 +749,18 @@ const EventDetail = () => {
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-3" />
           </button>
-        </motion.div>
 
-        {/* Weather Forecast - right after Date & Location */}
-        <WeatherForecast 
-          location={event.location} 
-          date={event.date} 
-          overrideCondition={(event.additional_fields as any)?.weather_override_condition || null}
-          overrideTempMin={(event.additional_fields as any)?.weather_override_temp_min ?? null}
-          overrideTempMax={(event.additional_fields as any)?.weather_override_temp_max ?? null}
-          overrideTempAvg={(event.additional_fields as any)?.weather_override_temp_avg ?? null}
-          overrideTemp={(event.additional_fields as any)?.weather_override_temp ?? null}
-        />
+          {/* Weather inline row */}
+          <WeatherForecast 
+            location={event.location} 
+            date={event.date} 
+            overrideCondition={(event.additional_fields as any)?.weather_override_condition || null}
+            overrideTempMin={(event.additional_fields as any)?.weather_override_temp_min ?? null}
+            overrideTempMax={(event.additional_fields as any)?.weather_override_temp_max ?? null}
+            overrideTempAvg={(event.additional_fields as any)?.weather_override_temp_avg ?? null}
+            overrideTemp={(event.additional_fields as any)?.weather_override_temp ?? null}
+          />
+        </motion.div>
 
         {/* Event Fit Score — below date/location/weather */}
         {user && !accessData?.failedRules?.length && (
@@ -772,7 +772,7 @@ const EventDetail = () => {
           <div className="flex items-start justify-between gap-4">
             {/* Organizer (left) */}
             <div className="flex-shrink-0">
-              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("organizer")}</p>
+              <p className="text-xs font-body font-semibold text-foreground mb-2">{t("organizer")}</p>
               <button onClick={() => setShowOrganizerContact(true)} className="flex items-center gap-2 group text-left">
                 {organizerProfile?.avatar_url ? (
                   <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -783,14 +783,14 @@ const EventDetail = () => {
                 )}
                 <div>
                   <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{organizerProfile?.first_name || event.organizer_name}</p>
-                  <p className="text-xs font-body text-primary">Contatta</p>
+                  <p className="text-xs font-body text-muted-foreground">Contatta</p>
                 </div>
               </button>
             </div>
 
             {/* Participants (right) */}
             <div className="flex-shrink-0">
-              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
+              <p className="text-xs font-body font-semibold text-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
               <button
                 onClick={() => navigate(`/event/${event.id}/participants`)}
                 className="flex items-center"
@@ -1126,9 +1126,13 @@ const EventDetail = () => {
               ) : (
                 <p className="text-lg font-display font-bold text-foreground">{getPriceDisplay()}</p>
               )}
-              <span className="text-xs font-body text-muted-foreground">·</span>
-              <span className="text-xs font-body text-muted-foreground">{remainingSpots > 0 ? `${remainingSpots} posti disponibili` : "Sold out"}</span>
             </div>
+            <span className="text-xs font-body text-muted-foreground">{remainingSpots > 0 ? `${remainingSpots} posti disponibili` : "Sold out"}</span>
+            {event.spots_total > 0 && (event.spots_taken / event.spots_total) > 0.7 && remainingSpots > 0 && (
+              <span className="text-[11px] font-body font-bold text-white bg-black dark:bg-white dark:text-black px-2 py-0.5 rounded-full">
+                🔥 ULTIMI POSTI RIMASTI!
+              </span>
+            )}
             {/* Registration deadline (if applicable) */}
             {event.additional_fields && (event.additional_fields as any).registration_deadline && (
               <p className="text-[10px] font-body text-muted-foreground">
@@ -1219,8 +1223,9 @@ const EventDetail = () => {
             {organizerProfile?.phone && (
               <>
                 <Button
+                  variant="outline"
                   asChild
-                  className="w-full justify-start font-body bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none"
+                  className="w-full justify-start font-body"
                 >
                   <a
                     href={`https://wa.me/${organizerProfile.phone.replace(/[^0-9+]/g, "")}`}
