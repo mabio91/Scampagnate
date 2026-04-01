@@ -336,6 +336,9 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 </button>
               </div>
             </div>
+
+            {/* CONSENSI & PRIVACY SECTION */}
+            <ConsentPrivacySection />
           </div>
         </SheetContent>
       </Sheet>
