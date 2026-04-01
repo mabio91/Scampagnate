@@ -262,7 +262,7 @@ const Profile = () => {
           <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Community</p>
           <div className="space-y-1 mb-5">
             <button onClick={() => setShowProposalForm(true)} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group w-full text-left">
-              <Lightbulb className="h-4.5 w-4.5 text-primary shrink-0" />
+              <Lightbulb className="h-4.5 w-4.5 text-secondary shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-body font-semibold text-foreground">Proponi un'attività</p>
                 <p className="text-xs font-body text-muted-foreground">Condividi la tua idea con il gruppo</p>
