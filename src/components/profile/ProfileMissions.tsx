@@ -93,7 +93,7 @@ const ProfileMissions = () => {
   return (
     <div className="mb-6 animate-fade-in">
       <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-        <Target className="h-5 w-5 text-secondary" /> Obiettivi
+        <Target className="h-5 w-5 text-secondary" /> Missioni
       </h2>
 
       {missionsToShow.length > 0 ? (
