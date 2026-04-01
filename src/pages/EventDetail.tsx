@@ -772,7 +772,7 @@ const EventDetail = () => {
           <div className="flex items-start justify-between gap-4">
             {/* Organizer (left) */}
             <div className="flex-shrink-0">
-              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("organizer")}</p>
+              <p className="text-xs font-body font-semibold text-foreground mb-2">{t("organizer")}</p>
               <button onClick={() => setShowOrganizerContact(true)} className="flex items-center gap-2 group text-left">
                 {organizerProfile?.avatar_url ? (
                   <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -783,14 +783,14 @@ const EventDetail = () => {
                 )}
                 <div>
                   <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{organizerProfile?.first_name || event.organizer_name}</p>
-                  <p className="text-xs font-body text-primary">Contatta</p>
+                  <p className="text-xs font-body text-muted-foreground">Contatta</p>
                 </div>
               </button>
             </div>
 
             {/* Participants (right) */}
             <div className="flex-shrink-0">
-              <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
+              <p className="text-xs font-body font-semibold text-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
               <button
                 onClick={() => navigate(`/event/${event.id}/participants`)}
                 className="flex items-center"
