@@ -1519,6 +1519,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_event_participant_avatars: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_url: string
+          first_name: string
+          user_id: string
+        }[]
+      }
       get_public_profile: {
         Args: { profile_id: string }
         Returns: {
