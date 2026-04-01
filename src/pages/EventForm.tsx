@@ -1486,14 +1486,14 @@ const EventForm = () => {
               <div className="space-y-3 pt-2 border-t border-border/50">
                 <div>
                   <Label className="text-xs">Etichetta esclusività (mostrata sulla card)</Label>
-                  <Select value={exclusivityLabel} onValueChange={setExclusivityLabel}>
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Rileva automaticamente" /></SelectTrigger>
+                  <Select value={exclusivityLabel || "auto"} onValueChange={(v) => setExclusivityLabel(v === "auto" ? "" : v)}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Auto (default)" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value=" ">Auto-detect</SelectItem>
-                      <SelectItem value="Exclusive Event">⭐ Evento esclusivo</SelectItem>
-                      <SelectItem value="Members Only">👑 Solo membri</SelectItem>
-                      <SelectItem value="Community Priority">🤝 Priorità community</SelectItem>
-                      <SelectItem value="Experience Required">🔒 Esperienza richiesta</SelectItem>
+                      <SelectItem value="auto">Auto (default)</SelectItem>
+                      <SelectItem value="⭐ Evento esclusivo">⭐ Evento esclusivo</SelectItem>
+                      <SelectItem value="👑 Solo membri">👑 Solo membri</SelectItem>
+                      <SelectItem value="🔒 Esperienza richiesta">🔒 Esperienza richiesta</SelectItem>
+                      <SelectItem value="⚡ Accesso limitato">⚡ Accesso limitato</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

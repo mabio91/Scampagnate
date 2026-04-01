@@ -370,27 +370,37 @@ export const getExclusivityIndicators = (accessRules: AccessRulesConfig | null |
 
   const indicators: { label: string; variant: "members" | "exclusive" | "community" | "restricted" }[] = [];
 
-  if (accessRules.exclusivity_label) {
+  // If manual override is set (non-empty, non-auto)
+  if (accessRules.exclusivity_label && accessRules.exclusivity_label.trim() !== "" && accessRules.exclusivity_label !== "auto") {
     indicators.push({ label: accessRules.exclusivity_label, variant: "exclusive" });
     return indicators;
   }
 
+  // Auto-detect with priority: Solo membri > Esperienza richiesta > Evento esclusivo > Accesso limitato
   const ruleTypes = accessRules.rules.map(r => r.type);
 
   if (ruleTypes.includes("require_membership")) {
-    indicators.push({ label: "Members Only", variant: "members" });
+    indicators.push({ label: "👑 Solo membri", variant: "members" });
+    return indicators;
   }
-  if (ruleTypes.includes("require_badge")) {
-    indicators.push({ label: "Exclusive Event", variant: "exclusive" });
-  }
+
   if (
     ruleTypes.includes("min_trekking_events") || ruleTypes.includes("min_attended_events") || ruleTypes.includes("min_activities") ||
     ruleTypes.includes("min_level") || ruleTypes.includes("min_experience") || ruleTypes.includes("min_activity_frequency")
   ) {
-    indicators.push({ label: "Experience Required", variant: "restricted" });
+    indicators.push({ label: "🔒 Esperienza richiesta", variant: "restricted" });
+    return indicators;
   }
+
   if (ruleTypes.includes("manual_approval")) {
-    indicators.push({ label: "Approval Required", variant: "community" });
+    indicators.push({ label: "⭐ Evento esclusivo", variant: "exclusive" });
+    return indicators;
+  }
+
+  // Fallback: at least one rule is active but none of the above matched
+  if (ruleTypes.length > 0) {
+    indicators.push({ label: "⚡ Accesso limitato", variant: "community" });
+    return indicators;
   }
 
   return indicators;

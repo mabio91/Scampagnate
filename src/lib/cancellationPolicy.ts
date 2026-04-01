@@ -34,9 +34,9 @@ export const CANCELLATION_POLICIES: Record<PolicyType, PolicyDefinition> = {
     icon: Clock,
     description: "Full refund up to 48 hours before the event.",
     descriptionIt: "Rimborso completo fino a 48 ore prima dell'evento.",
-    colorClass: "text-amber-600",
-    bgClass: "bg-amber-50",
-    borderClass: "border-amber-200",
+    colorClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-50 dark:bg-amber-950/30",
+    borderClass: "border-amber-200 dark:border-amber-800",
   },
   non_refundable: {
     type: "non_refundable",
