@@ -376,13 +376,26 @@ const EventDetail = () => {
         setPaymentLoading(false);
       }
     } else {
-      // Free/location event — update status directly
+      // Free/location event — check availability first, then update status
       try {
+        // Re-fetch event to get current spots
+        const { data: freshEvent } = await supabase
+          .from("events")
+          .select("spots_total, spots_taken")
+          .eq("id", event.id)
+          .single();
+        
+        if (!freshEvent || freshEvent.spots_taken >= freshEvent.spots_total) {
+          toast({ title: "Posto non disponibile", description: "Il posto è stato preso da un altro partecipante. Resti in lista d'attesa.", variant: "destructive" });
+          return;
+        }
+
         await supabase.from("event_registrations")
           .update({ status: "registered" as any, payment_status: event.payment_type === "location" ? "pay_on_location" : "not_required" })
           .eq("id", myRegistration.id)
           .eq("user_id", user!.id);
         toast({ title: "Prenotazione completata!", description: "Il posto è tuo!" });
+        // Refetch queries instead of full reload
         window.location.reload();
       } catch (err: any) {
         toast({ title: "Errore", description: err.message, variant: "destructive" });

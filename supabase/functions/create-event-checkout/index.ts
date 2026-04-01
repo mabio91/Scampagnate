@@ -47,11 +47,29 @@ serve(async (req) => {
     // Fetch event details using admin client to bypass RLS
     const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
-      .select("id, title, price, deposit, payment_type")
+      .select("id, title, price, deposit, payment_type, spots_total, spots_taken")
       .eq("id", eventId)
       .single();
 
     if (eventError || !event) throw new Error("Event not found");
+
+    // Check if registration is from waitlist — if so, verify spot availability
+    const { data: reg } = await supabaseAdmin
+      .from("event_registrations")
+      .select("status")
+      .eq("id", registrationId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (reg?.status === "waitlist") {
+      const availableSpots = event.spots_total - event.spots_taken;
+      if (availableSpots <= 0) {
+        return new Response(
+          JSON.stringify({ error: "Non ci sono posti disponibili al momento. Resti in lista d'attesa." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+    }
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
