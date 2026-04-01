@@ -311,7 +311,12 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return;
+    // "In arrivo" → show informational toast, don't start booking
+    if (event.status === "draft") {
+      toast({ title: "In arrivo", description: "Le prenotazioni apriranno a breve.\nTorna presto per assicurarti un posto." });
+      return;
+    }
+    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "past") return;
 
     // Waitlisted user with spot available → go directly to payment/checkout
     if (waitlistSpotAvailable) {
