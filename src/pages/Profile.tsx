@@ -260,8 +260,6 @@ const Profile = () => {
         {/* Badges */}
         <ProfileBadges />
 
-        {/* Reliability */}
-        <ProfileReliability />
 
         {/* Activity History Dashboard */}
         <ActivityHistory />
