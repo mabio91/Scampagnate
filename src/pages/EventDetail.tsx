@@ -331,8 +331,8 @@ const EventDetail = () => {
       return;
     }
 
-    // Fit score < 60 requires explicit confirmation
-    if (fitScore && !fitScore.hidden && !fitScore.profileIncomplete && fitScore.score < 60) {
+    // Fit score < 50 requires explicit confirmation
+    if (fitScore && !fitScore.hidden && !fitScore.profileIncomplete && fitScore.score < 50) {
       setShowFitScoreWarning(true);
       return;
     }
@@ -1560,7 +1560,7 @@ const EventDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Fit Score Warning Dialog (score < 60) */}
+      {/* Fit Score Warning Dialog (score < 50) */}
       <Dialog open={showFitScoreWarning} onOpenChange={setShowFitScoreWarning}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -1571,8 +1571,9 @@ const EventDetail = () => {
           </DialogHeader>
           <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
             <p className="font-body text-sm leading-relaxed text-muted-foreground">
-              Questo evento è più impegnativo rispetto al tuo livello attuale.
-              Richiede buona preparazione fisica ed esperienza.
+              {fitScore.score < 30
+                ? "Questo evento è probabilmente troppo impegnativo per te. Puoi comunque procedere, ma ti consigliamo di valutare bene prima di iscriverti."
+                : "Questo evento è più impegnativo rispetto al tuo livello attuale. Richiede buona preparazione fisica ed esperienza."}
             </p>
           </div>
           <div className="flex flex-col gap-2 mt-2">

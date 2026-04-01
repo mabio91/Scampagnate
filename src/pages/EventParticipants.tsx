@@ -25,8 +25,13 @@ function calcFitScore(
 ): FitScoreResult {
   const HIDDEN: FitScoreResult = {
     score: 0,
-    breakdown: { level: null, experience: null, activity: null, interests: null },
-    label: "media", labelDisplay: "", color: "amber", reasons: [], profileIncomplete: false, hidden: true,
+    breakdown: { level: null, experience: null, activity: null, interests: null, goal: null },
+    state: "medium",
+    label: "",
+    color: "amber",
+    reasons: [],
+    profileIncomplete: false,
+    hidden: true,
   };
 
   const hasLevel = rules.some(r => r.type === "min_level") || !!difficulty;
@@ -37,7 +42,7 @@ function calcFitScore(
   if (!hasLevel && !hasExp && !hasFreq && !hasInterests) return HIDDEN;
   if (!participantProfile) return { ...HIDDEN, hidden: false, profileIncomplete: true };
 
-  const breakdown: FitScoreResult["breakdown"] = { level: null, experience: null, activity: null, interests: null };
+  const breakdown: FitScoreResult["breakdown"] = { level: null, experience: null, activity: null, interests: null, goal: null };
   const reasons: FitScoreResult["reasons"] = [];
   const weights: { key: keyof typeof breakdown; weight: number }[] = [];
 
@@ -49,8 +54,8 @@ function calcFitScore(
       const diff = user - req;
       const s = diff >= 0 ? 100 : diff === -1 ? 60 : 20;
       breakdown.level = s;
-      weights.push({ key: "level", weight: 35 });
-      reasons.push({ icon: s >= 60 ? "check" : "warning", text: s >= 60 ? "Livello adeguato" : "Livello inferiore" });
+      weights.push({ key: "level", weight: 40 });
+      reasons.push({ icon: s >= 60 ? "check" : "warning", text: s >= 60 ? "Livello adeguato" : "Livello inferiore", component: "level" });
     }
   }
 
@@ -62,7 +67,7 @@ function calcFitScore(
     const s = diff >= 0 ? 100 : diff === -1 ? 70 : 30;
     breakdown.experience = s;
     weights.push({ key: "experience", weight: 20 });
-    reasons.push({ icon: s >= 70 ? "check" : "warning", text: s >= 70 ? "Esperienza sufficiente" : "Esperienza bassa" });
+    reasons.push({ icon: s >= 70 ? "check" : "warning", text: s >= 70 ? "Esperienza sufficiente" : "Esperienza bassa", component: "experience" });
   }
 
   if (hasFreq) {
@@ -72,8 +77,8 @@ function calcFitScore(
     const diff = user - req;
     const s = diff >= 0 ? 100 : diff === -1 ? 70 : 40;
     breakdown.activity = s;
-    weights.push({ key: "activity", weight: 20 });
-    reasons.push({ icon: s >= 70 ? "check" : "warning", text: s >= 70 ? "Attività adeguata" : "Attività bassa" });
+    weights.push({ key: "activity", weight: 25 });
+    reasons.push({ icon: s >= 70 ? "check" : "warning", text: s >= 70 ? "Attività adeguata" : "Attività bassa", component: "activity" });
   }
 
   if (hasInterests) {
@@ -84,7 +89,7 @@ function calcFitScore(
       const m = eventI.filter((i: string) => userI.includes(i)).length;
       const s = Math.round((m / Math.max(userI.length, eventI.length)) * 100);
       breakdown.interests = s;
-      weights.push({ key: "interests", weight: 25 });
+      weights.push({ key: "interests", weight: 10 });
     }
   }
 
@@ -93,12 +98,14 @@ function calcFitScore(
   const tw = weights.reduce((s, w) => s + w.weight, 0);
   const score = Math.round(weights.reduce((s, w) => s + (breakdown[w.key] || 0) * (w.weight / tw), 0));
 
+  const state: FitScoreResult["state"] = score >= 70 ? "high" : score >= 50 ? "medium" : score >= 30 ? "low_medium" : "low";
+
   return {
     score,
     breakdown,
-    label: score >= 80 ? "alta" : score >= 50 ? "media" : "bassa",
-    labelDisplay: score >= 80 ? "Ottima compatibilità" : score >= 50 ? "Buona compatibilità" : "Bassa compatibilità",
-    color: score >= 80 ? "green" : score >= 50 ? "amber" : "red",
+    state,
+    label: score >= 70 ? "Perfetto" : score >= 50 ? "Ci sta — ma preparati" : score >= 30 ? "Valuta bene" : "Potrebbe essere tosto",
+    color: score >= 70 ? "green" : score >= 50 ? "amber" : "red",
     reasons,
     profileIncomplete: false,
     hidden: false,
