@@ -81,8 +81,8 @@ function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInf
   // Priority 6: Closed
   if (isEventPast || isPastDate) return "closed";
 
-  // Priority 7: Waitlist label for non-registered users on full events
-  if (event.status === "full") return "waitlist";
+  // Priority 7: Closed — full without user in waitlist, or past/closed
+  if (event.status === "full") return "closed";
 
   // Priority 8: Open
   return "open";
