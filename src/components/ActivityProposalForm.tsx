@@ -17,7 +17,6 @@ import {
 import { Loader2, Lightbulb, Rocket } from "lucide-react";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityProposalFormProps {
   open: boolean;
