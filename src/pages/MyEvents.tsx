@@ -3,8 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
-  CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2
+  CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2, Zap
 } from "lucide-react";
+
+import { supabase } from "@/integrations/supabase/client";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
