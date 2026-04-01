@@ -172,19 +172,22 @@ export const useCheckEventAccessRules = (
           }
 
           case "require_badge": {
-            const badgeId = rule.badge_id || rule.value;
-            if (badgeId) {
-              const { data: userBadge } = await supabase
+            const badgeIds = rule.badge_ids && rule.badge_ids.length > 0
+              ? rule.badge_ids
+              : (rule.badge_id || rule.value) ? [String(rule.badge_id || rule.value)] : [];
+            
+            if (badgeIds.length > 0) {
+              const { data: userBadges } = await supabase
                 .from("user_badges")
-                .select("id")
+                .select("badge_id")
                 .eq("user_id", user.id)
-                .eq("badge_id", badgeId as string)
-                .maybeSingle();
+                .in("badge_id", badgeIds);
 
-              if (!userBadge) {
+              const hasAny = (userBadges || []).length > 0;
+              if (!hasAny) {
                 target.push({
                   rule,
-                  reason: rule.message || `Questo evento richiede il badge "${rule.badge_name || "richiesto"}".`,
+                  reason: rule.message || `Questo evento richiede uno dei badge richiesti.`,
                 });
               }
             }
