@@ -89,7 +89,7 @@ export const useEvent = (id: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("*, event_categories(name, icon), event_meeting_points(*), event_price_options(id, name, price, sort_order)")
+        .select("*, event_categories(name, icon), event_meeting_points(*), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
         .eq("id", id)
         .single();
       if (error) throw error;

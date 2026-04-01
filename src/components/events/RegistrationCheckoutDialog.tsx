@@ -203,7 +203,7 @@ const RegistrationCheckoutDialog = ({
                       className="mt-1"
                     />
                   )}
-                  {field.type === "dropdown" && (
+                  {(field.type === "dropdown" || field.type === "select") && (
                     <Select
                       value={additionalResponses[field.label] || ""}
                       onValueChange={(val) => setAdditionalResponses(prev => ({ ...prev, [field.label]: val }))}
