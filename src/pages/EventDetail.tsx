@@ -532,12 +532,9 @@ const EventDetail = () => {
   };
 
 
-  // Check if within 24h cancellation window
-  const registrationCreatedAt = myRegistration?.created_at ? new Date(myRegistration.created_at) : null;
-  const hoursSinceRegistration = registrationCreatedAt
-    ? (Date.now() - registrationCreatedAt.getTime()) / (1000 * 60 * 60)
-    : Infinity;
-  const canCancelRegistration = hoursSinceRegistration <= 24;
+  // Policy-based refund info for cancel dialog messaging
+  const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time) : null;
+  const hasPaidPayment = myRegistration?.payment_status === "paid";
 
   const handleCancelClick = () => {
     setShowCancelDialog(true);
@@ -547,10 +544,12 @@ const EventDetail = () => {
     try {
       const result = await cancelMutation.mutateAsync(event.id);
       setShowCancelDialog(false);
-      if (result?.reason === "cancellation_window_expired") {
-        toast({ title: "Impossibile annullare", description: "Sono trascorse più di 24 ore dalla registrazione. Non è più possibile annullare l'iscrizione.", variant: "destructive" });
-      } else if (result?.refunded) {
-        toast({ title: "Iscrizione annullata", description: "Il rimborso è stato elaborato automaticamente. Riceverai l'accredito entro 5-10 giorni lavorativi." });
+      if (result?.refunded) {
+        toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni." });
+      } else if (result?.reason === "no_refund_policy") {
+        toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso." });
+      } else if (result?.reason === "stripe_error") {
+        toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile." });
       } else {
         toast({ title: "Iscrizione annullata", description: "La tua iscrizione è stata annullata." });
       }
