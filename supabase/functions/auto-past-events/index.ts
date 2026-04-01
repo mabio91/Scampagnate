@@ -39,7 +39,22 @@ serve(async (req) => {
     const count = data?.length || 0;
     console.log(`Marked ${count} events as past:`, data?.map(e => e.title));
 
-    return new Response(JSON.stringify({ success: true, updated: count, events: data }), {
+    // Clean up stale pending registrations (older than 30 minutes)
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { data: staleRegs, error: staleError } = await supabase
+      .from('event_registrations')
+      .delete()
+      .eq('payment_status', 'pending')
+      .lt('created_at', thirtyMinAgo)
+      .select('id');
+
+    if (staleError) {
+      console.error('Error cleaning stale registrations:', staleError);
+    } else {
+      console.log(`Cleaned up ${staleRegs?.length || 0} stale pending registrations`);
+    }
+
+    return new Response(JSON.stringify({ success: true, updated: count, events: data, stale_cleaned: staleRegs?.length || 0 }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
