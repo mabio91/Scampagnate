@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock } from "lucide-react";
 import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -22,7 +22,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   info: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 
-const NotificationItem = ({ notification, onRead, onSelect }: { notification: Notification; onRead: () => void; onSelect: (n: Notification) => void }) => {
+const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notification; onRead: () => void; onSelect: (n: Notification) => void }>(({ notification, onRead, onSelect }, ref) => {
   const navigate = useNavigate();
   const markAsRead = useMarkAsRead();
 
@@ -60,9 +60,11 @@ const NotificationItem = ({ notification, onRead, onSelect }: { notification: No
       )}
     </button>
   );
-};
+});
 
-const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
+NotificationItem.displayName = "NotificationItem";
+
+const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({ onClose }, ref) => {
   const { data: notifications, isLoading } = useNotifications();
   const markAllAsRead = useMarkAllAsRead();
   const hasUnread = notifications?.some((n) => !n.read);
@@ -154,6 +156,7 @@ const NotificationPanel = ({ onClose }: { onClose: () => void }) => {
       </div>
     </div>
   );
-};
+});
 
+NotificationPanel.displayName = "NotificationPanel";
 export default NotificationPanel;
