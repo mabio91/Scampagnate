@@ -245,6 +245,29 @@ const EventForm = () => {
       loadEvent(id);
     } else if (isDuplicating) {
       loadEvent(duplicateId);
+    } else {
+      // Pre-fill from query params (e.g. proposal conversion)
+      const title = searchParams.get("title");
+      const description = searchParams.get("description");
+      const location = searchParams.get("location");
+      const locationLabel = searchParams.get("location_label");
+      const date = searchParams.get("date");
+      const time = searchParams.get("time");
+      const spotsTotal = searchParams.get("spots_total");
+      const categoryId = searchParams.get("category_id");
+      if (title || description || location) {
+        setForm(prev => ({
+          ...prev,
+          ...(title && { title }),
+          ...(description && { description }),
+          ...(location && { location }),
+          ...(locationLabel && { location_label: locationLabel }),
+          ...(date && { date }),
+          ...(time && { time }),
+          ...(spotsTotal && { spots_total: parseInt(spotsTotal) }),
+          ...(categoryId && { category_id: categoryId }),
+        }));
+      }
     }
   }, [id, duplicateId]);
 
