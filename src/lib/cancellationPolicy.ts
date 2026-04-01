@@ -90,3 +90,67 @@ export const serializeCancellationPolicy = (
 ): string => {
   return type;
 };
+
+/**
+ * Calculate refund eligibility for a given policy and event start time.
+ * Used client-side to show appropriate UI messaging before calling the backend.
+ */
+export const getRefundInfo = (
+  cancellationPolicy: string | null | undefined,
+  eventDate: string,
+  eventTime: string
+): {
+  policy: PolicyType;
+  policyLabel: string;
+  refundEligible: boolean;
+  refundPercentage: number;
+  hoursUntilEvent: number;
+  requiredHours: number | null;
+  message: string;
+} => {
+  const { policyType } = parseCancellationPolicy(cancellationPolicy);
+  const policy = policyType || "flexible";
+
+  const eventStart = new Date(`${eventDate}T${eventTime}`);
+  const now = new Date();
+  const hoursUntilEvent = (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  const policyDef = CANCELLATION_POLICIES[policy];
+
+  let requiredHours: number | null;
+  switch (policy) {
+    case "flexible":
+      requiredHours = 24;
+      break;
+    case "moderate":
+      requiredHours = 48;
+      break;
+    case "non_refundable":
+      requiredHours = null;
+      break;
+    default:
+      requiredHours = 24;
+  }
+
+  const refundEligible = requiredHours !== null && hoursUntilEvent >= requiredHours;
+  const refundPercentage = refundEligible ? 100 : 0;
+
+  let message: string;
+  if (policy === "non_refundable") {
+    message = "Secondo la policy dell'evento, non è previsto alcun rimborso.";
+  } else if (refundEligible) {
+    message = "Riceverai il rimborso nei prossimi giorni, secondo i tempi previsti dal tuo metodo di pagamento.";
+  } else {
+    message = `Il termine per il rimborso (${requiredHours}h prima dell'evento) è scaduto. Non è previsto alcun rimborso.`;
+  }
+
+  return {
+    policy,
+    policyLabel: policyDef.labelIt,
+    refundEligible,
+    refundPercentage,
+    hoursUntilEvent,
+    requiredHours,
+    message,
+  };
+};
