@@ -259,8 +259,6 @@ const Profile = () => {
         {/* Activity History Dashboard */}
         <ActivityHistory />
 
-        {/* Consensi & Privacy */}
-        <ConsentPrivacySection />
 
         {/* Help & Information */}
         <div className="mb-8 animate-fade-in">
