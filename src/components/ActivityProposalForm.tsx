@@ -72,7 +72,7 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
     if (!activityTitle.trim()) newErrors.title = true;
     if (!description.trim()) newErrors.description = true;
     if (!location.trim()) newErrors.location = true;
-    if (!category) newErrors.category = true;
+    if (!categoryId) newErrors.category = true;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
