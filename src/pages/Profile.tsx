@@ -66,9 +66,40 @@ const Profile = () => {
               {profile?.first_name} {profile?.last_name}
             </h1>
             <p className="text-sm font-body text-muted-foreground">{user.email}</p>
-            <p className="text-xs font-body text-secondary mt-0.5">
-              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} punti
-            </p>
+            <button
+              onClick={() => setShowPointsInfo(prev => !prev)}
+              className="text-xs font-body text-secondary mt-0.5 flex items-center gap-1 hover:opacity-80 transition-opacity active:scale-[0.97]"
+            >
+              <Star className="h-3 w-3" />{profile?.total_points || 0} punti
+              <Info className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </div>
+          <button onClick={() => setShowEditSheet(true)} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
+            <Edit3 className="h-5 w-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Points Info Popover */}
+        {showPointsInfo && (
+          <div className="mb-4 animate-fade-in">
+            <div className="relative p-4 rounded-2xl bg-card border border-border shadow-lg">
+              <button
+                onClick={() => setShowPointsInfo(false)}
+                className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <h3 className="font-display text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+                <Star className="h-4 w-4 text-secondary" /> Come funzionano i punti
+              </h3>
+              <div className="space-y-1.5 text-xs font-body text-muted-foreground leading-relaxed">
+                <p>I punti ti aiutano a salire di livello nella community e a sbloccare badge, missioni e ricompense.</p>
+                <p>Puoi guadagnare punti partecipando agli eventi, completando missioni e mantenendo il profilo aggiornato.</p>
+                <p className="font-semibold text-foreground">Più punti accumuli, più avanzi nella community.</p>
+              </div>
+            </div>
+          </div>
+        )}
           </div>
           <button onClick={() => setShowEditSheet(true)} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
             <Edit3 className="h-5 w-5 text-muted-foreground" />
