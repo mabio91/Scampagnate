@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Footprints, Mountain, Timer, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -12,10 +12,6 @@ export interface EventDiscount {
   code: string;
 }
 
-/**
- * Card status labels (user-facing):
- * Partecipato > Iscritto > Posto disponibile > In arrivo > In attesa > Aperto > Chiuso
- */
 type CardStatus = "attended" | "joined" | "spot_available" | "coming_soon" | "waitlist" | "open" | "closed";
 
 const STATUS_CONFIG: Record<CardStatus, { label: string; className: string }> = {
@@ -36,7 +32,7 @@ const STATUS_CONFIG: Record<CardStatus, { label: string; className: string }> = 
     className: "bg-amber-500/15 text-amber-600 border-amber-500/30",
   },
   waitlist: {
-    label: UI_LABELS.statusWaitlist,
+    label: "Waitlist",
     className: "bg-orange-500/15 text-orange-600 border-orange-500/30",
   },
   open: {
@@ -59,63 +55,16 @@ function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInf
   const isEventPast = event.status === "past" || event.status === "cancelled" || event.status === "closed";
   const isPastDate = new Date(event.date) < new Date(new Date().toDateString());
 
-  // Priority 1: Partecipato (past event + user attended)
   if ((isEventPast || isPastDate) && userReg?.checked_in) return "attended";
-
-  // Priority 2: Iscritto (user has confirmed registration)
-  if (userReg && (userReg.status === "registered" || userReg.status === "paid" || userReg.status === "attended")) {
-    return "joined";
-  }
-
-  // Priority 3: Posto disponibile (user in waitlist + spots available)
-  if (userReg?.status === "waitlist" && event.spots_taken < event.spots_total) {
-    return "spot_available";
-  }
-
-  // Priority 4: In arrivo (draft = registration not open yet)
+  if (userReg && (userReg.status === "registered" || userReg.status === "paid" || userReg.status === "attended")) return "joined";
+  if (userReg?.status === "waitlist" && event.spots_taken < event.spots_total) return "spot_available";
   if (event.status === "draft") return "coming_soon";
-
-  // Priority 5: In attesa (user in waitlist, no spots)
   if (userReg?.status === "waitlist") return "waitlist";
-
-  // Priority 6: Closed
   if (isEventPast || isPastDate) return "closed";
-
-  // Priority 7: Closed — full without user in waitlist, or past/closed
-  if (event.status === "full") return "closed";
-
-  // Priority 8: Open
+  // SOLD OUT: full event → show "Waitlist" status instead of "Chiuso"
+  if (event.status === "full" || event.spots_taken >= event.spots_total) return "waitlist";
   return "open";
 }
-
-type ImageBadge = "sold_out" | "promo" | null;
-
-function resolveImageBadge(event: EventWithDetails): ImageBadge {
-  if (event.spots_taken >= event.spots_total) return "sold_out";
-
-  const badges = (event as any).event_badges;
-  if (Array.isArray(badges)) {
-    const hasPromo = badges.some((b: any) =>
-      typeof b === "string"
-        ? b.toLowerCase().includes("promo")
-        : b?.label?.toLowerCase()?.includes("promo")
-    );
-    if (hasPromo) return "promo";
-  }
-
-  return null;
-}
-
-const IMAGE_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
-  sold_out: {
-    label: UI_LABELS.badgeSoldOut,
-    className: "bg-destructive text-destructive-foreground",
-  },
-  promo: {
-    label: UI_LABELS.badgePromo,
-    className: "bg-amber-500 text-white",
-  },
-};
 
 const EventCard = memo(({
   event,
@@ -134,20 +83,19 @@ const EventCard = memo(({
 }) => {
   const isAboveFold = index < 4;
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
+  const isSoldOut = event.spots_taken >= event.spots_total;
 
-  // Fill bar color
-  const fillColor = fillPercent > 80 ? "bg-destructive" : fillPercent > 50 ? "bg-warning" : "bg-success";
+  // Fill bar color: 0-49% green, 50-69% amber, 70%+ red
+  const fillColor = fillPercent >= 70 ? "bg-destructive" : fillPercent >= 50 ? "bg-warning" : "bg-success";
 
-  // Build registration info: use explicit userRegistration if provided, else fallback
   const regInfo: UserRegistrationInfo = userRegistration || (isUserRegistered ? { status: "registered" } : null);
-
-  // Status & badge resolution
   const cardStatus = useMemo(() => resolveCardStatus(event, regInfo), [event, regInfo]);
-  const imageBadge = useMemo(() => resolveImageBadge(event), [event]);
   const statusConfig = STATUS_CONFIG[cardStatus];
-  const badgeConfig = imageBadge ? IMAGE_BADGE_CONFIG[imageBadge] : null;
 
-  // Format date like "Sab, 28 Mar"
+  // Has promo for this user?
+  const hasPromo = !!discount;
+
+  // Format date: "Dom 5 apr"
   const formattedDate = useMemo(() => {
     const d = new Date(event.date);
     const today = new Date();
@@ -155,24 +103,17 @@ const EventCard = memo(({
     const eventDay = new Date(d);
     eventDay.setHours(0, 0, 0, 0);
     const diffDays = Math.round((eventDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
     if (diffDays === 0) return UI_LABELS.today;
     if (diffDays === 1) return UI_LABELS.tomorrow;
-
     return d.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })
       .replace(/^\w/, c => c.toUpperCase());
   }, [event.date]);
 
-  // Format time like "08:30"
   const formattedTime = event.time?.slice(0, 5) || "";
+  const locationLabel = (event as any).location_label || event.location;
 
-  // Stats line: distance, duration
-  const statsItems = useMemo(() => {
-    const items: string[] = [];
-    if (event.distance) items.push(event.distance);
-    if (event.duration) items.push(event.duration);
-    return items;
-  }, [event.distance, event.duration]);
+  // Urgency: ≥ 70% and not sold out
+  const showUrgency = fillPercent >= 70 && !isSoldOut;
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
@@ -180,7 +121,7 @@ const EventCard = memo(({
         <div className="flex gap-3 p-3 sm:p-4">
           {/* Left content */}
           <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-            {/* Date & time row + status */}
+            {/* Row 1: Date + Time | Status */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground text-[11px] sm:text-xs font-body min-w-0">
                 <span className="flex items-center gap-1 shrink-0">
@@ -197,41 +138,42 @@ const EventCard = memo(({
                   </>
                 )}
               </div>
-              {/* Status label */}
               <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold border ${statusConfig.className}`}>
                 {statusConfig.label}
               </span>
             </div>
 
-            {/* Title — up to 3 lines */}
+            {/* Row 2: Title — max 3 lines */}
             <h3 className="font-display text-[15px] sm:text-base font-bold text-foreground line-clamp-3 leading-snug">
               {event.title}
             </h3>
 
-            {/* Location */}
+            {/* Row 3: Location */}
             <div className="flex items-center gap-1 text-muted-foreground text-[11px] sm:text-xs font-body min-w-0">
               <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
-              <span className="truncate">{(event as any).location_label || event.location}</span>
-              {event.distance && (
-                <>
-                  <span className="text-muted-foreground/50 mx-0.5">|</span>
-                  <span className="shrink-0">{event.distance}</span>
-                </>
-              )}
+              <span className="truncate">{locationLabel}</span>
             </div>
 
-            {/* Category badge */}
-            {event.category && (
-              <div className="mt-0.5">
-                <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-border/60 bg-muted/30 text-[11px] sm:text-xs font-body font-medium text-foreground">
-                  {event.category.icon && <span className="text-xs sm:text-sm">{event.category.icon}</span>}
+            {/* Row 4: Category → Promo → Difficulty */}
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              {event.category && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/60 bg-muted/30 text-[10px] sm:text-[11px] font-body font-medium text-foreground">
+                  {event.category.icon && <span className="text-[11px]">{event.category.icon}</span>}
                   {event.category.name}
                 </span>
-              </div>
-            )}
+              )}
+              {hasPromo && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] sm:text-[11px] font-body font-semibold">
+                  Promo
+                </span>
+              )}
+              {event.difficulty && (
+                <DifficultyBadge difficulty={event.difficulty} className="text-[10px] sm:text-[11px] px-2 py-0.5" showLabel={true} />
+              )}
+            </div>
           </div>
 
-          {/* Right: thumbnail image with optional badge */}
+          {/* Right: thumbnail with SOLD OUT diagonal ribbon */}
           <div className="relative flex-shrink-0">
             <OptimizedImage
               src={event.image_url}
@@ -241,39 +183,58 @@ const EventCard = memo(({
               eager={isAboveFold}
               className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover bg-muted"
             />
-            {/* Image badge (max 1) */}
-            {badgeConfig && (
-              <span className={`absolute top-1 left-1 sm:top-1.5 sm:left-1.5 px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold font-body shadow-sm ${badgeConfig.className}`}>
-                {badgeConfig.label}
-              </span>
+            {/* Diagonal SOLD OUT patch on thumbnail */}
+            {isSoldOut && (
+              <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                <div className="absolute top-[10px] right-[-24px] w-[110px] text-center rotate-45 bg-destructive/85 text-destructive-foreground text-[8px] sm:text-[9px] font-bold font-body uppercase tracking-wider py-0.5 shadow-md">
+                  SOLD OUT
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Bottom section: attributes + participants */}
-        <div className="px-3 sm:px-4 pb-2.5 sm:pb-3 flex items-center justify-between gap-2">
-          {/* Attributes: difficulty, duration */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {event.difficulty && (
-              <DifficultyBadge difficulty={event.difficulty} className="bg-muted/50 text-foreground text-[10px] px-2 py-0.5" showLabel={false} />
+        {/* Row 5: Stats (left) + Spots/Urgency (right) */}
+        <div className="px-3 sm:px-4 pb-2.5 sm:pb-3 flex items-end justify-between gap-2">
+          {/* Left: trekking stats */}
+          <div className="flex items-center gap-3 text-[11px] sm:text-xs text-muted-foreground font-body">
+            {event.distance && (
+              <span className="flex items-center gap-1">
+                <Footprints className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                {event.distance}
+              </span>
             )}
-            {statsItems.length > 0 && (
-              <span className="text-[10px] sm:text-[11px] text-muted-foreground font-body">
-                {statsItems.join(" · ")}
+            {event.elevation && (
+              <span className="flex items-center gap-1">
+                <Mountain className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                {event.elevation}
+              </span>
+            )}
+            {event.duration && (
+              <span className="flex items-center gap-1">
+                <Timer className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                {event.duration}
               </span>
             )}
           </div>
 
-          {/* Participants bar */}
-          <div className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body shrink-0">
-            <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span>{event.spots_taken}/{event.spots_total}</span>
-            <div className="w-8 sm:w-10 h-1.5 rounded-full bg-muted ml-0.5 overflow-hidden">
+          {/* Right: spots + progress bar + urgency */}
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body">
+              <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span>{event.spots_taken}/{event.spots_total} posti</span>
+            </div>
+            <div className="w-16 sm:w-20 h-1.5 rounded-full bg-muted overflow-hidden">
               <div
-                className={`h-full rounded-full ${fillColor} transition-all duration-500 ease-out`}
-                style={{ width: `${fillPercent}%` }}
+                className={`h-full rounded-full ${isSoldOut ? "bg-destructive" : fillColor} transition-all duration-500 ease-out`}
+                style={{ width: `${isSoldOut ? 100 : fillPercent}%` }}
               />
             </div>
+            {showUrgency && (
+              <span className="text-[10px] font-body font-semibold text-destructive">
+                🔥 Ultimi posti!
+              </span>
+            )}
           </div>
         </div>
       </div>
