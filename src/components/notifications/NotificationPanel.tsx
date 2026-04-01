@@ -22,7 +22,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   info: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 
-const NotificationItem = ({ notification, onRead, onSelect }: { notification: Notification; onRead: () => void; onSelect: (n: Notification) => void }) => {
+const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notification; onRead: () => void; onSelect: (n: Notification) => void }>(({ notification, onRead, onSelect }, ref) => {
   const navigate = useNavigate();
   const markAsRead = useMarkAsRead();
 
