@@ -8,7 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { MapPin, Calendar, Users, MessageCircle, Archive, CheckCircle2, Clock } from "lucide-react";
+import { MapPin, Calendar, Users, Archive, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "In attesa", variant: "secondary" },
