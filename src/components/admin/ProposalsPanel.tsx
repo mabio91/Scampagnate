@@ -109,7 +109,19 @@ const ProposalsPanel = () => {
             )}
             {p.status === "reviewed" && (
               <div className="flex gap-2 pt-1">
-                <Button size="sm" className="text-xs h-7" onClick={() => updateStatus(p.id, "converted")}>
+                <Button size="sm" className="text-xs h-7" onClick={() => {
+                  const params = new URLSearchParams();
+                  if (p.activity_title) params.set("title", p.activity_title);
+                  if (p.description) params.set("description", p.description);
+                  if (p.location) params.set("location", p.location);
+                  if (p.location_label) params.set("location_label", p.location_label);
+                  if (p.suggested_date) params.set("date", p.suggested_date);
+                  if (p.suggested_time) params.set("time", p.suggested_time);
+                  if (p.max_participants) params.set("spots_total", String(p.max_participants));
+                  if (p.category_id) params.set("category_id", p.category_id);
+                  params.set("proposal_id", p.id);
+                  navigate(`/events/new?${params.toString()}`);
+                }}>
                   <CheckCircle2 className="h-3 w-3 mr-1" /> Converti in Evento
                 </Button>
                 <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => updateStatus(p.id, "archived")}>

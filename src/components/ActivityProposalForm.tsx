@@ -260,18 +260,18 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
                 Che tipo di esperienza è? <span className="text-destructive">*</span>
               </Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {CATEGORIES.map(cat => (
+                {(categories || []).map(cat => (
                   <button
-                    key={cat.value}
+                    key={cat.id}
                     type="button"
-                    onClick={() => { setCategory(cat.value); setErrors(p => ({ ...p, category: false })); }}
+                    onClick={() => { setCategoryId(cat.id); setErrors(p => ({ ...p, category: false })); }}
                     className={`px-3 py-1.5 rounded-full text-xs font-body font-medium transition-all active:scale-95 ${
-                      category === cat.value
+                      categoryId === cat.id
                         ? "bg-primary text-primary-foreground shadow-md"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    } ${errors.category && !category ? "ring-1 ring-destructive" : ""}`}
+                    } ${errors.category && !categoryId ? "ring-1 ring-destructive" : ""}`}
                   >
-                    {cat.label}
+                    {cat.icon} {cat.name}
                   </button>
                 ))}
               </div>
