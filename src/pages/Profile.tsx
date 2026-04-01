@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,12 +6,12 @@ import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift } from "lucide-react";
+import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
 import ProfileMissions from "@/components/profile/ProfileMissions";
-import ProfileReliability from "@/components/profile/ProfileReliability";
+
 import LevelAvatar from "@/components/LevelAvatar";
 import ReportIssueDialog from "@/components/ReportIssueDialog";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
@@ -27,6 +27,7 @@ const Profile = () => {
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [showProposalForm, setShowProposalForm] = useState(false);
+  const [showPointsInfo, setShowPointsInfo] = useState(false);
 
   if (!user) {
     return (
@@ -64,14 +65,40 @@ const Profile = () => {
               {profile?.first_name} {profile?.last_name}
             </h1>
             <p className="text-sm font-body text-muted-foreground">{user.email}</p>
-            <p className="text-xs font-body text-secondary mt-0.5">
-              <Star className="h-3 w-3 inline mr-1" />{profile?.total_points || 0} punti
-            </p>
+            <button
+              onClick={() => setShowPointsInfo(prev => !prev)}
+              className="text-xs font-body text-secondary mt-0.5 flex items-center gap-1 hover:opacity-80 transition-opacity active:scale-[0.97]"
+            >
+              <Star className="h-3 w-3" />{profile?.total_points || 0} punti
+              <Info className="h-3 w-3 text-muted-foreground" />
+            </button>
           </div>
           <button onClick={() => setShowEditSheet(true)} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
             <Edit3 className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
+
+        {/* Points Info Popover */}
+        {showPointsInfo && (
+          <div className="mb-4 animate-fade-in">
+            <div className="relative p-4 rounded-2xl bg-card border border-border shadow-lg">
+              <button
+                onClick={() => setShowPointsInfo(false)}
+                className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <h3 className="font-display text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+                <Star className="h-4 w-4 text-secondary" /> Come funzionano i punti
+              </h3>
+              <div className="space-y-1.5 text-xs font-body text-muted-foreground leading-relaxed">
+                <p>I punti ti aiutano a salire di livello nella community e a sbloccare badge, missioni e ricompense.</p>
+                <p>Puoi guadagnare punti partecipando agli eventi, completando missioni e mantenendo il profilo aggiornato.</p>
+                <p className="font-semibold text-foreground">Più punti accumuli, più avanzi nella community.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Profile Completeness */}
         <ProfileCompleteness
@@ -227,8 +254,6 @@ const Profile = () => {
         {/* Badges */}
         <ProfileBadges />
 
-        {/* Reliability */}
-        <ProfileReliability />
 
         {/* Activity History Dashboard */}
         <ActivityHistory />
