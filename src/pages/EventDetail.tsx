@@ -127,6 +127,8 @@ const EventDetail = () => {
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [equipmentOpen, setEquipmentOpen] = useState(false);
+  const [meetingPointsOpen, setMeetingPointsOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [showOrganizerContact, setShowOrganizerContact] = useState(false);
   const [showNavigationModal, setShowNavigationModal] = useState(false);
   const [navigationLocation, setNavigationLocation] = useState("");
