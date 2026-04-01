@@ -197,8 +197,8 @@ const ProfileMissions = () => {
       ) : (
         <EmptyState
           icon={Target}
-          title="Nessun obiettivo attivo"
-          description="I nuovi obiettivi saranno presto disponibili"
+          title="Nessuna missione attiva"
+          description="Le nuove missioni saranno presto disponibili"
           compact
         />
       )}
