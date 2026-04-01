@@ -749,18 +749,18 @@ const EventDetail = () => {
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-3" />
           </button>
-        </motion.div>
 
-        {/* Weather Forecast - right after Date & Location */}
-        <WeatherForecast 
-          location={event.location} 
-          date={event.date} 
-          overrideCondition={(event.additional_fields as any)?.weather_override_condition || null}
-          overrideTempMin={(event.additional_fields as any)?.weather_override_temp_min ?? null}
-          overrideTempMax={(event.additional_fields as any)?.weather_override_temp_max ?? null}
-          overrideTempAvg={(event.additional_fields as any)?.weather_override_temp_avg ?? null}
-          overrideTemp={(event.additional_fields as any)?.weather_override_temp ?? null}
-        />
+          {/* Weather inline row */}
+          <WeatherForecast 
+            location={event.location} 
+            date={event.date} 
+            overrideCondition={(event.additional_fields as any)?.weather_override_condition || null}
+            overrideTempMin={(event.additional_fields as any)?.weather_override_temp_min ?? null}
+            overrideTempMax={(event.additional_fields as any)?.weather_override_temp_max ?? null}
+            overrideTempAvg={(event.additional_fields as any)?.weather_override_temp_avg ?? null}
+            overrideTemp={(event.additional_fields as any)?.weather_override_temp ?? null}
+          />
+        </motion.div>
 
         {/* Event Fit Score — below date/location/weather */}
         {user && !accessData?.failedRules?.length && (
