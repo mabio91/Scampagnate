@@ -491,9 +491,13 @@ const EventDetail = () => {
     }
   };
 
-  const needsPayment = isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "paid" || event.payment_type === "deposit") && myRegistration?.payment_status !== "paid";
+   const needsPayment = isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "paid" || event.payment_type === "deposit") && myRegistration?.payment_status !== "paid";
   const isPendingApproval = isRegistered && myRegistration?.status === "pending_approval";
   const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
+
+  // Detect if a spot has become available for a waitlisted user
+  const remainingSpots = event.spots_total - event.spots_taken;
+  const waitlistSpotAvailable = isOnWaitlist && remainingSpots > 0;
 
   // CTA PRIORITY ORDER (from highest to lowest)
   // Check if user is blocked by hard access rules
@@ -506,9 +510,11 @@ const EventDetail = () => {
     if (event.status === "closed") return "Iscrizioni chiuse";
     if (isEventPast || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "Evento chiuso";
     if (!user) return "Partecipa";
+    // Waitlisted user with spot available → "Completa prenotazione"
+    if (waitlistSpotAvailable) return "Completa prenotazione";
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Registrato ✓";
     if (isPendingApproval) return "In attesa di approvazione";
-    if (isOnWaitlist) return "Lista d'attesa";
+    if (isOnWaitlist) return "In lista d'attesa";
     // Block CTA if user doesn't meet hard requirements (even if they have a pending payment)
     if (isBlockedByAccessRules) return "Requisiti non soddisfatti";
     if (needsPayment) return "Paga ora";
@@ -519,6 +525,7 @@ const EventDetail = () => {
   const getCTAClass = () => {
     if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "draft" || event.status === "past") return "bg-muted text-muted-foreground cursor-not-allowed";
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
+    if (waitlistSpotAvailable) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-green-600 text-white";
     if (isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30";
