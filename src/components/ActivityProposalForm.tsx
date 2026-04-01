@@ -216,6 +216,17 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
               {errors.location && <p className="text-xs text-destructive mt-1">Campo obbligatorio</p>}
             </div>
 
+            <div>
+              <Label className="font-body text-sm font-semibold">Nome del luogo (facoltativo)</Label>
+              <Input
+                value={locationLabel}
+                onChange={e => setLocationLabel(e.target.value)}
+                placeholder="es. Metro La Rustica"
+                className="mt-1"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Se vuoto, verrà mostrato l'indirizzo completo</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="font-body text-sm font-semibold">Data (opzionale)</Label>
