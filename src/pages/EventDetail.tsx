@@ -47,7 +47,7 @@ import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
-  const textRef = useRef<HTMLParagraphElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
   const [isClamped, setIsClamped] = useState(false);
 
   useEffect(() => {
@@ -61,12 +61,11 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="py-4 border-b border-border">
       <h3 className="font-display text-lg font-bold text-foreground mb-2">L'esperienza</h3>
       <div className="relative">
-        <p
+        <div
           ref={textRef}
-          className={`text-sm font-body text-muted-foreground leading-relaxed whitespace-pre-line ${!expanded ? "line-clamp-6" : ""}`}
-        >
-          {description}
-        </p>
+          className={`text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed whitespace-pre-line [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_del]:line-through ${!expanded ? "line-clamp-6" : ""}`}
+          dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, '<br/>') }}
+        />
         {isClamped && !expanded && (
           <>
             <div className="absolute bottom-6 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent pointer-events-none" />
@@ -330,8 +329,8 @@ const EventDetail = () => {
       return;
     }
 
-    // Fit score < 30 requires explicit confirmation
-    if (fitScore && !fitScore.hidden && !fitScore.profileIncomplete && fitScore.score < 30) {
+    // Fit score < 60 requires explicit confirmation
+    if (fitScore && !fitScore.hidden && !fitScore.profileIncomplete && fitScore.score < 60) {
       setShowFitScoreWarning(true);
       return;
     }
@@ -1036,32 +1035,7 @@ const EventDetail = () => {
           </motion.div>
         )}
 
-        {/* 11. PAYMENT SECTION (SIMPLIFIED) */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="py-4 border-b border-border">
-          <h3 className="font-display text-lg font-bold text-foreground mb-3">Prezzo</h3>
-          <div className="flex items-center gap-3">
-            <p className="text-2xl font-display font-bold text-foreground">{getPriceDisplay()}</p>
-            {getCancellationLabel() && (
-              <span className="text-xs font-body text-muted-foreground px-2 py-1 rounded-full bg-muted">
-                {getCancellationLabel()}
-              </span>
-            )}
-          </div>
-          {/* Optional included items */}
-          {getIncludedItems().length > 0 && (
-            <ul className="mt-2 space-y-1">
-              {getIncludedItems().map((item: string, idx: number) => (
-                <li key={idx} className="text-xs font-body text-muted-foreground flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          )}
-          {event.payment_type === "location" && Number(event.price) > 0 && (
-            <p className="text-xs font-body text-muted-foreground mt-1">Da saldare in loco</p>
-          )}
-        </motion.div>
+        {/* Price section removed — price only shown in bottom sticky bar */}
 
         {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
@@ -1508,37 +1482,37 @@ const EventDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Fit Score Warning Dialog (score < 30) */}
+      {/* Fit Score Warning Dialog (score < 60) */}
       <Dialog open={showFitScoreWarning} onOpenChange={setShowFitScoreWarning}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              Attenzione
+            <DialogTitle className="font-display flex items-center gap-2 text-foreground">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Sei sicuro sia l'evento giusto per te?
             </DialogTitle>
-            <DialogDescription className="font-body text-sm leading-relaxed">
-              La tua compatibilità con questo evento è molto bassa ({fitScore.score}%). 
-              Questo evento potrebbe essere significativamente troppo impegnativo per il tuo livello attuale.
-              Sei sicuro di voler procedere con l'iscrizione?
-            </DialogDescription>
           </DialogHeader>
+          <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+            <p className="font-body text-sm leading-relaxed text-muted-foreground">
+              Questo evento è più impegnativo rispetto al tuo livello attuale.
+              Richiede buona preparazione fisica ed esperienza.
+            </p>
+          </div>
           <div className="flex flex-col gap-2 mt-2">
             <Button
               onClick={() => {
                 setShowFitScoreWarning(false);
                 setShowRegisterDialog(true);
               }}
-              variant="destructive"
               className="w-full font-body h-12"
             >
-              Procedi comunque
+              👉 Partecipa comunque
             </Button>
             <Button
               variant="ghost"
               className="w-full font-body text-muted-foreground text-xs h-10"
               onClick={() => setShowFitScoreWarning(false)}
             >
-              Annulla
+              👉 Chiudi
             </Button>
           </div>
         </DialogContent>
