@@ -58,10 +58,11 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
     setActivityTitle("");
     setDescription("");
     setLocation("");
+    setLocationLabel("");
     setSuggestedDate("");
     setSuggestedTime("");
     setMaxParticipants("");
-    setCategory("");
+    setCategoryId("");
     setSubmitted(false);
     setErrors({});
   };
