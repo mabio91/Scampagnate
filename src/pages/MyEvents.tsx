@@ -209,22 +209,15 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   if (!event) return null;
 
+  // Resolve status using centralized logic
+  const resolvedStatus = resolveMyEventStatus(registration, !!isPast);
+  const statusLabel = statusLabels[resolvedStatus] || resolvedStatus;
+  const statusStyle = statusStyles[resolvedStatus] || statusStyles.iscritto;
+
   // Waitlist spot availability detection
   const isWaitlisted = registration.status === "waitlist";
-  const hasSpotAvailable = isWaitlisted && event.spots_total > 0 && event.spots_taken < event.spots_total;
+  const hasSpotAvailable = resolvedStatus === "posto_disponibile";
   const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
-
-  // Dynamic status display
-  let displayStatus = isPast ? "past" : registration.status;
-  let statusLabel = t(statusLabelKeys[displayStatus] as any) || displayStatus;
-  let statusStyle = statusStyles[displayStatus] || statusStyles.registered;
-
-  // Override for waitlist with spot available
-  if (hasSpotAvailable && !isPast) {
-    displayStatus = "spot_available";
-    statusLabel = "Posto disponibile";
-    statusStyle = "bg-success/10 text-success";
-  }
 
   const meetingPoint = registration.meeting_point;
 
