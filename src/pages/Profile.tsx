@@ -100,11 +100,6 @@ const Profile = () => {
             </div>
           </div>
         )}
-          </div>
-          <button onClick={() => setShowEditSheet(true)} className="p-2 rounded-full hover:bg-muted transition-all duration-200 active:scale-90">
-            <Edit3 className="h-5 w-5 text-muted-foreground" />
-          </button>
-        </div>
 
         {/* Profile Completeness */}
         <ProfileCompleteness
