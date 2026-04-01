@@ -209,7 +209,7 @@ const ActivityProposalForm = ({ open, onOpenChange }: ActivityProposalFormProps)
               <LocationAutocomplete
                 value={location}
                 onChange={(val) => { setLocation(val); setErrors(p => ({ ...p, location: false })); }}
-                placeholder="Città o luogo (es. Monte Soratte, Roma)"
+                placeholder="Cerca luogo…"
                 error={errors.location}
               />
               {errors.location && <p className="text-xs text-destructive mt-1">Campo obbligatorio</p>}
