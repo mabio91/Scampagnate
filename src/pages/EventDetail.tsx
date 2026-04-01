@@ -612,7 +612,7 @@ const EventDetail = () => {
     return items;
   };
 
-  const remainingSpots = event.spots_total - event.spots_taken;
+  // remainingSpots already computed above
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-36">
