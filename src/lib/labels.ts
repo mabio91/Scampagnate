@@ -27,12 +27,14 @@ export const UI_LABELS = {
   cancelled: "Cancellato",
   past: "Passato",
 
-  // Card statuses
+  // Card statuses (user-facing labels)
   statusOpen: "Aperto",
-  statusWaitlist: "Waitlist",
+  statusWaitlist: "In attesa",
+  statusSpotAvailable: "Posto disponibile",
   statusComingSoon: "In arrivo",
   statusJoined: "Iscritto",
   statusClosed: "Chiuso",
+  statusAttended: "Partecipato",
 
   // Image badges
   badgeSoldOut: "Sold Out",
@@ -81,4 +83,7 @@ export const UI_LABELS = {
   // Generic
   all: "Tutti",
   participants: "Partecipanti",
+
+  // Registration not open yet
+  registrationNotOpenYet: "Le prenotazioni apriranno a breve.\nTorna presto per assicurarti un posto.",
 } as const;

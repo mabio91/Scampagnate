@@ -12,12 +12,24 @@ export interface EventDiscount {
   code: string;
 }
 
-type CardStatus = "joined" | "coming_soon" | "waitlist" | "open" | "closed";
+/**
+ * Card status labels (user-facing):
+ * Partecipato > Iscritto > Posto disponibile > In arrivo > In attesa > Aperto > Chiuso
+ */
+type CardStatus = "attended" | "joined" | "spot_available" | "coming_soon" | "waitlist" | "open" | "closed";
 
 const STATUS_CONFIG: Record<CardStatus, { label: string; className: string }> = {
+  attended: {
+    label: UI_LABELS.statusAttended,
+    className: "bg-primary/15 text-primary border-primary/30",
+  },
   joined: {
     label: UI_LABELS.statusJoined,
     className: "bg-primary/15 text-primary border-primary/30",
+  },
+  spot_available: {
+    label: UI_LABELS.statusSpotAvailable,
+    className: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
   },
   coming_soon: {
     label: UI_LABELS.statusComingSoon,
@@ -37,31 +49,50 @@ const STATUS_CONFIG: Record<CardStatus, { label: string; className: string }> = 
   },
 };
 
-function resolveCardStatus(event: EventWithDetails, isUserRegistered: boolean): CardStatus {
-  // Priority 1: Joined
-  if (isUserRegistered) return "joined";
+export type UserRegistrationInfo = {
+  status: string;
+  checked_in?: boolean;
+  payment_status?: string | null;
+} | null;
 
-  // Priority 2: Coming soon (draft = not yet open for registration)
+function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInfo): CardStatus {
+  const isEventPast = event.status === "past" || event.status === "cancelled" || event.status === "closed";
+  const isPastDate = new Date(event.date) < new Date(new Date().toDateString());
+
+  // Priority 1: Partecipato (past event + user attended)
+  if ((isEventPast || isPastDate) && userReg?.checked_in) return "attended";
+
+  // Priority 2: Iscritto (user has confirmed registration)
+  if (userReg && (userReg.status === "registered" || userReg.status === "paid" || userReg.status === "attended")) {
+    return "joined";
+  }
+
+  // Priority 3: Posto disponibile (user in waitlist + spots available)
+  if (userReg?.status === "waitlist" && event.spots_taken < event.spots_total) {
+    return "spot_available";
+  }
+
+  // Priority 4: In arrivo (draft = registration not open yet)
   if (event.status === "draft") return "coming_soon";
 
-  // Priority 3: Closed (past, cancelled, closed)
-  if (event.status === "past" || event.status === "cancelled" || event.status === "closed") return "closed";
+  // Priority 5: In attesa (user in waitlist, no spots)
+  if (userReg?.status === "waitlist") return "waitlist";
 
-  // Priority 4: Waitlist (full but still accepting waitlist)
+  // Priority 6: Closed
+  if (isEventPast || isPastDate) return "closed";
+
+  // Priority 7: Waitlist label for non-registered users on full events
   if (event.status === "full") return "waitlist";
 
-  // Priority 5: Open
+  // Priority 8: Open
   return "open";
 }
 
 type ImageBadge = "sold_out" | "promo" | null;
 
 function resolveImageBadge(event: EventWithDetails): ImageBadge {
-  // Priority 1: Sold Out (spots_taken >= spots_total)
   if (event.spots_taken >= event.spots_total) return "sold_out";
 
-  // Priority 2: Promo (check event_badges or payment_type free as promo indicator)
-  // We check additional_fields or event for a promo flag
   const badges = (event as any).event_badges;
   if (Array.isArray(badges)) {
     const hasPromo = badges.some((b: any) =>
@@ -92,12 +123,14 @@ const EventCard = memo(({
   discount,
   showCompatibility,
   isUserRegistered = false,
+  userRegistration = null,
 }: {
   event: EventWithDetails;
   index: number;
   discount?: EventDiscount | null;
   showCompatibility?: boolean;
   isUserRegistered?: boolean;
+  userRegistration?: UserRegistrationInfo;
 }) => {
   const isAboveFold = index < 4;
   const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
@@ -105,8 +138,11 @@ const EventCard = memo(({
   // Fill bar color
   const fillColor = fillPercent > 80 ? "bg-destructive" : fillPercent > 50 ? "bg-warning" : "bg-success";
 
+  // Build registration info: use explicit userRegistration if provided, else fallback
+  const regInfo: UserRegistrationInfo = userRegistration || (isUserRegistered ? { status: "registered" } : null);
+
   // Status & badge resolution
-  const cardStatus = useMemo(() => resolveCardStatus(event, isUserRegistered), [event, isUserRegistered]);
+  const cardStatus = useMemo(() => resolveCardStatus(event, regInfo), [event, regInfo]);
   const imageBadge = useMemo(() => resolveImageBadge(event), [event]);
   const statusConfig = STATUS_CONFIG[cardStatus];
   const badgeConfig = imageBadge ? IMAGE_BADGE_CONFIG[imageBadge] : null;
