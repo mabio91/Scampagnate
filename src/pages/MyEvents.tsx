@@ -126,10 +126,10 @@ const MyEvents = () => {
   }
 
   const now = new Date();
+  // Only show active registrations (not cancelled) — spec: cancelled events disappear from My Events
   const active = registrations?.filter((r: any) => r.status !== "cancelled") || [];
   const upcoming = active.filter((r: any) => new Date(r.events?.date) >= now);
   const past = active.filter((r: any) => new Date(r.events?.date) < now);
-  const cancelled = registrations?.filter((r: any) => r.status === "cancelled") || [];
 
   return (
     <>
@@ -157,16 +157,6 @@ const MyEvents = () => {
                 {upcoming.map((r: any) => (
                   <EventRegistrationCard key={r.id} registration={r} showActions />
                 ))}
-              </div>
-            )}
-            {cancelled.length > 0 && (
-              <div className="mt-6">
-                <p className="text-xs font-body font-semibold text-muted-foreground mb-2">{t("cancelled")} ({cancelled.length})</p>
-                <div className="space-y-2">
-                  {cancelled.map((r: any) => (
-                    <EventRegistrationCard key={r.id} registration={r} />
-                  ))}
-                </div>
               </div>
             )}
           </TabsContent>
