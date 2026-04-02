@@ -7,6 +7,7 @@ interface SearchContextType {
   searchOpen: boolean;
   toggleSearch: () => void;
   openSearch: () => void;
+  closeSearch: () => void;
   // Persisted filter state
   selectedCategory: string | null;
   setSelectedCategory: (cat: string | null) => void;
@@ -28,6 +29,7 @@ const SearchContext = createContext<SearchContextType>({
   searchOpen: false,
   toggleSearch: () => {},
   openSearch: () => {},
+  closeSearch: () => {},
   selectedCategory: null,
   setSelectedCategory: () => {},
   searchQuery: "",
@@ -75,6 +77,7 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
       searchOpen,
       toggleSearch: () => setSearchOpen(p => !p),
       openSearch: () => setSearchOpen(true),
+      closeSearch: () => setSearchOpen(false),
       selectedCategory,
       setSelectedCategory,
       searchQuery,

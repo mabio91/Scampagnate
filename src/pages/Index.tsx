@@ -48,9 +48,17 @@ const Index = () => {
     quickFilters, toggleQuickFilter,
     hasActiveFilters,
     clearAllFilters,
+    closeSearch,
   } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { profile, user } = useAuth();
+
+  // Reset search status on unmount
+  useEffect(() => {
+    return () => {
+      closeSearch();
+    };
+  }, [closeSearch]);
 
   // Fetch user's active registrations for "Iscritto" status
   const { data: userRegisteredEventIds } = useQuery({
