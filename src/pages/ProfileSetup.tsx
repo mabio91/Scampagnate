@@ -338,9 +338,9 @@ const ProfileSetup = () => {
             <motion.div
               key={piece.id}
               aria-hidden="true"
-              initial={{ y: -20, opacity: 0, rotate: 0 }}
+              initial={{ y: "-5%", opacity: 0, rotate: 0 }}
               animate={{
-                y: ["0vh", "105vh"],
+                y: ["-5%", "110vh"],
                 x: piece.drift,
                 opacity: [0, 1, 1, 0],
                 rotate: piece.rotate,
@@ -354,7 +354,7 @@ const ProfileSetup = () => {
               className="absolute rounded-full"
               style={{
                 left: `${piece.left}%`,
-                top: -20,
+                top: 0,
                 width: piece.size,
                 height: piece.size,
                 backgroundColor: piece.color,
