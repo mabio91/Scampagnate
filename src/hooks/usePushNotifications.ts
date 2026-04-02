@@ -42,8 +42,8 @@ async function initOneSignal() {
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
-        serviceWorkerParam: { scope: '/push/onesignal/' },
-        serviceWorkerPath: 'push/onesignal/OneSignalSDKWorker.js',
+        serviceWorkerPath: 'sw.js',
+        serviceWorkerParam: { scope: '/' },
       });
 
       onesignalInitialized = true;
