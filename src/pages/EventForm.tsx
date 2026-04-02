@@ -682,7 +682,7 @@ const EventForm = () => {
             </div>
             <div>
               <Label htmlFor="description">Descrizione</Label>
-              <Textarea id="description" value={form.description} onChange={(e) => updateForm("description", e.target.value)} placeholder="Descrivi l'evento..." rows={4} />
+              <RichTextarea id="description" value={form.description} onChange={(val) => updateForm("description", val)} placeholder="Descrivi l'evento..." rows={4} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
