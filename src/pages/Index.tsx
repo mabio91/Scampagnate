@@ -27,14 +27,14 @@ import { UI_LABELS } from "@/lib/labels";
 
 // Interest-to-keyword map for personalized recommendations
 const INTEREST_KEYWORDS: Record<string, string[]> = {
-  "Trekking e camminate": ["trekking", "outdoor", "escursion"],
-  "Aperitivi e tramonti": ["aperitiv", "tramont", "social"],
-  "Cene e momenti conviviali": ["cena", "convivial", "social"],
-  "Eventi social": ["social", "evento"],
-  "Esperienze outdoor particolari": ["outdoor", "esperien", "special"],
-  "Sport e movimento": ["sport", "movimento", "fitness"],
-  "Eventi serali": ["seral", "nott", "sera"],
-  "Avventura e sfida": ["avventur", "sfida", "outdoor", "trekking"],
+  trekking: ["trekking", "outdoor", "escursion"],
+  aperitivi: ["aperitiv", "tramont", "social"],
+  cene: ["cena", "convivial", "social"],
+  social: ["social", "evento"],
+  outdoor: ["outdoor", "esperien", "special"],
+  sport: ["sport", "movimento", "fitness"],
+  serali: ["seral", "nott", "sera"],
+  avventura: ["avventur", "sfida", "outdoor", "trekking"],
 };
 
 const Index = () => {
