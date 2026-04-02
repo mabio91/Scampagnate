@@ -683,6 +683,7 @@ const EventDetail = () => {
   };
 
   // remainingSpots already computed above
+  const activeParticipantCount = participants ? participants.length : (event.spots_taken || 0);
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-36">
@@ -871,7 +872,7 @@ const EventDetail = () => {
 
             {/* Participants (right) */}
             <div className="flex-shrink-0">
-              <p className="text-xs font-body font-semibold text-foreground mb-2">Chi c'è? ({event.spots_taken})</p>
+              <p className="text-xs font-body font-semibold text-foreground mb-2">Chi c'è? ({activeParticipantCount})</p>
               <button
                 onClick={() => navigate(`/event/${event.id}/participants`)}
                 className="flex items-center"
@@ -882,7 +883,7 @@ const EventDetail = () => {
                     : publicAvatars && publicAvatars.length > 0
                     ? (publicAvatars as any[]).slice(0, 3).map((p: any) => ({ id: p.user_id, avatar_url: p.avatar_url, first_name: p.first_name }))
                     : [];
-                  const totalCount = participants && participants.length > 0 ? participants.length : event.spots_taken;
+                  const totalCount = activeParticipantCount;
 
                   return avatarList.length > 0 ? (
                     <div className="flex items-center">
@@ -907,7 +908,7 @@ const EventDetail = () => {
                     </div>
                   ) : (
                     <span className="text-xs font-body text-muted-foreground">
-                      {event.spots_taken > 0 ? `${event.spots_taken} iscritti` : "Nessun iscritto"}
+                      {activeParticipantCount > 0 ? `${activeParticipantCount} iscritti` : "Nessun iscritto"}
                     </span>
                   );
                 })()}
@@ -942,7 +943,7 @@ const EventDetail = () => {
             )}
             <div className="text-center">
               <Users className="h-5 w-5 mx-auto text-secondary mb-1" />
-              <p className="text-sm font-body font-bold text-foreground">{event.spots_taken}/{event.spots_total}</p>
+              <p className="text-sm font-body font-bold text-foreground">{activeParticipantCount}/{event.spots_total}</p>
               <p className="text-[10px] text-muted-foreground font-body">{t("spots")}</p>
             </div>
           </motion.div>

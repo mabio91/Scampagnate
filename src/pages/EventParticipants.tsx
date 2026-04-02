@@ -308,7 +308,7 @@ const EventParticipants = () => {
 
   const accessRules = (event?.access_rules as AccessRulesConfig | null)?.rules || [];
 
-  const totalParticipants = participants?.length || event?.spots_taken || 0;
+  const totalParticipants = participants ? participants.length : (event?.spots_taken || 0);
 
   // --- Loading ---
   if (eventLoading || participantsLoading) {
@@ -506,6 +506,8 @@ const EventParticipants = () => {
                       fitScore={fitScore}
                       reliabilityLabel={getReliabilityLabel(p.user_id)}
                       completedEvents={getCompletedEvents(p.user_id)}
+                      isManual={p.is_manual}
+                      manualLevel={p.manual_level}
                     />
                   );
                 }
@@ -516,6 +518,8 @@ const EventParticipants = () => {
                     avatarUrl={p.profiles?.avatar_url}
                     firstName={p.profiles?.first_name}
                     points={points}
+                    isManual={p.is_manual}
+                    manualLevel={p.manual_level}
                   />
                 );
               })}
@@ -537,18 +541,35 @@ const ParticipantRowWithLevel = ({
   avatarUrl,
   firstName,
   points,
+  isManual,
+  manualLevel,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
   points: number;
+  isManual?: boolean;
+  manualLevel?: string | null;
 }) => {
-  const { data: level } = useCommunityLevel(points);
+  const { data: levelData } = useCommunityLevel(points);
+  
+  let finalLevel = levelData;
+  if (isManual && manualLevel) {
+    const levelNameMap: Record<string, string> = { "beginner": "Principiante", "intermediate": "Intermedio", "advanced": "Esperto" };
+    finalLevel = {
+      level_number: 0,
+      name: levelNameMap[manualLevel] || manualLevel,
+      icon: "Star",
+      color: "#64748b",
+      min_points: 0
+    };
+  }
+
   return (
     <ParticipantRow
       avatarUrl={avatarUrl}
       firstName={firstName}
       points={points}
-      level={level}
+      level={finalLevel}
     />
   );
 };
@@ -561,6 +582,8 @@ const AdminParticipantRowWithLevel = ({
   fitScore,
   reliabilityLabel,
   completedEvents,
+  isManual,
+  manualLevel,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -568,14 +591,29 @@ const AdminParticipantRowWithLevel = ({
   fitScore: FitScoreResult | null;
   reliabilityLabel: string;
   completedEvents: number;
+  isManual?: boolean;
+  manualLevel?: string | null;
 }) => {
-  const { data: level } = useCommunityLevel(points);
+  const { data: levelData } = useCommunityLevel(points);
+
+  let finalLevel = levelData;
+  if (isManual && manualLevel) {
+    const levelNameMap: Record<string, string> = { "beginner": "Principiante", "intermediate": "Intermedio", "advanced": "Esperto" };
+    finalLevel = {
+      level_number: 0,
+      name: levelNameMap[manualLevel] || manualLevel,
+      icon: "Star",
+      color: "#64748b",
+      min_points: 0
+    };
+  }
+
   return (
     <AdminParticipantRow
       avatarUrl={avatarUrl}
       firstName={firstName}
       points={points}
-      level={level}
+      level={finalLevel}
       fitScore={fitScore}
       reliabilityLabel={reliabilityLabel}
       completedEvents={completedEvents}

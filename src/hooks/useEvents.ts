@@ -144,11 +144,32 @@ export const useEventParticipants = (eventId: string) => {
         }
       }
 
-      return (data || []).map((r: any) => ({
-        ...r,
-        profiles: profilesMap[r.user_id] || { first_name: "?", avatar_url: null },
-        badges: badgesMap[r.user_id] || [],
-      }));
+      return (data || []).map((r: any) => {
+        const isManual = r.sport_level?.startsWith("manual:");
+        let manualName: string | null = null;
+        let manualLevel: string | null = null;
+
+        if (isManual) {
+          const payload = r.sport_level.replace("manual:", "");
+          // Format: "Name" or "Name|level:beginner"
+          const parts = payload.split("|");
+          manualName = parts[0] || "?";
+          const levelPart = parts.find((p: string) => p.startsWith("level:"));
+          if (levelPart) {
+            manualLevel = levelPart.replace("level:", "");
+          }
+        }
+
+        return {
+          ...r,
+          profiles: isManual
+            ? { first_name: manualName, avatar_url: null, last_name_initial: null }
+            : profilesMap[r.user_id] || { first_name: "?", avatar_url: null },
+          badges: isManual ? [] : badgesMap[r.user_id] || [],
+          is_manual: isManual,
+          manual_level: manualLevel,
+        };
+      });
     },
     enabled: !!eventId,
   });
