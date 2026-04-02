@@ -18,6 +18,11 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
   try {
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -46,6 +51,20 @@ serve(async (req) => {
 
     const { eventId } = await req.json();
 
+    // Fetch membership fee from platform_settings
+    let membershipFeeEuros = 1; // fallback changed to 1 as requested
+    const { data: feeSetting } = await supabaseAdmin
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "membership_fee")
+      .single();
+    
+    if (feeSetting?.value) {
+      const parsed = Number(feeSetting.value);
+      if (!isNaN(parsed) && parsed >= 0) membershipFeeEuros = parsed;
+    }
+    const membershipFeeCents = Math.round(membershipFeeEuros * 100);
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
@@ -64,7 +83,14 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: "price_1TFUUY0xDIA9nImZF9nt1Xq1",
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: "Tessera Associativa ASD Scampagnate",
+              description: "Quota associativa annuale - valida fino al 31 dicembre",
+            },
+            unit_amount: membershipFeeCents,
+          },
           quantity: 1,
         },
       ],
