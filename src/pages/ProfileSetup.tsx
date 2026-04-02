@@ -119,7 +119,7 @@ const successConfettiPieces = Array.from({ length: 36 }, (_, index) => ({
   left: 2 + ((index * 7 + 3) % 96),
   delay: (index % 8) * 0.35,
   duration: 3.5 + (index % 5) * 0.6,
-  drift: (index % 2 === 0 ? 1 : -1) * (10 + (index % 4) * 8),
+  drift: [`${(index % 2 === 0 ? -1 : 1) * 5}px`, `${(index % 2 === 0 ? 1 : -1) * (10 + (index % 4) * 8)}px`] as string[],
   rotate: (index % 2 === 0 ? 1 : -1) * (120 + (index % 3) * 60),
   size: 7 + (index % 4) * 3,
   color: successParticleColors[index % successParticleColors.length],
