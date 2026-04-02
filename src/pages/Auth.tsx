@@ -26,7 +26,7 @@ const ConsentCheckbox = ({
   required?: boolean;
 }) => (
   <motion.div
-    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer select-none transition-colors duration-200 ${
+    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer select-none transition-colors duration-200 ${
       checked
         ? "border-success/50 bg-success/5"
         : error
@@ -38,7 +38,7 @@ const ConsentCheckbox = ({
     transition={{ duration: 0.2, ease: "easeOut" }}
   >
     <motion.div
-      className={`flex items-center justify-center h-5 w-5 rounded border-2 shrink-0 mt-0.5 transition-colors duration-200 ${
+      className={`flex items-center justify-center h-5 w-5 rounded border-2 shrink-0 transition-colors duration-200 ${
         checked
           ? "bg-success border-success"
           : error

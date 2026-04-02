@@ -9,6 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, Loader2, Info, Check, ChevronLeft, ArrowRight, PartyPopper } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Particles, { initParticlesEngine } from "@tsparticles/react";
+import { loadFull } from "tsparticles";
 
 const calculateExperienceGrade = (trekking: string, activity: string) => {
   const map: Record<string, Record<string, number>> = {
@@ -32,11 +34,10 @@ const SelectionCard = ({ selected, onClick, emoji, label, description }: Selecti
     type="button"
     whileTap={{ scale: 0.97 }}
     onClick={onClick}
-    className={`relative flex items-center gap-3 w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${
-      selected
-        ? "border-primary bg-primary/10 shadow-sm"
-        : "border-border bg-card hover:border-primary/30"
-    }`}
+    className={`relative flex items-center gap-3 w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${selected
+      ? "border-primary bg-primary/10 shadow-sm"
+      : "border-border bg-card hover:border-primary/30"
+      }`}
   >
     <span className="text-xl shrink-0">{emoji}</span>
     <div className="flex-1 min-w-0">
@@ -72,13 +73,12 @@ const InterestCard = ({ selected, onClick, emoji, label, disabled }: InterestCar
     whileTap={{ scale: 0.95 }}
     onClick={onClick}
     disabled={disabled && !selected}
-    className={`relative flex flex-col items-center justify-center text-center gap-1.5 px-3 py-3.5 rounded-xl border-2 transition-all duration-200 ${
-      selected
-        ? "border-primary bg-primary/10"
-        : disabled
+    className={`relative flex flex-col items-center justify-center text-center gap-1.5 px-3 py-3.5 rounded-xl border-2 transition-all duration-200 ${selected
+      ? "border-primary bg-primary/10"
+      : disabled
         ? "border-border bg-muted opacity-50 cursor-not-allowed"
         : "border-border bg-card hover:border-primary/30"
-    }`}
+      }`}
   >
     <span className="text-lg">{emoji}</span>
     <span className={`text-xs font-medium leading-tight w-full text-center ${selected ? "text-primary" : "text-foreground"}`}>{label}</span>
@@ -106,35 +106,45 @@ const slideVariants = {
   }),
 };
 
-const successParticleColors = [
-  "hsl(var(--primary))",
-  "hsl(var(--secondary))",
-  "hsl(var(--accent))",
-  "hsl(var(--gold))",
-  "hsl(var(--destructive))",
+const beautifulConfettiColors = [
+  "#FF6B6B", // Vibrant Soft Coral
+  "#4ECDC4", // Electric Teal
+  "#FFE66D", // Champagne Yellow
+  "#FF9F1C", // Vibrant Orange
+  "#CB9CF2", // Bright Lavender
+  "#FF99C8", // Bubblegum Pink
+  "#A3CEF1", // Sky Blue
+  "#80ED99", // Vivid Mint
 ];
 
-const successConfettiPieces = Array.from({ length: 36 }, (_, index) => ({
-  id: index,
-  left: 2 + ((index * 7 + 3) % 96),
-  delay: (index % 8) * 0.35,
-  duration: 3.5 + (index % 5) * 0.6,
-  drift: [`${(index % 2 === 0 ? -1 : 1) * 5}px`, `${(index % 2 === 0 ? 1 : -1) * (10 + (index % 4) * 8)}px`] as string[],
-  rotate: (index % 2 === 0 ? 1 : -1) * (120 + (index % 3) * 60),
-  size: 7 + (index % 4) * 3,
-  color: successParticleColors[index % successParticleColors.length],
-}));
+const successConfettiPieces = Array.from({ length: 32 }, (_, index) => {
+  const delay = (index % 8) * 1.2;
+  const duration = 7 + (index % 5) * 2;
+  const left = 3 + ((index * 23) % 94);
+  const driftX = (index % 2 === 0 ? 1 : -1) * (15 + (index % 4) * 12);
 
-const successBurstPieces = Array.from({ length: 10 }, (_, index) => {
-  const angle = (Math.PI * 2 * index) / 10;
-  const radius = 36 + (index % 3) * 10;
+  return {
+    id: index,
+    left,
+    delay,
+    duration,
+    drift: [`0px`, `${driftX}px`, `${-driftX}px`, `0px`],
+    rotate: (index % 2 === 0 ? 1 : -1) * (360 + (index % 4) * 180),
+    size: 5 + (index % 4) * 2.5,
+    color: beautifulConfettiColors[index % beautifulConfettiColors.length],
+  };
+});
+
+const successBurstPieces = Array.from({ length: 12 }, (_, index) => {
+  const angle = (Math.PI * 2 * index) / 12;
+  const radius = 45 + (index % 3) * 15;
 
   return {
     id: index,
     x: Math.cos(angle) * radius,
     y: Math.sin(angle) * radius,
     delay: index * 0.08,
-    color: successParticleColors[index % successParticleColors.length],
+    color: beautifulConfettiColors[index % beautifulConfettiColors.length],
   };
 });
 
@@ -160,6 +170,15 @@ const ProfileSetup = () => {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [initParticles, setInitParticles] = useState(false);
+
+  useEffect(() => {
+    initParticlesEngine(async (engine) => {
+      await loadFull(engine);
+    }).then(() => {
+      setInitParticles(true);
+    });
+  }, []);
 
   // Step 1 (only in first-time mode)
   const [phone, setPhone] = useState(profile?.phone || "");
@@ -327,41 +346,64 @@ const ProfileSetup = () => {
     return (
       <div className="relative min-h-screen min-h-[100dvh] overflow-hidden bg-background px-4 flex flex-col items-center justify-center isolate">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <motion.div
-            aria-hidden="true"
-            animate={{ scale: [0.9, 1.1, 0.95], opacity: [0.2, 0.35, 0.2] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
-          />
-
-          {successConfettiPieces.map((piece) => (
-            <motion.div
-              key={piece.id}
-              aria-hidden="true"
-              initial={{ y: "-5%", opacity: 0, rotate: 0 }}
-              animate={{
-                y: ["-5%", "110vh"],
-                x: piece.drift,
-                opacity: [0, 1, 1, 0],
-                rotate: piece.rotate,
-              }}
-              transition={{
-                duration: piece.duration,
-                delay: piece.delay,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              className="absolute rounded-full"
-              style={{
-                left: `${piece.left}%`,
-                top: 0,
-                width: piece.size,
-                height: piece.size,
-                backgroundColor: piece.color,
-                boxShadow: `0 0 4px ${piece.color}`,
+          {initParticles && (
+            <Particles
+              id="tsparticles"
+              options={{
+                fullScreen: { zIndex: 1 },
+                particles: {
+                  number: { value: 0 },
+                  color: { value: ["#00FFFC", "#FC00FF", "#fffc00"] },
+                  shape: { type: ["circle", "square", "triangle"], options: {} },
+                  opacity: {
+                    value: { min: 0, max: 1 },
+                    animation: { enable: true, speed: 2, startValue: "max", destroy: "min" }
+                  },
+                  size: { value: { min: 2, max: 4 } },
+                  links: { enable: false },
+                  life: { duration: { sync: true, value: 5 }, count: 1 },
+                  move: {
+                    enable: true,
+                    gravity: { enable: true, acceleration: 10 },
+                    speed: { min: 10, max: 20 },
+                    decay: 0.1,
+                    direction: "none",
+                    straight: false,
+                    outModes: { default: "destroy", top: "none" }
+                  },
+                  rotate: {
+                    value: { min: 0, max: 360 },
+                    direction: "random",
+                    move: true,
+                    animation: { enable: true, speed: 60 }
+                  },
+                  tilt: {
+                    direction: "random",
+                    enable: true,
+                    move: true,
+                    value: { min: 0, max: 360 },
+                    animation: { enable: true, speed: 60 }
+                  },
+                  roll: {
+                    darken: { enable: true, value: 25 },
+                    enable: true,
+                    speed: { min: 15, max: 25 }
+                  },
+                  wobble: {
+                    distance: 30,
+                    enable: true,
+                    move: true,
+                    speed: { min: -15, max: 15 }
+                  }
+                },
+                emitters: {
+                  life: { count: 0, duration: 0.1, delay: 0.4 },
+                  rate: { delay: 0.1, quantity: 150 },
+                  size: { width: 0, height: 0 }
+                }
               }}
             />
-          ))}
+          )}
         </div>
 
         <motion.div
@@ -409,15 +451,20 @@ const ProfileSetup = () => {
 
             <motion.div
               initial={{ rotate: -20, scale: 0 }}
-              animate={{ rotate: [0, -10, 8, 0], scale: [1, 1.08, 1] }}
+              animate={{ rotate: [0, -8, 5, 0], scale: [1, 1.05, 1.05, 1] }}
               transition={{
                 delay: 0.2,
-                rotate: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
-                scale: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
+                rotate: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+                scale: { duration: 4, repeat: Infinity, ease: "easeInOut" },
               }}
               className="relative flex h-20 w-20 items-center justify-center rounded-full border border-border bg-card shadow-sm"
             >
-              <PartyPopper className="h-14 w-14 text-primary" />
+              <motion.div
+                animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
+                transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1.5, ease: "easeInOut" }}
+              >
+                <PartyPopper className="h-14 w-14 text-primary" />
+              </motion.div>
             </motion.div>
           </div>
           <div className="space-y-2">
