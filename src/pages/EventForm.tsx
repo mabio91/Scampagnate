@@ -11,7 +11,6 @@ import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RichTextarea } from "@/components/ui/rich-textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
@@ -682,7 +681,7 @@ const EventForm = () => {
             </div>
             <div>
               <Label htmlFor="description">Descrizione</Label>
-              <RichTextarea id="description" value={form.description} onChange={(val) => updateForm("description", val)} placeholder="Descrivi l'evento..." rows={4} />
+              <Textarea id="description" value={form.description} onChange={(e) => updateForm("description", e.target.value)} placeholder="Descrivi l'evento..." rows={4} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
