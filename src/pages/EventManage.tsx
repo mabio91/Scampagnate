@@ -49,6 +49,7 @@ const EventManage = () => {
   const [addMode, setAddMode] = useState<"search" | "manual">("manual");
   const [searchQuery, setSearchQuery] = useState("");
   const [manualName, setManualName] = useState("");
+  const [manualLevel, setManualLevel] = useState<string>("none");
   const [manualMeetingPoint, setManualMeetingPoint] = useState("");
   const [manualPaymentStatus, setManualPaymentStatus] = useState("pending");
   const [selectedSearchUser, setSelectedSearchUser] = useState<any>(null);
@@ -251,26 +252,26 @@ const EventManage = () => {
   };
 
   // Add manual participant (creates a temporary profile-less registration)
-  // We'll use the organizer's user_id but mark it as a manual entry with sport_level = "manual:Name"
+  // We'll use the organizer's user_id but mark it as a manual entry with sport_level = "manual:Name|level:value"
   const handleAddManualParticipant = async () => {
     if (!manualName.trim()) return;
     setAddingParticipant(true);
     try {
-      // For manual participants, we store their name in sport_level field with "manual:" prefix
-      // This is a pragmatic approach that doesn't require schema changes
+      const levelPayload = manualLevel && manualLevel !== "none" ? `|level:${manualLevel}` : "";
       const { error } = await supabase.from("event_registrations").insert({
         event_id: id!,
         user_id: user.id, // organizer's id as placeholder
         meeting_point_id: manualMeetingPoint || null,
         status: "registered",
         payment_status: manualPaymentStatus,
-        sport_level: `manual:${manualName.trim()}`,
+        sport_level: `manual:${manualName.trim()}${levelPayload}`,
       });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
       queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
       setShowAddParticipant(false);
       setManualName("");
+      setManualLevel("none");
       toast({ title: `${manualName.trim()} added as participant!` });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -1011,14 +1012,28 @@ const EventManage = () => {
                 )}
               </>
             ) : (
-              <div>
-                <Label className="font-body text-xs">Participant Name *</Label>
-                <Input
-                  value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  placeholder="e.g. Mario Rossi"
-                  className="mt-1"
-                />
+              <div className="space-y-4">
+                <div>
+                  <Label className="font-body text-xs">Participant Name *</Label>
+                  <Input
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                    placeholder="e.g. Mario Rossi"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="font-body text-xs">Livello (opzionale)</Label>
+                  <Select value={manualLevel} onValueChange={setManualLevel}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Non specificato</SelectItem>
+                      <SelectItem value="beginner">Principiante</SelectItem>
+                      <SelectItem value="intermediate">Intermedio</SelectItem>
+                      <SelectItem value="advanced">Esperto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
 
