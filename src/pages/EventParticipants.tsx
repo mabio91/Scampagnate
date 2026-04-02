@@ -308,13 +308,27 @@ const EventParticipants = () => {
 
   const accessRules = (event?.access_rules as AccessRulesConfig | null)?.rules || [];
 
-  const totalParticipants = participants ? participants.length : (event?.spots_taken || 0);
+  // Fetch public avatars for blurred guest view
+  const { data: publicAvatars } = useQuery({
+    queryKey: ["public-avatars", id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_event_participant_avatars", { p_event_id: id! });
+      return data || [];
+    },
+    enabled: !user && !!id,
+  });
+
+  const totalParticipants = user && participants
+    ? participants.length
+    : publicAvatars && publicAvatars.length > 0
+      ? publicAvatars.length
+      : event?.spots_taken || 0;
 
   // --- Loading ---
   if (eventLoading || participantsLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 bg-background z-10 px-4 py-3 flex items-center gap-3">
+        <div className="sticky top-0 bg-background z-10 px-4 py-3 pt-safe flex items-center gap-3">
           <Skeleton className="w-8 h-8 rounded-full" />
           <Skeleton className="h-6 w-32" />
         </div>
@@ -344,10 +358,14 @@ const EventParticipants = () => {
 
   // --- Guest / not logged in ---
   if (!user) {
+    const renderList = publicAvatars && publicAvatars.length > 0
+      ? publicAvatars
+      : Array.from({ length: totalParticipants });
+
     return (
       <div className="min-h-screen bg-background relative">
         {/* Header */}
-        <div className="sticky top-0 bg-background z-10 px-4 py-3 flex items-center gap-3">
+        <div className="sticky top-0 bg-background z-10 px-4 py-3 pt-safe flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft className="h-5 w-5 text-foreground" /></button>
           <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
           {totalParticipants > 0 && (
@@ -382,25 +400,25 @@ const EventParticipants = () => {
           )}
 
           {/* Blurred participants */}
-          {participants && participants.length > 0 && (
+          {totalParticipants > 0 && (
             <div className="mt-5">
               <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Chi ci sarà</p>
               <div className="select-none">
-                {participants.map((p: any) => (
-                  <div key={p.id} className="flex items-center gap-3 py-3">
+                {renderList.map((p: any, index) => (
+                  <div key={p?.user_id || index} className="flex items-center gap-3 py-3">
                     <div className="blur-[6px] pointer-events-none">
-                      {p.profiles?.avatar_url ? (
-                        <img src={p.profiles.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover" />
+                      {p?.avatar_url ? (
+                        <img src={p.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover" />
                       ) : (
                         <span className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
-                          {p.profiles?.first_name?.[0] || "?"}
+                          {p?.first_name?.[0] || "?"}
                         </span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0 blur-[6px] pointer-events-none">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-body font-semibold text-foreground truncate">
-                          {p.profiles?.first_name || "Utente"}
+                          {p?.first_name || "Utente"}
                         </p>
                         <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-body font-medium bg-muted text-muted-foreground">
                           Membro
@@ -446,7 +464,7 @@ const EventParticipants = () => {
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <div className="sticky top-0 bg-background z-10 px-4 py-3 flex items-center gap-3">
+      <div className="sticky top-0 bg-background z-10 px-4 py-3 pt-safe flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
