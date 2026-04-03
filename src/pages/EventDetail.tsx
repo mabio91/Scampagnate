@@ -1126,6 +1126,11 @@ const EventDetail = () => {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
                         <p className="text-xs font-body text-muted-foreground truncate">{mp.location}</p>
+                        {mp.notes && (
+                          <p className="text-xs font-body text-muted-foreground/90 mt-0.5 break-words">
+                            {mp.notes}
+                          </p>
+                        )}
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <p className="text-sm font-body font-bold text-foreground">{mp.time?.slice(0, 5)}</p>
