@@ -63,8 +63,8 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
       <div className="relative">
         <div
           ref={textRef}
-          className={`text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed whitespace-pre-line [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_del]:line-through ${!expanded ? "line-clamp-6" : ""}`}
-          dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, '<br/>') }}
+          className={`text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed prose prose-sm dark:prose-invert max-w-none [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${!expanded ? "line-clamp-6" : ""}`}
+          dangerouslySetInnerHTML={{ __html: description }}
         />
         {isClamped && !expanded && (
           <>

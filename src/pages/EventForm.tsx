@@ -10,9 +10,9 @@ import { MANUAL_BADGE_OPTIONS } from "@/lib/eventBadges";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import RichTextEditor from "@/components/RichTextEditor";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -681,7 +681,11 @@ const EventForm = () => {
             </div>
             <div>
               <Label htmlFor="description">Descrizione</Label>
-              <Textarea id="description" value={form.description} onChange={(e) => updateForm("description", e.target.value)} placeholder="Descrivi l'evento..." rows={4} />
+              <RichTextEditor 
+                content={form.description} 
+                onChange={(content) => updateForm("description", content)} 
+                placeholder="Descrivi l'evento..." 
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
