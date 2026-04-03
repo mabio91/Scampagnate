@@ -188,7 +188,6 @@ export const useMyRegistration = (eventId: string) => {
         .eq("event_id", eventId)
         .eq("user_id", user.id)
         .neq("status", "cancelled")
-        .neq("payment_status", "pending")
         .order("created_at", { ascending: false })
         .maybeSingle();
       if (data) return data;
