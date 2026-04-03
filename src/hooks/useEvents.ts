@@ -247,36 +247,8 @@ export const useRegisterForEvent = () => {
         .insert(registrationPayload)
         .select("id")
         .single();
-
-      // Backward-compatibility fallback: if DB enum doesn't include 'pending_payment' yet,
-      // retry with legacy status='registered' while keeping payment_status='pending'.
-      const shouldFallbackToLegacyPending =
-        !!error &&
-        typeof error.message === "string" &&
-        error.message.includes("invalid input value for enum registration_status") &&
-        error.message.includes("pending_payment") &&
-        status === "pending_payment";
-
-      if (!error) {
-        return { registrationId: insertedData?.id, eventId };
-      }
-
-      if (!shouldFallbackToLegacyPending) {
-        throw error;
-      }
-
-      const { data: legacyInsertedData, error: legacyError } = await supabase
-        .from("event_registrations")
-        .insert({
-          ...registrationPayload,
-          status: "registered",
-        } as any)
-        .select("id")
-        .single();
-
-      if (legacyError) throw legacyError;
-      
-      return { registrationId: legacyInsertedData?.id, eventId };
+      if (error) throw error;
+      return { registrationId: insertedData?.id, eventId };
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["event", vars.eventId] });
