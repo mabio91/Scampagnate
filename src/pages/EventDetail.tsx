@@ -221,7 +221,17 @@ const EventDetail = () => {
   }
 
   const imageSrc = resolveEventImageSrc(event.image_url);
-  const isRegistered = myRegistration && myRegistration.status !== "cancelled";
+  const isPaymentEvent = event.payment_type === "paid" || event.payment_type === "deposit";
+  const isLegacyPendingPayment = !!myRegistration
+    && myRegistration.status === "registered"
+    && isPaymentEvent
+    && myRegistration.payment_status === "pending";
+  const hasPendingPayment = !!myRegistration
+    && (myRegistration.status === "pending_payment" || isLegacyPendingPayment);
+  const isRegistered = !!myRegistration
+    && myRegistration.status !== "cancelled"
+    && myRegistration.status !== "pending_payment"
+    && !isLegacyPendingPayment;
   const isSportCategory = event.category?.name === "Sport & Movimento";
   
   const eventBadges = resolveEventBadges({
@@ -558,9 +568,14 @@ const EventDetail = () => {
     }
   };
 
-   const needsPayment = isRegistered && myRegistration?.status !== "waitlist" && (event.payment_type === "paid" || event.payment_type === "deposit") && myRegistration?.payment_status !== "paid";
-  const isPendingApproval = isRegistered && myRegistration?.status === "pending_approval";
-  const isOnWaitlist = isRegistered && myRegistration?.status === "waitlist";
+  const needsPayment = !!myRegistration
+    && myRegistration.status !== "cancelled"
+    && myRegistration.status !== "waitlist"
+    && myRegistration.status !== "pending_approval"
+    && isPaymentEvent
+    && myRegistration.payment_status !== "paid";
+  const isPendingApproval = myRegistration?.status === "pending_approval";
+  const isOnWaitlist = myRegistration?.status === "waitlist";
 
   // Detect if a spot has become available for a waitlisted user
   const remainingSpots = event.spots_total - event.spots_taken;
@@ -1208,7 +1223,7 @@ const EventDetail = () => {
             </div>
           )}
 
-          {isRegistered && (
+          {isRegistered && !hasPendingPayment && (
             <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
               {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
             </Button>

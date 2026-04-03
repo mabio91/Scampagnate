@@ -1653,6 +1653,7 @@ export type Database = {
         | "paid"
         | "waitlist"
         | "cancelled"
+        | "pending_payment"
         | "pending_approval"
         | "attended"
         | "no_show"
@@ -1801,6 +1802,7 @@ export const Constants = {
         "paid",
         "waitlist",
         "cancelled",
+        "pending_payment",
         "pending_approval",
         "attended",
         "no_show",
