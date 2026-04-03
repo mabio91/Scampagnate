@@ -113,7 +113,8 @@ export const useEventParticipants = (eventId: string) => {
         .from("event_registrations")
         .select("*, meeting_point:event_meeting_points(id, name)")
         .eq("event_id", eventId)
-        .in("status", ["registered", "paid"]);
+        .in("status", ["registered", "paid"])
+        .neq("payment_status", "pending");
       if (error) throw error;
 
       const userIds = (data || []).map((r: any) => r.user_id);
@@ -223,10 +224,13 @@ export const useRegisterForEvent = () => {
       }
       // If membership is not active, payment remains pending and is handled at checkout.
 
-      type RegistrationStatus = "registered" | "waitlist" | "pending_approval";
+      type RegistrationStatus = "registered" | "waitlist" | "pending_approval" | "pending_payment";
       let status: RegistrationStatus = "registered";
       if (asWaitlist) status = "waitlist";
       if (requestApproval) status = "pending_approval";
+      if (!asWaitlist && !requestApproval && (paymentType === "paid" || paymentType === "deposit")) {
+        status = "pending_payment";
+      }
 
       const { data: insertedData, error } = await supabase.from("event_registrations").insert({
         event_id: eventId,

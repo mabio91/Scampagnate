@@ -32,6 +32,7 @@ const statusStyles: Record<string, string> = {
   in_attesa: "bg-warning/10 text-warning",
   posto_disponibile: "bg-success/10 text-success",
   partecipato: "bg-primary/10 text-primary",
+  pagamento_in_sospeso: "bg-accent/20 text-accent-foreground",
 };
 
 const statusLabels: Record<string, string> = {
@@ -39,15 +40,26 @@ const statusLabels: Record<string, string> = {
   in_attesa: "In attesa",
   posto_disponibile: "Posto disponibile",
   partecipato: "Partecipato",
+  pagamento_in_sospeso: "Pagamento in sospeso",
 };
+
+function isPendingPaymentRegistration(registration: any): boolean {
+  const event = registration?.events;
+  const isPaymentEvent = event?.payment_type === "paid" || event?.payment_type === "deposit";
+  if (!isPaymentEvent) return false;
+  if (registration.status === "pending_payment") return true;
+  return registration.status === "registered" && registration.payment_status === "pending";
+}
 
 /**
  * Resolve user-facing status label for My Events cards.
- * Priority: Partecipato > Iscritto > Posto disponibile > In attesa
+ * Priority: Pagamento in sospeso > Partecipato > Iscritto > Posto disponibile > In attesa
  */
 function resolveMyEventStatus(registration: any, isPast: boolean): string {
   const event = registration.events;
   if (!event) return "iscritto";
+
+  if (isPendingPaymentRegistration(registration)) return "pagamento_in_sospeso";
   
   // Past event + checked in → Partecipato
   if (isPast && registration.checked_in) return "partecipato";
