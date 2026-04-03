@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, type CSSProperties } from "react";
 import { Sprout, Footprints, Mountain, Dumbbell, Flame, type LucideIcon } from "lucide-react";
 import { useTrekkingDifficultyLevels } from "@/hooks/useTrekkingDifficultyLevels";
 
@@ -45,9 +45,18 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
 
     if (dbLevel) {
       const Icon = LEVEL_ICONS[dbLevel.level_number] || Mountain;
+      const dbStyle: CSSProperties = {
+        backgroundColor: dbLevel.color_background || undefined,
+        borderColor: dbLevel.color_border || undefined,
+        color: dbLevel.color_primary || undefined,
+      };
       return (
-        <span ref={ref} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 text-accent-foreground text-xs font-body font-semibold ${className}`}>
-          <Icon className="h-3.5 w-3.5" style={{ color: dbLevel.color_icon }} />
+        <span
+          ref={ref}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-body font-semibold ${className}`}
+          style={dbStyle}
+        >
+          <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: dbLevel.color_icon || dbLevel.color_primary }} />
           {showLabel && dbLevel.label}
         </span>
       );

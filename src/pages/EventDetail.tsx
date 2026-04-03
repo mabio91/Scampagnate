@@ -782,7 +782,7 @@ const EventDetail = () => {
           <div className="flex items-center gap-2 flex-wrap">
             {event.difficulty && (
               <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center hover:opacity-90 transition-opacity">
-                <DifficultyBadge difficulty={event.difficulty} className="bg-accent/20 text-accent-foreground" />
+                <DifficultyBadge difficulty={event.difficulty} />
               </button>
             )}
             {event.category && (
