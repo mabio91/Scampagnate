@@ -2,6 +2,7 @@ import { forwardRef, type CSSProperties } from "react";
 import { Sprout, Footprints, Mountain, Dumbbell, Flame, type LucideIcon } from "lucide-react";
 import { useTrekkingDifficultyLevels } from "@/hooks/useTrekkingDifficultyLevels";
 import DynamicIcon from "@/components/DynamicIcon";
+import { cn } from "@/lib/utils";
 
 // Fallback static data (used while DB is loading)
 const FALLBACK_LEVELS = [
@@ -54,7 +55,7 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
       return (
         <span
           ref={ref}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-body font-semibold ${className}`}
+          className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-body font-semibold", className)}
           style={dbStyle}
         >
           <span style={{ color: dbLevel.color_icon || dbLevel.color_primary }} className="flex items-center justify-center">
@@ -71,7 +72,7 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
     const Icon = details.icon;
 
     return (
-      <span ref={ref} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 text-accent-foreground text-xs font-body font-semibold ${className}`}>
+      <span ref={ref} className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 text-accent-foreground text-xs font-body font-semibold", className)}>
         <Icon className={`h-3.5 w-3.5 ${details.color}`} />
         {showLabel && details.name}
       </span>

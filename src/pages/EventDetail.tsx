@@ -786,17 +786,17 @@ const EventDetail = () => {
               </button>
             )}
             {event.category && (
-              <span className="inline-block px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-body font-semibold">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-body font-semibold">
                 {event.category.name}
               </span>
             )}
             {eventBadges.map((b) => (
-              <span key={b.key} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold shadow-sm ${b.className}`}>
+              <span key={b.key} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-body font-bold shadow-sm ${b.className}`}>
                 {b.emoji ? `${b.emoji} ` : ""}{b.label}
               </span>
             ))}
             {exclusivityIndicators.map((ind, idx) => (
-              <span key={idx} className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
+              <span key={idx} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
                 ind.variant === "members" ? "bg-primary/10 text-primary" :
                 ind.variant === "exclusive" ? "bg-gold/10 text-gold" :
                 ind.variant === "restricted" ? "bg-warning/10 text-warning" :
