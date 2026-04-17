@@ -26,6 +26,7 @@ interface Profile {
   phone_verified?: boolean;
   phone_verified_at?: string;
   phone_verification_method?: string;
+  birth_date?: string | null;
 }
 
 type AppRole = "admin" | "organizer" | "user";

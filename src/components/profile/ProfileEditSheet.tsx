@@ -40,6 +40,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -69,6 +70,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     setFirstName(profile?.first_name || "");
     setLastName(profile?.last_name || "");
     setPhone(profile?.phone || "");
+    setDateOfBirth(profile?.birth_date || "");
     setBio(profile?.bio || "");
     setHasChanges(false);
   };
@@ -82,7 +84,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     if (open && profile && !hasChanges) {
       initFields();
     }
-  }, [open, profile?.first_name, profile?.last_name, profile?.phone, profile?.bio, hasChanges]);
+  }, [open, profile?.first_name, profile?.last_name, profile?.phone, profile?.birth_date, profile?.bio, hasChanges]);
 
   const markChanged = () => setHasChanges(true);
 
@@ -113,6 +115,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
       first_name: firstName,
       last_name: lastName,
       phone,
+      birth_date: dateOfBirth || null,
       bio,
       updated_at: new Date().toISOString(),
     }).eq("id", user!.id);
@@ -246,6 +249,16 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 <div>
                   <Label className="font-body text-xs">Telefono</Label>
                   <Input value={phone} onChange={(e) => { setPhone(e.target.value); markChanged(); }} className="mt-1" />
+                </div>
+                <div>
+                  <Label className="font-body text-xs">Data di nascita</Label>
+                  <Input 
+                    type="date" 
+                    value={dateOfBirth} 
+                    onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }} 
+                    className="mt-1" 
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Visible only to organizers and admin</p>
                 </div>
                 <div>
                   <Label className="font-body text-xs">Bio</Label>
