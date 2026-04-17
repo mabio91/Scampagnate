@@ -737,14 +737,16 @@ const ProfileSetup = () => {
                   <p className="text-xs text-muted-foreground font-body">Seleziona fino a 3 opzioni.</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { val: "trekking", emoji: "🥾", label: "Trekking e camminate" },
-                      { val: "aperitivi", emoji: "🌅", label: "Aperitivi e tramonti" },
-                      { val: "cene", emoji: "🍷", label: "Cene e momenti conviviali" },
-                      { val: "social", emoji: "🎉", label: "Eventi social" },
-                      { val: "outdoor", emoji: "🏕️", label: "Esperienze outdoor particolari" },
-                      { val: "sport", emoji: "🏃", label: "Sport e movimento" },
-                      { val: "serali", emoji: "🌌", label: "Eventi serali" },
-                      { val: "avventura", emoji: "🔥", label: "Avventura e sfida" },
+                      { val: "trekking_giornalieri", emoji: "🥾", label: "Trekking giornalieri" },
+                      { val: "cammini_plurigiornalieri", emoji: "🎒", label: "Cammini plurigiornalieri" },
+                      { val: "notti_tenda", emoji: "⛺", label: "Notti in tenda" },
+                      { val: "trekking_notturni", emoji: "🌌", label: "Trekking notturni" },
+                      { val: "aperitivi_cene", emoji: "🍷", label: "Aperitivi e cene" },
+                      { val: "sport_movimento", emoji: "🏃", label: "Sport e movimento" },
+                      { val: "giochi_sfide", emoji: "🎯", label: "Giochi e sfide" },
+                      { val: "weekend_fuori_porta", emoji: "🚗", label: "Weekend fuori porta" },
+                      { val: "degustazioni_cantine", emoji: "🍇", label: "Degustazioni e cantine" },
+                      { val: "mare_spiaggia", emoji: "🏖️", label: "Mare e spiaggia" },
                     ].map((opt) => (
                       <InterestCard
                         key={opt.val}
