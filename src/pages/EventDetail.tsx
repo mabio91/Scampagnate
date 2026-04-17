@@ -8,7 +8,7 @@ import {
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
   Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, ChevronDown, X, ZoomIn
 } from "lucide-react";
-import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo } from "@/lib/cancellationPolicy";
+import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
@@ -558,6 +558,7 @@ const EventDetail = () => {
 
   // Policy-based refund info for cancel dialog messaging
   const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time) : null;
+  const cancellationDialogMessage = getCancellationDialogMessage(refundInfo);
   const hasPaidPayment = myRegistration?.payment_status === "paid";
 
   const handleCancelClick = () => {
@@ -1251,14 +1252,15 @@ const EventDetail = () => {
 
           {/* Cancel Confirmation Dialog */}
           <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-            <DialogContent className="max-w-xs">
+            <DialogContent className="max-w-sm">
               <DialogHeader>
                 <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
                 <DialogDescription className="font-body text-sm">
-                  Sei sicuro di voler annullare la tua iscrizione a <strong>{event.title}</strong>?
-                  {hasPaidPayment && refundInfo && (
-                    <span className={`block mt-2 text-xs font-semibold ${refundInfo.refundEligible ? "text-green-600" : "text-muted-foreground"}`}>
-                      {refundInfo.refundEligible
+                  <span className="block">Sei sicuro di voler rinunciare a questa esperienza?</span>
+                  <span className="block mt-2 font-semibold text-foreground">{event.title}</span>
+                  {hasPaidPayment && cancellationDialogMessage && (
+                    <span className="block mt-3 text-sm whitespace-pre-line text-foreground">
+                      {cancellationDialogMessage
                         ? "💰 Riceverai il rimborso completo nei prossimi giorni."
                         : `⚠️ ${refundInfo.message}`}
                     </span>
@@ -1272,7 +1274,7 @@ const EventDetail = () => {
               </DialogHeader>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 font-body" onClick={() => setShowCancelDialog(false)}>
-                  Mantieni
+                  Ci penso
                 </Button>
                 <Button
                   variant="destructive"
@@ -1280,7 +1282,7 @@ const EventDetail = () => {
                   onClick={handleCancel}
                   disabled={cancelMutation.isPending}
                 >
-                  {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla"}
+                  {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Cancella iscrizione"}
                 </Button>
               </div>
             </DialogContent>
