@@ -155,7 +155,8 @@ const ProfileSetup = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const carSectionRef = useRef<HTMLDivElement>(null);
   const interestsSectionRef = useRef<HTMLDivElement>(null);
-  const [step3Errors, setStep3Errors] = useState<{ car?: boolean; interests?: boolean }>({});
+  const motivationSectionRef = useRef<HTMLDivElement>(null);
+  const [step3Errors, setStep3Errors] = useState<{ car?: boolean; interests?: boolean; motivation?: boolean }>({});
   const [searchParams] = useSearchParams();
 
   // Edit mode: when user already completed onboarding and is editing preferences
@@ -265,9 +266,10 @@ const ProfileSetup = () => {
   };
 
   const validateStep3 = useCallback(() => {
-    const errors: { car?: boolean; interests?: boolean } = {};
+    const errors: { car?: boolean; interests?: boolean; motivation?: boolean } = {};
     if (!hasCar) errors.car = true;
     if (interests.length < 1) errors.interests = true;
+    if (!eventMotivation) errors.motivation = true;
     setStep3Errors(errors);
     if (errors.car) {
       carSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -277,8 +279,12 @@ const ProfileSetup = () => {
       interestsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return false;
     }
+    if (errors.motivation) {
+      motivationSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
     return true;
-  }, [hasCar, interests]);
+  }, [hasCar, interests, eventMotivation]);
 
   // Clear errors when user selects values
   useEffect(() => {
@@ -287,6 +293,9 @@ const ProfileSetup = () => {
   useEffect(() => {
     if (interests.length >= 1 && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
   }, [interests]);
+  useEffect(() => {
+    if (eventMotivation && step3Errors.motivation) setStep3Errors(prev => ({ ...prev, motivation: false }));
+  }, [eventMotivation]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -338,7 +347,7 @@ const ProfileSetup = () => {
   };
   const step1Valid = isValidPhone(phone);
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
-  const step3Valid = !!hasCar && interests.length >= 1;
+  const step3Valid = !!hasCar && interests.length >= 1 && !!eventMotivation;
 
   if (!user || !profile) return null;
 
@@ -749,10 +758,10 @@ const ProfileSetup = () => {
                   </div>
                 </div>
 
-                {/* Motivation (optional) */}
-                <div className="space-y-2">
-                  <Label className="font-body text-sm font-semibold">
-                    Cosa cerchi di più in un evento? <span className="text-muted-foreground font-normal">(opzionale)</span>
+                {/* Motivation (mandatory) */}
+                <div ref={motivationSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.motivation ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
+                  <Label className={`font-body text-sm font-semibold ${step3Errors.motivation ? "text-destructive" : ""}`}>
+                    Cosa cerchi di più in un evento? <span className="text-destructive">*</span> {step3Errors.motivation && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}
                   </Label>
                   <div className="space-y-2">
                     {[
@@ -765,7 +774,7 @@ const ProfileSetup = () => {
                       <SelectionCard
                         key={opt.val}
                         selected={eventMotivation === opt.val}
-                        onClick={() => setEventMotivation((prev) => (prev === opt.val ? "" : opt.val))}
+                        onClick={() => setEventMotivation(opt.val)}
                         emoji={opt.emoji}
                         label={opt.label}
                       />
