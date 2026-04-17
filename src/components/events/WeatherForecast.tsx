@@ -1,5 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { Cloud, CloudRain, Sun, Snowflake, CloudSun, CloudDrizzle, CloudLightning, CloudFog, Wind } from "lucide-react";
+import {
+  Cloud,
+  CloudRain,
+  Sun,
+  Snowflake,
+  CloudSun,
+  CloudDrizzle,
+  CloudLightning,
+  CloudFog,
+  Wind,
+} from "lucide-react";
 
 interface WeatherForecastProps {
   location: string;
@@ -65,14 +75,22 @@ const getWeatherInfo = (code: number) => {
 };
 
 const extractGeoLocation = (location: string): string => {
-  const parts = location.split(",").map(p => p.trim());
+  const parts = location.split(",").map((part) => part.trim());
   if (parts.length >= 2) {
     return parts[parts.length - 1];
   }
   return location;
 };
 
-export const WeatherForecast = ({ location, date, overrideCondition, overrideTempMin, overrideTempMax, overrideTempAvg, overrideTemp }: WeatherForecastProps) => {
+export const WeatherForecast = ({
+  location,
+  date,
+  overrideCondition,
+  overrideTempMin,
+  overrideTempMax,
+  overrideTempAvg,
+  overrideTemp,
+}: WeatherForecastProps) => {
   const eventDate = new Date(date);
   const now = new Date();
   const daysUntil = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -82,7 +100,7 @@ export const WeatherForecast = ({ location, date, overrideCondition, overrideTem
     queryKey: ["weather-forecast", location, date],
     queryFn: async (): Promise<DailyWeather | null> => {
       const geoLocation = extractGeoLocation(location);
-      
+
       let geoData: any = null;
       for (const loc of [geoLocation, location]) {
         const geoRes = await fetch(
@@ -91,7 +109,7 @@ export const WeatherForecast = ({ location, date, overrideCondition, overrideTem
         geoData = await geoRes.json();
         if (geoData.results?.length) break;
       }
-      
+
       if (!geoData?.results?.length) return null;
 
       const { latitude, longitude } = geoData.results[0];
@@ -140,24 +158,31 @@ export const WeatherForecast = ({ location, date, overrideCondition, overrideTem
 
   const displayTempMin = overrideTempMin ?? weather?.temperature_min ?? null;
   const displayTempMax = overrideTempMax ?? weather?.temperature_max ?? null;
-  const displayTempAvg = overrideTempAvg ?? legacyAvg ?? (displayTempMin != null && displayTempMax != null ? Math.round((displayTempMin + displayTempMax) / 2) : displayTempMax);
-
-  // Build inline text parts
-  const parts: string[] = [];
-  parts.push(displayCondition);
-  if (displayTempAvg != null) parts[0] += ` ${Math.round(displayTempAvg)}°`;
-  if (displayTempMin != null && displayTempMax != null) {
-    parts.push(`Min ${Math.round(displayTempMin)}° Max ${Math.round(displayTempMax)}°`);
-  }
+  const displayTempAvg =
+    overrideTempAvg ??
+    legacyAvg ??
+    (displayTempMin != null && displayTempMax != null
+      ? Math.round((displayTempMin + displayTempMax) / 2)
+      : displayTempMax);
 
   return (
-    <div className="flex items-center gap-3 py-2">
-      <div className="w-10 h-10 flex items-center justify-center shrink-0">
-        <WeatherIcon className="h-5 w-5 text-muted-foreground" />
+    <div className="flex items-center gap-4 py-2">
+      <div className="w-16 h-16 rounded-3xl bg-muted/35 border border-border/40 flex items-center justify-center shrink-0">
+        <WeatherIcon className="h-7 w-7 text-muted-foreground" />
       </div>
-      <p className="text-xs font-body text-muted-foreground">
-        {parts.join(" · ")}
-      </p>
+      <div className="min-w-0">
+        <p className="text-lg font-display font-bold text-foreground leading-tight">
+          {displayCondition}
+          {displayTempAvg != null ? ` ${Math.round(displayTempAvg)}°` : ""}
+        </p>
+        {(displayTempMin != null || displayTempMax != null) && (
+          <p className="text-sm font-body text-muted-foreground mt-1 leading-tight">
+            {displayTempMin != null ? `Min ${Math.round(displayTempMin)}°` : ""}
+            {displayTempMin != null && displayTempMax != null ? "  " : ""}
+            {displayTempMax != null ? `Max ${Math.round(displayTempMax)}°` : ""}
+          </p>
+        )}
+      </div>
     </div>
   );
 };
