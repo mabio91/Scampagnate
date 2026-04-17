@@ -214,7 +214,6 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const hasSpotAvailable = resolvedStatus === "posto_disponibile";
   const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
   const meetingPoint = registration.meeting_point;
-  const displayLocation = event.location_label || event.location;
 
   const refundInfo = useMemo(() => {
     if (!event.date || !event.time) return null;
@@ -311,7 +310,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
               <MapPin className="h-3 w-3" />
-              <span className="truncate">{displayLocation}</span>
+              <span className="truncate">{event.location}</span>
             </div>
             {meetingPoint && (
               <div className="flex items-center gap-2 mt-0.5 text-xs font-body text-secondary">
@@ -418,7 +417,6 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
 
   if (!event) return null;
   const isPast = new Date(event.date) < new Date();
-  const displayLocation = event.location_label || event.location;
 
   const handleUnsave = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -449,7 +447,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
             <MapPin className="h-3 w-3" />
-            <span className="truncate">{displayLocation}</span>
+            <span className="truncate">{event.location}</span>
           </div>
           <div className="mt-1.5">
             <span className="font-body font-bold text-xs text-foreground">
