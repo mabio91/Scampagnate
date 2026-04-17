@@ -49,7 +49,7 @@ const ProfileGamification = () => {
         {/* Current Level */}
         <div className="flex items-center gap-3 mb-3">
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+            className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-2xl leading-none whitespace-nowrap"
             style={{ backgroundColor: `${currentLevel.color}20`, border: `2px solid ${currentLevel.color}` }}
           >
             {visual.icon}
