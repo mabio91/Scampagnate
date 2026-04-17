@@ -1,6 +1,7 @@
 import { forwardRef, type CSSProperties } from "react";
 import { Sprout, Footprints, Mountain, Dumbbell, Flame, type LucideIcon } from "lucide-react";
 import { useTrekkingDifficultyLevels } from "@/hooks/useTrekkingDifficultyLevels";
+import DynamicIcon from "@/components/DynamicIcon";
 
 // Fallback static data (used while DB is loading)
 const FALLBACK_LEVELS = [
@@ -44,19 +45,21 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
     const dbLevel = dbLevels?.find(l => String(l.level_number) === difficulty);
 
     if (dbLevel) {
-      const Icon = LEVEL_ICONS[dbLevel.level_number] || Mountain;
       const dbStyle: CSSProperties = {
         backgroundColor: dbLevel.color_background || undefined,
         borderColor: dbLevel.color_border || undefined,
         color: dbLevel.color_primary || undefined,
       };
+      
       return (
         <span
           ref={ref}
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-body font-semibold ${className}`}
           style={dbStyle}
         >
-          <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: dbLevel.color_icon || dbLevel.color_primary }} />
+          <span style={{ color: dbLevel.color_icon || dbLevel.color_primary }} className="flex items-center justify-center">
+            <DynamicIcon value={dbLevel.icon} size={14} className="shrink-0" />
+          </span>
           {showLabel && dbLevel.label}
         </span>
       );
