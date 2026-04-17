@@ -11,6 +11,11 @@ import { Camera, Loader2, Info, Check, ChevronLeft, ArrowRight, PartyPopper } fr
 import { motion, AnimatePresence } from "framer-motion";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadFull } from "tsparticles";
+import {
+  FIT_SCORE_INTEREST_MAX,
+  FIT_SCORE_INTEREST_MIN,
+  FIT_SCORE_INTEREST_VALIDATION_MESSAGE,
+} from "@/lib/fitScoreAffinityTables";
 
 const calculateExperienceGrade = (trekking: string, activity: string) => {
   const map: Record<string, Record<string, number>> = {
@@ -240,7 +245,7 @@ const ProfileSetup = () => {
 
   const toggleInterest = (val: string) => {
     setInterests((prev) =>
-      prev.includes(val) ? prev.filter((i) => i !== val) : prev.length < 3 ? [...prev, val] : prev
+      prev.includes(val) ? prev.filter((i) => i !== val) : prev.length < FIT_SCORE_INTEREST_MAX ? [...prev, val] : prev
     );
   };
 
@@ -270,7 +275,7 @@ const ProfileSetup = () => {
   const validateStep3 = useCallback(() => {
     const errors: { car?: boolean; interests?: boolean; motivation?: boolean } = {};
     if (!hasCar) errors.car = true;
-    if (interests.length < 1) errors.interests = true;
+    if (interests.length < FIT_SCORE_INTEREST_MIN) errors.interests = true;
     if (!eventMotivation) errors.motivation = true;
     setStep3Errors(errors);
     if (errors.car) {
@@ -293,7 +298,7 @@ const ProfileSetup = () => {
     if (hasCar && step3Errors.car) setStep3Errors(prev => ({ ...prev, car: false }));
   }, [hasCar]);
   useEffect(() => {
-    if (interests.length >= 1 && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
+    if (interests.length >= FIT_SCORE_INTEREST_MIN && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
   }, [interests]);
   useEffect(() => {
     if (eventMotivation && step3Errors.motivation) setStep3Errors(prev => ({ ...prev, motivation: false }));
@@ -350,7 +355,7 @@ const ProfileSetup = () => {
   };
   const step1Valid = isValidPhone(phone) && !!dateOfBirth;
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
-  const step3Valid = !!hasCar && interests.length >= 1 && !!eventMotivation;
+  const step3Valid = !!hasCar && interests.length >= FIT_SCORE_INTEREST_MIN && !!eventMotivation;
 
   if (!user || !profile) return null;
 
@@ -749,7 +754,10 @@ const ProfileSetup = () => {
                   <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
                     Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {step3Errors.interests && <span className="text-destructive text-xs font-normal">— Seleziona almeno 1 opzione</span>}
                   </Label>
-                  <p className="text-xs text-muted-foreground font-body">Seleziona fino a 3 opzioni.</p>
+                  <p className="text-xs text-muted-foreground font-body">Seleziona da {FIT_SCORE_INTEREST_MIN} a {FIT_SCORE_INTEREST_MAX} attivita.</p>
+                  {step3Errors.interests && (
+                    <p className="text-xs font-body text-destructive">{FIT_SCORE_INTEREST_VALIDATION_MESSAGE}</p>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { val: "trekking_giornalieri", emoji: "🥾", label: "Trekking giornalieri" },
@@ -769,7 +777,7 @@ const ProfileSetup = () => {
                         onClick={() => toggleInterest(opt.val)}
                         emoji={opt.emoji}
                         label={opt.label}
-                        disabled={interests.length >= 3}
+                        disabled={interests.length >= FIT_SCORE_INTEREST_MAX}
                       />
                     ))}
                   </div>

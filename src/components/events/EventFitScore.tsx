@@ -1,5 +1,5 @@
-import { AlertTriangle, User, Info, X } from "lucide-react";
-import { FitScoreResult, FitState } from "@/hooks/useEventFitScore";
+import { User, Info, X } from "lucide-react";
+import { FitScoreResult } from "@/hooks/useEventFitScore";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -35,20 +35,14 @@ const colorMap = {
 
 const breakdownLabels: Record<string, string> = {
   level: "Livello",
-  experience: "Esperienza",
-  activity: "Attività fisica",
   interests: "Interessi",
-  goal: "Obiettivo",
 };
-
-// ── Detail content shared between Drawer and Dialog ───────────────
 
 const DetailContent = ({ fitScore }: { fitScore: FitScoreResult }) => {
   const colors = colorMap[fitScore.color];
 
   return (
     <div className="space-y-5 px-1">
-      {/* Headline + score */}
       <div className="flex items-center justify-between">
         <span className={`text-lg font-display font-bold ${colors.text}`}>
           {fitScore.label}
@@ -58,69 +52,56 @@ const DetailContent = ({ fitScore }: { fitScore: FitScoreResult }) => {
         </span>
       </div>
 
-      {/* Intro */}
       <p className="text-sm font-body text-muted-foreground leading-relaxed">
-        Questo punteggio è calcolato in base al tuo profilo e ai requisiti di questo evento.
+        Questo punteggio confronta il tuo livello e i tuoi interessi con le categorie dell&apos;evento.
       </p>
 
-      {/* Human explanation bullets */}
       {fitScore.reasons.length > 0 && (
         <div className="space-y-2">
-          {fitScore.reasons.map((r, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm font-body">
-              {r.icon === "check" ? (
-                <span className="text-green-600 dark:text-green-400 shrink-0 mt-0.5">✔️</span>
-              ) : (
-                <span className="text-amber-500 shrink-0 mt-0.5">⚠️</span>
-              )}
-              <span className="text-foreground/80 dark:text-foreground/90">{r.text}</span>
+          {fitScore.reasons.map((reason, index) => (
+            <div key={index} className="flex items-start gap-2 text-sm font-body">
+              <span className={reason.icon === "check" ? "text-green-600 shrink-0 mt-0.5" : "text-amber-500 shrink-0 mt-0.5"}>
+                {reason.icon === "check" ? "OK" : "!"}
+              </span>
+              <span className="text-foreground/80 dark:text-foreground/90">{reason.text}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Breakdown bars */}
       <div className="space-y-3 pt-2 border-t border-border/50">
         <p className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wider">
           Dettaglio
         </p>
         {(Object.keys(fitScore.breakdown) as (keyof typeof fitScore.breakdown)[]).map((key) => {
-          const val = fitScore.breakdown[key];
-          if (val === null) return null;
+          const value = fitScore.breakdown[key];
+          if (value === null) return null;
+
+          const weight = fitScore.componentWeights[key];
           const barColor =
-            val >= 70 ? "bg-green-500" : val >= 50 ? "bg-amber-500" : "bg-red-400";
+            value >= 70 ? "bg-green-500" : value >= 50 ? "bg-amber-500" : "bg-red-400";
+
           return (
             <div key={key}>
               <div className="flex justify-between text-xs font-body mb-1">
-                <span className="text-muted-foreground">{breakdownLabels[key]}</span>
-                <span className="font-semibold text-foreground">{val}%</span>
+                <span className="text-muted-foreground">
+                  {breakdownLabels[key]}{weight !== null ? ` (${weight}%)` : ""}
+                </span>
+                <span className="font-semibold text-foreground">{value}%</span>
               </div>
               <div className="h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${barColor} transition-all duration-300`}
-                  style={{ width: `${val}%` }}
+                  style={{ width: `${value}%` }}
                 />
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Low score warning */}
-      {fitScore.score < 50 && (
-        <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
-          <p className="text-xs font-body text-foreground/70 leading-relaxed">
-            {fitScore.score < 30
-              ? "Questo evento è probabilmente troppo impegnativo per te. Puoi comunque procedere, ma ti consigliamo di valutare bene prima di iscriverti."
-              : "Potresti faticare durante l'evento. Controlla bene livello, esperienza e ritmo richiesto prima di iscriverti."}
-          </p>
-        </div>
-      )}
     </div>
   );
 };
-
-// ── Main component ────────────────────────────────────────────────
 
 const EventFitScore = ({ fitScore, compact = false }: EventFitScoreProps) => {
   const [showDetails, setShowDetails] = useState(false);
@@ -128,7 +109,6 @@ const EventFitScore = ({ fitScore, compact = false }: EventFitScoreProps) => {
 
   if (fitScore.hidden) return null;
 
-  // Profile incomplete state
   if (fitScore.profileIncomplete) {
     return (
       <div className="p-3 rounded-xl bg-muted/50 border border-border/50 flex items-start gap-3">
@@ -156,7 +136,6 @@ const EventFitScore = ({ fitScore, compact = false }: EventFitScoreProps) => {
 
   return (
     <>
-      {/* Compact card */}
       <div className={`p-4 rounded-xl ${colors.bg} border ${colors.border}`}>
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
@@ -171,13 +150,12 @@ const EventFitScore = ({ fitScore, compact = false }: EventFitScoreProps) => {
             onClick={() => setShowDetails(true)}
             className="text-xs font-body font-semibold text-primary hover:underline underline-offset-2 flex items-center gap-1 shrink-0 ml-3"
           >
-            Scopri perché
+            Scopri perche
             <Info className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Detail view – bottom sheet on mobile, dialog on desktop */}
       {isMobile ? (
         <Drawer open={showDetails} onOpenChange={setShowDetails}>
           <DrawerContent className="max-h-[85vh]">
@@ -208,11 +186,9 @@ const EventFitScore = ({ fitScore, compact = false }: EventFitScoreProps) => {
   );
 };
 
-// ── Compact display for organizer participant lists ────────────────
-
 export const EventFitScoreCompact = ({ fitScore }: { fitScore: FitScoreResult }) => {
   if (fitScore.hidden || fitScore.profileIncomplete) {
-    return <span className="text-xs text-muted-foreground">—</span>;
+    return <span className="text-xs text-muted-foreground">-</span>;
   }
 
   const colors = colorMap[fitScore.color];
@@ -235,21 +211,23 @@ export const EventFitScoreCompact = ({ fitScore }: { fitScore: FitScoreResult })
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs p-3">
           <p className="text-xs font-body font-bold mb-1.5">
-            {fitScore.label} — {fitScore.score}%
+            {fitScore.label} - {fitScore.score}%
           </p>
           <div className="space-y-1">
-            {(Object.keys(fitScore.breakdown) as (keyof typeof fitScore.breakdown)[]).map(
-              (key) => {
-                const val = fitScore.breakdown[key];
-                if (val === null) return null;
-                return (
-                  <div key={key} className="flex justify-between text-xs font-body">
-                    <span className="text-muted-foreground">{breakdownLabels[key]}</span>
-                    <span className="font-semibold">{val}%</span>
-                  </div>
-                );
-              }
-            )}
+            {(Object.keys(fitScore.breakdown) as (keyof typeof fitScore.breakdown)[]).map((key) => {
+              const value = fitScore.breakdown[key];
+              if (value === null) return null;
+              const weight = fitScore.componentWeights[key];
+
+              return (
+                <div key={key} className="flex justify-between text-xs font-body">
+                  <span className="text-muted-foreground">
+                    {breakdownLabels[key]}{weight !== null ? ` (${weight}%)` : ""}
+                  </span>
+                  <span className="font-semibold">{value}%</span>
+                </div>
+              );
+            })}
           </div>
         </TooltipContent>
       </Tooltip>

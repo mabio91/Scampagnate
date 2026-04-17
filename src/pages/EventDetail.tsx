@@ -169,7 +169,20 @@ const EventDetail = () => {
   const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
 
   // Event Fit Score
-  const fitScore = useEventFitScore(eventAccessRules, event ? { difficulty: event.difficulty, category: event.category } : null);
+  const fitScoreMainCategory =
+    (event?.additional_fields as any)?.fit_score_main_category || event?.category?.name || null;
+  const fitScoreSecondaryCategories =
+    ((event?.additional_fields as any)?.fit_score_secondary_categories as string[] | undefined) || [];
+  const fitScore = useEventFitScore(
+    eventAccessRules,
+    event
+      ? {
+          difficulty: event.difficulty,
+          category: fitScoreMainCategory ? { name: fitScoreMainCategory } : null,
+          secondaryCategories: fitScoreSecondaryCategories,
+        }
+      : null
+  );
 
   // Dynamic pricing eligibility
   const rawPriceOptions = event?.price_options as PriceOption[] | null;
