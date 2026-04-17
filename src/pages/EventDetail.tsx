@@ -15,6 +15,7 @@ import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent,
 import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import { usePricingEligibility, getBestUserPrice, type PriceOption, type ResolvedPriceOption } from "@/hooks/usePricingEligibility";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
+import DynamicIcon from "@/components/DynamicIcon";
 import ShareSheet from "@/components/events/ShareSheet";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
@@ -786,7 +787,8 @@ const EventDetail = () => {
               </button>
             )}
             {event.category && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-body font-semibold">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-body font-semibold">
+                {event.category.icon && <span className="flex items-center justify-center shrink-0"><DynamicIcon value={event.category.icon} size={14} /></span>}
                 {event.category.name}
               </span>
             )}

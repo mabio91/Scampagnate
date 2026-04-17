@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
+import DynamicIcon from "@/components/DynamicIcon";
 import { UI_LABELS } from "@/lib/labels";
 
 export interface EventDiscount {
@@ -158,7 +159,7 @@ const EventCard = memo(({
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               {event.category && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/60 bg-muted/30 text-[10px] sm:text-[11px] font-body font-medium text-foreground">
-                  {event.category.icon && <span className="text-[11px]">{event.category.icon}</span>}
+                  {event.category.icon && <span className="flex items-center justify-center shrink-0"><DynamicIcon value={event.category.icon} size={11} /></span>}
                   {event.category.name}
                 </span>
               )}

@@ -1,14 +1,6 @@
 import { memo } from "react";
-import { Mountain, Dumbbell, Wine, Landmark, Sparkles, type LucideIcon } from "lucide-react";
 import { UI_LABELS } from "@/lib/labels";
-
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  "Trekking & Outdoor": Mountain,
-  "Sport & Movimento": Dumbbell,
-  "Social & Aperitivi": Wine,
-  "Esperienze & Cultura": Landmark,
-  "Eventi Speciali": Sparkles,
-};
+import DynamicIcon from "@/components/DynamicIcon";
 
 interface Category {
   id: string;
@@ -46,7 +38,7 @@ const CategoryFilter = memo(({ categories, selected, onSelect }: CategoryFilterP
               : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
-          {(() => { const Icon = CATEGORY_ICONS[cat.name]; return Icon ? <Icon className="h-4 w-4" /> : null; })()}
+          {cat.icon && <DynamicIcon value={cat.icon} size={16} />}
           <span className="whitespace-nowrap">{cat.name}</span>
         </button>
       ))}
