@@ -270,7 +270,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      payment_method_types: ["card", "link"],
+      payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
       success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId}&registration_id=${registrationId}`,
