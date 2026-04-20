@@ -624,6 +624,8 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          additional_responses: Json | null
+          car_availability: string | null
           checked_in: boolean
           created_at: string
           event_id: string
@@ -637,6 +639,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          additional_responses?: Json | null
+          car_availability?: string | null
           checked_in?: boolean
           created_at?: string
           event_id: string
@@ -650,6 +654,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          additional_responses?: Json | null
+          car_availability?: string | null
           checked_in?: boolean
           created_at?: string
           event_id?: string

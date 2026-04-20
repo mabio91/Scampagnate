@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
+import { parseEventDateTime } from "@/lib/timezone";
 
 export interface EventWithDetails {
   id: string;
@@ -212,7 +213,27 @@ export const useRegisterForEvent = () => {
   const { user, profile } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ eventId, meetingPointId, sportLevel, asWaitlist, requestApproval, paymentType, priceOptionId }: { eventId: string; meetingPointId?: string; sportLevel?: string; asWaitlist?: boolean; requestApproval?: boolean; paymentType?: string; priceOptionId?: string }) => {
+    mutationFn: async ({
+      eventId,
+      meetingPointId,
+      sportLevel,
+      asWaitlist,
+      requestApproval,
+      paymentType,
+      priceOptionId,
+      carAvailability,
+      additionalResponses,
+    }: {
+      eventId: string;
+      meetingPointId?: string;
+      sportLevel?: string;
+      asWaitlist?: boolean;
+      requestApproval?: boolean;
+      paymentType?: string;
+      priceOptionId?: string;
+      carAvailability?: string;
+      additionalResponses?: Record<string, string>;
+    }) => {
       if (!user) throw new Error("Devi effettuare il login");
 
       // Determine payment_status based on payment type
@@ -236,6 +257,8 @@ export const useRegisterForEvent = () => {
         event_id: eventId,
         user_id: user.id,
         meeting_point_id: meetingPointId || null,
+        car_availability: carAvailability || null,
+        additional_responses: additionalResponses && Object.keys(additionalResponses).length > 0 ? additionalResponses : null,
         sport_level: sportLevel || null,
         status: status as any,
         payment_status: paymentStatus,
@@ -249,6 +272,63 @@ export const useRegisterForEvent = () => {
         .single();
       if (error) throw error;
       return { registrationId: insertedData?.id, eventId };
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["event", vars.eventId] });
+      queryClient.invalidateQueries({ queryKey: ["event-participants", vars.eventId] });
+      queryClient.invalidateQueries({ queryKey: ["my-registration", vars.eventId] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["my-events"] });
+    },
+  });
+};
+
+export const useUpdateRegistrationDetails = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      registrationId,
+      eventId,
+      meetingPointId,
+      carAvailability,
+      additionalResponses,
+    }: {
+      registrationId: string;
+      eventId: string;
+      meetingPointId?: string;
+      carAvailability?: string;
+      additionalResponses?: Record<string, string>;
+    }) => {
+      if (!user) throw new Error("Devi effettuare il login");
+
+      const { data: eventData, error: eventError } = await supabase
+        .from("events")
+        .select("date, time")
+        .eq("id", eventId)
+        .single();
+
+      if (eventError) throw eventError;
+
+      if (!eventData?.date || !eventData?.time || parseEventDateTime(eventData.date, eventData.time).getTime() <= Date.now()) {
+        throw new Error("Non è più possibile modificare l'iscrizione dopo l'inizio dell'evento");
+      }
+
+      const payload = {
+        meeting_point_id: meetingPointId || null,
+        car_availability: carAvailability || null,
+        additional_responses: additionalResponses && Object.keys(additionalResponses).length > 0 ? additionalResponses : null,
+      };
+
+      const { error } = await supabase
+        .from("event_registrations")
+        .update(payload)
+        .eq("id", registrationId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      return { eventId, registrationId };
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["event", vars.eventId] });
@@ -295,11 +375,20 @@ export const useMyEvents = () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, events(*, event_categories(name, icon)), meeting_point:event_meeting_points(id, name, location, time)")
+        .select("*, events(*, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)), meeting_point:event_meeting_points(id, name, location, time)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data || []).map((registration: any) => ({
+        ...registration,
+        events: registration.events
+          ? {
+              ...registration.events,
+              category: registration.events.event_categories,
+              meeting_points: registration.events.event_meeting_points || [],
+            }
+          : registration.events,
+      }));
     },
     enabled: !!user,
   });

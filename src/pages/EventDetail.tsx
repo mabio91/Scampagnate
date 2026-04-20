@@ -1519,6 +1519,8 @@ const EventDetail = () => {
               eventId: event.id,
               meetingPointId: opts.meetingPointId,
               sportLevel: opts.sportLevel,
+              carAvailability: opts.carAvailability,
+              additionalResponses: opts.additionalResponses,
               asWaitlist: isWaitlist,
               requestApproval: opts.requestApproval,
               paymentType: event.payment_type,
