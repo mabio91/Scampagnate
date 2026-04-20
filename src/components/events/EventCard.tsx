@@ -6,6 +6,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
 import DynamicIcon from "@/components/DynamicIcon";
 import { UI_LABELS } from "@/lib/labels";
+import SoldOutOverlay from "./SoldOutOverlay";
 
 export interface EventDiscount {
   discount_type: string;
@@ -83,8 +84,10 @@ const EventCard = memo(({
   userRegistration?: UserRegistrationInfo;
 }) => {
   const isAboveFold = index < 4;
-  const fillPercent = Math.min(100, (event.spots_taken / event.spots_total) * 100);
-  const isSoldOut = event.spots_taken >= event.spots_total;
+  const isSoldOut = event.status === "full" || (event.spots_total > 0 && event.spots_taken >= event.spots_total);
+  const fillPercent = event.spots_total > 0
+    ? Math.min(100, (event.spots_taken / event.spots_total) * 100)
+    : 0;
 
   // Fill bar color: 0-49% green, 50-69% amber, 70%+ red
   const fillColor = fillPercent >= 70 ? "bg-destructive" : fillPercent >= 50 ? "bg-warning" : "bg-success";
@@ -182,15 +185,15 @@ const EventCard = memo(({
               width={112}
               height={112}
               eager={isAboveFold}
-              className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover bg-muted"
+              className={`w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover bg-muted transition-all duration-300 ${
+                isSoldOut ? "grayscale" : ""
+              }`}
             />
-            {/* Diagonal SOLD OUT patch on thumbnail */}
             {isSoldOut && (
-              <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-                <div className="absolute top-[10px] right-[-24px] w-[110px] text-center rotate-45 bg-destructive/85 text-destructive-foreground text-[8px] sm:text-[9px] font-bold font-body uppercase tracking-wider py-0.5 shadow-md">
-                  SOLD OUT
-                </div>
-              </div>
+              <SoldOutOverlay
+                size="card"
+                className="rounded-xl"
+              />
             )}
           </div>
         </div>

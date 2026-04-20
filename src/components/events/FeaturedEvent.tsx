@@ -6,11 +6,12 @@ import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { UI_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
+import SoldOutOverlay from "./SoldOutOverlay";
 
 type HeroBadge = "sold_out" | "promo" | "top" | null;
 
 function resolveHeroBadge(event: EventWithDetails): HeroBadge {
-  if (event.spots_taken >= event.spots_total) return "sold_out";
+  if (event.status === "full" || (event.spots_total > 0 && event.spots_taken >= event.spots_total)) return "sold_out";
 
   const badges = (event as any).event_badges;
   if (Array.isArray(badges)) {
@@ -46,7 +47,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
 
   const countdown = getCountdown(event.date);
   const heroBadge = useMemo(() => resolveHeroBadge(event), [event]);
-  const isSoldOut = event.spots_taken >= event.spots_total;
+  const isSoldOut = event.status === "full" || (event.spots_total > 0 && event.spots_taken >= event.spots_total);
 
   const dateStr = new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" });
   const locationLabel = (event as any).location_label || event.location;
@@ -61,19 +62,17 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
           width={600}
           height={320}
           eager
-          className="w-full h-[260px] sm:h-[320px] object-cover bg-muted transition-transform duration-700 group-hover:scale-105"
+          className={cn(
+            "w-full h-[260px] sm:h-[320px] object-cover bg-muted transition-transform duration-700 group-hover:scale-105",
+            isSoldOut && "grayscale"
+          )}
         />
 
         {/* Gradient overlay - strictly bottom to top for max readability, ~70% black to transparent */}
         <div className="absolute inset-x-0 bottom-0 top-1/4 bg-gradient-to-t from-black/75 to-transparent pointer-events-none z-10" />
 
-        {/* Diagonal SOLD OUT ribbon */}
         {isSoldOut && (
-          <div className="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none z-30">
-            <div className="absolute top-[18px] right-[-34px] w-[170px] text-center rotate-45 bg-destructive/90 text-destructive-foreground text-[11px] font-bold font-body uppercase tracking-wider py-1.5 shadow-lg">
-              SOLD OUT
-            </div>
-          </div>
+          <SoldOutOverlay size="hero" className="z-30" />
         )}
 
         {/* Top-left: Time badge - attached to corner, same pill style */}
