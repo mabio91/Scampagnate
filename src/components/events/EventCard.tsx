@@ -63,7 +63,7 @@ function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInf
   if (event.status === "draft") return "coming_soon";
   if (userReg?.status === "waitlist") return "waitlist";
   if (isEventPast || isPastDate) return "closed";
-  // SOLD OUT: full event → show "Waitlist" status instead of "Chiuso"
+  // SOLD OUT: full event -> show "Waitlist" instead of "Chiuso"
   if (event.status === "full" || event.spots_taken >= event.spots_total) return "waitlist";
   return "open";
 }
@@ -96,10 +96,8 @@ const EventCard = memo(({
   const cardStatus = useMemo(() => resolveCardStatus(event, regInfo), [event, regInfo]);
   const statusConfig = STATUS_CONFIG[cardStatus];
 
-  // Has promo for this user?
   const hasPromo = !!discount;
 
-  // Format date: "Dom 5 apr"
   const formattedDate = useMemo(() => {
     const d = new Date(event.date);
     const today = new Date();
@@ -115,17 +113,17 @@ const EventCard = memo(({
 
   const formattedTime = event.time?.slice(0, 5) || "";
   const locationLabel = (event as any).location_label || event.location;
+  const hasDifficulty = Boolean(event.difficulty);
+  const hasMetrics = Boolean(event.distance || event.elevation || event.duration);
+  const useCompactCardLayout = !hasDifficulty && !hasMetrics;
 
-  // Urgency: ≥ 70% and not sold out
   const showUrgency = fillPercent >= 70 && !isSoldOut;
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
       <div className="bg-card rounded-2xl border border-border/40 hover:border-border/60 hover:shadow-md active:scale-[0.98] transition-all duration-200 overflow-hidden">
         <div className="flex gap-3 p-3 sm:p-4">
-          {/* Left content */}
           <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-            {/* Row 1: Date + Time | Status */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground text-[11px] sm:text-xs font-body min-w-0">
                 <span className="flex items-center gap-1 shrink-0">
@@ -147,37 +145,59 @@ const EventCard = memo(({
               </span>
             </div>
 
-            {/* Row 2: Title — max 3 lines */}
             <h3 className="font-display text-[15px] sm:text-base font-bold text-foreground line-clamp-3 leading-snug">
               {event.title}
             </h3>
 
-            {/* Row 3: Location */}
             <div className="flex items-center gap-1 text-muted-foreground text-[11px] sm:text-xs font-body min-w-0">
               <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
               <span className="truncate">{locationLabel}</span>
             </div>
 
-            {/* Row 4: Category → Promo → Difficulty */}
-            <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
-              {event.category && (
-                <span className="inline-flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3 text-[11px] font-body font-semibold leading-none text-foreground">
-                  {event.category.icon && <span className="flex items-center justify-center shrink-0"><DynamicIcon value={event.category.icon} size={12} /></span>}
-                  <span className="truncate">{event.category.name}</span>
-                </span>
-              )}
-              {hasPromo && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] sm:text-[11px] font-body font-semibold">
-                  Promo
-                </span>
-              )}
-              {event.difficulty && (
-                <DifficultyBadge difficulty={event.difficulty} className="shrink-0" showLabel={true} />
+            <div className={`mt-0.5 flex min-w-0 ${useCompactCardLayout ? "items-end justify-between gap-2" : "items-center gap-1.5"}`}>
+              <div className="flex min-w-0 items-center gap-1.5">
+                {event.category && (
+                  <span className="inline-flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3 text-[11px] font-body font-semibold leading-none text-foreground">
+                    {event.category.icon && (
+                      <span className="flex items-center justify-center shrink-0">
+                        <DynamicIcon value={event.category.icon} size={12} />
+                      </span>
+                    )}
+                    <span className="truncate">{event.category.name}</span>
+                  </span>
+                )}
+                {!useCompactCardLayout && hasPromo && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] sm:text-[11px] font-body font-semibold">
+                    Promo
+                  </span>
+                )}
+                {hasDifficulty && (
+                  <DifficultyBadge difficulty={event.difficulty} className="shrink-0" showLabel={true} />
+                )}
+              </div>
+
+              {useCompactCardLayout && (
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body">
+                    <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <span>{event.spots_taken}/{event.spots_total} posti</span>
+                  </div>
+                  <div className="w-16 sm:w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${isSoldOut ? "bg-destructive" : fillColor} transition-all duration-500 ease-out`}
+                      style={{ width: `${isSoldOut ? 100 : fillPercent}%` }}
+                    />
+                  </div>
+                  {showUrgency && (
+                    <span className="text-[10px] font-body font-semibold text-destructive">
+                      Ultimi posti!
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
 
-          {/* Right: thumbnail with SOLD OUT diagonal ribbon */}
           <div className="relative flex-shrink-0">
             <OptimizedImage
               src={event.image_url}
@@ -198,49 +218,48 @@ const EventCard = memo(({
           </div>
         </div>
 
-        {/* Row 5: Stats (left) + Spots/Urgency (right) */}
-        <div className="px-3 sm:px-4 pb-2.5 sm:pb-3 flex items-end justify-between gap-2">
-          {/* Left: trekking stats */}
-          <div className="flex items-center gap-3 text-[11px] sm:text-xs text-muted-foreground font-body">
-            {event.distance && (
-              <span className="flex items-center gap-1">
-                <Footprints className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                {event.distance}
-              </span>
-            )}
-            {event.elevation && (
-              <span className="flex items-center gap-1">
-                <Mountain className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                {event.elevation}
-              </span>
-            )}
-            {event.duration && (
-              <span className="flex items-center gap-1">
-                <Timer className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                {event.duration}
-              </span>
-            )}
-          </div>
+        {!useCompactCardLayout && (
+          <div className="px-3 sm:px-4 pb-2.5 sm:pb-3 flex items-end justify-between gap-2">
+            <div className="flex items-center gap-3 text-[11px] sm:text-xs text-muted-foreground font-body">
+              {event.distance && (
+                <span className="flex items-center gap-1">
+                  <Footprints className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  {event.distance}
+                </span>
+              )}
+              {event.elevation && (
+                <span className="flex items-center gap-1">
+                  <Mountain className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  {event.elevation}
+                </span>
+              )}
+              {event.duration && (
+                <span className="flex items-center gap-1">
+                  <Timer className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  {event.duration}
+                </span>
+              )}
+            </div>
 
-          {/* Right: spots + progress bar + urgency */}
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body">
-              <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              <span>{event.spots_taken}/{event.spots_total} posti</span>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body">
+                <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span>{event.spots_taken}/{event.spots_total} posti</span>
+              </div>
+              <div className="w-16 sm:w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${isSoldOut ? "bg-destructive" : fillColor} transition-all duration-500 ease-out`}
+                  style={{ width: `${isSoldOut ? 100 : fillPercent}%` }}
+                />
+              </div>
+              {showUrgency && (
+                <span className="text-[10px] font-body font-semibold text-destructive">
+                  Ultimi posti!
+                </span>
+              )}
             </div>
-            <div className="w-16 sm:w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className={`h-full rounded-full ${isSoldOut ? "bg-destructive" : fillColor} transition-all duration-500 ease-out`}
-                style={{ width: `${isSoldOut ? 100 : fillPercent}%` }}
-              />
-            </div>
-            {showUrgency && (
-              <span className="text-[10px] font-body font-semibold text-destructive">
-                🔥 Ultimi posti!
-              </span>
-            )}
           </div>
-        </div>
+        )}
       </div>
     </Link>
   );
