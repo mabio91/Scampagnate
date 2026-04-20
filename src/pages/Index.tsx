@@ -80,6 +80,13 @@ const Index = () => {
   const { data: categories } = useCategories();
   const { data: discountMap } = useActiveDiscounts();
 
+  const normalizeSearchText = (value: string | null | undefined) =>
+    (value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
   // All upcoming, non-draft/past/cancelled events
   const allUpcoming = useMemo(() => {
     if (!events) return [];
@@ -129,9 +136,15 @@ const Index = () => {
     let filtered = allUpcoming;
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+      const q = normalizeSearchText(searchQuery);
       filtered = filtered.filter(e =>
-        e.title.toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || e.description.toLowerCase().includes(q)
+        [
+          e.title,
+          e.location,
+          e.description,
+          (e as any).location_label,
+          e.category?.name,
+        ].some((value) => normalizeSearchText(value).includes(q))
       );
     }
     if (dateFilter) {

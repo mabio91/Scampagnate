@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 import type { QuickFilterType } from "@/components/events/QuickFilters";
 
 type PriceFilter = "all" | "free" | "paid";
@@ -70,29 +70,57 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     setShowFilters(false);
   }, []);
 
+  const toggleSearch = useCallback(() => {
+    setSearchOpen((prev) => !prev);
+  }, []);
+
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+  }, []);
+
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+  }, []);
+
   const hasActiveFilters = !!(searchQuery || dateFilter || priceFilter !== "all" || quickFilters.length > 0);
 
+  const value = useMemo(() => ({
+    searchOpen,
+    toggleSearch,
+    openSearch,
+    closeSearch,
+    selectedCategory,
+    setSelectedCategory,
+    searchQuery,
+    setSearchQuery,
+    dateFilter,
+    setDateFilter,
+    priceFilter,
+    setPriceFilter,
+    quickFilters,
+    toggleQuickFilter,
+    showFilters,
+    setShowFilters,
+    clearAllFilters,
+    hasActiveFilters,
+  }), [
+    searchOpen,
+    toggleSearch,
+    openSearch,
+    closeSearch,
+    selectedCategory,
+    searchQuery,
+    dateFilter,
+    priceFilter,
+    quickFilters,
+    toggleQuickFilter,
+    showFilters,
+    clearAllFilters,
+    hasActiveFilters,
+  ]);
+
   return (
-    <SearchContext.Provider value={{
-      searchOpen,
-      toggleSearch: () => setSearchOpen(p => !p),
-      openSearch: () => setSearchOpen(true),
-      closeSearch: () => setSearchOpen(false),
-      selectedCategory,
-      setSelectedCategory,
-      searchQuery,
-      setSearchQuery,
-      dateFilter,
-      setDateFilter,
-      priceFilter,
-      setPriceFilter,
-      quickFilters,
-      toggleQuickFilter,
-      showFilters,
-      setShowFilters,
-      clearAllFilters,
-      hasActiveFilters,
-    }}>
+    <SearchContext.Provider value={value}>
       {children}
     </SearchContext.Provider>
   );
