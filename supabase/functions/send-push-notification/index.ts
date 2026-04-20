@@ -7,6 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const APP_BASE_URL = 'https://scampagnate.com';
+const NOTIFICATION_ICON_URL = `${APP_BASE_URL}/apple-touch-icon.png`;
+const NOTIFICATION_BADGE_URL = `${APP_BASE_URL}/favicon.png`;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -65,6 +69,8 @@ serve(async (req) => {
       message: message || '',
       url: event_id ? `/event/${event_id}` : '/',
       type: type || 'info',
+      icon: NOTIFICATION_ICON_URL,
+      badge: NOTIFICATION_BADGE_URL,
     });
 
     // Send to all subscriptions

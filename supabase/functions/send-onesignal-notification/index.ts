@@ -6,6 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const APP_BASE_URL = 'https://scampagnate.com';
+const NOTIFICATION_ICON_URL = `${APP_BASE_URL}/apple-touch-icon.png`;
+const NOTIFICATION_BADGE_URL = `${APP_BASE_URL}/favicon.png`;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,8 +67,12 @@ serve(async (req) => {
           target_channel: 'push',
           headings: { en: title },
           contents: { en: message || '' },
-          url: `https://scampagnate.com${url}`,
+          url: `${APP_BASE_URL}${url}`,
           web_push_type: 'Notification',
+          chrome_web_icon: NOTIFICATION_ICON_URL,
+          chrome_web_badge: NOTIFICATION_BADGE_URL,
+          firefox_icon: NOTIFICATION_ICON_URL,
+          safari_icon: NOTIFICATION_ICON_URL,
         }),
       });
 
@@ -90,8 +98,12 @@ serve(async (req) => {
         include_player_ids: playerIds,
         headings: { en: title },
         contents: { en: message || '' },
-        url: `https://scampagnate.com${url}`,
+        url: `${APP_BASE_URL}${url}`,
         web_push_type: 'Notification',
+        chrome_web_icon: NOTIFICATION_ICON_URL,
+        chrome_web_badge: NOTIFICATION_BADGE_URL,
+        firefox_icon: NOTIFICATION_ICON_URL,
+        safari_icon: NOTIFICATION_ICON_URL,
         data: { type: type || 'info', event_id: event_id || null },
       }),
     });
