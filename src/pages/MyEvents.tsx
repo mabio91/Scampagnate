@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
-  CalendarPlus, Clock, Calendar, Mail, Loader2, Zap
+  CalendarPlus, Clock, Calendar, Mail, Loader2, Zap, SquarePen
 } from "lucide-react";
 import { getRefundInfo, getCancellationDialogMessage } from "@/lib/cancellationPolicy";
 
@@ -12,7 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ShareSheet from "@/components/events/ShareSheet";
-import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import EditRegistrationDialog from "@/components/events/EditRegistrationDialog";
+import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useUpdateRegistrationDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +42,22 @@ const statusLabels: Record<string, string> = {
   partecipato: "Partecipato",
   pagamento_in_sospeso: "Pagamento in sospeso",
 };
+
+function getCustomRegistrationFields(event: any): any[] {
+  const af = event?.additional_fields as any;
+  return af && Array.isArray(af.fields) ? af.fields : [];
+}
+
+function hasEditableRegistrationFields(event: any): boolean {
+  const hasMeetingPoints = Boolean(event?.meeting_points?.length);
+  const carEnabled = Boolean((event?.additional_fields as any)?.car_availability_enabled || (event?.additional_fields as any)?.ask_car_availability);
+  return hasMeetingPoints || carEnabled || getCustomRegistrationFields(event).length > 0;
+}
+
+function canEditRegistration(event: any): boolean {
+  if (!event?.date || !event?.time) return false;
+  return parseEventDateTime(event.date, event.time).getTime() > Date.now();
+}
 
 function isPendingPaymentRegistration(registration: any): boolean {
   const event = registration?.events;
@@ -200,8 +217,10 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const cancelMutation = useCancelRegistration();
+  const updateRegistrationMutation = useUpdateRegistrationDetails();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -214,6 +233,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const hasSpotAvailable = resolvedStatus === "posto_disponibile";
   const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
   const meetingPoint = registration.meeting_point;
+  const displayLocation = event.location_label || event.location;
 
   const refundInfo = useMemo(() => {
     if (!event.date || !event.time) return null;
@@ -223,6 +243,9 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   const hasPaidPayment = registration.payment_status === "paid";
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
+  const editableFieldsAvailable = hasEditableRegistrationFields(event);
+  const registrationStillEditable = canEditRegistration(event);
+  const showEditButton = Boolean(showActions && registration.status !== "cancelled" && editableFieldsAvailable && registrationStillEditable);
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
   const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US")}`;
@@ -291,6 +314,26 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     }
   };
 
+  const handleSaveRegistrationDetails = async (payload: {
+    meetingPointId?: string;
+    carAvailability?: string;
+    additionalResponses?: Record<string, string>;
+  }) => {
+    try {
+      await updateRegistrationMutation.mutateAsync({
+        registrationId: registration.id,
+        eventId: event.id,
+        meetingPointId: payload.meetingPointId,
+        carAvailability: payload.carAvailability,
+        additionalResponses: payload.additionalResponses,
+      });
+      setShowEditDialog(false);
+      toast({ title: "Iscrizione aggiornata con successo" });
+    } catch (err: any) {
+      toast({ title: t("error"), description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <>
       <div className="rounded-xl bg-card overflow-hidden">
@@ -310,7 +353,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
               <MapPin className="h-3 w-3" />
-              <span className="truncate">{event.location}</span>
+              <span className="truncate">{displayLocation}</span>
             </div>
             {meetingPoint && (
               <div className="flex items-center gap-2 mt-0.5 text-xs font-body text-secondary">
@@ -344,6 +387,15 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {showEditButton && (
+              <button
+                onClick={() => setShowEditDialog(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all"
+              >
+                <SquarePen className="h-3.5 w-3.5" /> Modifica iscrizione
+              </button>
+            )}
 
             {hasSpotAvailable && (
               <button
@@ -405,6 +457,15 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         url={eventUrl}
         text={shareText}
       />
+
+      <EditRegistrationDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        event={event}
+        registration={registration}
+        isSubmitting={updateRegistrationMutation.isPending}
+        onSave={handleSaveRegistrationDetails}
+      />
     </>
   );
 };
@@ -417,6 +478,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
 
   if (!event) return null;
   const isPast = new Date(event.date) < new Date();
+  const displayLocation = event.location_label || event.location;
 
   const handleUnsave = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -447,7 +509,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-muted-foreground text-xs font-body">
             <MapPin className="h-3 w-3" />
-            <span className="truncate">{event.location}</span>
+            <span className="truncate">{displayLocation}</span>
           </div>
           <div className="mt-1.5">
             <span className="font-body font-bold text-xs text-foreground">

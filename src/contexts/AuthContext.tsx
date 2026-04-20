@@ -17,6 +17,8 @@ interface Profile {
   membership_status?: string;
   membership_registration_date?: string;
   membership_year?: number;
+  membership_subscription_order?: number | null;
+  is_founding_member?: boolean;
   account_status?: 'Active' | 'Suspended' | 'Banned';
   self_level?: string;
   has_car?: string;

@@ -1357,8 +1357,7 @@ const EventDetail = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black flex flex-col"
           >
-            <div className="flex items-center justify-between p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
-              <span className="text-white/70 text-sm font-body">{galleryStartIndex + 1} / {event.gallery_images.length}</span>
+            <div className="flex items-center justify-end p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
               <button onClick={() => setShowGalleryModal(false)} className="p-2 rounded-full bg-white/10 text-white">
                 <X className="h-5 w-5" />
               </button>
@@ -1519,6 +1518,8 @@ const EventDetail = () => {
               eventId: event.id,
               meetingPointId: opts.meetingPointId,
               sportLevel: opts.sportLevel,
+              carAvailability: opts.carAvailability,
+              additionalResponses: opts.additionalResponses,
               asWaitlist: isWaitlist,
               requestApproval: opts.requestApproval,
               paymentType: event.payment_type,

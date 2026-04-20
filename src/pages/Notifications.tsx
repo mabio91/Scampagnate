@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMemo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { localizeNotification } from "@/lib/notificationLocalization";
 
 const typeIcons: Record<string, React.ReactNode> = {
   registration: <CalendarDays className="h-5 w-5 text-primary" />,
@@ -39,6 +40,7 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
   };
 
   const locale = language === "it" ? itLocale : enUS;
+  const localized = localizeNotification(notification, language as "it" | "en");
 
   return (
     <button
@@ -52,11 +54,11 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
       </div>
       <div className="flex-1 min-w-0">
         <p className={`text-sm leading-tight ${!notification.read ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>
-          {notification.title}
+          {localized.title}
         </p>
         {(notification.type === 'event_reminder_24h' || notification.type === 'event_reminder_3h') ? (
           <div className="mt-1 space-y-1">
-            {notification.message.split('\n').map((line, i) => {
+            {localized.message.split('\n').map((line, i) => {
               const cleanLine = line.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
               const mapsMatch = cleanLine.match(/🗺️.*?(https:\/\/\S+)/);
               if (mapsMatch) {
@@ -90,7 +92,7 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
           </div>
         ) : (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-            {notification.message.replace(/(\d{2}:\d{2}):\d{2}/g, '$1')}
+            {localized.message.replace(/(\d{2}:\d{2}):\d{2}/g, '$1')}
           </p>
         )}
         <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-medium">

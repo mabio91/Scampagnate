@@ -624,6 +624,8 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          additional_responses: Json | null
+          car_availability: string | null
           checked_in: boolean
           created_at: string
           event_id: string
@@ -637,6 +639,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          additional_responses?: Json | null
+          car_availability?: string | null
           checked_in?: boolean
           created_at?: string
           event_id: string
@@ -650,6 +654,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          additional_responses?: Json | null
+          car_availability?: string | null
           checked_in?: boolean
           created_at?: string
           event_id?: string
@@ -1216,6 +1222,7 @@ export type Database = {
           is_founding_member: boolean
           last_name: string
           membership_id: number | null
+          membership_subscription_order: number | null
           membership_registration_date: string | null
           membership_status: string | null
           membership_year: number | null
@@ -1246,6 +1253,7 @@ export type Database = {
           is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
+          membership_subscription_order?: number | null
           membership_registration_date?: string | null
           membership_status?: string | null
           membership_year?: number | null
@@ -1276,6 +1284,7 @@ export type Database = {
           is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
+          membership_subscription_order?: number | null
           membership_registration_date?: string | null
           membership_status?: string | null
           membership_year?: number | null
