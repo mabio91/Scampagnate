@@ -45,6 +45,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
+import { getDeterministicEventClosingSentence } from "@/lib/eventClosingSentences";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
@@ -1164,16 +1165,9 @@ const EventDetail = () => {
           const { policyType } = parseCancellationPolicy(event.cancellation_policy);
           const isFlexible = policyType === "flexible" || policyType === "moderate";
           const windowHours = policyType === "moderate" ? "48h" : "24h";
-
-          const closingSentences = [
-            "✨ Porta leggerezza, al resto pensiamo noi",
-            "✨ Una community che arriva per i sentieri… e resta per le persone",
-            "✨ Il difficile è venire. Poi non vorrai più andare via",
-            "✨ Fidati: sarà una di quelle giornate che ricordi",
-            "✨ Vieni con lo spirito giusto — il resto viene da sé",
-            "✨ Qui si conoscono persone, non solo posti",
-          ];
-          const randomClosing = closingSentences[Math.floor(Math.random() * closingSentences.length)];
+          const closingSentence =
+            (event.additional_fields as any)?.closing_sentence ||
+            getDeterministicEventClosingSentence(event.id);
 
           const bullets = isFlexible
             ? [
@@ -1181,14 +1175,14 @@ const EventDetail = () => {
                 { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${windowHours} prima e ricevere il rimborso completo` },
                 { icon: "❌", text: "Dopo questo termine non è più possibile rimborsare (organizziamo tutto in anticipo)" },
                 { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
-                { icon: "", text: randomClosing },
+                { icon: "", text: closingSentence },
               ]
             : [
                 { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
                 { icon: "❌", text: "Questo evento non è rimborsabile" },
                 { icon: "💡", text: "Organizziamo tutto in anticipo per garantire l'esperienza" },
                 { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
-                { icon: "", text: randomClosing },
+                { icon: "", text: closingSentence },
               ];
 
           return (
