@@ -159,11 +159,11 @@ const EventCard = memo(({
             </div>
 
             {/* Row 4: Category → Promo → Difficulty */}
-            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
               {event.category && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/60 bg-muted/30 text-[10px] sm:text-[11px] font-body font-medium text-foreground">
-                  {event.category.icon && <span className="flex items-center justify-center shrink-0"><DynamicIcon value={event.category.icon} size={11} /></span>}
-                  {event.category.name}
+                <span className="inline-flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3 text-[11px] font-body font-semibold leading-none text-foreground">
+                  {event.category.icon && <span className="flex items-center justify-center shrink-0"><DynamicIcon value={event.category.icon} size={12} /></span>}
+                  <span className="truncate">{event.category.name}</span>
                 </span>
               )}
               {hasPromo && (
@@ -172,7 +172,7 @@ const EventCard = memo(({
                 </span>
               )}
               {event.difficulty && (
-                <DifficultyBadge difficulty={event.difficulty} className="text-[10px] sm:text-[11px] px-2 py-0.5" showLabel={true} />
+                <DifficultyBadge difficulty={event.difficulty} className="shrink-0" showLabel={true} />
               )}
             </div>
           </div>
