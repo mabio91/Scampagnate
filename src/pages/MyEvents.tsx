@@ -121,6 +121,21 @@ const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") =
   return URL.createObjectURL(blob);
 };
 
+const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+  }
+
+  return supabase.functions.invoke(functionName, {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+};
+
 const MyEvents = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -279,7 +294,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         const regPriceOptionId = registration.price_option_id;
         if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
 
-        const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+        const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
         if (error) throw error;
         if (data?.free) {
           toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });

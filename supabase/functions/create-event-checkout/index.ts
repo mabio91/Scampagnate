@@ -24,14 +24,41 @@ serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated");
-
     const { eventId, registrationId, discountCodeId, priceOptionId } = await req.json();
     if (!eventId || !registrationId) throw new Error("Event ID and Registration ID required");
+
+    const { data: registration, error: registrationError } = await supabaseAdmin
+      .from("event_registrations")
+      .select("id, user_id, status, price_option_id, payment_status")
+      .eq("id", registrationId)
+      .eq("event_id", eventId)
+      .single();
+
+    if (registrationError || !registration) throw new Error("Registration not found");
+
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+
+    let userId = registration.user_id;
+    let userEmail: string | null = null;
+
+    if (token) {
+      const { data: authData, error: authError } = await supabaseClient.auth.getUser(token);
+      if (!authError && authData.user) {
+        userId = authData.user.id;
+        userEmail = authData.user.email ?? null;
+      }
+    }
+
+    if (userId !== registration.user_id) {
+      throw new Error("Registration does not belong to the authenticated user");
+    }
+
+    if (!userEmail) {
+      const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(registration.user_id);
+      if (authUserError || !authUser.user?.email) throw new Error("User not authenticated");
+      userEmail = authUser.user.email;
+    }
 
     // Clean up any stale pending registrations (older than 30 min) for this user+event
     const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
@@ -39,7 +66,7 @@ serve(async (req) => {
       .from("event_registrations")
       .delete()
       .eq("event_id", eventId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("payment_status", "pending")
       .neq("id", registrationId)
       .lt("created_at", thirtyMinAgo);
@@ -54,14 +81,7 @@ serve(async (req) => {
     if (eventError || !event) throw new Error("Event not found");
 
     // Check if registration is from waitlist — if so, verify spot availability
-    const { data: reg } = await supabaseAdmin
-      .from("event_registrations")
-      .select("status")
-      .eq("id", registrationId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (reg?.status === "waitlist") {
+    if (registration.status === "waitlist") {
       const availableSpots = event.spots_total - event.spots_taken;
       if (availableSpots <= 0) {
         return new Response(
@@ -74,7 +94,7 @@ serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("membership_status, membership_registration_date")
-      .eq("id", user.id)
+      .eq("id", userId)
       .maybeSingle();
 
     if (profileError) throw new Error("Unable to verify membership status");
@@ -111,14 +131,8 @@ serve(async (req) => {
     
     if (!effectivePriceOptionId) {
       // Check the registration for a stored price_option_id
-      const { data: reg } = await supabaseAdmin
-        .from("event_registrations")
-        .select("price_option_id")
-        .eq("id", registrationId)
-        .eq("user_id", user.id)
-        .single();
-      if (reg?.price_option_id) {
-        effectivePriceOptionId = reg.price_option_id;
+      if (registration.price_option_id) {
+        effectivePriceOptionId = registration.price_option_id;
       }
     }
 
@@ -181,7 +195,7 @@ serve(async (req) => {
         .from("discount_code_usage")
         .select("id")
         .eq("discount_code_id", discountCodeId)
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("event_id", eventId)
         .maybeSingle();
 
@@ -199,7 +213,7 @@ serve(async (req) => {
       // Record usage
       await supabaseAdmin.from("discount_code_usage").insert({
         discount_code_id: discountCodeId,
-        user_id: user.id,
+        user_id: userId,
         event_id: eventId,
         original_price: originalPrice,
         discounted_price: finalPrice,
@@ -229,7 +243,7 @@ serve(async (req) => {
     });
 
     // Find or create Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
@@ -269,14 +283,14 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId ? undefined : userEmail,
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
       success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId}&registration_id=${registrationId}`,
       cancel_url: `${origin}/event/${eventId}`,
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         event_id: eventId,
         registration_id: registrationId,
         payment_type: event.payment_type,

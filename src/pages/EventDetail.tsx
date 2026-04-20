@@ -85,6 +85,21 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
   );
 };
 
+const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+  }
+
+  return supabase.functions.invoke(functionName, {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+};
+
 const EventDetail = () => {
   const { id } = useParams();
   const { t, language } = useLanguage();
@@ -387,7 +402,7 @@ const EventDetail = () => {
         const regPriceOptionId = (myRegistration as any).price_option_id;
         if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
         
-        const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+        const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
         if (error) throw error;
         if (data?.free) {
           toast({ title: "Prenotazione completata!", description: "Il posto è tuo!" });
@@ -436,9 +451,7 @@ const EventDetail = () => {
   const handleMembershipCheckout = async () => {
     setMembershipLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-membership-checkout", {
-        body: { eventId: event.id },
-      });
+      const { data, error } = await invokeAuthenticatedFunction("create-membership-checkout", { eventId: event.id });
       if (error) throw error;
       if (data?.url) {
         window.location.href = data.url;
@@ -463,9 +476,7 @@ const EventDetail = () => {
       if (regPriceOptionId) {
         body.priceOptionId = regPriceOptionId;
       }
-      const { data, error } = await supabase.functions.invoke("create-event-checkout", {
-        body,
-      });
+      const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
       if (error) throw error;
       if (data?.free) {
         toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
@@ -516,7 +527,7 @@ const EventDetail = () => {
           if (selectedPriceOption) {
             body.priceOptionId = selectedPriceOption;
           }
-          const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+          const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
           if (error) throw error;
           if (data?.free) {
             toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
@@ -1522,7 +1533,7 @@ const EventDetail = () => {
                 if (opts.priceOptionId) {
                   body.priceOptionId = opts.priceOptionId;
                 }
-                const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+                const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
                 if (error) throw error;
                 if (data?.free) {
                   toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
