@@ -29,6 +29,8 @@ interface BadgeData {
   description: string;
   icon: string;
   required_events: number;
+  requirement_type: string | null;
+  requirement_value: number;
   category: string | null;
 }
 
@@ -100,10 +102,30 @@ const ProfileBadges = () => {
 
   const allBadgesSorted = allBadges.filter((b) => b.name !== "Scampagnatore Ufficiale");
 
-  const getBadgeProgress = (badge: BadgeData) => ({
-    current: Math.min(attendedCount, badge.required_events),
-    target: badge.required_events,
-  });
+  const getBadgeMeta = (badge: BadgeData) => {
+    if (badge.requirement_type === "membership_first_150") {
+      const hasMembership = Boolean(profile?.membership_id);
+      const isEarned = earnedIds.has(badge.id);
+
+      return {
+        howToGet: "Sottoscrivi la tessera associativa",
+        current: isEarned ? 1 : 0,
+        target: 1,
+        unitLabel: "tessera",
+        lockedMessage: hasMembership
+          ? "Questo badge è riservato ai primi 150 membri della ASD Gruppo Scampagnate"
+          : "Attiva la tessera associativa per poter ottenere questo badge",
+      };
+    }
+
+    return {
+      howToGet: `Partecipa a ${badge.required_events} ${badge.required_events === 1 ? "evento" : "eventi"}`,
+      current: Math.min(attendedCount, badge.required_events),
+      target: badge.required_events,
+      unitLabel: "eventi",
+      lockedMessage: `Mancano ${badge.required_events - Math.min(attendedCount, badge.required_events)} eventi`,
+    };
+  };
 
   return (
     <div className="mb-6 animate-fade-in">
@@ -197,7 +219,7 @@ const ProfileBadges = () => {
           <div className="grid grid-cols-2 gap-2 animate-fade-in">
             {allBadgesSorted.map((badge) => {
               const isEarned = earnedIds.has(badge.id);
-              const { current, target } = getBadgeProgress(badge);
+              const { current, target, unitLabel } = getBadgeMeta(badge);
               return (
                 <button
                   key={badge.id}
@@ -224,7 +246,7 @@ const ProfileBadges = () => {
                   </p>
                   {!isEarned && (
                     <p className="text-[10px] font-body text-muted-foreground mt-0.5">
-                      {current}/{target} eventi
+                      {current}/{target} {unitLabel}
                     </p>
                   )}
                 </button>
@@ -258,12 +280,20 @@ const ProfileBadges = () => {
 
           {selectedBadge && (
             <div className="space-y-4">
+              {(() => {
+                const badgeMeta = getBadgeMeta(selectedBadge);
+                const progressPercent = badgeMeta.target > 0
+                  ? Math.min(100, (badgeMeta.current / badgeMeta.target) * 100)
+                  : 0;
+
+                return (
+                  <>
               <div className="p-3 rounded-xl bg-muted/50">
                 <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-1">
                   Come ottenerlo
                 </p>
                 <p className="text-sm font-body text-foreground">
-                  Partecipa a {selectedBadge.required_events} {selectedBadge.required_events === 1 ? "evento" : "eventi"}
+                  {badgeMeta.howToGet}
                 </p>
               </div>
 
@@ -273,11 +303,11 @@ const ProfileBadges = () => {
                 </p>
                 <div className="flex items-center gap-3">
                   <Progress
-                    value={Math.min(100, (attendedCount / selectedBadge.required_events) * 100)}
+                    value={progressPercent}
                     className="h-2 flex-1"
                   />
                   <span className="text-sm font-display font-bold text-foreground">
-                    {Math.min(attendedCount, selectedBadge.required_events)}/{selectedBadge.required_events}
+                    {badgeMeta.current}/{badgeMeta.target}
                   </span>
                 </div>
               </div>
@@ -299,10 +329,13 @@ const ProfileBadges = () => {
               ) : (
                 <div className="text-center p-2 rounded-lg bg-muted/50">
                   <p className="text-sm font-body text-muted-foreground flex items-center justify-center gap-1.5">
-                    <Lock className="h-4 w-4" /> Mancano {selectedBadge.required_events - Math.min(attendedCount, selectedBadge.required_events)} eventi
+                    <Lock className="h-4 w-4" /> {badgeMeta.lockedMessage}
                   </p>
                 </div>
               )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </DialogContent>

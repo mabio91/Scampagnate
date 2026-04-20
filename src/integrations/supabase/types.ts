@@ -1216,6 +1216,7 @@ export type Database = {
           is_founding_member: boolean
           last_name: string
           membership_id: number | null
+          membership_subscription_order: number | null
           membership_registration_date: string | null
           membership_status: string | null
           membership_year: number | null
@@ -1246,6 +1247,7 @@ export type Database = {
           is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
+          membership_subscription_order?: number | null
           membership_registration_date?: string | null
           membership_status?: string | null
           membership_year?: number | null
@@ -1276,6 +1278,7 @@ export type Database = {
           is_founding_member?: boolean
           last_name?: string
           membership_id?: number | null
+          membership_subscription_order?: number | null
           membership_registration_date?: string | null
           membership_status?: string | null
           membership_year?: number | null
