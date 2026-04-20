@@ -37,7 +37,6 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import RegistrationCheckoutDialog from "@/components/events/RegistrationCheckoutDialog";
@@ -1233,17 +1232,6 @@ const EventDetail = () => {
 
         {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
-          {/* Discount code for Pay Now state */}
-          {needsPayment && user && (
-            <div className="mb-4">
-              <DiscountCodeInput
-                eventId={event.id}
-                userId={user.id}
-                onDiscountApplied={setAppliedDiscount}
-              />
-            </div>
-          )}
-
           {isRegistered && !hasPendingPayment && (
             <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
               {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
