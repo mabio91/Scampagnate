@@ -1,110 +1,160 @@
-/**
- * Affinity tables for Event Fit Score calculation.
- * Maps event categories to user interests and goals with weighted affinity values (0–1).
- */
+export interface InterestCategoryOption {
+  id: string;
+  label: string;
+  emoji: string;
+}
+
+export const INTEREST_CATEGORY_OPTIONS: InterestCategoryOption[] = [
+  { id: "trekking_giornalieri", label: "Trekking giornalieri", emoji: "🥾" },
+  { id: "cammini_plurigiornalieri", label: "Cammini plurigiornalieri", emoji: "🎒" },
+  { id: "notti_tenda", label: "Notti in tenda", emoji: "⛺" },
+  { id: "trekking_notturni", label: "Trekking notturni", emoji: "🌌" },
+  { id: "aperitivi_cene", label: "Aperitivi e cene", emoji: "🍷" },
+  { id: "sport_movimento", label: "Sport e movimento", emoji: "🏃" },
+  { id: "giochi_sfide", label: "Giochi e sfide", emoji: "🎯" },
+  { id: "weekend_fuori_porta", label: "Weekend fuori porta", emoji: "🚗" },
+  { id: "degustazioni_cantine", label: "Degustazioni e cantine", emoji: "🍇" },
+  { id: "mare_spiaggia", label: "Mare e spiaggia", emoji: "🏖️" },
+];
+
+const labelById = Object.fromEntries(
+  INTEREST_CATEGORY_OPTIONS.map((option) => [option.id, option.label])
+) as Record<string, string>;
 
 export const CATEGORY_INTEREST_AFFINITY: Record<string, Record<string, number>> = {
-  "Trekking & Outdoor": {
-    "Trekking e camminate": 1.0,
-    "Esperienze outdoor particolari": 0.9,
-    "Avventura e sfida": 0.8,
-    "Scoprire posti nuovi": 0.7,
-    "Fare movimento": 0.6,
-    "Relax": 0.4,
-    "Conoscere persone": 0.3,
-    "Eventi social": 0.3,
-    "Cene e momenti conviviali": 0.2,
-    "Aperitivi e tramonti": 0.2,
-    "Eventi serali": 0.1,
+  "Trekking giornalieri": {
+    "Trekking giornalieri": 100,
+    "Cammini plurigiornalieri": 75,
+    "Notti in tenda": 50,
+    "Trekking notturni": 75,
+    "Aperitivi e cene": 25,
+    "Sport e movimento": 50,
+    "Giochi e sfide": 0,
+    "Weekend fuori porta": 50,
+    "Degustazioni e cantine": 25,
+    "Mare e spiaggia": 25,
   },
-  "Sport & Movimento": {
-    "Fare movimento": 1.0,
-    "Avventura e sfida": 0.8,
-    "Trekking e camminate": 0.7,
-    "Esperienze outdoor particolari": 0.6,
-    "Conoscere persone": 0.4,
-    "Eventi social": 0.4,
-    "Relax": 0.3,
-    "Scoprire posti nuovi": 0.3,
-    "Cene e momenti conviviali": 0.2,
-    "Aperitivi e tramonti": 0.1,
-    "Eventi serali": 0.1,
+  "Cammini plurigiornalieri": {
+    "Trekking giornalieri": 75,
+    "Cammini plurigiornalieri": 100,
+    "Notti in tenda": 75,
+    "Trekking notturni": 50,
+    "Aperitivi e cene": 0,
+    "Sport e movimento": 25,
+    "Giochi e sfide": 0,
+    "Weekend fuori porta": 50,
+    "Degustazioni e cantine": 0,
+    "Mare e spiaggia": 25,
   },
-  "Social & Aperitivi": {
-    "Conoscere persone": 1.0,
-    "Cene e momenti conviviali": 1.0,
-    "Aperitivi e tramonti": 1.0,
-    "Eventi social": 1.0,
-    "Relax": 0.8,
-    "Scoprire posti nuovi": 0.5,
-    "Fare movimento": 0.2,
-    "Trekking e camminate": 0.1,
-    "Esperienze outdoor particolari": 0.1,
-    "Avventura e sfida": 0.1,
-    "Eventi serali": 0.7,
+  "Notti in tenda": {
+    "Trekking giornalieri": 50,
+    "Cammini plurigiornalieri": 75,
+    "Notti in tenda": 100,
+    "Trekking notturni": 50,
+    "Aperitivi e cene": 0,
+    "Sport e movimento": 25,
+    "Giochi e sfide": 0,
+    "Weekend fuori porta": 50,
+    "Degustazioni e cantine": 0,
+    "Mare e spiaggia": 25,
   },
-  "Esperienze & Cultura": {
-    "Scoprire posti nuovi": 1.0,
-    "Relax": 0.7,
-    "Conoscere persone": 0.6,
-    "Eventi social": 0.5,
-    "Cene e momenti conviviali": 0.4,
-    "Aperitivi e tramonti": 0.4,
-    "Esperienze outdoor particolari": 0.4,
-    "Trekking e camminate": 0.2,
-    "Fare movimento": 0.2,
-    "Avventura e sfida": 0.2,
-    "Eventi serali": 0.3,
+  "Trekking notturni": {
+    "Trekking giornalieri": 75,
+    "Cammini plurigiornalieri": 50,
+    "Notti in tenda": 50,
+    "Trekking notturni": 100,
+    "Aperitivi e cene": 25,
+    "Sport e movimento": 50,
+    "Giochi e sfide": 0,
+    "Weekend fuori porta": 50,
+    "Degustazioni e cantine": 0,
+    "Mare e spiaggia": 25,
   },
-  "Eventi Speciali": {
-    "Esperienze outdoor particolari": 1.0,
-    "Avventura e sfida": 0.9,
-    "Scoprire posti nuovi": 0.8,
-    "Conoscere persone": 0.6,
-    "Relax": 0.5,
-    "Cene e momenti conviviali": 0.5,
-    "Eventi social": 0.5,
-    "Aperitivi e tramonti": 0.4,
-    "Fare movimento": 0.4,
-    "Trekking e camminate": 0.4,
-    "Eventi serali": 0.3,
+  "Aperitivi e cene": {
+    "Trekking giornalieri": 25,
+    "Cammini plurigiornalieri": 0,
+    "Notti in tenda": 0,
+    "Trekking notturni": 25,
+    "Aperitivi e cene": 100,
+    "Sport e movimento": 25,
+    "Giochi e sfide": 50,
+    "Weekend fuori porta": 50,
+    "Degustazioni e cantine": 75,
+    "Mare e spiaggia": 50,
+  },
+  "Sport e movimento": {
+    "Trekking giornalieri": 50,
+    "Cammini plurigiornalieri": 25,
+    "Notti in tenda": 25,
+    "Trekking notturni": 50,
+    "Aperitivi e cene": 25,
+    "Sport e movimento": 100,
+    "Giochi e sfide": 25,
+    "Weekend fuori porta": 50,
+    "Degustazioni e cantine": 25,
+    "Mare e spiaggia": 50,
+  },
+  "Giochi e sfide": {
+    "Trekking giornalieri": 0,
+    "Cammini plurigiornalieri": 0,
+    "Notti in tenda": 0,
+    "Trekking notturni": 0,
+    "Aperitivi e cene": 50,
+    "Sport e movimento": 25,
+    "Giochi e sfide": 100,
+    "Weekend fuori porta": 25,
+    "Degustazioni e cantine": 25,
+    "Mare e spiaggia": 25,
+  },
+  "Weekend fuori porta": {
+    "Trekking giornalieri": 50,
+    "Cammini plurigiornalieri": 50,
+    "Notti in tenda": 50,
+    "Trekking notturni": 50,
+    "Aperitivi e cene": 50,
+    "Sport e movimento": 50,
+    "Giochi e sfide": 25,
+    "Weekend fuori porta": 100,
+    "Degustazioni e cantine": 50,
+    "Mare e spiaggia": 75,
+  },
+  "Degustazioni e cantine": {
+    "Trekking giornalieri": 25,
+    "Cammini plurigiornalieri": 0,
+    "Notti in tenda": 0,
+    "Trekking notturni": 0,
+    "Aperitivi e cene": 75,
+    "Sport e movimento": 25,
+    "Giochi e sfide": 25,
+    "Weekend fuori porta": 50,
+    "Degustazioni e cantine": 100,
+    "Mare e spiaggia": 50,
+  },
+  "Mare e spiaggia": {
+    "Trekking giornalieri": 25,
+    "Cammini plurigiornalieri": 25,
+    "Notti in tenda": 25,
+    "Trekking notturni": 25,
+    "Aperitivi e cene": 50,
+    "Sport e movimento": 50,
+    "Giochi e sfide": 25,
+    "Weekend fuori porta": 75,
+    "Degustazioni e cantine": 50,
+    "Mare e spiaggia": 100,
   },
 };
 
-export const CATEGORY_GOAL_AFFINITY: Record<string, Record<string, number>> = {
-  "Trekking & Outdoor": {
-    "Relax": 0.5,
-    "Conoscere persone": 0.4,
-    "Fare movimento": 0.8,
-    "Scoprire posti nuovi": 0.9,
-    "Mettermi alla prova": 1.0,
-  },
-  "Sport & Movimento": {
-    "Relax": 0.2,
-    "Conoscere persone": 0.4,
-    "Fare movimento": 1.0,
-    "Scoprire posti nuovi": 0.4,
-    "Mettermi alla prova": 0.9,
-  },
-  "Social & Aperitivi": {
-    "Relax": 0.9,
-    "Conoscere persone": 1.0,
-    "Fare movimento": 0.1,
-    "Scoprire posti nuovi": 0.5,
-    "Mettermi alla prova": 0.1,
-  },
-  "Esperienze & Cultura": {
-    "Relax": 0.7,
-    "Conoscere persone": 0.5,
-    "Fare movimento": 0.2,
-    "Scoprire posti nuovi": 1.0,
-    "Mettermi alla prova": 0.3,
-  },
-  "Eventi Speciali": {
-    "Relax": 0.5,
-    "Conoscere persone": 0.6,
-    "Fare movimento": 0.4,
-    "Scoprire posti nuovi": 0.8,
-    "Mettermi alla prova": 0.9,
-  },
+export const FIT_SCORE_INTEREST_MIN = 2;
+export const FIT_SCORE_INTEREST_MAX = 4;
+export const FIT_SCORE_EVENT_SECONDARY_MAX = 2;
+export const FIT_SCORE_INTEREST_VALIDATION_MESSAGE =
+  "Seleziona almeno 2 attività per continuare";
+
+export const normalizeInterestCategory = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  if (CATEGORY_INTEREST_AFFINITY[value]) return value;
+  return labelById[value] || null;
 };
+
+export const getInterestCategoryLabel = (value: string | null | undefined): string | null =>
+  normalizeInterestCategory(value);

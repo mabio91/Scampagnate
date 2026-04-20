@@ -24,18 +24,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "@/contexts/SearchContext";
 import { UI_LABELS } from "@/lib/labels";
-
-// Interest-to-keyword map for personalized recommendations
-const INTEREST_KEYWORDS: Record<string, string[]> = {
-  trekking: ["trekking", "outdoor", "escursion"],
-  aperitivi: ["aperitiv", "tramont", "social"],
-  cene: ["cena", "convivial", "social"],
-  social: ["social", "evento"],
-  outdoor: ["outdoor", "esperien", "special"],
-  sport: ["sport", "movimento", "fitness"],
-  serali: ["seral", "nott", "sera"],
-  avventura: ["avventur", "sfida", "outdoor", "trekking"],
-};
+import { calculateEventFitScore } from "@/hooks/useEventFitScore";
 
 const Index = () => {
   const {
@@ -107,24 +96,29 @@ const Index = () => {
 
   // Personalized recommendations
   const recommended = useMemo(() => {
-    const userInterests = profile?.interests as string[] | null;
-    if (!userInterests || userInterests.length === 0 || !profile?.onboarding_completed) return [];
-
-    const getScore = (event: any) => {
-      let score = 0;
-      const searchText = `${(event.category?.name || "").toLowerCase()} ${event.title.toLowerCase()} ${event.description.toLowerCase()}`;
-      for (const interest of userInterests) {
-        const keywords = INTEREST_KEYWORDS[interest] || [];
-        for (const kw of keywords) {
-          if (searchText.includes(kw)) { score += 1; break; }
-        }
-      }
-      return score;
-    };
+    if (!profile?.onboarding_completed) return [];
 
     return allUpcoming
-      .map(e => ({ event: e, score: getScore(e) }))
-      .filter(x => x.score > 0)
+      .map((event) => {
+        const fitScoreMainCategory =
+          (event.additional_fields as any)?.fit_score_main_category || event.category?.name || null;
+        const fitScoreSecondaryCategories =
+          ((event.additional_fields as any)?.fit_score_secondary_categories as string[] | undefined) || [];
+        const fitScore = calculateEventFitScore(
+          {
+            interests: (profile.interests as string[] | null | undefined) || [],
+            self_level: profile.self_level,
+          },
+          {
+            difficulty: event.difficulty,
+            category: fitScoreMainCategory ? { name: fitScoreMainCategory } : null,
+            secondaryCategories: fitScoreSecondaryCategories,
+          }
+        );
+
+        return { event, score: fitScore.score, hidden: fitScore.hidden, profileIncomplete: fitScore.profileIncomplete };
+      })
+      .filter((item) => !item.hidden && !item.profileIncomplete && item.score >= 75)
       .sort((a, b) => b.score - a.score || new Date(a.event.date).getTime() - new Date(b.event.date).getTime())
       .map(x => x.event)
       .slice(0, 3);

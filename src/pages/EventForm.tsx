@@ -6,6 +6,7 @@ import type { AccessRule, AccessRulesConfig } from "@/hooks/useEventAccessRules"
 import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import { MANUAL_BADGE_OPTIONS } from "@/lib/eventBadges";
+import { FIT_SCORE_EVENT_SECONDARY_MAX, INTEREST_CATEGORY_OPTIONS } from "@/lib/fitScoreAffinityTables";
 
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
@@ -182,6 +183,8 @@ const EventForm = () => {
     visibility: "public" as "public" | "private" | "hidden",
     gallery_images: [] as { url: string; order: number }[],
   });
+  const [fitScoreMainCategory, setFitScoreMainCategory] = useState("");
+  const [fitScoreSecondaryCategories, setFitScoreSecondaryCategories] = useState<string[]>([]);
 
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [policyType, setPolicyType] = useState<PolicyType | "">("flexible");  
@@ -360,6 +363,12 @@ const EventForm = () => {
 
       if (event.additional_fields) {
         const af = event.additional_fields as any;
+        setFitScoreMainCategory(af.fit_score_main_category || "");
+        setFitScoreSecondaryCategories(
+          Array.isArray(af.fit_score_secondary_categories)
+            ? af.fit_score_secondary_categories.slice(0, FIT_SCORE_EVENT_SECONDARY_MAX)
+            : []
+        );
         if (af.ask_car_availability !== undefined) {
           setAskCarAvailability(!!af.ask_car_availability);
           if (af.weather_override_condition) setWeatherOverrideCondition(af.weather_override_condition);
@@ -471,6 +480,18 @@ const EventForm = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const toggleFitScoreSecondaryCategory = (category: string) => {
+    setFitScoreSecondaryCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((value) => value !== category);
+      }
+      if (prev.length >= FIT_SCORE_EVENT_SECONDARY_MAX) {
+        return prev;
+      }
+      return [...prev, category];
+    });
+  };
+
   const addMeetingPoint = () => {
     setMeetingPoints((prev) => [...prev, { name: "", location: "", time: "08:00", notes: "" }]);
   };
@@ -490,6 +511,7 @@ const EventForm = () => {
     if (!form.date) errors.date = true;
     if (!form.time) errors.time = true;
     if (!form.location) errors.location = true;
+    if (!fitScoreMainCategory) errors.fit_score_main_category = true;
     if (!imageFile && !form.image_url) errors.image = true;
 
     if (Object.keys(errors).length > 0) {
@@ -543,6 +565,8 @@ const EventForm = () => {
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: {
+          fit_score_main_category: fitScoreMainCategory,
+          fit_score_secondary_categories: fitScoreSecondaryCategories,
           fields: additionalFields.filter((f) => f.label.trim()),
           ask_car_availability: askCarAvailability,
           weather_override_condition: weatherOverrideCondition || undefined,
@@ -731,6 +755,63 @@ const EventForm = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+          <div className="space-y-3 rounded-xl border border-border/50 p-3">
+            <div>
+              <Label className="text-sm font-semibold">Categoria principale</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Obbligatoria per il KPI "Quanto fa per te".
+              </p>
+              <Select
+                value={fitScoreMainCategory}
+                onValueChange={(value) => {
+                  setFitScoreMainCategory(value);
+                  setValidationErrors((prev) => ({ ...prev, fit_score_main_category: false }));
+                }}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Seleziona la categoria principale" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INTEREST_CATEGORY_OPTIONS.map((option) => (
+                    <SelectItem key={option.id} value={option.label}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {validationErrors.fit_score_main_category && (
+                <p className="text-xs text-destructive mt-1">La categoria principale e obbligatoria.</p>
+              )}
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">Categorie secondarie</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Facoltative, massimo {FIT_SCORE_EVENT_SECONDARY_MAX}.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {INTEREST_CATEGORY_OPTIONS.filter((option) => option.label !== fitScoreMainCategory).map((option) => {
+                  const selected = fitScoreSecondaryCategories.includes(option.label);
+                  const disabled = !selected && fitScoreSecondaryCategories.length >= FIT_SCORE_EVENT_SECONDARY_MAX;
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => toggleFitScoreSecondaryCategory(option.label)}
+                      disabled={disabled}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                        selected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-muted/40 text-foreground"
+                      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </Card>

@@ -123,6 +123,19 @@ function calcReliabilityLabel(registrations: any[]): string {
   return "Da migliorare";
 }
 
+// --- Age calc helper ---
+function calculateAge(birthDate: string | null | undefined): number | null {
+  if (!birthDate) return null;
+  const birthDateObj = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birthDateObj.getFullYear();
+  const m = today.getMonth() - birthDateObj.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 // --- Level badge pill ---
 const LevelBadgePill = ({ level }: { level: CommunityLevel | null | undefined }) => {
   if (!level) return null;
@@ -181,6 +194,7 @@ const AdminParticipantRow = ({
   fitScore,
   reliabilityLabel,
   completedEvents,
+  age,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -189,6 +203,7 @@ const AdminParticipantRow = ({
   fitScore: FitScoreResult | null;
   reliabilityLabel: string;
   completedEvents: number;
+  age: number | null;
 }) => {
   return (
     <div className="flex items-center gap-3 py-3">
@@ -225,6 +240,11 @@ const AdminParticipantRow = ({
           <span className="text-[11px] font-body text-muted-foreground">
             ✔️ {completedEvents} eventi completati
           </span>
+          {age !== null && (
+            <span className="text-[11px] font-body text-muted-foreground">
+              🎂 {age} anni
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -250,7 +270,7 @@ const EventParticipants = () => {
       if (participantIds.length === 0) return {};
       const { data } = await supabase
         .from("profiles")
-        .select("id, self_level, trekking_experience, activity_frequency, interests, total_points")
+        .select("id, self_level, trekking_experience, activity_frequency, interests, total_points, birth_date")
         .in("id", participantIds);
       const map: Record<string, any> = {};
       (data || []).forEach((p: any) => { map[p.id] = p; });
@@ -526,6 +546,7 @@ const EventParticipants = () => {
                       completedEvents={getCompletedEvents(p.user_id)}
                       isManual={p.is_manual}
                       manualLevel={p.manual_level}
+                      birthDate={pProfile?.birth_date}
                     />
                   );
                 }
@@ -602,6 +623,7 @@ const AdminParticipantRowWithLevel = ({
   completedEvents,
   isManual,
   manualLevel,
+  birthDate,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -611,6 +633,7 @@ const AdminParticipantRowWithLevel = ({
   completedEvents: number;
   isManual?: boolean;
   manualLevel?: string | null;
+  birthDate?: string | null;
 }) => {
   const { data: levelData } = useCommunityLevel(points);
 
@@ -635,6 +658,7 @@ const AdminParticipantRowWithLevel = ({
       fitScore={fitScore}
       reliabilityLabel={reliabilityLabel}
       completedEvents={completedEvents}
+      age={calculateAge(birthDate)}
     />
   );
 };

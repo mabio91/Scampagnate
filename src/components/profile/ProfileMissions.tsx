@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserMissions, useActiveMissions } from "@/hooks/useMissions";
 import { useSearch } from "@/contexts/SearchContext";
 import { Progress } from "@/components/ui/progress";
-import { Target, Gift, CheckCircle, ChevronRight, Clock, Ticket, Trophy, Flame } from "lucide-react";
+import { Target, Gift, CheckCircle, ChevronRight, Clock, Ticket, Trophy, Beer } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -18,7 +18,7 @@ const TYPE_LABELS: Record<string, string> = {
 const REWARD_ICONS: Record<string, typeof Gift> = {
   coupon: Ticket,
   badge: Trophy,
-  physical: Gift,
+  physical: Beer,
 };
 
 const getFilterForMission = (mission: any): { category?: string; quickFilter?: string } => {
@@ -116,15 +116,6 @@ const ProfileMissions = () => {
                     : "bg-card border-border hover:border-primary/20"
                 }`}
               >
-                {/* Reward pill - only for non-badge rewards */}
-                {hasReward && !mission.completed && mission.reward_type !== "badge" && (
-                  <div className="flex justify-end mb-1">
-                    <span className="text-[9px] font-display font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {mission.reward_type === "coupon" ? "Coupon" : "Reward"}
-                    </span>
-                  </div>
-                )}
-
                 <div className="flex items-start gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${
                     mission.completed ? "bg-primary/10" : "bg-muted"
@@ -158,7 +149,11 @@ const ProfileMissions = () => {
                     {!mission.completed && hasReward && (
                       <p className="text-[10px] font-body text-primary mt-1 flex items-center gap-1">
                         {RewardIcon && <RewardIcon className="h-3 w-3" />}
-                        {mission.reward_type === "coupon" ? "Sblocca uno sconto" : mission.reward_type === "badge" ? "Sblocca un badge" : "Reward al completamento"}
+                        {mission.reward_type === "coupon"
+                          ? "Sblocca uno sconto"
+                          : mission.reward_type === "badge"
+                            ? "Sblocca un badge"
+                            : "Premio al completamento"}
                       </p>
                     )}
 
@@ -169,12 +164,6 @@ const ProfileMissions = () => {
                           +{mission.rewardPoints} punti
                         </span>
                       </div>
-                      {hasReward && mission.reward_type !== "badge" && (
-                        <span className="text-[10px] font-body font-semibold text-primary flex items-center gap-0.5">
-                          {mission.reward_type === "coupon" ? "🎟️" : "🎁"}
-                          {mission.reward_type === "coupon" ? "Coupon" : "Reward"}
-                        </span>
-                      )}
                       {mission.type !== "one_time" && (
                         <span className="text-[10px] font-body text-muted-foreground">
                           • {TYPE_LABELS[mission.type] || mission.type}

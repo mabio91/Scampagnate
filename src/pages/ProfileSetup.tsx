@@ -11,6 +11,11 @@ import { Camera, Loader2, Info, Check, ChevronLeft, ArrowRight, PartyPopper } fr
 import { motion, AnimatePresence } from "framer-motion";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadFull } from "tsparticles";
+import {
+  FIT_SCORE_INTEREST_MAX,
+  FIT_SCORE_INTEREST_MIN,
+  FIT_SCORE_INTEREST_VALIDATION_MESSAGE,
+} from "@/lib/fitScoreAffinityTables";
 
 const calculateExperienceGrade = (trekking: string, activity: string) => {
   const map: Record<string, Record<string, number>> = {
@@ -183,6 +188,7 @@ const ProfileSetup = () => {
 
   // Step 1 (only in first-time mode)
   const [phone, setPhone] = useState(profile?.phone || "");
+  const [dateOfBirth, setDateOfBirth] = useState(profile?.birth_date || "");
 
   // Step 2 - prefill from profile in edit mode
   const [trekkingExp, setTrekkingExp] = useState(isEditMode ? (profile?.trekking_experience || "") : "");
@@ -202,6 +208,7 @@ const ProfileSetup = () => {
   useEffect(() => {
     if (isEditMode && profile) {
       setPhone(profile.phone || "");
+      setDateOfBirth(profile.birth_date || "");
       setTrekkingExp(profile.trekking_experience || "");
       setSelfLevel(profile.self_level || "");
       setActivityFreq(profile.activity_frequency || "");
@@ -238,7 +245,7 @@ const ProfileSetup = () => {
 
   const toggleInterest = (val: string) => {
     setInterests((prev) =>
-      prev.includes(val) ? prev.filter((i) => i !== val) : prev.length < 3 ? [...prev, val] : prev
+      prev.includes(val) ? prev.filter((i) => i !== val) : prev.length < FIT_SCORE_INTEREST_MAX ? [...prev, val] : prev
     );
   };
 
@@ -268,7 +275,7 @@ const ProfileSetup = () => {
   const validateStep3 = useCallback(() => {
     const errors: { car?: boolean; interests?: boolean; motivation?: boolean } = {};
     if (!hasCar) errors.car = true;
-    if (interests.length < 1) errors.interests = true;
+    if (interests.length < FIT_SCORE_INTEREST_MIN) errors.interests = true;
     if (!eventMotivation) errors.motivation = true;
     setStep3Errors(errors);
     if (errors.car) {
@@ -291,7 +298,7 @@ const ProfileSetup = () => {
     if (hasCar && step3Errors.car) setStep3Errors(prev => ({ ...prev, car: false }));
   }, [hasCar]);
   useEffect(() => {
-    if (interests.length >= 1 && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
+    if (interests.length >= FIT_SCORE_INTEREST_MIN && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
   }, [interests]);
   useEffect(() => {
     if (eventMotivation && step3Errors.motivation) setStep3Errors(prev => ({ ...prev, motivation: false }));
@@ -314,9 +321,10 @@ const ProfileSetup = () => {
         onboarding_completed: true,
       };
 
-      // Only update phone in first-time mode
+      // Only update phone and birth_date in first-time mode
       if (!isEditMode) {
         updateData.phone = phone.trim();
+        updateData.birth_date = dateOfBirth || null;
       }
 
       const { error } = await supabase
@@ -345,9 +353,9 @@ const ProfileSetup = () => {
     if (/[a-zA-Z]/.test(cleaned)) return false;
     return /^\+?[\d\s\-().]{5,20}$/.test(cleaned);
   };
-  const step1Valid = isValidPhone(phone);
+  const step1Valid = isValidPhone(phone) && !!dateOfBirth;
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
-  const step3Valid = !!hasCar && interests.length >= 1 && !!eventMotivation;
+  const step3Valid = !!hasCar && interests.length >= FIT_SCORE_INTEREST_MIN && !!eventMotivation;
 
   if (!user || !profile) return null;
 
@@ -576,11 +584,23 @@ const ProfileSetup = () => {
                     }}
                     placeholder="+39 333 1234567"
                   />
+                </div>
+
+                {/* Date of Birth */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="birth_date" className="font-body text-sm font-semibold">
+                    Data di nascita <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="birth_date"
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                  />
                   <div className="flex items-start gap-1.5 mt-2 text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
                     <Info className="h-4 w-4 shrink-0 mt-0.5 text-secondary" />
                     <p>
-                      Serve per coordinamento eventi e comunicazioni importanti. Non sarà visibile agli altri
-                      partecipanti, ma potrà essere utilizzato dagli organizzatori per la gestione dell'evento.
+                      La tua data di nascita sarà visibile solo agli organizzatori per scopi di sicurezza e assicurativi.
                     </p>
                   </div>
                 </div>
@@ -734,7 +754,10 @@ const ProfileSetup = () => {
                   <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
                     Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {step3Errors.interests && <span className="text-destructive text-xs font-normal">— Seleziona almeno 1 opzione</span>}
                   </Label>
-                  <p className="text-xs text-muted-foreground font-body">Seleziona fino a 3 opzioni.</p>
+                  <p className="text-xs text-muted-foreground font-body">Seleziona da {FIT_SCORE_INTEREST_MIN} a {FIT_SCORE_INTEREST_MAX} attivita.</p>
+                  {step3Errors.interests && (
+                    <p className="text-xs font-body text-destructive">{FIT_SCORE_INTEREST_VALIDATION_MESSAGE}</p>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { val: "trekking_giornalieri", emoji: "🥾", label: "Trekking giornalieri" },
@@ -754,7 +777,7 @@ const ProfileSetup = () => {
                         onClick={() => toggleInterest(opt.val)}
                         emoji={opt.emoji}
                         label={opt.label}
-                        disabled={interests.length >= 3}
+                        disabled={interests.length >= FIT_SCORE_INTEREST_MAX}
                       />
                     ))}
                   </div>

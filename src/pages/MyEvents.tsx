@@ -3,9 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
-  CalendarPlus, ChevronRight, Clock, Calendar, Mail, Loader2, Zap
+  CalendarPlus, Clock, Calendar, Mail, Loader2, Zap
 } from "lucide-react";
-import { getRefundInfo } from "@/lib/cancellationPolicy";
+import { getRefundInfo, getCancellationDialogMessage } from "@/lib/cancellationPolicy";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
 
-// Status styles for My Events cards — using spec-defined labels
 const statusStyles: Record<string, string> = {
   iscritto: "bg-success/10 text-success",
   in_attesa: "bg-warning/10 text-warning",
@@ -51,32 +50,19 @@ function isPendingPaymentRegistration(registration: any): boolean {
   return registration.status === "registered" && registration.payment_status === "pending";
 }
 
-/**
- * Resolve user-facing status label for My Events cards.
- * Priority: Pagamento in sospeso > Partecipato > Iscritto > Posto disponibile > In attesa
- */
 function resolveMyEventStatus(registration: any, isPast: boolean): string {
   const event = registration.events;
   if (!event) return "iscritto";
 
   if (isPendingPaymentRegistration(registration)) return "pagamento_in_sospeso";
-  
-  // Past event + checked in → Partecipato
   if (isPast && registration.checked_in) return "partecipato";
-  
-  // Iscritto (registered/paid with confirmed payment or free)
   if (registration.status === "registered" || registration.status === "paid" || registration.status === "attended") {
     return "iscritto";
   }
-  
-  // Waitlist with spot available → Posto disponibile
   if (registration.status === "waitlist" && event.spots_total > 0 && event.spots_taken < event.spots_total) {
     return "posto_disponibile";
   }
-  
-  // Waitlist → In attesa
   if (registration.status === "waitlist") return "in_attesa";
-  
   return "iscritto";
 }
 
@@ -139,7 +125,6 @@ const MyEvents = () => {
   }
 
   const now = new Date();
-  // Only show active registrations (not cancelled) — spec: cancelled events disappear from My Events
   const active = registrations?.filter((r: any) => r.status !== "cancelled") || [];
   const upcoming = active.filter((r: any) => new Date(r.events?.date) >= now);
   const past = active.filter((r: any) => new Date(r.events?.date) < now);
@@ -159,7 +144,7 @@ const MyEvents = () => {
 
           <TabsContent value="upcoming">
             {isLoading ? (
-              <div className="space-y-3 mt-4">{[1, 2].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
+              <div className="space-y-3 mt-4">{[1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
             ) : upcoming.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground font-body text-sm">{t("noUpcomingEvents")}</p>
@@ -188,7 +173,7 @@ const MyEvents = () => {
 
           <TabsContent value="saved">
             {savedLoading ? (
-              <div className="space-y-3 mt-4">{[1, 2].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
+              <div className="space-y-3 mt-4">{[1, 2].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
             ) : !savedEvents || savedEvents.length === 0 ? (
               <div className="text-center py-8">
                 <Bookmark className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
@@ -222,23 +207,19 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   if (!event) return null;
 
-  // Resolve status using centralized logic
   const resolvedStatus = resolveMyEventStatus(registration, !!isPast);
   const statusLabel = statusLabels[resolvedStatus] || resolvedStatus;
   const statusStyle = statusStyles[resolvedStatus] || statusStyles.iscritto;
 
-  // Waitlist spot availability detection
-  const isWaitlisted = registration.status === "waitlist";
   const hasSpotAvailable = resolvedStatus === "posto_disponibile";
   const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
-
   const meetingPoint = registration.meeting_point;
 
-  // Policy-based refund info
   const refundInfo = useMemo(() => {
     if (!event.date || !event.time) return null;
     return getRefundInfo(event.cancellation_policy, event.date, event.time);
   }, [event.cancellation_policy, event.date, event.time]);
+  const cancellationDialogMessage = useMemo(() => getCancellationDialogMessage(refundInfo), [refundInfo]);
 
   const hasPaidPayment = registration.payment_status === "paid";
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
@@ -265,17 +246,16 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     }
   };
 
-  // Handle "Completa prenotazione" for waitlisted users when spot is available
   const handleCompleteBooking = async () => {
     if (!user) return;
-    
+
     if (needsOnlinePayment) {
       setPaymentLoading(true);
       try {
         const body: any = { eventId: event.id, registrationId: registration.id };
         const regPriceOptionId = registration.price_option_id;
         if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
-        
+
         const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
         if (error) throw error;
         if (data?.free) {
@@ -294,7 +274,6 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         setPaymentLoading(false);
       }
     } else {
-      // Free/location events — navigate to event detail to complete
       navigate(`/event/${event.id}`);
     }
   };
@@ -342,7 +321,6 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
           </div>
         </Link>
 
-        {/* Quick Actions */}
         {(showActions || isPast) && registration.status !== "cancelled" && (
           <div className="flex items-center gap-2 px-3 pb-3 pt-1 flex-wrap">
             <button onClick={shareEvent} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all">
@@ -367,7 +345,6 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Waitlist spot available → "Completa prenotazione" CTA */}
             {hasSpotAvailable && (
               <button
                 onClick={handleCompleteBooking}
@@ -379,7 +356,6 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               </button>
             )}
 
-            {/* Cancel button — only show when not in "spot available" state */}
             {canCancel && (
               <button
                 onClick={() => setShowCancelDialog(true)}
@@ -392,30 +368,23 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         )}
       </div>
 
-      {/* Cancel Confirmation */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-         <DialogContent className="max-w-xs">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              {t("cancelRegistrationText", { title: event.title })}
-              {hasPaidPayment && refundInfo && (
-                <span className={`block mt-2 text-xs font-semibold ${refundInfo.refundEligible ? "text-green-600" : "text-muted-foreground"}`}>
-                  {refundInfo.refundEligible
-                    ? "💰 Riceverai il rimborso completo nei prossimi giorni."
-                    : `⚠️ ${refundInfo.message}`}
-                </span>
-              )}
-              {refundInfo && (
-                <span className="block mt-1 text-[11px] text-muted-foreground">
-                  Policy: {refundInfo.policyLabel}
+              <span className="block">Sei sicuro di voler rinunciare a questa esperienza?</span>
+              <span className="block mt-2 font-semibold text-foreground">{event.title}</span>
+              {hasPaidPayment && cancellationDialogMessage && (
+                <span className="block mt-3 text-sm whitespace-pre-line text-foreground">
+                  {cancellationDialogMessage}
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 font-body" onClick={() => setShowCancelDialog(false)}>
-              {t("keep")}
+              Ci penso
             </Button>
             <Button
               variant="destructive"
@@ -423,7 +392,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               onClick={handleCancel}
               disabled={cancelMutation.isPending}
             >
-              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("cancelling")}...</> : t("cancelRegistration")}
+              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("cancelling")}...</> : "Cancella iscrizione"}
             </Button>
           </div>
         </DialogContent>

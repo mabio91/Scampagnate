@@ -154,3 +154,19 @@ export const getRefundInfo = (
     message,
   };
 };
+
+export const getCancellationDialogMessage = (
+  refundInfo: ReturnType<typeof getRefundInfo> | null
+): string | null => {
+  if (!refundInfo) return null;
+
+  if (refundInfo.policy === "flexible") {
+    return "💰 Rimborso completo disponibile\nPuoi cancellare gratuitamente fino a 24 ore prima dell’evento";
+  }
+
+  if (refundInfo.policy === "moderate") {
+    return "💰 Rimborso completo disponibile\nPuoi cancellare gratuitamente fino a 48 ore prima dell’evento";
+  }
+
+  return "⚠️ Questo evento non prevede rimborso in caso di cancellazione";
+};
