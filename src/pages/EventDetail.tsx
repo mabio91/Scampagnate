@@ -612,6 +612,14 @@ const EventDetail = () => {
   // Detect if a spot has become available for a waitlisted user
   const remainingSpots = event.spots_total - event.spots_taken;
   const waitlistSpotAvailable = isOnWaitlist && remainingSpots > 0;
+  const availabilityText = remainingSpots <= 0
+    ? "Sold out"
+    : remainingSpots === 1
+      ? "1 posto disponibile"
+      : `${remainingSpots} posti disponibili`;
+  const showUrgencyBadge = event.spots_total > 0
+    && (event.spots_taken / event.spots_total) > 0.7
+    && remainingSpots > 0;
 
   // CTA PRIORITY ORDER (from highest to lowest)
   // Check if user is blocked by hard access rules
@@ -1302,7 +1310,7 @@ const EventDetail = () => {
             </p>
           </div>
         )}
-        <div className="max-w-lg mx-auto flex items-center justify-between gap-3 p-3 pb-safe">
+        <div className="max-w-lg mx-auto flex items-end justify-between gap-3 p-3 pb-safe">
           <div className="min-w-0 flex-1">
             {/* Price display */}
             <div className="flex items-baseline gap-1.5">
@@ -1315,8 +1323,8 @@ const EventDetail = () => {
                 <p className="text-lg font-display font-bold text-foreground">{getPriceDisplay()}</p>
               )}
             </div>
-            <span className="text-xs font-body text-muted-foreground">{remainingSpots > 0 ? `${remainingSpots} posti disponibili` : "Sold out"}</span>
-            {event.spots_total > 0 && (event.spots_taken / event.spots_total) > 0.7 && remainingSpots > 0 && (
+            <span className="text-xs font-body text-muted-foreground">{availabilityText}</span>
+            {false && (
               <span className="text-[11px] font-body font-bold text-white bg-black dark:bg-white dark:text-black px-2 py-0.5 rounded-full">
                 🔥 ULTIMI POSTI RIMASTI!
               </span>
@@ -1328,6 +1336,12 @@ const EventDetail = () => {
               </p>
             )}
           </div>
+          <div className="relative shrink-0 pt-5">
+            {showUrgencyBadge && (
+              <span className="pointer-events-none absolute right-2 top-0 z-10 rounded-full bg-black px-2.5 py-1 text-[11px] font-body font-bold text-white shadow-sm dark:bg-white dark:text-black">
+                Ultimi posti!
+              </span>
+            )}
           <Button
             onClick={handleCTA}
             className={`px-6 py-3 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
@@ -1344,6 +1358,7 @@ const EventDetail = () => {
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Attendere...</>
             ) : getCTALabel()}
           </Button>
+          </div>
         </div>
       </div>
 
