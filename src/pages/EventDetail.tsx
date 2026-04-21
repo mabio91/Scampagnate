@@ -276,6 +276,11 @@ const EventDetail = () => {
   const isEventPast = eventStartDate < new Date();
 
   const canViewParticipants = !!user && (!!isRegistered || user.id === event.organizer_id || isAdmin);
+  const canViewMeetingPoints = !!user && (
+    isRegistered ||
+    user.id === event.organizer_id ||
+    isAdmin
+  );
 
   const handleToggleSave = async () => {
     if (!user) { navigate("/auth"); return; }
@@ -1132,7 +1137,7 @@ const EventDetail = () => {
         })()}
 
         {/* 8. MEETING POINTS – collapsible */}
-        {event.meeting_points && event.meeting_points.length > 0 && (
+        {canViewMeetingPoints && event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
             <Collapsible open={meetingPointsOpen} onOpenChange={setMeetingPointsOpen}>
               <CollapsibleTrigger className="flex items-center justify-between w-full group">
