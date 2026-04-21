@@ -348,7 +348,7 @@ const EventParticipants = () => {
   if (eventLoading || participantsLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 bg-background z-10 px-4 py-3 pt-safe flex items-center gap-3">
+        <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top flex items-center gap-3">
           <Skeleton className="w-8 h-8 rounded-full" />
           <Skeleton className="h-6 w-32" />
         </div>
@@ -484,7 +484,7 @@ const EventParticipants = () => {
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <div className="sticky top-0 bg-background z-10 px-4 py-3 pt-safe flex items-center gap-3">
+      <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
