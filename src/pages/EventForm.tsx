@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import { MANUAL_BADGE_OPTIONS } from "@/lib/eventBadges";
 import { FIT_SCORE_EVENT_SECONDARY_MAX, INTEREST_CATEGORY_OPTIONS } from "@/lib/fitScoreAffinityTables";
+import { getRandomEventClosingSentence } from "@/lib/eventClosingSentences";
 
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
@@ -187,7 +188,7 @@ const EventForm = () => {
   const [fitScoreSecondaryCategories, setFitScoreSecondaryCategories] = useState<string[]>([]);
 
   const [registrationOpen, setRegistrationOpen] = useState(true);
-  const [policyType, setPolicyType] = useState<PolicyType | "">("flexible");  
+  const [policyType, setPolicyType] = useState<PolicyType | "">("flexible_24h");
   const [policyCustomText, setPolicyCustomText] = useState("");
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
@@ -225,6 +226,7 @@ const EventForm = () => {
   const [weatherOverrideTempMin, setWeatherOverrideTempMin] = useState("");
   const [weatherOverrideTempMax, setWeatherOverrideTempMax] = useState("");
   const [weatherOverrideTempAvg, setWeatherOverrideTempAvg] = useState("");
+  const [closingSentence, setClosingSentence] = useState(() => getRandomEventClosingSentence());
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
@@ -330,7 +332,7 @@ const EventForm = () => {
       });
       setRegistrationOpen(event.status !== "closed");
       const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
-      setPolicyType(pt || "flexible");
+      setPolicyType(pt || "flexible_24h");
       setPolicyCustomText(ct);
       if (event.image_url) {
         setImagePreview(event.image_url);
@@ -363,6 +365,7 @@ const EventForm = () => {
 
       if (event.additional_fields) {
         const af = event.additional_fields as any;
+        setClosingSentence(isDuplicating ? getRandomEventClosingSentence() : (af.closing_sentence || getRandomEventClosingSentence()));
         setFitScoreMainCategory(af.fit_score_main_category || "");
         setFitScoreSecondaryCategories(
           Array.isArray(af.fit_score_secondary_categories)
@@ -476,6 +479,110 @@ const EventForm = () => {
     return urlData.publicUrl;
   };
 
+  const normalizeGalleryFiles = (files: File[]) => {
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+
+    if (imageFiles.length !== files.length) {
+      toast({
+        title: "Alcuni file non sono immagini",
+        description: "Sono state considerate solo le immagini.",
+        variant: "destructive",
+      });
+    }
+
+    const validFiles = imageFiles.filter((file) => {
+      if (file.size <= 5 * 1024 * 1024) return true;
+
+      toast({
+        title: "Immagine troppo grande",
+        description: `${file.name} supera il limite di 5MB.`,
+        variant: "destructive",
+      });
+      return false;
+    });
+
+    const remaining = 5 - form.gallery_images.length;
+    if (remaining <= 0) {
+      toast({
+        title: "Hai raggiunto il limite massimo",
+        description: "Puoi caricare fino a 5 immagini.",
+        variant: "destructive",
+      });
+      return [];
+    }
+
+    if (validFiles.length > remaining) {
+      toast({
+        title: "Limite immagini raggiunto",
+        description: `Sono state aggiunte solo le prime ${remaining} immagini disponibili.`,
+      });
+    }
+
+    return validFiles.slice(0, remaining);
+  };
+
+  const uploadGalleryFiles = async (files: File[]) => {
+    const filesToUpload = normalizeGalleryFiles(files);
+    if (filesToUpload.length === 0) return;
+
+    setGalleryUploading(true);
+    setGalleryUploadProgress(0);
+    setGalleryUploadTotal(filesToUpload.length);
+
+    let completed = 0;
+    const uploadPromises = filesToUpload.map(async (file) => {
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const { error } = await supabase.storage.from("event-images").upload(fileName, file);
+
+      completed += 1;
+      setGalleryUploadProgress(completed);
+
+      if (error) {
+        toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+        return null;
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from("event-images").getPublicUrl(fileName);
+      return publicUrl;
+    });
+
+    const results = await Promise.all(uploadPromises);
+    const successfulUrls = results.filter((url): url is string => url !== null);
+
+    if (successfulUrls.length > 0) {
+      const newImages = successfulUrls.map((url, index) => ({
+        url,
+        order: form.gallery_images.length + index,
+      }));
+      updateForm("gallery_images", [...form.gallery_images, ...newImages]);
+      toast({ title: `${successfulUrls.length} immagini caricate` });
+    }
+
+    setGalleryUploading(false);
+  };
+
+  const handleGalleryPaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const items = Array.from(event.clipboardData?.items || []);
+    const pastedImages = items
+      .filter((item) => item.type.startsWith("image/"))
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => file !== null);
+
+    if (pastedImages.length === 0) return;
+
+    event.preventDefault();
+    await uploadGalleryFiles(
+      pastedImages.map((file, index) => {
+        if (file.name) return file;
+        const extension = file.type.split("/")[1] || "png";
+        return new File([file], `immagine-incollata-${Date.now()}-${index}.${extension}`, {
+          type: file.type || "image/png",
+        });
+      }),
+    );
+  };
+
   const updateForm = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -565,6 +672,7 @@ const EventForm = () => {
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: {
+          closing_sentence: closingSentence,
           fit_score_main_category: fitScoreMainCategory,
           fit_score_secondary_categories: fitScoreSecondaryCategories,
           fields: additionalFields.filter((f) => f.label.trim()),
@@ -919,7 +1027,10 @@ const EventForm = () => {
                 ))}
 
                 {form.gallery_images.length < 5 && (
-                  <div className="relative">
+                  <div
+                    className="relative"
+                    onPaste={handleGalleryPaste}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -927,31 +1038,7 @@ const EventForm = () => {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       onChange={async (e) => {
                         const files = Array.from(e.target.files || []);
-                        const remaining = 5 - form.gallery_images.length;
-                        const filesToUpload = files.slice(0, remaining);
-                        if (filesToUpload.length === 0) return;
-                        setGalleryUploading(true);
-                        setGalleryUploadProgress(0);
-                        setGalleryUploadTotal(filesToUpload.length);
-                        let completed = 0;
-                        const uploadPromises = filesToUpload.map(async (file) => {
-                          const fileExt = file.name.split('.').pop();
-                          const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-                          const { data, error } = await supabase.storage.from('event-images').upload(fileName, file);
-                          completed++;
-                          setGalleryUploadProgress(completed);
-                          if (error) { toast({ title: "Errore upload", description: error.message, variant: "destructive" }); return null; }
-                          const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(fileName);
-                          return publicUrl;
-                        });
-                        const results = await Promise.all(uploadPromises);
-                        const successfulUrls = results.filter((url): url is string => url !== null);
-                        if (successfulUrls.length > 0) {
-                          const newImages = successfulUrls.map((url, i) => ({ url, order: form.gallery_images.length + i }));
-                          updateForm("gallery_images", [...form.gallery_images, ...newImages]);
-                          toast({ title: `${successfulUrls.length} immagini caricate` });
-                        }
-                        setGalleryUploading(false);
+                        await uploadGalleryFiles(files);
                         e.target.value = '';
                       }}
                     />
@@ -964,10 +1051,18 @@ const EventForm = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div
+                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        tabIndex={0}
+                        role="button"
+                        aria-label="Aggiungi o incolla immagini della galleria"
+                      >
                         <Plus className="h-6 w-6 text-muted-foreground mb-2" />
                         <p className="text-xs font-body font-semibold text-foreground">Aggiungi immagini</p>
                         <p className="text-[10px] text-muted-foreground font-body">PNG, JPG fino a 5MB</p>
+                        <p className="text-[10px] text-muted-foreground font-body mt-1 text-center">
+                          Puoi anche incollare un'immagine copiata dal browser con Ctrl+V
+                        </p>
                       </div>
                     )}
                   </div>

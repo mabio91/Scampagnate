@@ -1,1 +1,13 @@
 project_id = "etiynvukviykquqcsjln"
+
+[functions.create-event-checkout]
+verify_jwt = false
+
+[functions.verify-event-payment]
+verify_jwt = false
+
+[functions.process-refund]
+verify_jwt = false
+
+[functions.notify-event-cancelled]
+verify_jwt = false

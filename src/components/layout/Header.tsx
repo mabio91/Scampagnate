@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
 import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/contexts/SearchContext";
 import { useUnreadCount } from "@/hooks/useNotifications";
@@ -11,7 +11,8 @@ import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 const Header = () => {
   const { user, profile } = useAuth();
-  const { toggleSearch } = useSearch();
+  const { searchOpen, toggleSearch, openSearch } = useSearch();
+  const location = useLocation();
   const navigate = useNavigate();
   const { data: unreadCount } = useUnreadCount();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -59,8 +60,16 @@ const Header = () => {
           )}
           <button
             className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
-            onClick={() => { navigate("/"); toggleSearch(); }}
+            onClick={() => {
+              if (location.pathname === "/") {
+                toggleSearch();
+                return;
+              }
+              navigate("/");
+              openSearch();
+            }}
             aria-label={t("search")}
+            aria-pressed={location.pathname === "/" ? searchOpen : false}
           >
             <Search className="h-[18px] sm:h-5 w-[18px] sm:w-5 text-muted-foreground" />
           </button>

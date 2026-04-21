@@ -24,7 +24,13 @@ serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing authorization token" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
@@ -57,6 +63,7 @@ serve(async (req) => {
     const registrationId = session.metadata?.registration_id;
     const eventId = session.metadata?.event_id;
     const membershipIncluded = session.metadata?.membership_included === "true";
+    const bookingAmountCents = Number(session.metadata?.booking_amount_cents || "0");
 
     if (!registrationId) throw new Error("Registration ID not found in session");
 
@@ -67,16 +74,16 @@ serve(async (req) => {
     // Check if registration still exists
     const { data: reg, error: regError } = await supabaseAdmin
       .from("event_registrations")
-      .select("id, status, payment_status, event_id")
+      .select("id, status, payment_status, event_id, amount_paid, service_fee_amount")
       .eq("id", registrationId)
       .eq("user_id", user.id)
       .single();
 
     if (regError || !reg) {
       // Registration was cleaned up — auto-refund
-      if (stripePaymentIntentId) {
+      if (stripePaymentIntentId && bookingAmountCents > 0) {
         try {
-          await stripe.refunds.create({ payment_intent: stripePaymentIntentId });
+          await stripe.refunds.create({ payment_intent: stripePaymentIntentId, amount: bookingAmountCents });
         } catch (e) {
           console.error("Refund error for missing registration:", e);
         }
@@ -113,9 +120,9 @@ serve(async (req) => {
     if (spotsAvailable <= 0) {
       // RACE CONDITION: Another user got the spot first
       // Auto-refund this payment
-      if (stripePaymentIntentId) {
+      if (stripePaymentIntentId && bookingAmountCents > 0) {
         try {
-          await stripe.refunds.create({ payment_intent: stripePaymentIntentId });
+          await stripe.refunds.create({ payment_intent: stripePaymentIntentId, amount: bookingAmountCents });
           console.log(`Auto-refunded payment ${stripePaymentIntentId} — spot taken by another user`);
         } catch (refundErr) {
           console.error("Auto-refund error:", refundErr);
@@ -129,6 +136,9 @@ serve(async (req) => {
           payment_status: "refunded",
           status: "waitlist",
           stripe_payment_intent_id: stripePaymentIntentId,
+          refund_percentage: 100,
+          refund_amount: bookingAmountCents / 100,
+          refund_status: "completed",
         })
         .eq("id", registrationId)
         .eq("user_id", user.id);
@@ -166,6 +176,7 @@ serve(async (req) => {
         payment_status: "paid",
         status: "paid",
         stripe_payment_intent_id: stripePaymentIntentId,
+        refund_status: "not_requested",
       })
       .eq("id", registrationId)
       .eq("user_id", user.id);

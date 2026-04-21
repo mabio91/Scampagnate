@@ -8,7 +8,7 @@ import {
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
   Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, ChevronDown, X, ZoomIn
 } from "lucide-react";
-import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage } from "@/lib/cancellationPolicy";
+import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage, getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
@@ -37,7 +37,6 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import RegistrationCheckoutDialog from "@/components/events/RegistrationCheckoutDialog";
@@ -46,6 +45,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
+import { getDeterministicEventClosingSentence } from "@/lib/eventClosingSentences";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
@@ -83,6 +83,21 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
       </div>
     </motion.div>
   );
+};
+
+const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+  }
+
+  return supabase.functions.invoke(functionName, {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
 };
 
 const EventDetail = () => {
@@ -261,6 +276,11 @@ const EventDetail = () => {
   const isEventPast = eventStartDate < new Date();
 
   const canViewParticipants = !!user && (!!isRegistered || user.id === event.organizer_id || isAdmin);
+  const canViewMeetingPoints = !!user && (
+    isRegistered ||
+    user.id === event.organizer_id ||
+    isAdmin
+  );
 
   const handleToggleSave = async () => {
     if (!user) { navigate("/auth"); return; }
@@ -387,7 +407,7 @@ const EventDetail = () => {
         const regPriceOptionId = (myRegistration as any).price_option_id;
         if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
         
-        const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+        const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
         if (error) throw error;
         if (data?.free) {
           toast({ title: "Prenotazione completata!", description: "Il posto è tuo!" });
@@ -436,9 +456,7 @@ const EventDetail = () => {
   const handleMembershipCheckout = async () => {
     setMembershipLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-membership-checkout", {
-        body: { eventId: event.id },
-      });
+      const { data, error } = await invokeAuthenticatedFunction("create-membership-checkout", { eventId: event.id });
       if (error) throw error;
       if (data?.url) {
         window.location.href = data.url;
@@ -463,9 +481,7 @@ const EventDetail = () => {
       if (regPriceOptionId) {
         body.priceOptionId = regPriceOptionId;
       }
-      const { data, error } = await supabase.functions.invoke("create-event-checkout", {
-        body,
-      });
+      const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
       if (error) throw error;
       if (data?.free) {
         toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
@@ -516,7 +532,7 @@ const EventDetail = () => {
           if (selectedPriceOption) {
             body.priceOptionId = selectedPriceOption;
           }
-          const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+          const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
           if (error) throw error;
           if (data?.free) {
             toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
@@ -557,7 +573,8 @@ const EventDetail = () => {
 
 
   // Policy-based refund info for cancel dialog messaging
-  const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time) : null;
+  const serviceFeeAmount = event ? getServiceFeeAmount(event.payment_type) : 0;
+  const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time, 0, serviceFeeAmount) : null;
   const cancellationDialogMessage = getCancellationDialogMessage(refundInfo);
   const hasPaidPayment = myRegistration?.payment_status === "paid";
 
@@ -572,7 +589,7 @@ const EventDetail = () => {
       if (result?.refunded) {
         toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni." });
       } else if (result?.reason === "no_refund_policy") {
-        toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso." });
+        toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata con successo. Secondo la policy dell'evento, non è previsto alcun rimborso." });
       } else if (result?.reason === "stripe_error") {
         toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile." });
       } else {
@@ -1121,7 +1138,7 @@ const EventDetail = () => {
         })()}
 
         {/* 8. MEETING POINTS – collapsible */}
-        {event.meeting_points && event.meeting_points.length > 0 && (
+        {canViewMeetingPoints && event.meeting_points && event.meeting_points.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="py-4 border-b border-border">
             <Collapsible open={meetingPointsOpen} onOpenChange={setMeetingPointsOpen}>
               <CollapsibleTrigger className="flex items-center justify-between w-full group">
@@ -1162,34 +1179,26 @@ const EventDetail = () => {
 
         {/* REGOLE & INFO – collapsible, dynamic based on cancellation policy */}
         {(() => {
-          const { policyType } = parseCancellationPolicy(event.cancellation_policy);
-          const isFlexible = policyType === "flexible" || policyType === "moderate";
-          const windowHours = policyType === "moderate" ? "48h" : "24h";
-
-          const closingSentences = [
-            "✨ Porta leggerezza, al resto pensiamo noi",
-            "✨ Una community che arriva per i sentieri… e resta per le persone",
-            "✨ Il difficile è venire. Poi non vorrai più andare via",
-            "✨ Fidati: sarà una di quelle giornate che ricordi",
-            "✨ Vieni con lo spirito giusto — il resto viene da sé",
-            "✨ Qui si conoscono persone, non solo posti",
-          ];
-          const randomClosing = closingSentences[Math.floor(Math.random() * closingSentences.length)];
+          const policy = getPolicyDefinition(event.cancellation_policy);
+          const isFlexible = policy.type !== "non_refundable";
+          const closingSentence =
+            (event.additional_fields as any)?.closing_sentence ||
+            getDeterministicEventClosingSentence(event.id);
 
           const bullets = isFlexible
             ? [
                 { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
-                { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${windowHours} prima e ricevere il rimborso completo` },
-                { icon: "❌", text: "Dopo questo termine non è più possibile rimborsare (organizziamo tutto in anticipo)" },
+                { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${policy.requiredHours}h prima dell'evento` },
+                { icon: "ℹ️", text: "In questo caso riceverai il rimborso dell'importo versato, escluso il costo del servizio di 1€" },
                 { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
-                { icon: "", text: randomClosing },
+                { icon: "✨", text: closingSentence },
               ]
             : [
                 { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
-                { icon: "❌", text: "Questo evento non è rimborsabile" },
+                { icon: "❌", text: "Questo evento non è rimborsabile in caso di cancellazione" },
                 { icon: "💡", text: "Organizziamo tutto in anticipo per garantire l'esperienza" },
                 { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
-                { icon: "", text: randomClosing },
+                { icon: "✨", text: closingSentence },
               ];
 
           return (
@@ -1198,9 +1207,9 @@ const EventDetail = () => {
                 <CollapsibleTrigger className="flex items-start justify-between w-full group text-left">
                   <div>
                     <h3 className="font-display text-lg font-bold text-foreground">Regole & Info</h3>
-                    {isFlexible && (
+                    {policy.shortInfoLabelIt && (
                       <p className="text-xs font-body text-muted-foreground mt-0.5">
-                        Cancellazione gratuita fino a {windowHours} →
+                        {policy.shortInfoLabelIt}
                       </p>
                     )}
                   </div>
@@ -1233,17 +1242,6 @@ const EventDetail = () => {
 
         {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
-          {/* Discount code for Pay Now state */}
-          {needsPayment && user && (
-            <div className="mb-4">
-              <DiscountCodeInput
-                eventId={event.id}
-                userId={user.id}
-                onDiscountApplied={setAppliedDiscount}
-              />
-            </div>
-          )}
-
           {isRegistered && !hasPendingPayment && (
             <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
               {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
@@ -1256,13 +1254,16 @@ const EventDetail = () => {
               <DialogHeader>
                 <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
                 <DialogDescription className="font-body text-sm">
-                  <span className="block">Sei sicuro di voler rinunciare a questa esperienza?</span>
+                  <span className="block">Cancelli la tua partecipazione?</span>
                   <span className="block mt-2 font-semibold text-foreground">{event.title}</span>
                   {hasPaidPayment && cancellationDialogMessage && (
                     <span className="block mt-3 text-sm whitespace-pre-line text-foreground">
-                      {cancellationDialogMessage
-                        ? "💰 Riceverai il rimborso completo nei prossimi giorni."
-                        : `⚠️ ${refundInfo.message}`}
+                      {cancellationDialogMessage}
+                    </span>
+                  )}
+                  {!hasPaidPayment && (
+                    <span className="block mt-3 text-sm text-foreground">
+                      La tua iscrizione verrà annullata.
                     </span>
                   )}
                   {refundInfo && (
@@ -1540,7 +1541,7 @@ const EventDetail = () => {
                 if (opts.priceOptionId) {
                   body.priceOptionId = opts.priceOptionId;
                 }
-                const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+                const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
                 if (error) throw error;
                 if (data?.free) {
                   toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });

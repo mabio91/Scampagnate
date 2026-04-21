@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 function buildCancellationEmailHtml(eventTitle: string, eventDate: string, eventTime: string, eventLocation: string): string {
@@ -16,11 +17,11 @@ function buildCancellationEmailHtml(eventTitle: string, eventDate: string, event
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
   <tr><td style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 24px;text-align:center">
     <div style="font-size:40px;margin-bottom:8px">❌</div>
-    <h1 style="color:#fff;font-size:22px;margin:0;font-weight:700">Evento Cancellato</h1>
+    <h1 style="color:#fff;font-size:22px;margin:0;font-weight:700">Evento annullato</h1>
   </td></tr>
   <tr><td style="padding:28px 24px">
     <p style="font-size:15px;color:#374151;margin:0 0 20px;line-height:1.5">
-      Ci dispiace informarti che il seguente evento è stato <strong>cancellato</strong>:
+      Ci dispiace informarti che il seguente evento è stato <strong>annullato</strong>:
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border-radius:12px;padding:16px;margin-bottom:20px">
       <tr><td>
@@ -31,7 +32,7 @@ function buildCancellationEmailHtml(eventTitle: string, eventDate: string, event
       </td></tr>
     </table>
     <p style="font-size:14px;color:#6b7280;margin:0;line-height:1.5">
-      Se avevi effettuato un pagamento, verrai contattato per il rimborso. Per qualsiasi domanda, contatta l'organizzatore.
+      Evento annullato. Riceverai il rimborso completo dell'importo versato.
     </p>
   </td></tr>
   <tr><td style="padding:0 24px 24px;text-align:center">
@@ -48,123 +49,162 @@ function buildCancellationEmailHtml(eventTitle: string, eventDate: string, event
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
 
     const { event_id } = await req.json();
     if (!event_id) {
-      return new Response(JSON.stringify({ error: 'event_id required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ error: "event_id required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch event details
     const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('title, date, time, location')
-      .eq('id', event_id)
+      .from("events")
+      .select("title, date, time, location")
+      .eq("id", event_id)
       .single();
 
     if (eventError || !event) {
-      return new Response(JSON.stringify({ error: 'Event not found' }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ error: "Event not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Get all active registrations
     const { data: registrations } = await supabase
-      .from('event_registrations')
-      .select('user_id')
-      .eq('event_id', event_id)
-      .in('status', ['registered', 'paid', 'waitlist', 'pending_approval']);
+      .from("event_registrations")
+      .select("id, user_id, payment_status, stripe_payment_intent_id, amount_paid")
+      .eq("event_id", event_id)
+      .in("status", ["registered", "paid", "waitlist", "pending_approval"]);
 
     if (!registrations || registrations.length === 0) {
-      return new Response(JSON.stringify({ success: true, notified: 0 }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ success: true, notified: 0, refunded: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userIds = [...new Set(registrations.map(r => r.user_id))];
+    let refundedCount = 0;
+    for (const registration of registrations) {
+      const amountPaid = Number(registration.amount_paid || 0);
+      const shouldRefund = registration.payment_status === "paid" && registration.stripe_payment_intent_id && amountPaid > 0;
 
-    // Create in-app notifications for all participants
-    const notifications = userIds.map(uid => ({
+      if (shouldRefund) {
+        try {
+          await stripe.refunds.create({
+            payment_intent: registration.stripe_payment_intent_id,
+            amount: Math.round(amountPaid * 100),
+          });
+
+          await supabase
+            .from("event_registrations")
+            .update({
+              payment_status: "refunded",
+              refund_percentage: 100,
+              refund_amount: amountPaid,
+              refund_status: "completed",
+              cancelled_at: new Date().toISOString(),
+              status: "cancelled",
+            })
+            .eq("id", registration.id);
+
+          refundedCount += 1;
+        } catch (refundError) {
+          console.error(`Refund failed for registration ${registration.id}:`, refundError);
+          await supabase
+            .from("event_registrations")
+            .update({
+              refund_percentage: 100,
+              refund_amount: amountPaid,
+              refund_status: "failed",
+              cancelled_at: new Date().toISOString(),
+              status: "cancelled",
+            })
+            .eq("id", registration.id);
+        }
+      } else {
+        await supabase
+          .from("event_registrations")
+          .update({
+            status: "cancelled",
+            cancelled_at: new Date().toISOString(),
+            refund_status: amountPaid > 0 ? "not_required" : "not_applicable",
+          })
+          .eq("id", registration.id);
+      }
+    }
+
+    const userIds = [...new Set(registrations.map((r) => r.user_id))];
+
+    const notifications = userIds.map((uid) => ({
       user_id: uid,
-      type: 'event_cancelled',
-      title: '❌ Evento cancellato',
-      message: `L'evento "${event.title}" previsto per il ${event.date} alle ${event.time} è stato cancellato.`,
+      type: "event_cancelled",
+      title: "Evento annullato",
+      message: "Evento annullato. Riceverai il rimborso completo dell'importo versato.",
       event_id,
     }));
 
-    const { error: notifError } = await supabase.from('notifications').insert(notifications);
-    if (notifError) console.error('Notification insert error:', notifError);
+    const { error: notifError } = await supabase.from("notifications").insert(notifications);
+    if (notifError) console.error("Notification insert error:", notifError);
 
-    // Fetch participant emails
     const { data: profiles } = await supabase
-      .from('profiles')
-      .select('email')
-      .in('id', userIds);
+      .from("profiles")
+      .select("email")
+      .in("id", userIds);
 
-    const emails = profiles?.map(p => p.email).filter(Boolean) || [];
-
-    // Send cancellation emails
-    const emailHtml = buildCancellationEmailHtml(
-      event.title,
-      event.date,
-      event.time,
-      event.location
-    );
+    const emails = profiles?.map((p) => p.email).filter(Boolean) || [];
+    const emailHtml = buildCancellationEmailHtml(event.title, event.date, event.time, event.location);
 
     let emailsSent = 0;
     for (const email of emails) {
       try {
-        const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+        const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
         if (!RESEND_API_KEY) break;
 
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: 'Scampagnate <noreply@scampagnate.com>',
+            from: "Scampagnate <noreply@scampagnate.com>",
             to: [email],
-            subject: `❌ Evento cancellato: ${event.title}`,
+            subject: `Evento annullato: ${event.title}`,
             html: emailHtml,
           }),
         });
-        emailsSent++;
+        emailsSent += 1;
       } catch (e) {
         console.error(`Email send error for ${email}:`, e);
       }
     }
 
-    // Also cancel all active registrations
-    await supabase
-      .from('event_registrations')
-      .update({ status: 'cancelled' as any })
-      .eq('event_id', event_id)
-      .in('status', ['registered', 'paid', 'waitlist', 'pending_approval']);
+    console.log(`Event ${event.title} cancelled: ${userIds.length} notified, ${emailsSent} emails sent, ${refundedCount} refunds completed`);
 
-    console.log(`Event ${event.title} cancelled: ${userIds.length} notified, ${emailsSent} emails sent`);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      notified: userIds.length, 
-      emails_sent: emailsSent 
+    return new Response(JSON.stringify({
+      success: true,
+      notified: userIds.length,
+      emails_sent: emailsSent,
+      refunded: refundedCount,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error('Cancellation notification error:', err);
+    console.error("Cancellation notification error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

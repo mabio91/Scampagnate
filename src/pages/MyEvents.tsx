@@ -5,7 +5,7 @@ import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
   CalendarPlus, Clock, Calendar, Mail, Loader2, Zap, SquarePen
 } from "lucide-react";
-import { getRefundInfo, getCancellationDialogMessage } from "@/lib/cancellationPolicy";
+import { getRefundInfo, getCancellationDialogMessage, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -119,6 +119,21 @@ const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") =
 
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   return URL.createObjectURL(blob);
+};
+
+const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+  }
+
+  return supabase.functions.invoke(functionName, {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
 };
 
 const MyEvents = () => {
@@ -237,8 +252,14 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   const refundInfo = useMemo(() => {
     if (!event.date || !event.time) return null;
-    return getRefundInfo(event.cancellation_policy, event.date, event.time);
-  }, [event.cancellation_policy, event.date, event.time]);
+    return getRefundInfo(
+      event.cancellation_policy,
+      event.date,
+      event.time,
+      0,
+      getServiceFeeAmount(event.payment_type)
+    );
+  }, [event.cancellation_policy, event.date, event.time, event.payment_type]);
   const cancellationDialogMessage = useMemo(() => getCancellationDialogMessage(refundInfo), [refundInfo]);
 
   const hasPaidPayment = registration.payment_status === "paid";
@@ -258,7 +279,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       if (result?.refunded) {
         toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni." });
       } else if (result?.reason === "no_refund_policy") {
-        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso." });
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata con successo. Secondo la policy dell'evento, non è previsto alcun rimborso." });
       } else if (result?.reason === "stripe_error") {
         toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile." });
       } else {
@@ -279,7 +300,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         const regPriceOptionId = registration.price_option_id;
         if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
 
-        const { data, error } = await supabase.functions.invoke("create-event-checkout", { body });
+        const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
         if (error) throw error;
         if (data?.free) {
           toast({ title: "Pagamento completato", description: "Lo sconto ha coperto l'intero importo!" });
@@ -425,11 +446,16 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
           <DialogHeader>
             <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              <span className="block">Sei sicuro di voler rinunciare a questa esperienza?</span>
+              <span className="block">Cancelli la tua partecipazione?</span>
               <span className="block mt-2 font-semibold text-foreground">{event.title}</span>
               {hasPaidPayment && cancellationDialogMessage && (
                 <span className="block mt-3 text-sm whitespace-pre-line text-foreground">
                   {cancellationDialogMessage}
+                </span>
+              )}
+              {!hasPaidPayment && (
+                <span className="block mt-3 text-sm text-foreground">
+                  La tua iscrizione verrà annullata.
                 </span>
               )}
             </DialogDescription>
