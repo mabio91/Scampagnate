@@ -32,7 +32,7 @@ export const UI_LABELS = {
   statusWaitlist: "In attesa",
   statusSpotAvailable: "Posto disponibile",
   statusComingSoon: "In arrivo",
-  statusJoined: "Iscritto",
+  statusJoined: "Iscritto ✓",
   statusClosed: "Chiuso",
   statusAttended: "Partecipato",
 

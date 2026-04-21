@@ -319,7 +319,7 @@ const Index = () => {
             {/* Personalized recommendations */}
             {recommended.length > 0 && (
               <div className="mt-4">
-                <RecommendedSection events={recommended} />
+                <RecommendedSection events={recommended} registeredEventIds={userRegisteredEventIds} />
               </div>
             )}
 

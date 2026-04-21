@@ -23,7 +23,7 @@ const STATUS_CONFIG: Record<CardStatus, { label: string; className: string }> = 
   },
   joined: {
     label: UI_LABELS.statusJoined,
-    className: "bg-primary/15 text-primary border-primary/30",
+    className: "bg-success/20 text-success border-success/30",
   },
   spot_available: {
     label: UI_LABELS.statusSpotAvailable,

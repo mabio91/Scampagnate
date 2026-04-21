@@ -9,9 +9,10 @@ import { EventWithDetails } from "@/hooks/useEvents";
 
 interface Props {
   events: EventWithDetails[];
+  registeredEventIds?: Set<string>;
 }
 
-const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetails; index: number }) => {
+const RecommendedCarouselCard = memo(({ event, index, isUserRegistered = false }: { event: EventWithDetails; index: number; isUserRegistered?: boolean }) => {
   const isAboveFold = index < 2;
   const formattedDate = useMemo(() => {
     const d = new Date(event.date);
@@ -28,16 +29,20 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
 
   const formattedTime = event.time?.slice(0, 5) || "";
   const locationLabel = (event as any).location_label || event.location;
-  const statusLabel = event.status === "full"
-    ? UI_LABELS.statusWaitlist
-    : event.status === "closed" || event.status === "cancelled" || event.status === "past"
-      ? UI_LABELS.statusClosed
-      : UI_LABELS.statusOpen;
-  const statusClassName = event.status === "full"
-    ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
-    : event.status === "closed" || event.status === "cancelled" || event.status === "past"
-      ? "bg-muted text-muted-foreground border-border/50"
-      : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
+  const statusLabel = isUserRegistered
+    ? UI_LABELS.statusJoined
+    : event.status === "full"
+      ? UI_LABELS.statusWaitlist
+      : event.status === "closed" || event.status === "cancelled" || event.status === "past"
+        ? UI_LABELS.statusClosed
+        : UI_LABELS.statusOpen;
+  const statusClassName = isUserRegistered
+    ? "bg-success/20 text-success border-success/30"
+    : event.status === "full"
+      ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
+      : event.status === "closed" || event.status === "cancelled" || event.status === "past"
+        ? "bg-muted text-muted-foreground border-border/50"
+        : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
 
   return (
     <Link to={`/event/${event.id}`} className="group block h-full">
@@ -128,7 +133,7 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
 
 RecommendedCarouselCard.displayName = "RecommendedCarouselCard";
 
-const RecommendedSection = memo(({ events }: Props) => {
+const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
   if (events.length === 0) return null;
 
   return (
@@ -150,7 +155,11 @@ const RecommendedSection = memo(({ events }: Props) => {
               key={event.id}
               className="h-[18.75rem] shrink-0 snap-center basis-[84%] sm:basis-[68%] lg:basis-[52%]"
             >
-              <RecommendedCarouselCard event={event} index={i} />
+              <RecommendedCarouselCard
+                event={event}
+                index={i}
+                isUserRegistered={!!registeredEventIds?.has(event.id)}
+              />
             </div>
           ))}
         </div>
