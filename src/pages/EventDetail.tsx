@@ -1240,7 +1240,7 @@ const EventDetail = () => {
 
         {/* Event Fit Score — "Quanto fa per te" */}
         {user && !accessData?.failedRules?.length && !fitScore.hidden && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="py-4 border-b border-border">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="pt-4 pb-3">
             <h3 className="font-display text-lg font-bold text-foreground mb-3">Quanto fa per te</h3>
             <EventFitScore fitScore={fitScore} />
           </motion.div>
@@ -1249,7 +1249,7 @@ const EventDetail = () => {
         {/* Price section removed — price only shown in bottom sticky bar */}
 
         {/* Actions for registered users */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="py-4">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className={isRegistered && !hasPendingPayment ? "pt-3" : "hidden"}>
           {isRegistered && !hasPendingPayment && (
             <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
               {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
