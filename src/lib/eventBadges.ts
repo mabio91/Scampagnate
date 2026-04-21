@@ -65,6 +65,7 @@ export const MANUAL_BADGE_OPTIONS = [
 
 interface EventForBadges {
   price: number;
+  payment_type?: string | null;
   spots_taken: number;
   spots_total: number;
   status?: string;
@@ -108,7 +109,7 @@ export function resolveEventBadges(event: EventForBadges): EventBadge[] {
   }
 
   // Auto: GRATUITO
-  if (Number(event.price) === 0) {
+  if (event.payment_type === "free" && Number(event.price) === 0) {
     autoBadges.push("gratuito");
   }
 

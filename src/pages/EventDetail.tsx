@@ -265,6 +265,7 @@ const EventDetail = () => {
   
   const eventBadges = resolveEventBadges({
     price: Number(event.price),
+    payment_type: event.payment_type,
     spots_taken: event.spots_taken,
     spots_total: event.spots_total,
     status: event.status,
