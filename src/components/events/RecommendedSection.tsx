@@ -40,9 +40,9 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
       : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
 
   return (
-    <Link to={`/event/${event.id}`} className="group block">
-      <article className="flex h-[18.75rem] flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md sm:h-[19.5rem]">
-        <div className="relative h-32 shrink-0 overflow-hidden bg-muted sm:h-36">
+    <Link to={`/event/${event.id}`} className="group block h-full">
+      <article className="flex h-full flex-col overflow-hidden rounded-[28px] border border-border/40 bg-card shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md">
+        <div className="relative h-32 shrink-0 overflow-hidden bg-muted">
           <OptimizedImage
             src={event.image_url}
             alt={event.title}
@@ -144,11 +144,11 @@ const RecommendedSection = memo(({ events }: Props) => {
       </p>
 
       <div className="-mx-4 overflow-x-auto px-4 pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory [scroll-padding-inline:1rem]">
-        <div className="flex items-start gap-4 pr-4">
+        <div className="flex items-stretch gap-4 pr-4">
           {events.slice(0, 3).map((event, i) => (
             <div
               key={event.id}
-              className="shrink-0 snap-center basis-[84%] sm:basis-[68%] lg:basis-[52%]"
+              className="h-[18.75rem] shrink-0 snap-center basis-[84%] sm:basis-[68%] lg:basis-[52%]"
             >
               <RecommendedCarouselCard event={event} index={i} />
             </div>
