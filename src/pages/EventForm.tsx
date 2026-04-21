@@ -188,7 +188,7 @@ const EventForm = () => {
   const [fitScoreSecondaryCategories, setFitScoreSecondaryCategories] = useState<string[]>([]);
 
   const [registrationOpen, setRegistrationOpen] = useState(true);
-  const [policyType, setPolicyType] = useState<PolicyType | "">("flexible");  
+  const [policyType, setPolicyType] = useState<PolicyType | "">("flexible_24h");
   const [policyCustomText, setPolicyCustomText] = useState("");
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
@@ -332,7 +332,7 @@ const EventForm = () => {
       });
       setRegistrationOpen(event.status !== "closed");
       const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
-      setPolicyType(pt || "flexible");
+      setPolicyType(pt || "flexible_24h");
       setPolicyCustomText(ct);
       if (event.image_url) {
         setImagePreview(event.image_url);

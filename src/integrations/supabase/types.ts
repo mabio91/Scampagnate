@@ -625,7 +625,10 @@ export type Database = {
       event_registrations: {
         Row: {
           additional_responses: Json | null
+          amount_paid: number | null
+          cancellation_policy: string | null
           car_availability: string | null
+          cancelled_at: string | null
           checked_in: boolean
           created_at: string
           event_id: string
@@ -633,6 +636,10 @@ export type Database = {
           meeting_point_id: string | null
           payment_status: string | null
           price_option_id: string | null
+          refund_amount: number | null
+          refund_percentage: number | null
+          refund_status: string | null
+          service_fee_amount: number
           sport_level: string | null
           status: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id: string | null
@@ -640,7 +647,10 @@ export type Database = {
         }
         Insert: {
           additional_responses?: Json | null
+          amount_paid?: number | null
+          cancellation_policy?: string | null
           car_availability?: string | null
+          cancelled_at?: string | null
           checked_in?: boolean
           created_at?: string
           event_id: string
@@ -648,6 +658,10 @@ export type Database = {
           meeting_point_id?: string | null
           payment_status?: string | null
           price_option_id?: string | null
+          refund_amount?: number | null
+          refund_percentage?: number | null
+          refund_status?: string | null
+          service_fee_amount?: number
           sport_level?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id?: string | null
@@ -655,7 +669,10 @@ export type Database = {
         }
         Update: {
           additional_responses?: Json | null
+          amount_paid?: number | null
+          cancellation_policy?: string | null
           car_availability?: string | null
+          cancelled_at?: string | null
           checked_in?: boolean
           created_at?: string
           event_id?: string
@@ -663,6 +680,10 @@ export type Database = {
           meeting_point_id?: string | null
           payment_status?: string | null
           price_option_id?: string | null
+          refund_amount?: number | null
+          refund_percentage?: number | null
+          refund_status?: string | null
+          service_fee_amount?: number
           sport_level?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id?: string | null

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { useMembershipFee } from "@/hooks/useMembershipFee";
-import { parseCancellationPolicy, CANCELLATION_POLICIES } from "@/lib/cancellationPolicy";
+import { getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -73,8 +73,9 @@ const RegistrationCheckoutDialog = ({
   const depositAmount = isDeposit ? Number(event.deposit) : 0;
   const displayPrice = isDeposit ? depositAmount : basePrice;
   const membershipFee = needsMembership ? membershipFeeAmount : 0;
+  const serviceFee = isPaymentEvent ? getServiceFeeAmount(event.payment_type) : 0;
   const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
-  const totalDueToday = discountedEventPrice + membershipFee;
+  const totalDueToday = discountedEventPrice + serviceFee + membershipFee;
   const remainingAmount = isDeposit ? Number(event.price) - depositAmount : 0;
 
   // Membership expiry display
@@ -122,14 +123,9 @@ const RegistrationCheckoutDialog = ({
   })();
 
   // Cancellation policy details
-  const cancellationDetails = (() => {
-    if (!event.cancellation_policy) return null;
-    const { policyType } = parseCancellationPolicy(event.cancellation_policy);
-    if (!policyType) return null;
-    const policy = CANCELLATION_POLICIES[policyType];
-    if (!policy) return null;
-    return { label: policy.labelIt, description: policy.descriptionIt, icon: policy.icon, colorClass: policy.colorClass };
-  })();
+  const cancellationDetails = event.cancellation_policy
+    ? getPolicyDefinition(event.cancellation_policy)
+    : null;
 
   // Check if Section 1 has any content
   const hasSection1 = hasMeetingPoints || isSportCategory || carEnabled || customFields.length > 0 || hasMandatoryEquipment;
@@ -457,6 +453,13 @@ const RegistrationCheckoutDialog = ({
                   <p className="text-xs font-body text-muted-foreground italic">Da saldare in loco</p>
                 )}
 
+                {serviceFee > 0 && (
+                  <div className="flex justify-between text-sm font-body">
+                    <span className="text-muted-foreground">Costo del servizio</span>
+                    <span className="font-semibold text-foreground">€{serviceFee.toFixed(2)}</span>
+                  </div>
+                )}
+
                 {needsMembership && (
                   <div className="flex justify-between text-sm font-body">
                     <span className="text-primary font-semibold flex items-center gap-1">
@@ -491,13 +494,14 @@ const RegistrationCheckoutDialog = ({
               <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
                 <div className="flex items-center gap-2">
                   <cancellationDetails.icon className={`h-4 w-4 shrink-0 ${cancellationDetails.colorClass}`} />
-                  <p className="text-sm font-body font-semibold text-foreground">
-                    Politica di cancellazione: {cancellationDetails.label}
+                  <p className="text-sm font-body font-semibold text-foreground">Politica di cancellazione</p>
+                </div>
+                <div className="pl-6 space-y-0.5">
+                  <p className="text-sm font-body font-semibold text-foreground">{cancellationDetails.labelIt}</p>
+                  <p className="text-xs font-body text-muted-foreground">
+                    {cancellationDetails.checkoutDescriptionIt}
                   </p>
                 </div>
-                <p className="text-xs font-body text-muted-foreground pl-6">
-                  {cancellationDetails.description}
-                </p>
               </div>
             )}
 

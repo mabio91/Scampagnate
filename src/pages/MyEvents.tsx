@@ -5,7 +5,7 @@ import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
   CalendarPlus, Clock, Calendar, Mail, Loader2, Zap, SquarePen
 } from "lucide-react";
-import { getRefundInfo, getCancellationDialogMessage } from "@/lib/cancellationPolicy";
+import { getRefundInfo, getCancellationDialogMessage, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -252,8 +252,14 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   const refundInfo = useMemo(() => {
     if (!event.date || !event.time) return null;
-    return getRefundInfo(event.cancellation_policy, event.date, event.time);
-  }, [event.cancellation_policy, event.date, event.time]);
+    return getRefundInfo(
+      event.cancellation_policy,
+      event.date,
+      event.time,
+      0,
+      getServiceFeeAmount(event.payment_type)
+    );
+  }, [event.cancellation_policy, event.date, event.time, event.payment_type]);
   const cancellationDialogMessage = useMemo(() => getCancellationDialogMessage(refundInfo), [refundInfo]);
 
   const hasPaidPayment = registration.payment_status === "paid";
@@ -273,7 +279,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       if (result?.refunded) {
         toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni." });
       } else if (result?.reason === "no_refund_policy") {
-        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso." });
+        toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata con successo. Secondo la policy dell'evento, non è previsto alcun rimborso." });
       } else if (result?.reason === "stripe_error") {
         toast({ title: t("registrationCancelled"), description: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile." });
       } else {
@@ -440,11 +446,16 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
           <DialogHeader>
             <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              <span className="block">Sei sicuro di voler rinunciare a questa esperienza?</span>
+              <span className="block">Cancelli la tua partecipazione?</span>
               <span className="block mt-2 font-semibold text-foreground">{event.title}</span>
               {hasPaidPayment && cancellationDialogMessage && (
                 <span className="block mt-3 text-sm whitespace-pre-line text-foreground">
                   {cancellationDialogMessage}
+                </span>
+              )}
+              {!hasPaidPayment && (
+                <span className="block mt-3 text-sm text-foreground">
+                  La tua iscrizione verrà annullata.
                 </span>
               )}
             </DialogDescription>

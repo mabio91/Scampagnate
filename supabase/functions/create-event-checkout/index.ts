@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+const SERVICE_FEE_EUR = 1;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -74,7 +76,7 @@ serve(async (req) => {
     // Fetch event details using admin client to bypass RLS
     const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
-      .select("id, title, price, deposit, payment_type, spots_total, spots_taken")
+      .select("id, title, price, deposit, payment_type, spots_total, spots_taken, cancellation_policy")
       .eq("id", eventId)
       .single();
 
@@ -223,7 +225,23 @@ serve(async (req) => {
     }
 
     const eventAmountCents = Math.round(finalPrice * 100);
-    const totalAmountCents = eventAmountCents + membershipFeeCents;
+    const serviceFeeCents = event.payment_type === "paid" || event.payment_type === "deposit"
+      ? SERVICE_FEE_EUR * 100
+      : 0;
+    const bookingAmountCents = eventAmountCents + serviceFeeCents;
+    const totalAmountCents = bookingAmountCents + membershipFeeCents;
+
+    await supabaseAdmin
+      .from("event_registrations")
+      .update({
+        amount_paid: bookingAmountCents / 100,
+        cancellation_policy: event.cancellation_policy || null,
+        service_fee_amount: serviceFeeCents / 100,
+        refund_percentage: 0,
+        refund_amount: 0,
+        refund_status: registration.payment_status === "paid" ? "completed" : "pending",
+      })
+      .eq("id", registrationId);
 
     if (totalAmountCents <= 0) {
       // Free after discount and no membership fee — mark as paid directly
@@ -267,6 +285,20 @@ serve(async (req) => {
       });
     }
 
+    if (serviceFeeCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: "Costo del servizio",
+            description: "Costo del servizio non rimborsabile in caso di cancellazione utente idonea al rimborso",
+          },
+          unit_amount: serviceFeeCents,
+        },
+        quantity: 1,
+      });
+    }
+
     if (membershipFeeCents > 0) {
       lineItems.push({
         price_data: {
@@ -296,6 +328,8 @@ serve(async (req) => {
         payment_type: event.payment_type,
         discount_code_id: discountCodeId || "",
         membership_included: String(membershipFeeCents > 0),
+        booking_amount_cents: String(bookingAmountCents),
+        service_fee_cents: String(serviceFeeCents),
       },
     });
 

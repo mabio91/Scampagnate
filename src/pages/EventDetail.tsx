@@ -8,7 +8,7 @@ import {
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
   Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, ChevronDown, X, ZoomIn
 } from "lucide-react";
-import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage } from "@/lib/cancellationPolicy";
+import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage, getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
@@ -573,7 +573,8 @@ const EventDetail = () => {
 
 
   // Policy-based refund info for cancel dialog messaging
-  const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time) : null;
+  const serviceFeeAmount = event ? getServiceFeeAmount(event.payment_type) : 0;
+  const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time, 0, serviceFeeAmount) : null;
   const cancellationDialogMessage = getCancellationDialogMessage(refundInfo);
   const hasPaidPayment = myRegistration?.payment_status === "paid";
 
@@ -588,7 +589,7 @@ const EventDetail = () => {
       if (result?.refunded) {
         toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni." });
       } else if (result?.reason === "no_refund_policy") {
-        toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata. Secondo la policy dell'evento, non è previsto alcun rimborso." });
+        toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata con successo. Secondo la policy dell'evento, non è previsto alcun rimborso." });
       } else if (result?.reason === "stripe_error") {
         toast({ title: "Iscrizione annullata", description: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile." });
       } else {
@@ -1178,9 +1179,8 @@ const EventDetail = () => {
 
         {/* REGOLE & INFO – collapsible, dynamic based on cancellation policy */}
         {(() => {
-          const { policyType } = parseCancellationPolicy(event.cancellation_policy);
-          const isFlexible = policyType === "flexible" || policyType === "moderate";
-          const windowHours = policyType === "moderate" ? "48h" : "24h";
+          const policy = getPolicyDefinition(event.cancellation_policy);
+          const isFlexible = policy.type !== "non_refundable";
           const closingSentence =
             (event.additional_fields as any)?.closing_sentence ||
             getDeterministicEventClosingSentence(event.id);
@@ -1188,17 +1188,17 @@ const EventDetail = () => {
           const bullets = isFlexible
             ? [
                 { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
-                { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${windowHours} prima e ricevere il rimborso completo` },
-                { icon: "❌", text: "Dopo questo termine non è più possibile rimborsare (organizziamo tutto in anticipo)" },
+                { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${policy.requiredHours}h prima dell'evento` },
+                { icon: "ℹ️", text: "In questo caso riceverai il rimborso dell'importo versato, escluso il costo del servizio di 1€" },
                 { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
-                { icon: "", text: closingSentence },
+                { icon: "✨", text: closingSentence },
               ]
             : [
                 { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
-                { icon: "❌", text: "Questo evento non è rimborsabile" },
+                { icon: "❌", text: "Questo evento non è rimborsabile in caso di cancellazione" },
                 { icon: "💡", text: "Organizziamo tutto in anticipo per garantire l'esperienza" },
                 { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
-                { icon: "", text: closingSentence },
+                { icon: "✨", text: closingSentence },
               ];
 
           return (
@@ -1207,9 +1207,9 @@ const EventDetail = () => {
                 <CollapsibleTrigger className="flex items-start justify-between w-full group text-left">
                   <div>
                     <h3 className="font-display text-lg font-bold text-foreground">Regole & Info</h3>
-                    {isFlexible && (
+                    {policy.shortInfoLabelIt && (
                       <p className="text-xs font-body text-muted-foreground mt-0.5">
-                        Cancellazione gratuita fino a {windowHours} →
+                        {policy.shortInfoLabelIt}
                       </p>
                     )}
                   </div>
@@ -1254,13 +1254,16 @@ const EventDetail = () => {
               <DialogHeader>
                 <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
                 <DialogDescription className="font-body text-sm">
-                  <span className="block">Sei sicuro di voler rinunciare a questa esperienza?</span>
+                  <span className="block">Cancelli la tua partecipazione?</span>
                   <span className="block mt-2 font-semibold text-foreground">{event.title}</span>
                   {hasPaidPayment && cancellationDialogMessage && (
                     <span className="block mt-3 text-sm whitespace-pre-line text-foreground">
-                      {cancellationDialogMessage
-                        ? "💰 Riceverai il rimborso completo nei prossimi giorni."
-                        : `⚠️ ${refundInfo.message}`}
+                      {cancellationDialogMessage}
+                    </span>
+                  )}
+                  {!hasPaidPayment && (
+                    <span className="block mt-3 text-sm text-foreground">
+                      La tua iscrizione verrà annullata.
                     </span>
                   )}
                   {refundInfo && (

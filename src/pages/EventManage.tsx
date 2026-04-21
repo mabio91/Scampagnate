@@ -1368,7 +1368,7 @@ const EventManage = () => {
 
                   queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
                   queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
-                  toast({ title: "Evento cancellato", description: "Tutti i partecipanti sono stati notificati." });
+                  toast({ title: "Evento annullato", description: "I partecipanti riceveranno il rimborso completo dell'importo versato." });
                 } catch (err: any) {
                   toast({ title: "Errore", description: err.message, variant: "destructive" });
                 } finally {
