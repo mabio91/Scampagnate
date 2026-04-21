@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus,
-  Loader2, Zap, BarChart3, Trash2, Send, Settings, Search, Copy,
-  MessageCircle, Bell, Clock, CloudSun, AlertTriangle, History,
+  Loader2, Zap, BarChart3, Trash2, Send, Search, Copy,
+  MessageCircle, Bell, AlertTriangle, History,
   FileEdit, Eye, CircleOff, Lock, XCircle, Archive
 } from "lucide-react";
 import { format } from "date-fns";
@@ -62,6 +62,19 @@ const EventManage = () => {
   const [messageText, setMessageText] = useState("");
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [broadcastChannel, setBroadcastChannel] = useState<"notification" | "whatsapp">("notification");
+
+  const { data: broadcastTemplates } = useQuery({
+    queryKey: ["broadcast-message-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("broadcast_message_templates")
+        .select("id, title, message, sort_order")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   // Broadcast history
   const { data: broadcastHistory } = useQuery({
@@ -1115,20 +1128,20 @@ const EventManage = () => {
             <div>
               <p className="text-xs font-body font-semibold text-muted-foreground mb-2">Quick templates</p>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  { icon: <Clock className="h-3 w-3" />, label: "Time change", text: `Important update for "${event.title}": the event time has been changed. Please check the event page for the updated schedule.` },
-                  { icon: <AlertTriangle className="h-3 w-3" />, label: "Meeting point", text: `Meeting point update for "${event.title}": the meeting point has been updated. Please check the event page for new details.` },
-                  { icon: <CloudSun className="h-3 w-3" />, label: "Weather alert", text: `Weather update for "${event.title}": please check the weather forecast and come prepared. The event will proceed as planned unless further notice.` },
-                  { icon: <Bell className="h-3 w-3" />, label: "Reminder", text: `Reminder: "${event.title}" is coming up! Don't forget to check the event details and prepare accordingly. See you there!` },
-                ].map((tpl) => (
+                {broadcastTemplates?.map((tpl: any) => (
                   <button
-                    key={tpl.label}
-                    onClick={() => setMessageText(tpl.text)}
+                    key={tpl.id}
+                    onClick={() => setMessageText(tpl.message.replace(/\{\{event_title\}\}/g, event.title))}
                     className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-body font-medium rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors active:scale-95"
                   >
-                    {tpl.icon} {tpl.label}
+                    <MessageCircle className="h-3 w-3" /> {tpl.title}
                   </button>
                 ))}
+                {!broadcastTemplates?.length && (
+                  <p className="text-[11px] font-body text-muted-foreground">
+                    No templates configured yet.
+                  </p>
+                )}
               </div>
             </div>
 
