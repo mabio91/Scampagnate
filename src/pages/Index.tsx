@@ -103,9 +103,8 @@ const Index = () => {
 
   // Personalized recommendations
   const recommended = useMemo(() => {
-    if (!profile?.onboarding_completed) return [];
-
-    return allUpcoming
+    const personalizedRecommendations = profile?.onboarding_completed
+      ? allUpcoming
       .map((event) => {
         const fitScoreMainCategory =
           (event.additional_fields as any)?.fit_score_main_category || event.category?.name || null;
@@ -128,8 +127,17 @@ const Index = () => {
       .filter((item) => !item.hidden && !item.profileIncomplete && item.score >= 75)
       .sort((a, b) => b.score - a.score || new Date(a.event.date).getTime() - new Date(b.event.date).getTime())
       .map(x => x.event)
+      .slice(0, 3)
+      : [];
+
+    if (personalizedRecommendations.length > 0) {
+      return personalizedRecommendations;
+    }
+
+    return allUpcoming
+      .filter((event) => event.id !== featured?.id)
       .slice(0, 3);
-  }, [allUpcoming, profile]);
+  }, [allUpcoming, featured?.id, profile]);
 
   // Filter events
   const filteredEvents = useMemo(() => {
@@ -309,7 +317,7 @@ const Index = () => {
             <QuickFilters active={quickFilters} onToggle={toggleQuickFilter} />
 
             {/* Personalized recommendations */}
-            {!hasActiveFilters && recommended.length > 0 && (
+            {recommended.length > 0 && (
               <div className="mt-4">
                 <RecommendedSection events={recommended} />
               </div>
