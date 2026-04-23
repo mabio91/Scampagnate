@@ -48,6 +48,10 @@ import { resolveEventBadges } from "@/lib/eventBadges";
 import { getDeterministicEventClosingSentence } from "@/lib/eventClosingSentences";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 
+const EDGE_GATEWAY_JWT =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
+
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
   const [isClamped, setIsClamped] = useState(false);
@@ -87,16 +91,15 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
 };
 
 const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+  if (!EDGE_GATEWAY_JWT) {
+    throw new Error("Configurazione Supabase mancante per la funzione.");
   }
 
   return supabase.functions.invoke(functionName, {
     body,
     headers: {
-      Authorization: `Bearer ${session.access_token}`,
+      apikey: EDGE_GATEWAY_JWT,
+      Authorization: `Bearer ${EDGE_GATEWAY_JWT}`,
     },
   });
 };

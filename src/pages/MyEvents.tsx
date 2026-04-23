@@ -28,6 +28,10 @@ import {
 import { parseEventDateTime } from "@/lib/timezone";
 import { getDepositPaymentLabel, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 
+const EDGE_GATEWAY_JWT =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
+
 const statusStyles: Record<string, string> = {
   iscritto: "bg-success/10 text-success",
   in_attesa: "bg-warning/10 text-warning",
@@ -121,16 +125,15 @@ const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") =
 };
 
 const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+  if (!EDGE_GATEWAY_JWT) {
+    throw new Error("Configurazione Supabase mancante per la funzione.");
   }
 
   return supabase.functions.invoke(functionName, {
     body,
     headers: {
-      Authorization: `Bearer ${session.access_token}`,
+      apikey: EDGE_GATEWAY_JWT,
+      Authorization: `Bearer ${EDGE_GATEWAY_JWT}`,
     },
   });
 };

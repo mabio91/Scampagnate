@@ -1525,9 +1525,15 @@ const EventManage = () => {
 
                   // Trigger cancellation notifications via edge function
                   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'etiynvukviykquqcsjln';
+                  const gatewayJwt = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.SUPABASE_PUBLISHABLE_KEY;
+                  if (!gatewayJwt) throw new Error("Configurazione Supabase mancante per la funzione.");
                   await fetch(`https://${projectId}.supabase.co/functions/v1/notify-event-cancelled`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'apikey': gatewayJwt,
+                      'Authorization': `Bearer ${gatewayJwt}`,
+                    },
                     body: JSON.stringify({ event_id: id }),
                   });
 

@@ -25,16 +25,14 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Missing authorization token" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+    let authenticatedUserId: string | null = null;
+
+    if (token) {
+      const { data } = await supabaseClient.auth.getUser(token);
+      authenticatedUserId = data.user?.id ?? null;
+      if (!authenticatedUserId) throw new Error("User not authenticated");
     }
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user) throw new Error("User not authenticated");
 
     const { sessionId } = await req.json();
     if (!sessionId) throw new Error("Session ID required");
@@ -62,11 +60,20 @@ serve(async (req) => {
 
     const registrationId = session.metadata?.registration_id;
     const eventId = session.metadata?.event_id;
+    const sessionUserId = session.metadata?.user_id || null;
     const membershipIncluded = session.metadata?.membership_included === "true";
     const bookingAmountCents = Number(session.metadata?.booking_amount_cents || "0");
     const checkoutKind = (session.metadata?.checkout_kind || "full") as "full" | "deposit" | "balance";
+    const userId = authenticatedUserId || sessionUserId;
 
     if (!registrationId) throw new Error("Registration ID not found in session");
+    if (!userId) throw new Error("User not found in session");
+    if (authenticatedUserId && sessionUserId && authenticatedUserId !== sessionUserId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Session mismatch" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
 
     const stripePaymentIntentId = typeof session.payment_intent === 'string' 
       ? session.payment_intent 
@@ -77,7 +84,7 @@ serve(async (req) => {
       .from("event_registrations")
       .select("id, status, payment_status, event_id, amount_paid, service_fee_amount, total_price_amount, deposit_amount, balance_due_amount")
       .eq("id", registrationId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (regError || !reg) {
@@ -145,11 +152,11 @@ serve(async (req) => {
           refund_status: "completed",
         })
         .eq("id", registrationId)
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       // Notify user
       await supabaseAdmin.from("notifications").insert({
-        user_id: user.id,
+        user_id: userId,
         type: "waitlist_spot_lost",
         title: "Posto già assegnato",
         message: `Il posto per "${event.title}" è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente. Resti in lista d'attesa.`,
@@ -158,7 +165,7 @@ serve(async (req) => {
 
       // Activate membership if included (they still paid for it)
       if (membershipIncluded) {
-        await supabaseAdmin.rpc("activate_membership", { user_id_param: user.id });
+        await supabaseAdmin.rpc("activate_membership", { user_id_param: userId });
       }
 
       return new Response(
@@ -189,7 +196,7 @@ serve(async (req) => {
         balance_due_amount: nextBalanceDueAmount,
       })
       .eq("id", registrationId)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     if (updateError) {
       console.error("Registration update error:", updateError);
@@ -198,7 +205,7 @@ serve(async (req) => {
 
     if (membershipIncluded) {
       const { error: membershipError } = await supabaseAdmin.rpc("activate_membership", {
-        user_id_param: user.id,
+        user_id_param: userId,
       });
       if (membershipError) {
         console.error("Membership activation error:", membershipError);
@@ -210,7 +217,7 @@ serve(async (req) => {
       .from("event_registrations")
       .delete()
       .eq("event_id", reg.event_id)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("payment_status", "pending")
       .neq("id", registrationId);
 
