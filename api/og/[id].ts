@@ -67,7 +67,7 @@ export default async function handler(req: Request) {
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aXludnVrdml5a3F1cWNzamxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDAxNDMsImV4cCI6MjA4ODQxNjE0M30.IHz7Uu8AN4p9Ufewn1vPo1ECA_LcOrcDVZSPK8vORPI";
 
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/events?id=eq.${eventId}&visibility=eq.public&select=title,description,image_url,date,location,organizer_name`,
+      `${SUPABASE_URL}/rest/v1/events?id=eq.${eventId}&visibility=eq.public&select=title,description,image_url,date,location,location_label,organizer_name`,
       {
         headers: {
           apikey: SUPABASE_KEY,
@@ -110,7 +110,7 @@ export default async function handler(req: Request) {
 
     const title = event.title || "Evento Scampagnate";
     const description =
-      [formattedDate, event.location, event.organizer_name]
+      [formattedDate, event.location_label || event.location, event.organizer_name]
         .filter(Boolean)
         .join(" · ") ||
       event.description?.substring(0, 160) ||

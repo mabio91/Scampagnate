@@ -469,6 +469,36 @@ export type Database = {
           },
         ]
       }
+      broadcast_message_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_broadcasts: {
         Row: {
           channel: string

@@ -6,12 +6,14 @@ import DynamicIcon from "@/components/DynamicIcon";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { UI_LABELS } from "@/lib/labels";
 import { EventWithDetails } from "@/hooks/useEvents";
+import EventCarousel from "./EventCarousel";
 
 interface Props {
-  events: EventWithDetails[];
+  events: Array<{ event: EventWithDetails; whyText: string; score: number }>;
+  registeredEventIds?: Set<string>;
 }
 
-const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetails; index: number }) => {
+const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered = false }: { event: EventWithDetails; whyText: string; index: number; isUserRegistered?: boolean }) => {
   const isAboveFold = index < 2;
   const formattedDate = useMemo(() => {
     const d = new Date(event.date);
@@ -28,16 +30,20 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
 
   const formattedTime = event.time?.slice(0, 5) || "";
   const locationLabel = (event as any).location_label || event.location;
-  const statusLabel = event.status === "full"
-    ? UI_LABELS.statusWaitlist
-    : event.status === "closed" || event.status === "cancelled" || event.status === "past"
-      ? UI_LABELS.statusClosed
-      : UI_LABELS.statusOpen;
-  const statusClassName = event.status === "full"
-    ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
-    : event.status === "closed" || event.status === "cancelled" || event.status === "past"
-      ? "bg-muted text-muted-foreground border-border/50"
-      : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
+  const statusLabel = isUserRegistered
+    ? UI_LABELS.statusJoined
+    : event.status === "full"
+      ? UI_LABELS.statusWaitlist
+      : event.status === "closed" || event.status === "cancelled" || event.status === "past"
+        ? UI_LABELS.statusClosed
+        : UI_LABELS.statusOpen;
+  const statusClassName = isUserRegistered
+    ? "bg-success/20 text-success border-success/30"
+    : event.status === "full"
+      ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
+      : event.status === "closed" || event.status === "cancelled" || event.status === "past"
+        ? "bg-muted text-muted-foreground border-border/50"
+        : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
 
   return (
     <Link to={`/event/${event.id}`} className="group block h-full">
@@ -53,13 +59,13 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
           />
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
             {event.featured ? (
-              <span className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary-foreground">
+              <span className="rounded-full bg-primary px-2.5 py-[3px] text-[9px] font-semibold uppercase leading-none tracking-[0.08em] text-primary-foreground">
                 Nuovo
               </span>
             ) : (
               <span />
             )}
-            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${statusClassName}`}>
+            <span className={`rounded-full border px-2.5 py-[3px] text-[9px] font-semibold leading-none ${statusClassName}`}>
               {statusLabel}
             </span>
           </div>
@@ -96,7 +102,7 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
           <div className="mt-2 max-h-[2.4rem] min-h-[2.4rem] overflow-hidden">
             <div className="flex flex-wrap items-center gap-2">
             {event.category && (
-              <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-[11px] font-semibold text-foreground">
+              <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-[10px] font-semibold leading-none text-foreground">
                 {event.category.icon && (
                   <span className="flex shrink-0 items-center justify-center">
                     <DynamicIcon value={event.category.icon} size={12} />
@@ -109,17 +115,24 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
             </div>
           </div>
 
-          <div />
+          <div className="mt-3 rounded-2xl bg-muted/35 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              {UI_LABELS.recommendedWhyTitle}
+            </p>
+            <p className="mt-1 text-xs leading-snug text-foreground/85">
+              {whyText}
+            </p>
+          </div>
 
           <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/50 pt-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
               <span>{event.spots_taken}/{event.spots_total} posti</span>
             </div>
-            <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-foreground">
-              {event.payment_type === "free" || Number(event.price) === 0 ? UI_LABELS.free : `EUR ${Number(event.price)}`}
-            </span>
-          </div>
+              <span className="rounded-full bg-muted px-2.5 py-[3px] text-[10px] font-semibold leading-none text-foreground">
+                {event.payment_type === "free" || Number(event.price) === 0 ? UI_LABELS.free : `EUR ${Number(event.price)}`}
+              </span>
+            </div>
         </div>
       </article>
     </Link>
@@ -128,7 +141,7 @@ const RecommendedCarouselCard = memo(({ event, index }: { event: EventWithDetail
 
 RecommendedCarouselCard.displayName = "RecommendedCarouselCard";
 
-const RecommendedSection = memo(({ events }: Props) => {
+const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
   if (events.length === 0) return null;
 
   return (
@@ -143,17 +156,21 @@ const RecommendedSection = memo(({ events }: Props) => {
         {UI_LABELS.recommendedSubtitle}
       </p>
 
-      <div className="-mx-4 overflow-x-auto px-4 pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory [scroll-padding-inline:1rem]">
-        <div className="flex items-stretch gap-4 pr-4">
-          {events.slice(0, 3).map((event, i) => (
-            <div
-              key={event.id}
-              className="h-[18.75rem] shrink-0 snap-center basis-[84%] sm:basis-[68%] lg:basis-[52%]"
-            >
-              <RecommendedCarouselCard event={event} index={i} />
+      <div className="-mx-4 pl-4 pb-2">
+        <EventCarousel
+          items={events.slice(0, 6)}
+          itemClassName="h-[22.5rem]"
+          renderItem={(item, i) => (
+            <div key={item.event.id} className="h-full">
+              <RecommendedCarouselCard
+                event={item.event}
+                whyText={item.whyText}
+                index={i}
+                isUserRegistered={!!registeredEventIds?.has(item.event.id)}
+              />
             </div>
-          ))}
-        </div>
+          )}
+        />
       </div>
     </section>
   );

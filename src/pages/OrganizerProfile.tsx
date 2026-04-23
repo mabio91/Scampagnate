@@ -128,7 +128,7 @@ const OrganizerProfile = () => {
 
               {/* Bio */}
               {profile?.bio && (
-                <p className="text-sm font-body text-muted-foreground leading-relaxed max-w-sm border-t border-border/50 pt-3 w-full text-center">
+                <p className="text-sm font-body text-muted-foreground leading-relaxed max-w-sm border-t border-border/50 pt-3 w-full text-center whitespace-pre-line">
                   {profile.bio}
                 </p>
               )}

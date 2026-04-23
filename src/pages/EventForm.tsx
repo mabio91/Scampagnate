@@ -32,6 +32,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { useTrekkingDifficultyLevels } from "@/hooks/useTrekkingDifficultyLevels";
 
 type PaymentType = Database["public"]["Enums"]["payment_type"];
+type BalancePaymentMode = "online" | "on_site";
 
 interface EquipmentItem {
   name: string;
@@ -173,6 +174,7 @@ const EventForm = () => {
     price: 0,
     deposit: 0,
     payment_type: "free" as PaymentType,
+    balance_payment_mode: "online" as BalancePaymentMode,
     difficulty: "",
     distance: "",
     elevation: "",
@@ -319,6 +321,7 @@ const EventForm = () => {
         price: event.price,
         deposit: event.deposit || 0,
         payment_type: event.payment_type,
+        balance_payment_mode: (event as any).balance_payment_mode || "online",
         difficulty: event.difficulty || "",
         distance: distanceVal,
         elevation: elevationVal,
@@ -659,6 +662,7 @@ const EventForm = () => {
         price: form.price,
         deposit: form.payment_type === "deposit" ? form.deposit : null,
         payment_type: form.payment_type,
+        balance_payment_mode: form.payment_type === "deposit" ? form.balance_payment_mode : null,
         difficulty: form.difficulty || null,
         distance: distanceFormatted,
         elevation: elevationFormatted,
@@ -1114,6 +1118,18 @@ const EventForm = () => {
                   <Label htmlFor="deposit">Acconto (€)</Label>
                   <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit || ""} onChange={(e) => updateForm("deposit", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
                 </div>
+                <div>
+                  <Label>ModalitÃ  pagamento saldo</Label>
+                  <Select value={form.balance_payment_mode} onValueChange={(v) => updateForm("balance_payment_mode", v as BalancePaymentMode)}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="online">Online (Stripe)</SelectItem>
+                      <SelectItem value="on_site">Sul posto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 {form.price > 0 && form.deposit > 0 && (
                   <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
                     <div className="flex justify-between text-sm font-body">
@@ -1134,32 +1150,41 @@ const EventForm = () => {
             )}
 
             {/* Cancellation Policy */}
-            <div>
-              <Label>Politica di cancellazione</Label>
-              <Select value={policyType} onValueChange={(v) => setPolicyType(v as PolicyType)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Seleziona una politica" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.values(CANCELLATION_POLICIES)).map((p) => {
-                    const Icon = p.icon;
-                    return (
-                      <SelectItem key={p.type} value={p.type}>
-                        <span className={`inline-flex items-center gap-1.5 ${p.colorClass}`}>
-                          <Icon className="h-3.5 w-3.5" />
-                          {p.labelIt}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              {policyType && (
-                <p className={`mt-1.5 text-xs font-body px-1 ${CANCELLATION_POLICIES[policyType as PolicyType]?.colorClass || 'text-muted-foreground'}`}>
-                  {CANCELLATION_POLICIES[policyType as PolicyType]?.descriptionIt}
+            {form.payment_type !== "free" ? (
+              <div>
+                <Label>Politica di cancellazione</Label>
+                <Select value={policyType} onValueChange={(v) => setPolicyType(v as PolicyType)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleziona una politica" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.values(CANCELLATION_POLICIES)).map((p) => {
+                      const Icon = p.icon;
+                      return (
+                        <SelectItem key={p.type} value={p.type}>
+                          <span className={`inline-flex items-center gap-1.5 ${p.colorClass}`}>
+                            <Icon className="h-3.5 w-3.5" />
+                            {p.labelIt}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                {policyType && (
+                  <p className={`mt-1.5 text-xs font-body px-1 ${CANCELLATION_POLICIES[policyType as PolicyType]?.colorClass || 'text-muted-foreground'}`}>
+                    {CANCELLATION_POLICIES[policyType as PolicyType]?.descriptionIt}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
+                <p className="text-sm font-body font-semibold text-foreground">Regole eventi gratuiti</p>
+                <p className="text-xs font-body text-muted-foreground mt-1">
+                  Per gli eventi gratuiti non viene mostrata alcuna policy di rimborso. Gli utenti vedranno solo le regole di comportamento e cancellazione del posto.
                 </p>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* ── Fasce di prezzo (Pricing Tiers) ── */}
             {form.payment_type !== "free" && (

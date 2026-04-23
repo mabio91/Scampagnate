@@ -67,16 +67,15 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization token" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+    let userId: string | null = null;
+
+    if (token) {
+      const { data } = await supabaseClient.auth.getUser(token);
+      userId = data.user?.id ?? null;
     }
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user) throw new Error("User not authenticated");
+
+    if (!userId) throw new Error("User not authenticated");
 
     const { eventId } = await req.json();
     if (!eventId) throw new Error("Event ID required");
@@ -85,8 +84,8 @@ serve(async (req) => {
       .from("event_registrations")
       .select("id, payment_status, stripe_payment_intent_id, status, amount_paid, service_fee_amount")
       .eq("event_id", eventId)
-      .eq("user_id", user.id)
-      .in("status", ["registered", "paid", "waitlist"])
+      .eq("user_id", userId)
+      .in("status", ["registered", "deposit_paid", "paid", "waitlist"])
       .maybeSingle();
 
     if (regError) throw new Error("Failed to fetch registration");
@@ -119,9 +118,9 @@ serve(async (req) => {
       })
       .eq("id", registration.id);
 
-    if (isWaitlist || registration.payment_status !== "paid" || !registration.stripe_payment_intent_id) {
+    if (isWaitlist || !["paid", "deposit_paid"].includes(registration.payment_status || "") || !registration.stripe_payment_intent_id) {
       await supabaseAdmin.from("notifications").insert({
-        user_id: user.id,
+        user_id: userId,
         type: "cancellation",
         title: "Iscrizione annullata",
         message: isWaitlist
@@ -152,7 +151,7 @@ serve(async (req) => {
         .eq("id", registration.id);
 
       await supabaseAdmin.from("notifications").insert({
-        user_id: user.id,
+        user_id: userId,
         type: "cancellation",
         title: "Iscrizione annullata",
         message: "Prenotazione cancellata con successo. Secondo la policy dell'evento, non è previsto alcun rimborso.",
@@ -214,7 +213,7 @@ serve(async (req) => {
         .eq("id", registration.id);
 
       await supabaseAdmin.from("notifications").insert({
-        user_id: user.id,
+        user_id: userId,
         type: "refund",
         title: "Rimborso elaborato",
         message: "Prenotazione cancellata con successo. Riceverai il rimborso nei prossimi giorni.",
@@ -245,7 +244,7 @@ serve(async (req) => {
         .eq("id", registration.id);
 
       await supabaseAdmin.from("notifications").insert({
-        user_id: user.id,
+        user_id: userId,
         type: "refund_error",
         title: "Verifica rimborso in corso",
         message: "Prenotazione cancellata. Stiamo verificando il rimborso: ti aggiorneremo appena possibile.",

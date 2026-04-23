@@ -24,7 +24,8 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "@/contexts/SearchContext";
 import { UI_LABELS } from "@/lib/labels";
-import { calculateEventFitScore } from "@/hooks/useEventFitScore";
+import { getPersonalizedRecommendations } from "@/lib/recommendations";
+import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
 
 const Index = () => {
   const {
@@ -60,6 +61,58 @@ const Index = () => {
         .eq("user_id", user.id)
         .in("status", ["registered", "paid", "waitlist"]);
       return new Set((data || []).map((r: any) => r.event_id));
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  const { data: recommendationHistory } = useQuery({
+    queryKey: ["recommendation-history", user?.id],
+    queryFn: async () => {
+      if (!user) {
+        return {
+          joinedCategoryCounts: {} as Record<string, number>,
+          joinedEventCount: 0,
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("event_registrations")
+        .select("status, events(difficulty, additional_fields, event_categories(name))")
+        .eq("user_id", user.id)
+        .in("status", ["registered", "paid", "waitlist", "attended"]);
+
+      if (error) throw error;
+
+      const joinedCategoryCounts: Record<string, number> = {};
+
+      for (const row of data || []) {
+        const eventRecord = Array.isArray((row as any).events) ? (row as any).events[0] : (row as any).events;
+        if (!eventRecord) continue;
+
+        const additionalFields = (eventRecord.additional_fields as Record<string, unknown> | null) || {};
+        const categories = [
+          typeof additionalFields.fit_score_main_category === "string"
+            ? additionalFields.fit_score_main_category
+            : (eventRecord.event_categories as any)?.name || null,
+          ...(Array.isArray(additionalFields.fit_score_secondary_categories)
+            ? additionalFields.fit_score_secondary_categories.filter((value): value is string => typeof value === "string")
+            : []),
+        ]
+          .map((value) => value || null)
+          .filter((value): value is string => !!value);
+
+        for (const category of categories) {
+          const normalizedCategory = normalizeInterestCategory(category);
+          if (!normalizedCategory) continue;
+          joinedCategoryCounts[normalizedCategory] = (joinedCategoryCounts[normalizedCategory] || 0) + 1;
+        }
+      }
+
+      return {
+        joinedCategoryCounts,
+        joinedEventCount: (data || []).length,
+      };
     },
     enabled: !!user,
     staleTime: 60_000,
@@ -103,41 +156,21 @@ const Index = () => {
 
   // Personalized recommendations
   const recommended = useMemo(() => {
-    const personalizedRecommendations = profile?.onboarding_completed
-      ? allUpcoming
-      .map((event) => {
-        const fitScoreMainCategory =
-          (event.additional_fields as any)?.fit_score_main_category || event.category?.name || null;
-        const fitScoreSecondaryCategories =
-          ((event.additional_fields as any)?.fit_score_secondary_categories as string[] | undefined) || [];
-        const fitScore = calculateEventFitScore(
-          {
-            interests: (profile.interests as string[] | null | undefined) || [],
-            self_level: profile.self_level,
-          },
-          {
-            difficulty: event.difficulty,
-            category: fitScoreMainCategory ? { name: fitScoreMainCategory } : null,
-            secondaryCategories: fitScoreSecondaryCategories,
-          }
-        );
+    if (!user || !profile) return [];
 
-        return { event, score: fitScore.score, hidden: fitScore.hidden, profileIncomplete: fitScore.profileIncomplete };
-      })
-      .filter((item) => !item.hidden && !item.profileIncomplete && item.score >= 75)
-      .sort((a, b) => b.score - a.score || new Date(a.event.date).getTime() - new Date(b.event.date).getTime())
-      .map(x => x.event)
-      .slice(0, 3)
-      : [];
-
-    if (personalizedRecommendations.length > 0) {
-      return personalizedRecommendations;
-    }
-
-    return allUpcoming
-      .filter((event) => event.id !== featured?.id)
-      .slice(0, 3);
-  }, [allUpcoming, featured?.id, profile]);
+    return getPersonalizedRecommendations({
+      events: allUpcoming.filter((event) => event.id !== featured?.id),
+      profile: {
+        interests: (profile.interests as string[] | null | undefined) || [],
+        self_level: profile.self_level,
+      },
+      history: {
+        joinedCategoryCounts: recommendationHistory?.joinedCategoryCounts,
+        joinedEventCount: recommendationHistory?.joinedEventCount,
+        registeredEventIds: userRegisteredEventIds,
+      },
+    });
+  }, [allUpcoming, featured?.id, profile, recommendationHistory, user, userRegisteredEventIds]);
 
   // Filter events
   const filteredEvents = useMemo(() => {
@@ -317,9 +350,9 @@ const Index = () => {
             <QuickFilters active={quickFilters} onToggle={toggleQuickFilter} />
 
             {/* Personalized recommendations */}
-            {recommended.length > 0 && (
+            {user && recommended.length > 0 && (
               <div className="mt-4">
-                <RecommendedSection events={recommended} />
+                <RecommendedSection events={recommended} registeredEventIds={userRegisteredEventIds} />
               </div>
             )}
 

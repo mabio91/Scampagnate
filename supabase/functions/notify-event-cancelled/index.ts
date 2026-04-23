@@ -86,7 +86,7 @@ serve(async (req) => {
       .from("event_registrations")
       .select("id, user_id, payment_status, stripe_payment_intent_id, amount_paid")
       .eq("event_id", event_id)
-      .in("status", ["registered", "paid", "waitlist", "pending_approval"]);
+      .in("status", ["registered", "deposit_paid", "paid", "waitlist", "pending_approval", "attended", "no_show"]);
 
     if (!registrations || registrations.length === 0) {
       return new Response(JSON.stringify({ success: true, notified: 0, refunded: 0 }), {
@@ -97,7 +97,7 @@ serve(async (req) => {
     let refundedCount = 0;
     for (const registration of registrations) {
       const amountPaid = Number(registration.amount_paid || 0);
-      const shouldRefund = registration.payment_status === "paid" && registration.stripe_payment_intent_id && amountPaid > 0;
+      const shouldRefund = ["paid", "deposit_paid"].includes(registration.payment_status || "") && registration.stripe_payment_intent_id && amountPaid > 0;
 
       if (shouldRefund) {
         try {

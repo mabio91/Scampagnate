@@ -20,6 +20,7 @@ import IssuesPanel from "@/components/admin/IssuesPanel";
 import ProposalsPanel from "@/components/admin/ProposalsPanel";
 import DiscountCodesPanel from "@/components/admin/DiscountCodesPanel";
 import MissionsPanel from "@/components/admin/MissionsPanel";
+import BroadcastTemplatesPanel from "@/components/admin/BroadcastTemplatesPanel";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -167,6 +168,9 @@ const OrganizerDashboard = () => {
                 </TabsTrigger>
                 <TabsTrigger value="issues" className="flex-1 min-w-0 text-xs px-2">
                   <AlertTriangle className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Issues</span>
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="flex-1 min-w-0 text-xs px-2">
+                  <Copy className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Templates</span>
                 </TabsTrigger>
               </>
             )}
@@ -498,6 +502,12 @@ const OrganizerDashboard = () => {
           {isAdmin && (
             <TabsContent value="issues" className="mt-4">
               <IssuesPanel />
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="templates" className="mt-4">
+              <BroadcastTemplatesPanel />
             </TabsContent>
           )}
         </Tabs>

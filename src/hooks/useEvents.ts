@@ -3,6 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 import { parseEventDateTime } from "@/lib/timezone";
+import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
+
+const EDGE_GATEWAY_JWT =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
 
 export interface EventWithDetails {
   id: string;
@@ -16,6 +21,7 @@ export interface EventWithDetails {
   price: number;
   deposit: number | null;
   payment_type: "free" | "paid" | "deposit" | "location";
+  balance_payment_mode?: "online" | "on_site" | null;
   additional_fields: any;
   image_url: string | null;
   difficulty: string | null;
@@ -44,7 +50,7 @@ export const useEvents = (categoryName?: string | null) => {
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
+        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, balance_payment_mode, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
         .order("date", { ascending: true });
 
       if (categoryName) {
@@ -114,7 +120,7 @@ export const useEventParticipants = (eventId: string) => {
         .from("event_registrations")
         .select("*, meeting_point:event_meeting_points(id, name)")
         .eq("event_id", eventId)
-        .in("status", ["registered", "paid"])
+        .in("status", [...ACTIVE_PARTICIPANT_STATUSES])
         .neq("payment_status", "pending");
       if (error) throw error;
 
@@ -347,12 +353,30 @@ export const useCancelRegistration = () => {
   return useMutation({
     mutationFn: async (eventId: string) => {
       if (!user) throw new Error("Devi effettuare il login");
-      
-      const { data, error } = await supabase.functions.invoke("process-refund", {
-        body: { eventId },
+      if (!EDGE_GATEWAY_JWT) {
+        throw new Error("Configurazione Supabase mancante per la funzione.");
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "etiynvukviykquqcsjln";
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/process-refund`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: EDGE_GATEWAY_JWT,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ eventId }),
       });
-      
-      if (error) throw new Error(error.message || "Errore durante la cancellazione");
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Errore durante la cancellazione");
+      }
       if (data?.error) throw new Error(data.error);
       
       return data as { refunded: boolean; cancelled: boolean; reason?: string; policy?: string };
