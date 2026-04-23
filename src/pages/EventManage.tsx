@@ -1527,7 +1527,7 @@ const EventManage = () => {
                   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'etiynvukviykquqcsjln';
                   const gatewayJwt = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.SUPABASE_PUBLISHABLE_KEY;
                   if (!gatewayJwt) throw new Error("Configurazione Supabase mancante per la funzione.");
-                  await fetch(`https://${projectId}.supabase.co/functions/v1/notify-event-cancelled`, {
+                  const response = await fetch(`https://${projectId}.supabase.co/functions/v1/notify-event-cancelled`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -1536,6 +1536,10 @@ const EventManage = () => {
                     },
                     body: JSON.stringify({ event_id: id }),
                   });
+                  if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    throw new Error(data?.error || "Errore durante la cancellazione dell'evento");
+                  }
 
                   queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
                   queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });

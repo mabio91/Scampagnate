@@ -5,6 +5,10 @@ import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 import { parseEventDateTime } from "@/lib/timezone";
 import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
 
+const EDGE_GATEWAY_JWT =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
+
 export interface EventWithDetails {
   id: string;
   title: string;
@@ -349,12 +353,30 @@ export const useCancelRegistration = () => {
   return useMutation({
     mutationFn: async (eventId: string) => {
       if (!user) throw new Error("Devi effettuare il login");
-      
-      const { data, error } = await supabase.functions.invoke("process-refund", {
-        body: { eventId },
+      if (!EDGE_GATEWAY_JWT) {
+        throw new Error("Configurazione Supabase mancante per la funzione.");
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "etiynvukviykquqcsjln";
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/process-refund`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: EDGE_GATEWAY_JWT,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ eventId }),
       });
-      
-      if (error) throw new Error(error.message || "Errore durante la cancellazione");
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Errore durante la cancellazione");
+      }
       if (data?.error) throw new Error(data.error);
       
       return data as { refunded: boolean; cancelled: boolean; reason?: string; policy?: string };

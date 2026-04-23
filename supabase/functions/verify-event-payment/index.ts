@@ -24,16 +24,6 @@ serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
-    let authenticatedUserId: string | null = null;
-
-    if (token) {
-      const { data } = await supabaseClient.auth.getUser(token);
-      authenticatedUserId = data.user?.id ?? null;
-      if (!authenticatedUserId) throw new Error("User not authenticated");
-    }
-
     const { sessionId } = await req.json();
     if (!sessionId) throw new Error("Session ID required");
 
@@ -50,30 +40,16 @@ serve(async (req) => {
       );
     }
 
-    // Verify the session belongs to this user
-    if (session.metadata?.user_id !== user.id) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Session mismatch" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
-    }
-
     const registrationId = session.metadata?.registration_id;
     const eventId = session.metadata?.event_id;
     const sessionUserId = session.metadata?.user_id || null;
     const membershipIncluded = session.metadata?.membership_included === "true";
     const bookingAmountCents = Number(session.metadata?.booking_amount_cents || "0");
     const checkoutKind = (session.metadata?.checkout_kind || "full") as "full" | "deposit" | "balance";
-    const userId = authenticatedUserId || sessionUserId;
+    const userId = sessionUserId;
 
     if (!registrationId) throw new Error("Registration ID not found in session");
     if (!userId) throw new Error("User not found in session");
-    if (authenticatedUserId && sessionUserId && authenticatedUserId !== sessionUserId) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Session mismatch" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
-    }
 
     const stripePaymentIntentId = typeof session.payment_intent === 'string' 
       ? session.payment_intent 

@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const EDGE_GATEWAY_JWT =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -29,11 +32,26 @@ const PaymentSuccess = () => {
 
     const verify = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("verify-event-payment", {
-          body: { sessionId },
+        if (!EDGE_GATEWAY_JWT) {
+          throw new Error("Configurazione Supabase mancante per la verifica del pagamento.");
+        }
+
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "etiynvukviykquqcsjln";
+        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/verify-event-payment`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: EDGE_GATEWAY_JWT,
+            Authorization: `Bearer ${EDGE_GATEWAY_JWT}`,
+          },
+          body: JSON.stringify({ sessionId }),
         });
 
-        if (error) throw new Error(error.message || "Verification failed");
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(data?.error || "Verification failed");
+        }
 
         // Handle spot taken / auto-refund
         if (data?.spot_taken && data?.auto_refunded) {
