@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventRegistrations, useEventMeetingPoints } from "@/hooks/useOrganizerEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ACTIVE_PARTICIPANT_STATUSES, getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration } from "@/lib/eventPayments";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
@@ -44,6 +46,9 @@ const EventManage = () => {
   const [showCapacityDialog, setShowCapacityDialog] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancellingEvent, setCancellingEvent] = useState(false);
+  const [participantFilter, setParticipantFilter] = useState<"all" | "participants" | "deposit_paid" | "attended" | "waitlist">("all");
+  const [selectedDepositReminderIds, setSelectedDepositReminderIds] = useState<string[]>([]);
+  const [pendingCancelRegistrationId, setPendingCancelRegistrationId] = useState<string | null>(null);
 
   // Add participant state
   const [addMode, setAddMode] = useState<"search" | "manual">("manual");
@@ -62,6 +67,7 @@ const EventManage = () => {
   const [messageText, setMessageText] = useState("");
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [broadcastChannel, setBroadcastChannel] = useState<"notification" | "whatsapp">("notification");
+  const [sendingBalanceReminder, setSendingBalanceReminder] = useState(false);
 
   const { data: broadcastTemplates } = useQuery({
     queryKey: ["broadcast-message-templates"],
@@ -144,12 +150,16 @@ const EventManage = () => {
   if (authLoading) return null;
   if (!user || !isOrganizer) return <Navigate to="/" replace />;
 
-  const registered = registrations?.filter((r) => r.status === "registered" || r.status === "paid") || [];
+  const registered = registrations?.filter((r) => ACTIVE_PARTICIPANT_STATUSES.includes(r.status as any)) || [];
   const waitlisted = registrations?.filter((r) => r.status === "waitlist") || [];
   const cancelled = registrations?.filter((r) => r.status === "cancelled") || [];
   const pending = registrations?.filter((r) => r.status === "pending_approval") || [];
-  const checkedIn = registered.filter((r) => r.checked_in);
+  const depositPaid = registered.filter((r) => isDepositRegistration(r));
+  const attended = registered.filter((r) => r.status === "attended");
+  const checkedIn = attended;
   const reservedSpots = (event as any)?.reserved_spots || 0;
+  const hasDepositPayments = event?.payment_type === "deposit";
+  const balancePaymentMode = getEventBalancePaymentMode(event || {});
 
   const getParticipantName = (reg: any) => {
     if (reg.sport_level?.startsWith("manual:")) {
@@ -162,9 +172,24 @@ const EventManage = () => {
     };
   };
 
-  const filteredRegistered = meetingPointFilter === "all"
+  const filteredRegisteredBase = meetingPointFilter === "all"
     ? registered
     : registered.filter((r) => r.meeting_point_id === meetingPointFilter);
+
+  const filteredRegistered = filteredRegisteredBase.filter((r) => {
+    if (participantFilter === "participants") return ACTIVE_PARTICIPANT_STATUSES.includes(r.status as any);
+    if (participantFilter === "deposit_paid") return r.status === "deposit_paid";
+    if (participantFilter === "attended") return r.status === "attended";
+    if (participantFilter === "waitlist") return false;
+    return true;
+  });
+
+  const depositReminderCandidates = depositPaid.filter((r) => {
+    if (r.sport_level?.startsWith("manual:")) return false;
+    const lastSentAt = (r as any).last_balance_reminder_sent_at;
+    if (!lastSentAt) return true;
+    return Date.now() - new Date(lastSentAt).getTime() > 12 * 60 * 60 * 1000;
+  });
 
   // Check-in filtered list (by meeting point + search)
   const filteredCheckIn = registered.filter((r) => {
@@ -192,7 +217,10 @@ const EventManage = () => {
   const handleStatusChange = async (regId: string, newStatus: string) => {
     const { error } = await supabase
       .from("event_registrations")
-      .update({ status: newStatus as any })
+      .update({
+        status: newStatus as any,
+        cancelled_at: newStatus === "cancelled" ? new Date().toISOString() : null,
+      } as any)
       .eq("id", regId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -213,6 +241,68 @@ const EventManage = () => {
 
   const handleCancelRegistration = async (regId: string) => {
     await handleStatusChange(regId, "cancelled");
+  };
+
+  const toggleDepositReminderSelection = (regId: string) => {
+    setSelectedDepositReminderIds((prev) =>
+      prev.includes(regId) ? prev.filter((id) => id !== regId) : [...prev, regId]
+    );
+  };
+
+  const sendBalanceReminders = async (registrationIds?: string[]) => {
+    if (!event) return;
+
+    const candidates = depositReminderCandidates.filter((reg) => {
+      if (!registrationIds?.length) return true;
+      return registrationIds.includes(reg.id);
+    });
+
+    if (candidates.length === 0) {
+      toast({ title: "Nessun partecipante da sollecitare" });
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+    setSendingBalanceReminder(true);
+    try {
+      const notifications = candidates.map((reg) => ({
+        user_id: reg.user_id,
+        type: "deposit_balance_reminder",
+        title: event.title,
+        message: "Completa il saldo per confermare definitivamente la partecipazione",
+        event_id: event.id,
+      }));
+
+      const { error: notifError } = await supabase.from("notifications").insert(notifications);
+      if (notifError) throw notifError;
+
+      await Promise.allSettled(
+        candidates.map((reg) =>
+          supabase.functions.invoke("send-push-notification", {
+            body: {
+              user_id: reg.user_id,
+              title: event.title,
+              message: "Completa il saldo per confermare definitivamente la partecipazione",
+              event_id: event.id,
+              type: "deposit_balance_reminder",
+            },
+          }),
+        ),
+      );
+
+      await supabase
+        .from("event_registrations")
+        .update({ last_balance_reminder_sent_at: nowIso } as any)
+        .in("id", candidates.map((reg) => reg.id));
+
+      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+      setSelectedDepositReminderIds([]);
+      toast({ title: "Notifica inviata con successo" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } finally {
+      setSendingBalanceReminder(false);
+    }
   };
 
   // Select a searched user (don't add yet, show edit form first)
@@ -469,24 +559,30 @@ const EventManage = () => {
         )}
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-4 gap-2">
-          <Card className="p-2 text-center">
+        <div className={`grid gap-2 ${hasDepositPayments ? "grid-cols-5" : "grid-cols-4"}`}>
+          <Card className={`p-2 text-center cursor-pointer transition-colors ${participantFilter === "participants" ? "ring-1 ring-primary bg-primary/5" : "hover:bg-muted/50"}`} onClick={() => setParticipantFilter(participantFilter === "participants" ? "all" : "participants")}>
             <p className="text-lg font-bold font-display text-foreground">{registered.length}</p>
-            <p className="text-[10px] text-muted-foreground font-body">Registered</p>
+            <p className="text-[10px] text-muted-foreground font-body">Partecipanti</p>
           </Card>
-          <Card className="p-2 text-center">
+          {hasDepositPayments && (
+            <Card className={`p-2 text-center cursor-pointer transition-colors ${participantFilter === "deposit_paid" ? "ring-1 ring-primary bg-primary/5" : "hover:bg-muted/50"}`} onClick={() => setParticipantFilter(participantFilter === "deposit_paid" ? "all" : "deposit_paid")}>
+              <p className="text-lg font-bold font-display text-foreground">{depositPaid.length}</p>
+              <p className="text-[10px] text-muted-foreground font-body">Acconti</p>
+            </Card>
+          )}
+          <Card className={`p-2 text-center cursor-pointer transition-colors ${participantFilter === "attended" ? "ring-1 ring-primary bg-primary/5" : "hover:bg-muted/50"}`} onClick={() => setParticipantFilter(participantFilter === "attended" ? "all" : "attended")}>
             <p className="text-lg font-bold font-display text-foreground">{checkedIn.length}</p>
-            <p className="text-[10px] text-muted-foreground font-body">Checked In</p>
+            <p className="text-[10px] text-muted-foreground font-body">Presenti</p>
           </Card>
-          <Card className="p-2 text-center">
+          <Card className="p-2 text-center cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setParticipantFilter(participantFilter === "waitlist" ? "all" : "waitlist")}>
             <p className="text-lg font-bold font-display text-foreground">{waitlisted.length}</p>
-            <p className="text-[10px] text-muted-foreground font-body">Waitlist</p>
+            <p className="text-[10px] text-muted-foreground font-body">Lista d'attesa</p>
           </Card>
           <Card className="p-2 text-center cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setNewCapacity(event.spots_total); setShowCapacityDialog(true); }}>
             <p className="text-lg font-bold font-display text-foreground">{event.spots_total - registered.length - reservedSpots}</p>
-            <p className="text-[10px] text-muted-foreground font-body">Available</p>
+            <p className="text-[10px] text-muted-foreground font-body">Disponibili</p>
             {reservedSpots > 0 && (
-              <p className="text-[9px] text-warning font-body">{reservedSpots} reserved</p>
+              <p className="text-[9px] text-warning font-body">{reservedSpots} riservati</p>
             )}
           </Card>
         </div>
@@ -499,6 +595,17 @@ const EventManage = () => {
           <Button size="sm" variant="outline" className="gap-1 flex-1" onClick={() => setShowMessageDialog(true)}>
             <Send className="h-3.5 w-3.5" /> Message All
           </Button>
+          {hasDepositPayments && balancePaymentMode === "online" && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 flex-1"
+              disabled={sendingBalanceReminder || depositReminderCandidates.length === 0}
+              onClick={() => void sendBalanceReminders(selectedDepositReminderIds.length > 0 ? selectedDepositReminderIds : undefined)}
+            >
+              <Bell className="h-3.5 w-3.5" /> Sollecita saldo
+            </Button>
+          )}
         </div>
 
         <Tabs defaultValue="participants" className="w-full">
@@ -552,9 +659,17 @@ const EventManage = () => {
                 {filteredRegistered.map((reg) => {
                   const mp = meetingPoints?.find((p) => p.id === reg.meeting_point_id);
                   const { firstName, lastName, isManual } = getParticipantName(reg);
+                  const depositLabel = getDepositPaymentLabel(reg, event);
                   return (
                     <Card key={reg.id} className="p-3 space-y-2">
                       <div className="flex items-center gap-3">
+                        {hasDepositPayments && reg.status === "deposit_paid" && balancePaymentMode === "online" && !isManual && (
+                          <Checkbox
+                            checked={selectedDepositReminderIds.includes(reg.id)}
+                            onCheckedChange={() => toggleDepositReminderSelection(reg.id)}
+                            aria-label="Seleziona per sollecito saldo"
+                          />
+                        )}
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
                           {isManual ? "M" : ((reg.profiles as any)?.avatar_url ? (
                             <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
@@ -574,9 +689,9 @@ const EventManage = () => {
                               const po = priceOptions.find((p: any) => p.id === (reg as any).price_option_id);
                               return po ? <span className="text-secondary ml-1">· {po.name}</span> : null;
                             })()}
-                            {reg.payment_status && reg.payment_status !== "not_required" && (
-                              <span className={`ml-1 ${reg.payment_status === "paid" ? "text-success" : "text-warning"}`}>
-                                · {reg.payment_status}
+                            {(depositLabel || (reg.payment_status && reg.payment_status !== "not_required")) && (
+                              <span className={`ml-1 ${(reg.payment_status === "paid" || reg.status === "paid") ? "text-success" : "text-warning"}`}>
+                                · {depositLabel || reg.payment_status}
                               </span>
                             )}
                           </p>
@@ -628,12 +743,19 @@ const EventManage = () => {
                           >
                             <Edit className="h-3.5 w-3.5" />
                           </Button>
-                          <Select onValueChange={(v) => handleStatusChange(reg.id, v)}>
+                          <Select onValueChange={(v) => {
+                            if (v === "cancelled") {
+                              setPendingCancelRegistrationId(reg.id);
+                              return;
+                            }
+                            void handleStatusChange(reg.id, v);
+                          }}>
                             <SelectTrigger className="w-8 h-8 p-0 border-0">
                               <span className="sr-only">Actions</span>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="registered">Registered</SelectItem>
+                              <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
                               <SelectItem value="paid">Paid</SelectItem>
                               <SelectItem value="attended">Attended</SelectItem>
                               <SelectItem value="no_show">No-show</SelectItem>
@@ -662,6 +784,7 @@ const EventManage = () => {
                             <Select value={editPaymentStatus} onValueChange={setEditPaymentStatus}>
                               <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue /></SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
                                 <SelectItem value="paid">Paid</SelectItem>
                                 <SelectItem value="pending">Pending</SelectItem>
                                 <SelectItem value="not_required">Not Required</SelectItem>
@@ -830,7 +953,7 @@ const EventManage = () => {
                       <Button size="sm" variant="default" className="gap-1 h-7 text-xs" onClick={() => handlePromoteFromWaitlist(reg.id)}>
                         <UserPlus className="h-3 w-3" /> Promote
                       </Button>
-                      <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => handleCancelRegistration(reg.id)}>
+                      <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setPendingCancelRegistrationId(reg.id)}>
                         <UserMinus className="h-3 w-3" />
                       </Button>
                     </div>
@@ -880,7 +1003,7 @@ const EventManage = () => {
                       <Button size="sm" variant="default" className="flex-1 text-xs" onClick={() => handleApprovePending(reg.id)}>
                         Approve
                       </Button>
-                      <Button size="sm" variant="outline" className="flex-1 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleCancelRegistration(reg.id)}>
+                      <Button size="sm" variant="outline" className="flex-1 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setPendingCancelRegistrationId(reg.id)}>
                         Reject
                       </Button>
                     </div>
@@ -969,6 +1092,7 @@ const EventManage = () => {
                       <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
                         <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
                           <SelectItem value="paid">Paid</SelectItem>
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="not_required">Not Required</SelectItem>
@@ -1071,6 +1195,7 @@ const EventManage = () => {
                   <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="not_required">Not Required</SelectItem>
@@ -1340,6 +1465,33 @@ const EventManage = () => {
             </div>
             <Button onClick={handleUpdateCapacity} disabled={newCapacity < registered.length} className="w-full font-body">
               Update Capacity
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pendingCancelRegistrationId} onOpenChange={(open) => { if (!open) setPendingCancelRegistrationId(null); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="font-display">Cancella partecipante?</DialogTitle>
+            <DialogDescription className="font-body text-sm">
+              Sei sicuro di voler cancellare questo partecipante?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setPendingCancelRegistrationId(null)}>
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={async () => {
+                if (!pendingCancelRegistrationId) return;
+                await handleCancelRegistration(pendingCancelRegistrationId);
+                setPendingCancelRegistrationId(null);
+              }}
+            >
+              Conferma
             </Button>
           </div>
         </DialogContent>

@@ -26,6 +26,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
+import { getDepositPaymentLabel, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 
 const statusStyles: Record<string, string> = {
   iscritto: "bg-success/10 text-success",
@@ -33,6 +34,8 @@ const statusStyles: Record<string, string> = {
   posto_disponibile: "bg-success/10 text-success",
   partecipato: "bg-primary/10 text-primary",
   pagamento_in_sospeso: "bg-accent/20 text-accent-foreground",
+  "Acconto pagato - saldo da completare": "bg-warning/10 text-warning",
+  "Acconto pagato - saldo sul posto": "bg-warning/10 text-warning",
 };
 
 const statusLabels: Record<string, string> = {
@@ -41,6 +44,8 @@ const statusLabels: Record<string, string> = {
   posto_disponibile: "Posto disponibile",
   partecipato: "Partecipato",
   pagamento_in_sospeso: "Pagamento in sospeso",
+  "Acconto pagato - saldo da completare": "Acconto pagato - saldo da completare",
+  "Acconto pagato - saldo sul posto": "Acconto pagato - saldo sul posto",
 };
 
 function getCustomRegistrationFields(event: any): any[] {
@@ -59,19 +64,13 @@ function canEditRegistration(event: any): boolean {
   return parseEventDateTime(event.date, event.time).getTime() > Date.now();
 }
 
-function isPendingPaymentRegistration(registration: any): boolean {
-  const event = registration?.events;
-  const isPaymentEvent = event?.payment_type === "paid" || event?.payment_type === "deposit";
-  if (!isPaymentEvent) return false;
-  if (registration.status === "pending_payment") return true;
-  return registration.status === "registered" && registration.payment_status === "pending";
-}
-
 function resolveMyEventStatus(registration: any, isPast: boolean): string {
   const event = registration.events;
   if (!event) return "iscritto";
 
-  if (isPendingPaymentRegistration(registration)) return "pagamento_in_sospeso";
+  const depositLabel = getDepositPaymentLabel(registration, event);
+  if (depositLabel) return depositLabel;
+  if (isPendingPaymentRegistration(registration, event)) return "pagamento_in_sospeso";
   if (isPast && registration.checked_in) return "partecipato";
   if (registration.status === "registered" || registration.status === "paid" || registration.status === "attended") {
     return "iscritto";
@@ -262,7 +261,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   }, [event.cancellation_policy, event.date, event.time, event.payment_type]);
   const cancellationDialogMessage = useMemo(() => getCancellationDialogMessage(refundInfo), [refundInfo]);
 
-  const hasPaidPayment = registration.payment_status === "paid";
+  const hasPaidPayment = registration.payment_status === "paid" || isDepositRegistration(registration);
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
   const editableFieldsAvailable = hasEditableRegistrationFields(event);
   const registrationStillEditable = canEditRegistration(event);

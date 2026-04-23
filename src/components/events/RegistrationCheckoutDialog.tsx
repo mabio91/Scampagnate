@@ -3,6 +3,7 @@ import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from
 import { useMembershipFee } from "@/hooks/useMembershipFee";
 import { getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
+import { getEventBalancePaymentMode } from "@/lib/eventPayments";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ interface RegistrationCheckoutDialogProps {
     additionalResponses?: Record<string, string>;
     appliedDiscount?: any;
     requestApproval?: boolean;
+    paymentChoice?: "deposit" | "full";
   }) => void;
   isSubmitting: boolean;
   isRequestingOverride?: boolean;
@@ -51,6 +53,7 @@ const RegistrationCheckoutDialog = ({
   const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
+  const [paymentChoice, setPaymentChoice] = useState<"deposit" | "full">("deposit");
 
   const hasMeetingPoints = event.meeting_points && event.meeting_points.length > 0;
   const hasPriceOptions = event.price_options && event.price_options.length > 0;
@@ -61,6 +64,8 @@ const RegistrationCheckoutDialog = ({
   const membershipActive = isMembershipActive(profile);
   const membershipExpired = isMembershipExpired(profile);
   const isPaymentEvent = event.payment_type === "paid" || event.payment_type === "deposit";
+  const balancePaymentMode = getEventBalancePaymentMode(event);
+  const canPayFullAmount = event.payment_type === "deposit" && balancePaymentMode === "online";
 
   // Custom fields
   const af = event.additional_fields as any;
@@ -68,15 +73,19 @@ const RegistrationCheckoutDialog = ({
 
   // Compute pricing
   const selectedOpt = event.price_options?.find((o: any) => o.id === selectedPriceOption);
-  const basePrice = selectedOpt ? Number(selectedOpt.price) : Number(event.price);
-  const isDeposit = (event.payment_type as string) === "deposit" && event.deposit && !selectedOpt;
-  const depositAmount = isDeposit ? Number(event.deposit) : 0;
-  const displayPrice = isDeposit ? depositAmount : basePrice;
+  const totalEventPrice = selectedOpt ? Number(selectedOpt.price) : Number(event.price);
+  const depositAmount = event.payment_type === "deposit" ? Number(event.deposit || 0) : 0;
+  const isDepositPayment = event.payment_type === "deposit" && paymentChoice === "deposit";
+  const displayPrice = event.payment_type === "deposit"
+    ? (isDepositPayment ? depositAmount : totalEventPrice)
+    : totalEventPrice;
   const membershipFee = needsMembership ? membershipFeeAmount : 0;
   const serviceFee = isPaymentEvent ? getServiceFeeAmount(event.payment_type) : 0;
   const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
   const totalDueToday = discountedEventPrice + serviceFee + membershipFee;
-  const remainingAmount = isDeposit ? Number(event.price) - depositAmount : 0;
+  const remainingAmount = event.payment_type === "deposit" && isDepositPayment
+    ? Math.max(0, totalEventPrice - depositAmount)
+    : 0;
 
   // Membership expiry display
   const expiryDate = getMembershipExpiryDate(profile);
@@ -100,6 +109,7 @@ const RegistrationCheckoutDialog = ({
       additionalResponses,
       appliedDiscount,
       requestApproval: isRequestingOverride || requiresApproval,
+      paymentChoice: event.payment_type === "deposit" ? paymentChoice : undefined,
     });
   };
 
@@ -109,7 +119,7 @@ const RegistrationCheckoutDialog = ({
     if (isRequestingOverride || requiresApproval) return "Invia richiesta di iscrizione";
     if (event.status === "full") return "Iscriviti alla lista d'attesa";
     if (needsMembership && !isPaymentEvent && event.payment_type === "free") return "Attiva tessera e iscriviti";
-    if (isDeposit) return "Paga acconto e iscriviti";
+    if (event.payment_type === "deposit") return paymentChoice === "full" ? "Paga tutto e iscriviti" : "Paga acconto e iscriviti";
     if (isPaymentEvent) return "Paga e completa l'iscrizione";
     if (needsMembership) return "Attiva tessera e iscriviti";
     return "Conferma iscrizione";
@@ -118,6 +128,12 @@ const RegistrationCheckoutDialog = ({
   // Helper text above CTA
   const ctaHelperText = (() => {
     if (isRequestingOverride || requiresApproval) return "La tua richiesta verrà inviata agli organizzatori per l'approvazione.";
+    if (event.payment_type === "deposit" && paymentChoice === "deposit" && balancePaymentMode === "on_site") {
+      return "Pagherai l'acconto online ora. Il saldo rimanente andrà versato sul posto.";
+    }
+    if (event.payment_type === "deposit" && paymentChoice === "deposit") {
+      return "Pagherai l'acconto online ora. Il saldo rimanente resterà da completare online.";
+    }
     if (isPaymentEvent || needsMembership) return "Verrai reindirizzato al pagamento sicuro per completare l'iscrizione.";
     return "L'iscrizione verrà confermata subito.";
   })();
@@ -413,6 +429,39 @@ const RegistrationCheckoutDialog = ({
                   />
                 </div>
               )}
+
+              {event.payment_type === "deposit" && (
+                <div>
+                  <Label className="font-body text-sm font-semibold mb-2 block">Come vuoi pagare?</Label>
+                  <RadioGroup value={paymentChoice} onValueChange={(value) => setPaymentChoice(value as "deposit" | "full")} className="space-y-2">
+                    <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
+                      paymentChoice === "deposit" ? "bg-primary/5 border-primary/30 shadow-sm" : "bg-muted/40 border-transparent hover:bg-muted/60"
+                    }`}>
+                      <RadioGroupItem value="deposit" />
+                      <div>
+                        <p className="text-sm font-body font-semibold text-foreground">Paga acconto</p>
+                        <p className="text-xs font-body text-muted-foreground">
+                          Oggi paghi €{depositAmount.toFixed(2)}.
+                          {remainingAmount > 0 && ` Restano €${remainingAmount.toFixed(2)}.`}
+                        </p>
+                      </div>
+                    </label>
+                    {canPayFullAmount && (
+                      <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
+                        paymentChoice === "full" ? "bg-primary/5 border-primary/30 shadow-sm" : "bg-muted/40 border-transparent hover:bg-muted/60"
+                      }`}>
+                        <RadioGroupItem value="full" />
+                        <div>
+                          <p className="text-sm font-body font-semibold text-foreground">Paga tutto subito</p>
+                          <p className="text-xs font-body text-muted-foreground">
+                            Completi online l'intero importo in un solo checkout.
+                          </p>
+                        </div>
+                      </label>
+                    )}
+                  </RadioGroup>
+                </div>
+              )}
             </div>
           )}
 
@@ -432,7 +481,7 @@ const RegistrationCheckoutDialog = ({
                 {(isPaymentEvent || event.payment_type === "location") && displayPrice > 0 && (
                   <div className="flex justify-between text-sm font-body">
                     <span className="text-muted-foreground">
-                      {isDeposit ? "Acconto evento" : (selectedOpt?.name || "Evento")}
+                      {event.payment_type === "deposit" && isDepositPayment ? "Acconto evento" : (selectedOpt?.name || "Evento")}
                     </span>
                     <span className={`font-semibold ${appliedDiscount ? "line-through text-muted-foreground" : "text-foreground"}`}>
                       €{displayPrice.toFixed(2)}
@@ -490,7 +539,18 @@ const RegistrationCheckoutDialog = ({
             )}
 
             {/* Cancellation policy */}
-            {cancellationDetails && (
+            {event.payment_type === "free" ? (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-2">
+                <p className="text-sm font-body font-semibold text-foreground">Regole e info</p>
+                <div className="space-y-1 text-xs font-body text-muted-foreground">
+                  <p>Puoi disdire in qualsiasi momento direttamente dall'app</p>
+                  <p>Se non puoi più venire, libera il posto il prima possibile</p>
+                  <p>I posti liberati vengono assegnati alla lista d'attesa</p>
+                  <p>Chi non si presenta senza disdire potrà avere limitazioni sugli eventi futuri</p>
+                  <p>Qui si viene per stare bene: rispetto per il gruppo prima di tutto</p>
+                </div>
+              </div>
+            ) : cancellationDetails && (
               <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
                 <div className="flex items-center gap-2">
                   <cancellationDetails.icon className={`h-4 w-4 shrink-0 ${cancellationDetails.colorClass}`} />

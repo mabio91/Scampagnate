@@ -64,6 +64,7 @@ serve(async (req) => {
     const eventId = session.metadata?.event_id;
     const membershipIncluded = session.metadata?.membership_included === "true";
     const bookingAmountCents = Number(session.metadata?.booking_amount_cents || "0");
+    const checkoutKind = (session.metadata?.checkout_kind || "full") as "full" | "deposit" | "balance";
 
     if (!registrationId) throw new Error("Registration ID not found in session");
 
@@ -74,7 +75,7 @@ serve(async (req) => {
     // Check if registration still exists
     const { data: reg, error: regError } = await supabaseAdmin
       .from("event_registrations")
-      .select("id, status, payment_status, event_id, amount_paid, service_fee_amount")
+      .select("id, status, payment_status, event_id, amount_paid, service_fee_amount, total_price_amount, deposit_amount, balance_due_amount")
       .eq("id", registrationId)
       .eq("user_id", user.id)
       .single();
@@ -98,8 +99,11 @@ serve(async (req) => {
       );
     }
 
-    // Already paid — idempotent
-    if (reg.payment_status === "paid") {
+    // Already processed — idempotent
+    if (
+      reg.payment_status === "paid" ||
+      (checkoutKind === "deposit" && reg.payment_status === "deposit_paid")
+    ) {
       return new Response(
         JSON.stringify({ success: true, eventId: eventId || null }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
@@ -117,7 +121,7 @@ serve(async (req) => {
 
     const spotsAvailable = event.spots_total - event.spots_taken;
 
-    if (spotsAvailable <= 0) {
+    if (checkoutKind !== "balance" && spotsAvailable <= 0) {
       // RACE CONDITION: Another user got the spot first
       // Auto-refund this payment
       if (stripePaymentIntentId && bookingAmountCents > 0) {
@@ -169,14 +173,20 @@ serve(async (req) => {
       );
     }
 
+    const nextStatus = checkoutKind === "deposit" ? "deposit_paid" : "paid";
+    const nextBalanceDueAmount = checkoutKind === "deposit"
+      ? Math.max(0, Number(reg.total_price_amount || 0) - Number(reg.deposit_amount || 0))
+      : 0;
+
     // Spot is available — confirm registration
     const { error: updateError } = await supabaseAdmin
       .from("event_registrations")
       .update({ 
-        payment_status: "paid",
-        status: "paid",
+        payment_status: nextStatus,
+        status: nextStatus,
         stripe_payment_intent_id: stripePaymentIntentId,
         refund_status: "not_requested",
+        balance_due_amount: nextBalanceDueAmount,
       })
       .eq("id", registrationId)
       .eq("user_id", user.id);

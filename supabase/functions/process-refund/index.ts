@@ -86,7 +86,7 @@ serve(async (req) => {
       .select("id, payment_status, stripe_payment_intent_id, status, amount_paid, service_fee_amount")
       .eq("event_id", eventId)
       .eq("user_id", user.id)
-      .in("status", ["registered", "paid", "waitlist"])
+      .in("status", ["registered", "deposit_paid", "paid", "waitlist"])
       .maybeSingle();
 
     if (regError) throw new Error("Failed to fetch registration");
@@ -119,7 +119,7 @@ serve(async (req) => {
       })
       .eq("id", registration.id);
 
-    if (isWaitlist || registration.payment_status !== "paid" || !registration.stripe_payment_intent_id) {
+    if (isWaitlist || !["paid", "deposit_paid"].includes(registration.payment_status || "") || !registration.stripe_payment_intent_id) {
       await supabaseAdmin.from("notifications").insert({
         user_id: user.id,
         type: "cancellation",

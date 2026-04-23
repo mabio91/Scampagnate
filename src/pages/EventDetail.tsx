@@ -46,6 +46,7 @@ import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
 import { getDeterministicEventClosingSentence } from "@/lib/eventClosingSentences";
+import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
@@ -255,8 +256,11 @@ const EventDetail = () => {
     && myRegistration.status === "registered"
     && isPaymentEvent
     && myRegistration.payment_status === "pending";
-  const hasPendingPayment = !!myRegistration
-    && (myRegistration.status === "pending_payment" || isLegacyPendingPayment);
+  const hasPendingPayment = !!myRegistration && isPendingPaymentRegistration(myRegistration, event);
+  const balancePaymentMode = getEventBalancePaymentMode(event);
+  const isDepositPaid = !!myRegistration && isDepositRegistration(myRegistration);
+  const hasOnlineBalanceDue = isDepositPaid && balancePaymentMode === "online";
+  const depositStatusMessage = myRegistration ? getDepositPaymentLabel(myRegistration, event) : null;
   const isRegistered = !!myRegistration
     && myRegistration.status !== "cancelled"
     && myRegistration.status !== "pending_payment"
@@ -577,7 +581,7 @@ const EventDetail = () => {
   const serviceFeeAmount = event ? getServiceFeeAmount(event.payment_type) : 0;
   const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time, 0, serviceFeeAmount) : null;
   const cancellationDialogMessage = getCancellationDialogMessage(refundInfo);
-  const hasPaidPayment = myRegistration?.payment_status === "paid";
+  const hasPaidPayment = myRegistration?.payment_status === "paid" || myRegistration?.payment_status === "deposit_paid";
 
   const handleCancelClick = () => {
     setShowCancelDialog(true);
@@ -606,7 +610,7 @@ const EventDetail = () => {
     && myRegistration.status !== "waitlist"
     && myRegistration.status !== "pending_approval"
     && isPaymentEvent
-    && myRegistration.payment_status !== "paid";
+    && (myRegistration.payment_status === "pending" || hasOnlineBalanceDue);
   const isPendingApproval = myRegistration?.status === "pending_approval";
   const isOnWaitlist = myRegistration?.status === "waitlist";
 
@@ -629,13 +633,14 @@ const EventDetail = () => {
     ? (accessData?.restrictionMessage || accessData?.failedRules?.[0]?.reason || "Non soddisfi i requisiti per partecipare a questo evento.")
     : null;
 
-  const getCTALabel = () => {
+const getCTALabel = () => {
     if (event.status === "closed") return "Chiuso";
     if (isEventPast || event.status === "cancelled" || event.status === "past") return "Chiuso";
     if (event.status === "draft") return "Partecipa"; // shown as disabled/inactive
     if (!user) return "Partecipa";
     // Waitlisted user with spot available → "Completa prenotazione"
     if (waitlistSpotAvailable) return "Completa prenotazione";
+    if (hasOnlineBalanceDue) return "Completa il saldo";
     // Already registered → "Iscritto" (disabled, informational)
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Iscritto ✓";
     if (isPendingApproval) return "In attesa di approvazione";
@@ -652,6 +657,7 @@ const EventDetail = () => {
     if (event.status === "draft") return "bg-muted text-muted-foreground cursor-not-allowed opacity-60"; // "In arrivo" disabled style
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (waitlistSpotAvailable) return "bg-primary text-primary-foreground hover:bg-primary/90";
+    if (hasOnlineBalanceDue) return "bg-accent text-accent-foreground hover:bg-accent/90";
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-success/20 text-success cursor-default";
     if (isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30 cursor-default";
@@ -1188,27 +1194,36 @@ const EventDetail = () => {
 
         {/* REGOLE & INFO – collapsible, dynamic based on cancellation policy */}
         {(() => {
-          const policy = getPolicyDefinition(event.cancellation_policy);
-          const isFlexible = policy.type !== "non_refundable";
           const closingSentence =
             (event.additional_fields as any)?.closing_sentence ||
             getDeterministicEventClosingSentence(event.id);
 
-          const bullets = isFlexible
+          const policy = getPolicyDefinition(event.cancellation_policy);
+          const isFlexible = policy.type !== "non_refundable";
+          const bullets = event.payment_type === "free"
             ? [
-                { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
-                { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${policy.requiredHours}h prima dell'evento` },
-                { icon: "ℹ️", text: "In questo caso riceverai il rimborso dell'importo versato, escluso il costo del servizio di 1€" },
-                { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
+                { icon: "✅", text: "Puoi disdire in qualsiasi momento direttamente dall'app" },
+                { icon: "⚠️", text: "Se non puoi più venire, libera il posto il prima possibile" },
+                { icon: "🔁", text: "I posti liberati vengono assegnati alla lista d'attesa" },
+                { icon: "❌", text: "Chi non si presenta senza disdire potrà avere limitazioni sugli eventi futuri" },
+                { icon: "🤝", text: "Qui si viene per stare bene: rispetto per il gruppo prima di tutto" },
                 { icon: "✨", text: closingSentence },
               ]
-            : [
-                { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
-                { icon: "❌", text: "Questo evento non è rimborsabile in caso di cancellazione" },
-                { icon: "💡", text: "Organizziamo tutto in anticipo per garantire l'esperienza" },
-                { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
-                { icon: "✨", text: closingSentence },
-              ];
+            : isFlexible
+              ? [
+                  { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
+                  { icon: "✔️", text: `Se cambi idea, puoi disdire fino a ${policy.requiredHours}h prima dell'evento` },
+                  { icon: "ℹ️", text: "In questo caso riceverai il rimborso dell'importo versato, escluso il costo del servizio di 1€" },
+                  { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
+                  { icon: "✨", text: closingSentence },
+                ]
+              : [
+                  { icon: "✔️", text: "Se dobbiamo annullare noi (es. maltempo), ti rimborsiamo tutto — senza stress" },
+                  { icon: "❌", text: "Questo evento non è rimborsabile in caso di cancellazione" },
+                  { icon: "💡", text: "Organizziamo tutto in anticipo per garantire l'esperienza" },
+                  { icon: "🤝", text: "Qui si viene per stare bene: rispetto, puntualità e voglia di condividere" },
+                  { icon: "✨", text: closingSentence },
+                ];
 
           return (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="py-4 border-b border-border">
@@ -1216,7 +1231,7 @@ const EventDetail = () => {
                 <CollapsibleTrigger className="flex items-start justify-between w-full group text-left">
                   <div>
                     <h3 className="font-display text-lg font-bold text-foreground">Regole & Info</h3>
-                    {policy.shortInfoLabelIt && (
+                    {event.payment_type !== "free" && policy.shortInfoLabelIt && (
                       <p className="text-xs font-body text-muted-foreground mt-0.5">
                         {policy.shortInfoLabelIt}
                       </p>
@@ -1325,6 +1340,11 @@ const EventDetail = () => {
               )}
             </div>
             <span className="text-xs font-body text-muted-foreground">{availabilityText}</span>
+            {depositStatusMessage && (
+              <p className={`text-[11px] font-body mt-1 ${hasOnlineBalanceDue ? "text-warning" : "text-muted-foreground"}`}>
+                {depositStatusMessage}
+              </p>
+            )}
             {false && (
               <span className="text-[11px] font-body font-bold text-white bg-black dark:bg-white dark:text-black px-2 py-0.5 rounded-full">
                 🔥 ULTIMI POSTI RIMASTI!
@@ -1556,6 +1576,9 @@ const EventDetail = () => {
                 }
                 if (opts.priceOptionId) {
                   body.priceOptionId = opts.priceOptionId;
+                }
+                if (opts.paymentChoice) {
+                  body.paymentChoice = opts.paymentChoice;
                 }
                 const { data, error } = await invokeAuthenticatedFunction("create-event-checkout", body);
                 if (error) throw error;

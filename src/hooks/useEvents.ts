@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 import { parseEventDateTime } from "@/lib/timezone";
+import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
 
 export interface EventWithDetails {
   id: string;
@@ -16,6 +17,7 @@ export interface EventWithDetails {
   price: number;
   deposit: number | null;
   payment_type: "free" | "paid" | "deposit" | "location";
+  balance_payment_mode?: "online" | "on_site" | null;
   additional_fields: any;
   image_url: string | null;
   difficulty: string | null;
@@ -44,7 +46,7 @@ export const useEvents = (categoryName?: string | null) => {
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
+        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, balance_payment_mode, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
         .order("date", { ascending: true });
 
       if (categoryName) {
@@ -114,7 +116,7 @@ export const useEventParticipants = (eventId: string) => {
         .from("event_registrations")
         .select("*, meeting_point:event_meeting_points(id, name)")
         .eq("event_id", eventId)
-        .in("status", ["registered", "paid"])
+        .in("status", [...ACTIVE_PARTICIPANT_STATUSES])
         .neq("payment_status", "pending");
       if (error) throw error;
 
