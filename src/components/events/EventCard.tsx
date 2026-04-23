@@ -140,7 +140,7 @@ const EventCard = memo(({
                   </>
                 )}
               </div>
-              <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-body font-semibold border ${statusConfig.className}`}>
+              <span className={`shrink-0 rounded-full border px-2 py-[3px] text-[9px] font-body font-semibold leading-none ${statusConfig.className}`}>
                 {statusConfig.label}
               </span>
             </div>
@@ -157,7 +157,7 @@ const EventCard = memo(({
             <div className={`mt-0.5 flex min-w-0 ${useCompactCardLayout ? "items-end justify-between gap-2" : "items-center gap-1.5"}`}>
               <div className="flex min-w-0 items-center gap-1.5">
                 {event.category && (
-                  <span className="inline-flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3 text-[11px] font-body font-semibold leading-none text-foreground">
+                  <span className="inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 text-[10px] font-body font-semibold leading-none text-foreground">
                     {event.category.icon && (
                       <span className="flex items-center justify-center shrink-0">
                         <DynamicIcon value={event.category.icon} size={12} />
@@ -167,7 +167,7 @@ const EventCard = memo(({
                   </span>
                 )}
                 {!useCompactCardLayout && hasPromo && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] sm:text-[11px] font-body font-semibold">
+                  <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-[3px] text-[9px] font-body font-semibold leading-none text-amber-600 sm:text-[10px]">
                     Promo
                   </span>
                 )}
