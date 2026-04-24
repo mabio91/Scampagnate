@@ -1,10 +1,10 @@
 export const EVENT_CLOSING_SENTENCES = [
-  "✨ Porta leggerezza, al resto pensiamo noi",
-  "✨ Una community che arriva per i sentieri… e resta per le persone",
-  "✨ Il difficile è venire. Poi non vorrai più andare via",
-  "✨ Fidati: sarà una di quelle giornate che ricordi",
-  "✨ Vieni con lo spirito giusto — il resto viene da sé",
-  "✨ Qui si conoscono persone, non solo posti",
+  "Porta leggerezza, al resto pensiamo noi",
+  "Una community che arriva per i sentieri... e resta per le persone",
+  "Il difficile è venire. Poi non vorrai più andare via",
+  "Fidati: sarà una di quelle giornate che ricordi",
+  "Vieni con lo spirito giusto - il resto viene da sé",
+  "Qui si conoscono persone, non solo posti",
 ] as const;
 
 export const getRandomEventClosingSentence = () =>
