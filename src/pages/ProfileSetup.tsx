@@ -12,7 +12,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadFull } from "tsparticles";
 import {
-  FIT_SCORE_INTEREST_MAX,
   FIT_SCORE_INTEREST_MIN,
   FIT_SCORE_INTEREST_VALIDATION_MESSAGE,
 } from "@/lib/fitScoreAffinityTables";
@@ -244,9 +243,7 @@ const ProfileSetup = () => {
   }, [isEditMode, step, navigate, scrollToTop]);
 
   const toggleInterest = (val: string) => {
-    setInterests((prev) =>
-      prev.includes(val) ? prev.filter((i) => i !== val) : prev.length < FIT_SCORE_INTEREST_MAX ? [...prev, val] : prev
-    );
+    setInterests((prev) => (prev[0] === val ? [] : [val]));
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -754,7 +751,7 @@ const ProfileSetup = () => {
                   <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
                     Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {step3Errors.interests && <span className="text-destructive text-xs font-normal">— Seleziona almeno 1 opzione</span>}
                   </Label>
-                  <p className="text-xs text-muted-foreground font-body">Seleziona da {FIT_SCORE_INTEREST_MIN} a {FIT_SCORE_INTEREST_MAX} attivita.</p>
+                  <p className="text-xs text-muted-foreground font-body">Seleziona 1 attivita.</p>
                   {step3Errors.interests && (
                     <p className="text-xs font-body text-destructive">{FIT_SCORE_INTEREST_VALIDATION_MESSAGE}</p>
                   )}
@@ -777,7 +774,7 @@ const ProfileSetup = () => {
                         onClick={() => toggleInterest(opt.val)}
                         emoji={opt.emoji}
                         label={opt.label}
-                        disabled={interests.length >= FIT_SCORE_INTEREST_MAX}
+                        disabled={false}
                       />
                     ))}
                   </div>
