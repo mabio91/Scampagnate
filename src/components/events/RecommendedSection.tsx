@@ -157,7 +157,7 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
         {UI_LABELS.recommendedSubtitle}
       </p>
 
-      <div className="-mx-4 pl-4 pb-2">
+      <div className="-mx-4 overflow-hidden pl-4 pb-2">
         <EventCarousel
           items={events.slice(0, 6)}
           itemClassName="h-[22.5rem]"

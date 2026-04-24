@@ -16,8 +16,8 @@ interface CategoryFilterProps {
 }
 
 const CategoryFilter = memo(({ categories, selected, onSelect }: CategoryFilterProps) => (
-  <div className="px-4 py-3">
-    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar snap-x">
+  <div className="overflow-hidden py-3">
+    <div className="flex gap-2 overflow-x-auto px-4 pb-2 no-scrollbar snap-x">
       <button
         onClick={() => onSelect(null)}
         className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-body font-medium transition-all active:scale-95 snap-start ${

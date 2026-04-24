@@ -220,7 +220,7 @@ const Index = () => {
 
   return (
     <>
-      <div className="pt-4 pb-4 scroll-smooth">
+      <div className="overflow-x-hidden pt-4 pb-4 scroll-smooth">
         {isLoading && !events ? (
           <div className="px-4">
             <Skeleton className="w-full h-64 rounded-2xl mb-4" />
@@ -357,7 +357,7 @@ const Index = () => {
             )}
 
             {/* Event list */}
-            <div className="px-3 sm:px-4 mt-4">
+            <div className="px-4 mt-4">
               <h2 className="font-display text-lg font-bold text-foreground mb-3">
                 {hasActiveFilters ? "Risultati ricerca" : UI_LABELS.upcomingEvents}
                 {hasActiveFilters && (

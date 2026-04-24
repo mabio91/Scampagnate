@@ -55,7 +55,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
-      <div className="relative mx-3 sm:mx-4 rounded-2xl overflow-hidden shadow-xl active:scale-[0.98] transition-transform duration-200">
+      <div className="relative mx-4 rounded-2xl overflow-hidden shadow-xl active:scale-[0.98] transition-transform duration-200">
         {/* Background image */}
         <OptimizedImage
           src={event.image_url}

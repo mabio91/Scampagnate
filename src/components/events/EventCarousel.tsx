@@ -14,7 +14,7 @@ const EventCarousel = memo(
     if (items.length === 0) return null;
 
     return (
-      <div className={cn("-mr-4", className)}>
+      <div className={cn("w-full", className)}>
         <Carousel
           opts={{
             align: "start",
