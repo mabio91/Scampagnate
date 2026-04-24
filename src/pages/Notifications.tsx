@@ -6,9 +6,8 @@ import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
 import { it as itLocale } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-
 import { useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { localizeNotification } from "@/lib/notificationLocalization";
 
@@ -56,10 +55,10 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
         <p className={`text-sm leading-tight ${!notification.read ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>
           {localized.title}
         </p>
-        {(notification.type === 'event_reminder_24h' || notification.type === 'event_reminder_3h') ? (
+        {(notification.type === "event_reminder_24h" || notification.type === "event_reminder_3h") ? (
           <div className="mt-1 space-y-1">
-            {localized.message.split('\n').map((line, i) => {
-              const cleanLine = line.replace(/(\d{2}:\d{2}):\d{2}/g, '$1');
+            {localized.message.split("\n").map((line, i) => {
+              const cleanLine = line.replace(/(\d{2}:\d{2}):\d{2}/g, "$1");
               const mapsMatch = cleanLine.match(/🗺️.*?(https:\/\/\S+)/);
               if (mapsMatch) {
                 return (
@@ -76,11 +75,11 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
                   </a>
                 );
               }
-              if (cleanLine.includes('📍')) {
+              if (cleanLine.includes("📍")) {
                 return (
                   <p key={i} className="flex items-start gap-1 text-xs text-foreground font-body font-medium">
                     <MapPin className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
-                    <span>{cleanLine.replace('📍 ', '')}</span>
+                    <span>{cleanLine.replace("📍 ", "")}</span>
                   </p>
                 );
               }
@@ -92,7 +91,7 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
           </div>
         ) : (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-            {localized.message.replace(/(\d{2}:\d{2}):\d{2}/g, '$1')}
+            {localized.message.replace(/(\d{2}:\d{2}):\d{2}/g, "$1")}
           </p>
         )}
         <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-medium">
@@ -112,6 +111,7 @@ const Notifications = () => {
   const hasUnread = notifications?.some((n) => !n.read);
   const navigate = useNavigate();
   const { isSupported, canManagePush, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, errorMessage: pushError } = usePushNotifications();
+  const { toast } = useToast();
   const { language, t } = useLanguage();
   const locale = language === "it" ? itLocale : enUS;
 
@@ -140,19 +140,22 @@ const Notifications = () => {
 
   const handlePushToggle = async () => {
     if (!canManagePush && pushError) {
-      toast.error(pushError);
+      toast({ title: pushError, variant: "destructive" });
       return;
     }
 
     if (isSubscribed) {
       await unsubscribe();
-      toast.success(language === "it" ? "Notifiche push disattivate" : "Push notifications disabled");
+      toast({ title: language === "it" ? "Notifiche push disattivate" : "Push notifications disabled" });
     } else {
       const success = await subscribe();
       if (success) {
-        toast.success(language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!");
+        toast({ title: language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!" });
       } else {
-        toast.error(pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"));
+        toast({
+          title: pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"),
+          variant: "destructive",
+        });
       }
     }
   };
