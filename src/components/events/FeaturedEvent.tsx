@@ -6,6 +6,7 @@ import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { UI_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
+import { eventBadgePillClassName } from "./EventBadgePill";
 import SoldOutOverlay from "./SoldOutOverlay";
 
 type HeroBadge = "sold_out" | "promo" | "top" | null;
@@ -34,7 +35,7 @@ const HERO_BADGE_LABEL: Record<string, string> = {
 };
 
 // exact same core style for badges: shape pill, padding 3 (12px) horizontal, 1.5 (6px) vertical, semi-transparent text white
-const BADGE_CORE = "inline-flex items-center px-3 py-1.5 text-[11px] sm:text-xs font-body font-semibold text-white bg-black/50 backdrop-blur-sm z-20";
+const BADGE_CORE = `${eventBadgePillClassName} px-3 text-[11px] sm:text-xs text-white bg-black/50 backdrop-blur-sm z-20`;
 
 const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
   const getCountdown = (dateStr: string) => {
@@ -54,7 +55,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
-      <div className="relative mx-3 sm:mx-4 rounded-2xl overflow-hidden shadow-xl active:scale-[0.98] transition-transform duration-200">
+      <div className="relative mx-4 rounded-2xl overflow-hidden shadow-xl active:scale-[0.98] transition-transform duration-200">
         {/* Background image */}
         <OptimizedImage
           src={event.image_url}

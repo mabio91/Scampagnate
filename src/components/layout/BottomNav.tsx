@@ -23,14 +23,17 @@ const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50 pb-safe">
-      <div className="flex items-center justify-around max-w-lg mx-auto px-2 py-1.5">
+      <div
+        className="grid max-w-lg mx-auto px-2 py-1.5"
+        style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
+      >
         {navItems.map((item) => {
           const active = isActive(item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`relative flex flex-col items-center gap-0.5 px-2 sm:px-3 py-2 rounded-xl transition-all duration-200 touch-target justify-center press-scale ${
+              className={`relative flex w-full flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-xl text-center transition-all duration-200 touch-target press-scale ${
                 active
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"

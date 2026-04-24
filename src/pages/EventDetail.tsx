@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import { usePricingEligibility, getBestUserPrice, type PriceOption, type Resolve
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import DynamicIcon from "@/components/DynamicIcon";
 import ShareSheet from "@/components/events/ShareSheet";
+import { EventBadgePill } from "@/components/events/EventBadgePill";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
@@ -154,6 +155,10 @@ const EventDetail = () => {
   const [navigationLocation, setNavigationLocation] = useState("");
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id]);
 
   // Gallery carousel
   const [emblaRef, emblaApi] = useEmblaCarousel({ startIndex: galleryStartIndex });
@@ -836,18 +841,18 @@ const getCTALabel = () => {
               </button>
             )}
             {event.category && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-body font-semibold">
+              <EventBadgePill className="bg-muted text-muted-foreground">
                 {event.category.icon && <span className="flex items-center justify-center shrink-0"><DynamicIcon value={event.category.icon} size={14} /></span>}
                 {event.category.name}
-              </span>
+              </EventBadgePill>
             )}
             {eventBadges.map((b) => (
-              <span key={b.key} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-body font-bold shadow-sm ${b.className}`}>
+              <EventBadgePill key={b.key} className={`font-bold shadow-sm ${b.className}`}>
                 {b.emoji ? `${b.emoji} ` : ""}{b.label}
-              </span>
+              </EventBadgePill>
             ))}
             {exclusivityIndicators.map((ind, idx) => (
-              <span key={idx} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
+              <EventBadgePill key={idx} className={`${
                 ind.variant === "members" ? "bg-primary/10 text-primary" :
                 ind.variant === "exclusive" ? "bg-gold/10 text-gold" :
                 ind.variant === "restricted" ? "bg-warning/10 text-warning" :
@@ -855,14 +860,14 @@ const getCTALabel = () => {
               }`}>
                 {ind.variant === "members" ? "👑 " : ind.variant === "exclusive" ? "⭐ " : ind.variant === "restricted" ? "🔒 " : "✋ "}
                 {ind.label}
-              </span>
+              </EventBadgePill>
             ))}
             {(isOrganizer || isAdmin) && event.visibility !== "public" && (
-              <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-semibold ${
+              <EventBadgePill className={`${
                 event.visibility === 'private' ? 'bg-amber-100/90 text-amber-800' : 'bg-slate-800/80 text-white'
               }`}>
                 {event.visibility === 'private' ? '🔗 Private' : '👁️ Hidden'}
-              </span>
+              </EventBadgePill>
             )}
           </div>
         </div>

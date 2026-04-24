@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
 import DynamicIcon from "@/components/DynamicIcon";
 import { DifficultyBadge } from "./DifficultyBadge";
+import { EventBadgePill } from "./EventBadgePill";
 import { UI_LABELS } from "@/lib/labels";
 import { EventWithDetails } from "@/hooks/useEvents";
 import EventCarousel from "./EventCarousel";
@@ -59,15 +60,15 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
           />
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
             {event.featured ? (
-              <span className="rounded-full bg-primary px-2.5 py-[3px] text-[9px] font-semibold uppercase leading-none tracking-[0.08em] text-primary-foreground">
+              <EventBadgePill className="bg-primary uppercase tracking-[0.08em] text-primary-foreground">
                 Nuovo
-              </span>
+              </EventBadgePill>
             ) : (
               <span />
             )}
-            <span className={`rounded-full border px-2.5 py-[3px] text-[9px] font-semibold leading-none ${statusClassName}`}>
+            <EventBadgePill className={`border ${statusClassName}`}>
               {statusLabel}
-            </span>
+            </EventBadgePill>
           </div>
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent px-4 pb-4 pt-10">
             <div className="flex items-center gap-2 text-[11px] text-white/90">
@@ -102,14 +103,14 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
           <div className="mt-2 max-h-[2.4rem] min-h-[2.4rem] overflow-hidden">
             <div className="flex flex-wrap items-center gap-2">
             {event.category && (
-              <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-[10px] font-semibold leading-none text-foreground">
+              <EventBadgePill className="min-w-0 max-w-full border border-border/60 bg-muted/30 text-foreground">
                 {event.category.icon && (
                   <span className="flex shrink-0 items-center justify-center">
                     <DynamicIcon value={event.category.icon} size={12} />
                   </span>
                 )}
                 <span className="truncate">{event.category.name}</span>
-              </span>
+              </EventBadgePill>
             )}
             {event.difficulty && <DifficultyBadge difficulty={event.difficulty} className="shrink-0" showLabel={true} />}
             </div>
@@ -129,9 +130,9 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
               <Users className="h-4 w-4" />
               <span>{event.spots_taken}/{event.spots_total} posti</span>
             </div>
-              <span className="rounded-full bg-muted px-2.5 py-[3px] text-[10px] font-semibold leading-none text-foreground">
+              <EventBadgePill className="bg-muted text-foreground">
                 {event.payment_type === "free" || Number(event.price) === 0 ? UI_LABELS.free : `EUR ${Number(event.price)}`}
-              </span>
+              </EventBadgePill>
             </div>
         </div>
       </article>
@@ -156,7 +157,7 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
         {UI_LABELS.recommendedSubtitle}
       </p>
 
-      <div className="-mx-4 pl-4 pb-2">
+      <div className="-mx-4 overflow-hidden pl-4 pb-2">
         <EventCarousel
           items={events.slice(0, 6)}
           itemClassName="h-[22.5rem]"

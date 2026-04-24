@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { EventWithDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "./DifficultyBadge";
+import { EventBadgePill } from "./EventBadgePill";
 import DynamicIcon from "@/components/DynamicIcon";
 import { UI_LABELS } from "@/lib/labels";
 import SoldOutOverlay from "./SoldOutOverlay";
@@ -140,9 +141,9 @@ const EventCard = memo(({
                   </>
                 )}
               </div>
-              <span className={`shrink-0 rounded-full border px-2 py-[3px] text-[9px] font-body font-semibold leading-none ${statusConfig.className}`}>
+              <EventBadgePill className={`shrink-0 border ${statusConfig.className}`}>
                 {statusConfig.label}
-              </span>
+              </EventBadgePill>
             </div>
 
             <h3 className="font-display text-[15px] sm:text-base font-bold text-foreground line-clamp-3 leading-snug">
@@ -157,19 +158,19 @@ const EventCard = memo(({
             <div className={`mt-0.5 flex min-w-0 ${useCompactCardLayout ? "items-end justify-between gap-2" : "items-center gap-1.5"}`}>
               <div className="flex min-w-0 items-center gap-1.5">
                 {event.category && (
-                  <span className="inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 text-[10px] font-body font-semibold leading-none text-foreground">
+                  <EventBadgePill className="min-w-0 max-w-full border border-border/60 bg-muted/30 text-foreground">
                     {event.category.icon && (
                       <span className="flex items-center justify-center shrink-0">
                         <DynamicIcon value={event.category.icon} size={12} />
                       </span>
                     )}
                     <span className="truncate">{event.category.name}</span>
-                  </span>
+                  </EventBadgePill>
                 )}
                 {!useCompactCardLayout && hasPromo && (
-                  <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-[3px] text-[9px] font-body font-semibold leading-none text-amber-600 sm:text-[10px]">
+                  <EventBadgePill className="border border-amber-500/30 bg-amber-500/15 text-amber-600">
                     Promo
-                  </span>
+                  </EventBadgePill>
                 )}
                 {hasDifficulty && (
                   <DifficultyBadge difficulty={event.difficulty} className="shrink-0" showLabel={true} />

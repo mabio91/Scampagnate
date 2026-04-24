@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { it, enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { localizeNotification } from "@/lib/notificationLocalization";
 
@@ -67,7 +67,7 @@ const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notificat
         )}
       </button>
     );
-  }
+  },
 );
 
 NotificationItem.displayName = "NotificationItem";
@@ -78,24 +78,28 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
   const hasUnread = notifications?.some((n) => !n.read);
   const { isSupported, canManagePush, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, errorMessage: pushError } = usePushNotifications();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const { toast } = useToast();
   const { language, t } = useLanguage();
   const locale = language === "it" ? it : enUS;
 
   const handlePushToggle = async () => {
     if (!canManagePush && pushError) {
-      toast.error(pushError);
+      toast({ title: pushError, variant: "destructive" });
       return;
     }
 
     if (isSubscribed) {
       await unsubscribe();
-      toast.success(language === "it" ? "Notifiche push disattivate" : "Push notifications disabled");
+      toast({ title: language === "it" ? "Notifiche push disattivate" : "Push notifications disabled" });
     } else {
       const success = await subscribe();
       if (success) {
-        toast.success(language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!");
+        toast({ title: language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!" });
       } else {
-        toast.error(pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"));
+        toast({
+          title: pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"),
+          variant: "destructive",
+        });
       }
     }
   };
@@ -107,7 +111,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
       <div ref={ref} className="w-[calc(100vw-2rem)] max-w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSelectedNotification(null)}>
-            ←
+            {"<-"}
           </Button>
           <h3 className="font-display font-semibold text-sm truncate">{localized.title}</h3>
         </div>

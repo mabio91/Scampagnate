@@ -19,6 +19,14 @@ const PaymentSuccess = () => {
   const [status, setStatus] = useState<"verifying" | "success" | "spot_taken" | "error">("verifying");
   const [eventId, setEventId] = useState<string | null>(null);
   const [spotTakenMessage, setSpotTakenMessage] = useState("");
+  const navigateToEvent = () => {
+    if (eventId) {
+      navigate(`/event/${eventId}`, { replace: true });
+    }
+  };
+
+  const navigateToMyEvents = () => navigate("/my-events", { replace: true });
+  const navigateToHome = () => navigate("/", { replace: true });
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -103,14 +111,14 @@ const PaymentSuccess = () => {
             <div className="space-y-3 pt-4">
               {eventId && (
                 <Button
-                  onClick={() => navigate(`/event/${eventId}`)}
+                  onClick={navigateToEvent}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
                   {t("backToEvent")}
                 </Button>
               )}
               <Button
-                onClick={() => navigate("/my-events")}
+                onClick={navigateToMyEvents}
                 variant="outline"
                 className="w-full font-body"
               >
@@ -129,14 +137,14 @@ const PaymentSuccess = () => {
             <div className="space-y-3 pt-4">
               {eventId && (
                 <Button
-                  onClick={() => navigate(`/event/${eventId}`)}
+                  onClick={navigateToEvent}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
                   Torna all'evento
                 </Button>
               )}
               <Button
-                onClick={() => navigate("/my-events")}
+                onClick={navigateToMyEvents}
                 variant="outline"
                 className="w-full font-body"
               >
@@ -154,14 +162,14 @@ const PaymentSuccess = () => {
             <div className="space-y-3 pt-4">
               {eventId && (
                 <Button
-                  onClick={() => navigate(`/event/${eventId}`)}
+                  onClick={navigateToEvent}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
                   {t("backToEvent")}
                 </Button>
               )}
               <Button
-                onClick={() => navigate("/")}
+                onClick={navigateToHome}
                 variant="outline"
                 className="w-full font-body"
               >

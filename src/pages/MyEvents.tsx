@@ -446,9 +446,8 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display">Annulla iscrizione</DialogTitle>
             <DialogDescription className="font-body text-sm">
-              <span className="block">Cancelli la tua partecipazione?</span>
+              <span className="block font-display text-lg font-semibold text-foreground">Cancelli la tua partecipazione?</span>
               <span className="block mt-2 font-semibold text-foreground">{event.title}</span>
               {hasPaidPayment && cancellationDialogMessage && (
                 <span className="block mt-3 text-sm whitespace-pre-line text-foreground">

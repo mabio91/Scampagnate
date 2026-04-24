@@ -18,7 +18,8 @@ interface Props {
 }
 
 const QuickFilters = memo(({ active, onToggle }: Props) => (
-  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar px-4">
+  <div className="overflow-hidden">
+    <div className="flex gap-2 overflow-x-auto px-4 pb-1 no-scrollbar">
     {FILTERS.map(({ key, label, icon: Icon }) => {
       const isActive = active.includes(key);
       return (
@@ -36,6 +37,7 @@ const QuickFilters = memo(({ active, onToggle }: Props) => (
         </button>
       );
     })}
+    </div>
   </div>
 ));
 

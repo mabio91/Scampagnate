@@ -158,11 +158,11 @@ const OrganizerDashboard = () => {
             <TabsTrigger value="proposals" className="flex-1 min-w-0 text-xs px-2">
               <Lightbulb className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Proposals</span>
             </TabsTrigger>
-            <TabsTrigger value="discounts" className="flex-1 min-w-0 text-xs px-2">
-              <Ticket className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Discounts</span>
-            </TabsTrigger>
             {isAdmin && (
               <>
+                <TabsTrigger value="discounts" className="flex-1 min-w-0 text-xs px-2">
+                  <Ticket className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Discounts</span>
+                </TabsTrigger>
                 <TabsTrigger value="missions" className="flex-1 min-w-0 text-xs px-2">
                   <Target className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Missions</span>
                 </TabsTrigger>
@@ -486,10 +486,12 @@ const OrganizerDashboard = () => {
             <ProposalsPanel />
           </TabsContent>
 
-          {/* Discounts Tab */}
-          <TabsContent value="discounts" className="mt-4">
-            <DiscountCodesPanel />
-          </TabsContent>
+          {/* Discounts Tab (Admin only) */}
+          {isAdmin && (
+            <TabsContent value="discounts" className="mt-4">
+              <DiscountCodesPanel />
+            </TabsContent>
+          )}
 
           {/* Missions Tab (Admin only) */}
           {isAdmin && (

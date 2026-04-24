@@ -30,6 +30,7 @@ export interface FitScoreResult {
   score: number;
   breakdown: FitScoreBreakdown;
   componentWeights: FitScoreBreakdown;
+  interestOnly: boolean;
   state: FitState;
   label: string;
   color: "green" | "amber" | "red";
@@ -58,6 +59,7 @@ const EMPTY_RESULT: FitScoreResult = {
   score: 0,
   breakdown: EMPTY_BREAKDOWN,
   componentWeights: EMPTY_BREAKDOWN,
+  interestOnly: false,
   state: "medium",
   label: "",
   color: "amber",
@@ -68,15 +70,15 @@ const EMPTY_RESULT: FitScoreResult = {
 
 export const getLevelScore = (userLevelValue: string | null | undefined, eventDifficulty: string | null | undefined) => {
   const rawRequiredLevel = Number.parseInt(eventDifficulty || "", 10);
+  if (Number.isNaN(rawRequiredLevel) || rawRequiredLevel <= 0) return null;
+
   const userLevel = LEVEL_MAP[userLevelValue || ""];
   const requiredLevel =
-    rawRequiredLevel <= 0
-      ? 0
-      : rawRequiredLevel <= 2
-        ? 1
-        : rawRequiredLevel <= 3
-          ? 2
-          : 3;
+    rawRequiredLevel <= 2
+      ? 1
+      : rawRequiredLevel <= 3
+        ? 2
+        : 3;
 
   if (!requiredLevel) return null;
   if (!userLevel) return null;
@@ -179,6 +181,8 @@ export const calculateEventFitScore = (
   const score = hasDifficulty
     ? Math.round(((levelScore ?? 0) * 0.7) + ((interestsScore ?? 0) * 0.3))
     : interestsScore ?? 0;
+  const interestOnly = !hasDifficulty;
+  const shouldHideInterestOnlyScore = interestOnly && score <= 30;
 
   const reasons: FitReason[] = [];
 
@@ -208,9 +212,10 @@ export const calculateEventFitScore = (
     score,
     breakdown,
     componentWeights,
+    interestOnly,
     reasons,
     profileIncomplete: false,
-    hidden: false,
+    hidden: shouldHideInterestOnlyScore,
     ...getStateFromScore(score),
   };
 };
