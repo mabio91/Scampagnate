@@ -166,17 +166,17 @@ export const WeatherForecast = ({
       : displayTempMax);
 
   return (
-    <div className="flex items-center gap-4 py-2">
-      <div className="w-16 h-16 rounded-3xl bg-muted/35 border border-border/40 flex items-center justify-center shrink-0">
-        <WeatherIcon className="h-7 w-7 text-muted-foreground" />
+    <div className="flex items-start gap-3 pt-3">
+      <div className="w-10 h-10 rounded-xl bg-muted/35 border border-border/40 flex items-center justify-center shrink-0">
+        <WeatherIcon className="h-5 w-5 text-muted-foreground" />
       </div>
-      <div className="min-w-0">
-        <p className="text-lg font-display font-bold text-foreground leading-tight">
+      <div className="min-w-0 pt-0.5">
+        <p className="text-sm font-body font-semibold text-foreground leading-tight">
           {displayCondition}
           {displayTempAvg != null ? ` ${Math.round(displayTempAvg)}°` : ""}
         </p>
         {(displayTempMin != null || displayTempMax != null) && (
-          <p className="text-sm font-body text-muted-foreground mt-1 leading-tight">
+          <p className="text-xs font-body text-muted-foreground mt-0.5 leading-tight">
             {displayTempMin != null ? `Min ${Math.round(displayTempMin)}°` : ""}
             {displayTempMin != null && displayTempMax != null ? "  " : ""}
             {displayTempMax != null ? `Max ${Math.round(displayTempMax)}°` : ""}
