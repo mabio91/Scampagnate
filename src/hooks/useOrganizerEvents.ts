@@ -12,7 +12,7 @@ export const useOrganizerEvents = () => {
         .from("events")
         .select("*, event_categories(name, icon)")
         .eq("organizer_id", user!.id)
-        .order("date", { ascending: false });
+        .order("date", { ascending: true });
       if (error) throw error;
       return data;
     },

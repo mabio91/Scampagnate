@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -155,6 +155,10 @@ const EventDetail = () => {
   const [navigationLocation, setNavigationLocation] = useState("");
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id]);
 
   // Gallery carousel
   const [emblaRef, emblaApi] = useEmblaCarousel({ startIndex: galleryStartIndex });
