@@ -15,6 +15,13 @@ const MembershipSuccess = () => {
   const { t } = useLanguage();
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [eventId, setEventId] = useState<string | null>(null);
+  const navigateToEvent = () => {
+    if (eventId) {
+      navigate(`/event/${eventId}`, { replace: true });
+    }
+  };
+
+  const navigateToHome = () => navigate("/", { replace: true });
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -68,14 +75,14 @@ const MembershipSuccess = () => {
             <div className="space-y-3 pt-4">
               {eventId && (
                 <Button
-                  onClick={() => navigate(`/event/${eventId}`)}
+                  onClick={navigateToEvent}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
                   {t("backToEvent")}
                 </Button>
               )}
               <Button
-                onClick={() => navigate("/")}
+                onClick={navigateToHome}
                 variant="outline"
                 className="w-full font-body"
               >
@@ -91,7 +98,7 @@ const MembershipSuccess = () => {
             <h1 className="font-display text-2xl font-bold text-foreground">{t("verificationError")}</h1>
             <p className="text-sm font-body text-muted-foreground">{t("verificationErrorDesc")}</p>
             <Button
-              onClick={() => navigate("/")}
+              onClick={navigateToHome}
               className="w-full bg-primary text-primary-foreground font-body font-semibold"
             >
               {t("goToHome")}
