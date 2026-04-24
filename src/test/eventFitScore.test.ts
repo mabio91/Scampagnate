@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getInterestScore, getLevelScore } from "@/hooks/useEventFitScore";
+import { calculateEventFitScore, getInterestScore, getLevelScore } from "@/hooks/useEventFitScore";
 
 describe("event fit score helpers", () => {
   it("uses the best interest match across main and secondary categories", () => {
@@ -23,5 +23,48 @@ describe("event fit score helpers", () => {
     );
 
     expect(score).toBe(75);
+  });
+
+  it("hides low interest-only scores at or below 30%", () => {
+    const fitScore = calculateEventFitScore(
+      { interests: ["aperitivi_cene"] },
+      {
+        category: { name: "Trekking giornalieri" },
+        secondaryCategories: [],
+      }
+    );
+
+    expect(fitScore.interestOnly).toBe(true);
+    expect(fitScore.score).toBeLessThanOrEqual(30);
+    expect(fitScore.hidden).toBe(true);
+  });
+
+  it("shows interest-only scores above 30%", () => {
+    const fitScore = calculateEventFitScore(
+      { interests: ["Cammini plurigiornalieri"] },
+      {
+        category: { name: "Trekking giornalieri" },
+        secondaryCategories: [],
+      }
+    );
+
+    expect(fitScore.interestOnly).toBe(true);
+    expect(fitScore.score).toBeGreaterThan(30);
+    expect(fitScore.hidden).toBe(false);
+  });
+
+  it("keeps low level-aware scores visible", () => {
+    const fitScore = calculateEventFitScore(
+      { interests: ["aperitivi_cene"], self_level: "beginner" },
+      {
+        difficulty: "5",
+        category: { name: "Trekking giornalieri" },
+        secondaryCategories: [],
+      }
+    );
+
+    expect(fitScore.interestOnly).toBe(false);
+    expect(fitScore.score).toBeLessThanOrEqual(30);
+    expect(fitScore.hidden).toBe(false);
   });
 });
