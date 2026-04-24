@@ -16,6 +16,12 @@ describe("event fit score helpers", () => {
     expect(getLevelScore("beginner", "4")).toBe(20);
   });
 
+  it("returns null when the event has no valid difficulty", () => {
+    expect(getLevelScore("advanced", null)).toBeNull();
+    expect(getLevelScore("advanced", "")).toBeNull();
+    expect(getLevelScore("advanced", "not-a-level")).toBeNull();
+  });
+
   it("supports already-normalized labels in user interests", () => {
     const score = getInterestScore(
       ["Cammini plurigiornalieri", "Weekend fuori porta"],

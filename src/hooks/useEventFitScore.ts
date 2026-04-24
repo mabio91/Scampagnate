@@ -70,15 +70,15 @@ const EMPTY_RESULT: FitScoreResult = {
 
 export const getLevelScore = (userLevelValue: string | null | undefined, eventDifficulty: string | null | undefined) => {
   const rawRequiredLevel = Number.parseInt(eventDifficulty || "", 10);
+  if (Number.isNaN(rawRequiredLevel) || rawRequiredLevel <= 0) return null;
+
   const userLevel = LEVEL_MAP[userLevelValue || ""];
   const requiredLevel =
-    rawRequiredLevel <= 0
-      ? 0
-      : rawRequiredLevel <= 2
-        ? 1
-        : rawRequiredLevel <= 3
-          ? 2
-          : 3;
+    rawRequiredLevel <= 2
+      ? 1
+      : rawRequiredLevel <= 3
+        ? 2
+        : 3;
 
   if (!requiredLevel) return null;
   if (!userLevel) return null;
