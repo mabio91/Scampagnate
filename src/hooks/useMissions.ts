@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Mission {
@@ -22,19 +23,46 @@ export interface UserMission {
 }
 
 export const useUserMissions = (userId: string | undefined) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["user-missions", userId],
     queryFn: async () => {
       if (!userId) return [];
       const { data } = await supabase
         .from("user_missions")
         .select("*, missions(*)")
-        .eq("user_id", userId)
-        .eq("completed", false);
+        .eq("user_id", userId);
       return (data || []) as unknown as UserMission[];
     },
     enabled: !!userId,
   });
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`user-missions-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_missions",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["user-missions", userId] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, userId]);
+
+  return query;
 };
 
 export const useActiveMissions = () => {
