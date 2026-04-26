@@ -1124,7 +1124,7 @@ const EventForm = () => {
                   <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit || ""} onChange={(e) => updateForm("deposit", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
                 </div>
                 <div>
-                  <Label>ModalitÃ  pagamento saldo</Label>
+                  <Label>Modalità pagamento saldo</Label>
                   <Select value={form.balance_payment_mode} onValueChange={(v) => updateForm("balance_payment_mode", v as BalancePaymentMode)}>
                     <SelectTrigger className="mt-1">
                       <SelectValue />
