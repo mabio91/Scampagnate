@@ -260,17 +260,17 @@ const EventDetail = () => {
 
   const imageSrc = resolveEventImageSrc(event.image_url);
   const isPaymentEvent = event.payment_type === "paid" || event.payment_type === "deposit";
-  const isLegacyPendingPayment = !!myRegistration
+  const hasCurrentRegistration = !!myRegistration && myRegistration.status !== "cancelled";
+  const isLegacyPendingPayment = hasCurrentRegistration
     && myRegistration.status === "registered"
     && isPaymentEvent
     && myRegistration.payment_status === "pending";
-  const hasPendingPayment = !!myRegistration && isPendingPaymentRegistration(myRegistration, event);
+  const hasPendingPayment = hasCurrentRegistration && isPendingPaymentRegistration(myRegistration, event);
   const balancePaymentMode = getEventBalancePaymentMode(event);
-  const isDepositPaid = !!myRegistration && isDepositRegistration(myRegistration);
+  const isDepositPaid = hasCurrentRegistration && isDepositRegistration(myRegistration);
   const hasOnlineBalanceDue = isDepositPaid && balancePaymentMode === "online";
-  const depositStatusMessage = myRegistration ? getDepositPaymentLabel(myRegistration, event) : null;
-  const isRegistered = !!myRegistration
-    && myRegistration.status !== "cancelled"
+  const depositStatusMessage = hasCurrentRegistration ? getDepositPaymentLabel(myRegistration, event) : null;
+  const isRegistered = hasCurrentRegistration
     && myRegistration.status !== "pending_payment"
     && !isLegacyPendingPayment;
   const isSportCategory = event.category?.name === "Sport & Movimento";
@@ -589,7 +589,7 @@ const EventDetail = () => {
   const serviceFeeAmount = event ? getServiceFeeAmount(event.payment_type) : 0;
   const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time, 0, serviceFeeAmount) : null;
   const cancellationDialogMessage = getCancellationDialogMessage(refundInfo);
-  const hasPaidPayment = myRegistration?.payment_status === "paid" || myRegistration?.payment_status === "deposit_paid";
+  const hasPaidPayment = hasCurrentRegistration && (myRegistration.payment_status === "paid" || myRegistration.payment_status === "deposit_paid");
 
   const handleCancelClick = () => {
     setShowCancelDialog(true);
@@ -613,14 +613,13 @@ const EventDetail = () => {
     }
   };
 
-  const needsPayment = !!myRegistration
-    && myRegistration.status !== "cancelled"
+  const needsPayment = hasCurrentRegistration
     && myRegistration.status !== "waitlist"
     && myRegistration.status !== "pending_approval"
     && isPaymentEvent
     && (myRegistration.payment_status === "pending" || hasOnlineBalanceDue);
-  const isPendingApproval = myRegistration?.status === "pending_approval";
-  const isOnWaitlist = myRegistration?.status === "waitlist";
+  const isPendingApproval = hasCurrentRegistration && myRegistration.status === "pending_approval";
+  const isOnWaitlist = hasCurrentRegistration && myRegistration.status === "waitlist";
 
   // Detect if a spot has become available for a waitlisted user
   const remainingSpots = event.spots_total - event.spots_taken;
