@@ -750,7 +750,7 @@ const EventManage = () => {
                             }
                             void handleStatusChange(reg.id, v);
                           }}>
-                            <SelectTrigger className="w-8 h-8 p-0 border-0">
+                            <SelectTrigger className="w-8 h-8 justify-center px-0 border-0 [&>span:first-child]:hidden">
                               <span className="sr-only">Actions</span>
                             </SelectTrigger>
                             <SelectContent>
