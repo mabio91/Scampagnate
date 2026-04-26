@@ -186,9 +186,7 @@ const EventManage = () => {
 
   const depositReminderCandidates = depositPaid.filter((r) => {
     if (r.sport_level?.startsWith("manual:")) return false;
-    const lastSentAt = (r as any).last_balance_reminder_sent_at;
-    if (!lastSentAt) return true;
-    return Date.now() - new Date(lastSentAt).getTime() > 12 * 60 * 60 * 1000;
+    return true;
   });
 
   // Check-in filtered list (by meeting point + search)
