@@ -144,11 +144,11 @@ export const CATEGORY_INTEREST_AFFINITY: Record<string, Record<string, number>> 
   },
 };
 
-export const FIT_SCORE_INTEREST_MIN = 1;
-export const FIT_SCORE_INTEREST_MAX = 1;
+export const FIT_SCORE_INTEREST_MIN = 2;
+export const FIT_SCORE_INTEREST_MAX = 4;
 export const FIT_SCORE_EVENT_SECONDARY_MAX = 2;
 export const FIT_SCORE_INTEREST_VALIDATION_MESSAGE =
-  "Seleziona 1 attività per continuare";
+  "Seleziona da 2 a 4 attività per continuare";
 
 export const normalizeInterestCategory = (value: string | null | undefined): string | null => {
   if (!value) return null;
