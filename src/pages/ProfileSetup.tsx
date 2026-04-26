@@ -13,6 +13,7 @@ import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadFull } from "tsparticles";
 import {
   FIT_SCORE_INTEREST_MIN,
+  FIT_SCORE_INTEREST_MAX,
   FIT_SCORE_INTEREST_VALIDATION_MESSAGE,
 } from "@/lib/fitScoreAffinityTables";
 
@@ -243,7 +244,17 @@ const ProfileSetup = () => {
   }, [isEditMode, step, navigate, scrollToTop]);
 
   const toggleInterest = (val: string) => {
-    setInterests((prev) => (prev[0] === val ? [] : [val]));
+    setInterests((prev) => {
+      if (prev.includes(val)) {
+        return prev.filter((interest) => interest !== val);
+      }
+
+      if (prev.length >= FIT_SCORE_INTEREST_MAX) {
+        return prev;
+      }
+
+      return [...prev, val];
+    });
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,7 +283,9 @@ const ProfileSetup = () => {
   const validateStep3 = useCallback(() => {
     const errors: { car?: boolean; interests?: boolean; motivation?: boolean } = {};
     if (!hasCar) errors.car = true;
-    if (interests.length < FIT_SCORE_INTEREST_MIN) errors.interests = true;
+    if (interests.length < FIT_SCORE_INTEREST_MIN || interests.length > FIT_SCORE_INTEREST_MAX) {
+      errors.interests = true;
+    }
     if (!eventMotivation) errors.motivation = true;
     setStep3Errors(errors);
     if (errors.car) {
@@ -295,7 +308,13 @@ const ProfileSetup = () => {
     if (hasCar && step3Errors.car) setStep3Errors(prev => ({ ...prev, car: false }));
   }, [hasCar]);
   useEffect(() => {
-    if (interests.length >= FIT_SCORE_INTEREST_MIN && step3Errors.interests) setStep3Errors(prev => ({ ...prev, interests: false }));
+    if (
+      interests.length >= FIT_SCORE_INTEREST_MIN &&
+      interests.length <= FIT_SCORE_INTEREST_MAX &&
+      step3Errors.interests
+    ) {
+      setStep3Errors(prev => ({ ...prev, interests: false }));
+    }
   }, [interests]);
   useEffect(() => {
     if (eventMotivation && step3Errors.motivation) setStep3Errors(prev => ({ ...prev, motivation: false }));
@@ -352,7 +371,11 @@ const ProfileSetup = () => {
   };
   const step1Valid = isValidPhone(phone) && !!dateOfBirth;
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
-  const step3Valid = !!hasCar && interests.length >= FIT_SCORE_INTEREST_MIN && !!eventMotivation;
+  const step3Valid =
+    !!hasCar &&
+    interests.length >= FIT_SCORE_INTEREST_MIN &&
+    interests.length <= FIT_SCORE_INTEREST_MAX &&
+    !!eventMotivation;
 
   if (!user || !profile) return null;
 
@@ -749,9 +772,9 @@ const ProfileSetup = () => {
                 {/* Interests */}
                 <div ref={interestsSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.interests ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
                   <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
-                    Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {step3Errors.interests && <span className="text-destructive text-xs font-normal">— Seleziona almeno 1 opzione</span>}
+                    Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {step3Errors.interests && <span className="text-destructive text-xs font-normal">— Seleziona da 2 a 4 opzioni</span>}
                   </Label>
-                  <p className="text-xs text-muted-foreground font-body">Seleziona 1 attivita.</p>
+                  <p className="text-xs text-muted-foreground font-body">Seleziona da 2 a 4 attività.</p>
                   {step3Errors.interests && (
                     <p className="text-xs font-body text-destructive">{FIT_SCORE_INTEREST_VALIDATION_MESSAGE}</p>
                   )}
@@ -774,7 +797,7 @@ const ProfileSetup = () => {
                         onClick={() => toggleInterest(opt.val)}
                         emoji={opt.emoji}
                         label={opt.label}
-                        disabled={false}
+                        disabled={interests.length >= FIT_SCORE_INTEREST_MAX}
                       />
                     ))}
                   </div>

@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
@@ -47,7 +46,6 @@ const EventManage = () => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancellingEvent, setCancellingEvent] = useState(false);
   const [participantFilter, setParticipantFilter] = useState<"all" | "participants" | "deposit_paid" | "attended" | "waitlist">("all");
-  const [selectedDepositReminderIds, setSelectedDepositReminderIds] = useState<string[]>([]);
   const [pendingCancelRegistrationId, setPendingCancelRegistrationId] = useState<string | null>(null);
 
   // Add participant state
@@ -186,9 +184,7 @@ const EventManage = () => {
 
   const depositReminderCandidates = depositPaid.filter((r) => {
     if (r.sport_level?.startsWith("manual:")) return false;
-    const lastSentAt = (r as any).last_balance_reminder_sent_at;
-    if (!lastSentAt) return true;
-    return Date.now() - new Date(lastSentAt).getTime() > 12 * 60 * 60 * 1000;
+    return true;
   });
 
   // Check-in filtered list (by meeting point + search)
@@ -243,12 +239,6 @@ const EventManage = () => {
     await handleStatusChange(regId, "cancelled");
   };
 
-  const toggleDepositReminderSelection = (regId: string) => {
-    setSelectedDepositReminderIds((prev) =>
-      prev.includes(regId) ? prev.filter((id) => id !== regId) : [...prev, regId]
-    );
-  };
-
   const sendBalanceReminders = async (registrationIds?: string[]) => {
     if (!event) return;
 
@@ -296,7 +286,6 @@ const EventManage = () => {
         .in("id", candidates.map((reg) => reg.id));
 
       queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
-      setSelectedDepositReminderIds([]);
       toast({ title: "Notifica inviata con successo" });
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
@@ -588,22 +577,25 @@ const EventManage = () => {
         </div>
 
         {/* Action Bar */}
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" className="gap-1 flex-1" onClick={() => { setAddMode("manual"); setShowAddParticipant(true); }}>
-            <UserPlus className="h-3.5 w-3.5" /> Add Participant
+        <div className="grid grid-cols-3 gap-2 min-w-0">
+          <Button size="sm" variant="outline" className="w-full min-w-0 gap-1 px-2 text-xs" onClick={() => { setAddMode("manual"); setShowAddParticipant(true); }}>
+            <UserPlus className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">Add Participant</span>
           </Button>
-          <Button size="sm" variant="outline" className="gap-1 flex-1" onClick={() => setShowMessageDialog(true)}>
-            <Send className="h-3.5 w-3.5" /> Message All
+          <Button size="sm" variant="outline" className="w-full min-w-0 gap-1 px-2 text-xs" onClick={() => setShowMessageDialog(true)}>
+            <Send className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">Message All</span>
           </Button>
           {hasDepositPayments && balancePaymentMode === "online" && (
             <Button
               size="sm"
               variant="outline"
-              className="gap-1 flex-1"
+              className="w-full min-w-0 gap-1 px-2 text-xs"
               disabled={sendingBalanceReminder || depositReminderCandidates.length === 0}
-              onClick={() => void sendBalanceReminders(selectedDepositReminderIds.length > 0 ? selectedDepositReminderIds : undefined)}
+              onClick={() => void sendBalanceReminders()}
             >
-              <Bell className="h-3.5 w-3.5" /> Sollecita saldo
+              <Bell className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Sollecita saldo</span>
             </Button>
           )}
         </div>
@@ -663,13 +655,6 @@ const EventManage = () => {
                   return (
                     <Card key={reg.id} className="p-3 space-y-2">
                       <div className="flex items-center gap-3">
-                        {hasDepositPayments && reg.status === "deposit_paid" && balancePaymentMode === "online" && !isManual && (
-                          <Checkbox
-                            checked={selectedDepositReminderIds.includes(reg.id)}
-                            onCheckedChange={() => toggleDepositReminderSelection(reg.id)}
-                            aria-label="Seleziona per sollecito saldo"
-                          />
-                        )}
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
                           {isManual ? "M" : ((reg.profiles as any)?.avatar_url ? (
                             <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
@@ -750,7 +735,7 @@ const EventManage = () => {
                             }
                             void handleStatusChange(reg.id, v);
                           }}>
-                            <SelectTrigger className="w-8 h-8 p-0 border-0">
+                            <SelectTrigger className="w-8 h-8 justify-center px-0 border-0 [&>span:first-child]:hidden">
                               <span className="sr-only">Actions</span>
                             </SelectTrigger>
                             <SelectContent>

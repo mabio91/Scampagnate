@@ -4,11 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import EmptyState from "@/components/EmptyState";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Activity, CalendarCheck, CalendarX, AlertCircle, CheckCircle2,
   Flame, Clock, TrendingUp, ChevronDown, ChevronUp, BarChart3, Shield,
-  ChevronRight
+  ChevronRight, X
 } from "lucide-react";
 
 interface RegistrationWithEvent {
@@ -41,6 +44,8 @@ export const ActivityHistory = () => {
   const { user } = useAuth();
   const [showTimeline, setShowTimeline] = useState(false);
   const [timelineLimit, setTimelineLimit] = useState(TIMELINE_PAGE_SIZE);
+  const [showStreakDetails, setShowStreakDetails] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data, isLoading } = useQuery({
     queryKey: ["user-activity-full", user?.id],
@@ -82,8 +87,13 @@ export const ActivityHistory = () => {
     const pastRegs = data
       .filter(r => r.events?.date && new Date(r.events.date) < now && (r.status === "registered" || r.status === "paid" || r.checked_in))
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
+    const streakEvents: RegistrationWithEvent[] = [];
     let streak = 0;
-    for (const reg of pastRegs) { if (reg.checked_in) streak++; else break; }
+    for (const reg of pastRegs) {
+      if (!reg.checked_in) break;
+      streak++;
+      streakEvents.push(reg);
+    }
 
     const lastAttended = data
       .filter(r => r.checked_in && r.events)
@@ -106,7 +116,7 @@ export const ActivityHistory = () => {
       .filter(r => r.events?.date && new Date(r.events.date) < now)
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
 
-    return { attended, cancelled, noShows, joined, streak, lastAttended, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline };
+    return { attended, cancelled, noShows, joined, streak, streakEvents, lastAttended, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline };
   }, [data]);
 
   const getStatusLabel = useCallback((reg: RegistrationWithEvent) => {
@@ -147,9 +157,68 @@ export const ActivityHistory = () => {
     );
   }
 
-  const { attended, cancelled, noShows, joined, streak, lastAttended, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline } = metrics;
+  const { attended, cancelled, noShows, joined, streak, streakEvents, lastAttended, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline } = metrics;
   const visibleTimeline = allTimeline.slice(0, timelineLimit);
   const hasMoreTimeline = allTimeline.length > timelineLimit;
+
+  const StreakDetailsContent = () => (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="text-xs font-body font-bold uppercase tracking-[0.24em] text-muted-foreground">
+          Streak attuale
+        </p>
+        <div className="mt-3 flex items-end justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${streak > 0 ? "bg-orange-500/10" : "bg-muted"}`}>
+              <Flame className={`h-6 w-6 ${streak > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+            </div>
+            <div>
+              <p className="text-3xl font-display font-bold leading-none text-foreground">{streak}</p>
+              <p className="mt-1 text-sm font-body text-muted-foreground">{streak === 1 ? "evento consecutivo" : "eventi consecutivi"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-xs font-display font-bold uppercase tracking-[0.24em] text-muted-foreground">
+          Eventi che contano per la streak
+        </h4>
+        {streakEvents.length > 0 ? (
+          <div className="mt-3 space-y-2">
+            {streakEvents.map((reg) => (
+              <Link
+                key={reg.id}
+                to={`/event/${reg.events!.id}`}
+                onClick={() => setShowStreakDetails(false)}
+                className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 transition-all duration-200 hover:border-primary/20 hover:shadow-sm active:scale-[0.99]"
+              >
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-base">
+                  {reg.events?.event_categories?.icon || "🗓️"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-body font-semibold text-foreground">{reg.events!.title}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-body text-muted-foreground">
+                    <span>
+                      {new Date(reg.events!.date).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-success">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Check-in confermato
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-3 rounded-xl border border-dashed border-border bg-card/60 p-4 text-sm font-body text-muted-foreground">
+            Nessun evento nella streak attuale.
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="mb-6 animate-fade-in">
@@ -165,32 +234,49 @@ export const ActivityHistory = () => {
         <StatCard icon={CalendarX} value={cancelled} label="Cancellati" iconColor="text-destructive" />
       </div>
 
-      {/* Streak + Last Event */}
-      <div className="flex gap-2 mb-4">
-        <div className="flex-1 p-3 rounded-xl bg-card border border-border flex items-center gap-3 transition-all duration-200 hover:shadow-sm">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${streak > 0 ? "bg-orange-500/10" : "bg-muted"}`}>
-            <Flame className={`h-5 w-5 ${streak > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+      {/* Streak */}
+      <button
+        type="button"
+        onClick={() => setShowStreakDetails(true)}
+        className="mb-4 w-full rounded-2xl border border-border bg-card p-4 text-left transition-all duration-200 hover:border-primary/20 hover:shadow-sm active:scale-[0.99]"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${streak > 0 ? "bg-orange-500/10" : "bg-muted"}`}>
+              <Flame className={`h-5 w-5 ${streak > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+            </div>
+            <span className="text-[11px] font-body font-bold uppercase tracking-[0.24em] text-muted-foreground">
+              Streak attuale
+            </span>
           </div>
-          <div>
-            <p className="text-sm font-display font-bold text-foreground">{streak} {streak === 1 ? "evento" : "eventi"}</p>
-            <p className="text-[10px] text-muted-foreground font-body uppercase font-bold tracking-wider">Streak attuale</p>
-          </div>
+          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/60" />
         </div>
+
+        <div className="mt-4">
+          <p className="text-4xl font-display font-bold leading-none text-foreground">
+            {streak}
+          </p>
+          <p className="mt-2 text-sm font-body text-muted-foreground">
+            {streak === 1 ? "evento consecutivo completato" : "eventi consecutivi completati"}
+          </p>
+        </div>
+
         {lastAttended?.events && (
-          <Link to={`/event/${lastAttended.events.id}`} className="flex-1 p-3 rounded-xl bg-card border border-border flex items-center gap-3 group transition-all duration-200 hover:shadow-sm hover:border-primary/20 active:scale-[0.98]">
-            <div className="w-9 h-9 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
-              <Clock className="h-5 w-5 text-secondary" />
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-border/60 bg-background/30 p-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-base">
+              {lastAttended.events.event_categories?.icon || <Clock className="h-5 w-5 text-secondary" />}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-body font-semibold text-foreground truncate">{lastAttended.events.title}</p>
-              <p className="text-[10px] text-muted-foreground font-body">
-                {new Date(lastAttended.events.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+              <p className="truncate text-sm font-body font-semibold text-foreground">
+                {lastAttended.events.title}
+              </p>
+              <p className="mt-1 text-[11px] font-body text-muted-foreground">
+                {new Date(lastAttended.events.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}
               </p>
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors flex-shrink-0" />
-          </Link>
+          </div>
         )}
-      </div>
+      </button>
 
       {/* Performance Insights */}
       <div className="mb-4">
@@ -299,6 +385,41 @@ export const ActivityHistory = () => {
             />
           )}
         </div>
+      )}
+
+      {isMobile ? (
+        <Drawer open={showStreakDetails} onOpenChange={setShowStreakDetails}>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader className="flex items-center justify-between pb-2">
+              <div>
+                <DrawerTitle className="font-display text-base">Dettaglio streak</DrawerTitle>
+                <DrawerDescription className="font-body text-sm">
+                  I tuoi eventi consecutivi completati piu recenti.
+                </DrawerDescription>
+              </div>
+              <DrawerClose asChild>
+                <button className="rounded-full p-1 hover:bg-muted">
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </DrawerClose>
+            </DrawerHeader>
+            <div className="overflow-y-auto px-4 pb-6">
+              <StreakDetailsContent />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={showStreakDetails} onOpenChange={setShowStreakDetails}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display text-base">Dettaglio streak</DialogTitle>
+              <DialogDescription className="font-body text-sm">
+                I tuoi eventi consecutivi completati piu recenti.
+              </DialogDescription>
+            </DialogHeader>
+            <StreakDetailsContent />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

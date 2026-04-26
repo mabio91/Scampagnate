@@ -140,6 +140,8 @@ const Index = () => {
       .toLowerCase()
       .trim();
 
+  const hasSearchQuery = normalizeSearchText(searchQuery).length > 0;
+
   // All upcoming, non-draft/past/cancelled events
   const allUpcoming = useMemo(() => {
     if (!events) return [];
@@ -350,7 +352,7 @@ const Index = () => {
             <QuickFilters active={quickFilters} onToggle={toggleQuickFilter} />
 
             {/* Personalized recommendations */}
-            {user && recommended.length > 0 && (
+            {user && recommended.length > 0 && !hasSearchQuery && (
               <div className="mt-4">
                 <RecommendedSection events={recommended} registeredEventIds={userRegisteredEventIds} />
               </div>

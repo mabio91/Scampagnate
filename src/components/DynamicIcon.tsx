@@ -12,8 +12,22 @@ function DynamicIconInner({ value, className = "", size = 20, style }: DynamicIc
   if (!value) return null;
 
   if (value.startsWith("lucide:")) {
-    const iconName = value.replace("lucide:", "") as keyof typeof icons;
-    const IconComponent = icons[iconName] as LucideIcon | undefined;
+    const rawIconName = value.replace("lucide:", "").trim();
+    const normalizedIconName = rawIconName
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join("");
+
+    const iconCandidates = [
+      rawIconName,
+      normalizedIconName,
+      rawIconName.charAt(0).toUpperCase() + rawIconName.slice(1),
+    ] as (keyof typeof icons)[];
+
+    const IconComponent = iconCandidates
+      .map((candidate) => icons[candidate] as LucideIcon | undefined)
+      .find(Boolean);
 
     if (IconComponent) {
       return <IconComponent className={className} size={size} style={style} />;

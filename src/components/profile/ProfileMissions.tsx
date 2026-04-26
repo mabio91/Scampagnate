@@ -5,6 +5,7 @@ import { useSearch } from "@/contexts/SearchContext";
 import { Progress } from "@/components/ui/progress";
 import { Target, Gift, CheckCircle, ChevronRight, Clock, Ticket, Trophy, Beer } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
+import DynamicIcon from "@/components/DynamicIcon";
 
 const TYPE_LABELS: Record<string, string> = {
   one_time: "Una tantum",
@@ -34,39 +35,44 @@ const ProfileMissions = () => {
   const { setSelectedCategory, toggleQuickFilter, clearAllFilters } = useSearch();
   const { data: userMissions = [] } = useUserMissions(user?.id);
   const { data: activeMissions = [] } = useActiveMissions();
+  const userMissionMap = new Map(userMissions.map((mission) => [mission.mission_id, mission]));
 
-  const missionsToShow = userMissions.length > 0
-    ? userMissions.map(um => ({
-        id: um.mission_id,
-        title: um.missions?.title || "",
-        description: um.missions?.description || "",
-        progress: um.progress,
-        target: um.missions?.target_value || 1,
-        rewardPoints: um.missions?.reward_points || 0,
-        completed: um.completed,
-        type: um.missions?.type || "one_time",
-        icon: (um.missions as any)?.icon || "🎯",
-        reward_type: (um.missions as any)?.reward_type || "points",
-        reward_value: (um.missions as any)?.reward_value || null,
-        category: (um.missions as any)?.category || null,
-        target_action: (um.missions as any)?.target_action || "event_attended",
-        expires_at: (um.missions as any)?.expires_at || null,
-      }))
-    : activeMissions.slice(0, 4).map(m => ({
-        id: m.id,
-        title: m.title,
-        description: m.description,
-        progress: 0,
-        target: m.target_value,
-        rewardPoints: m.reward_points,
-        completed: false,
-        type: m.type,
-        icon: (m as any).icon || "🎯",
-        reward_type: (m as any).reward_type || "points",
-        reward_value: (m as any).reward_value || null,
-        category: m.category || null,
-        target_action: (m as any).target_action || "event_attended",
-        expires_at: (m as any).expires_at || null,
+  const missionsToShow = activeMissions.length > 0
+    ? activeMissions.map((mission) => {
+        const userMission = userMissionMap.get(mission.id);
+
+        return {
+          id: mission.id,
+          title: mission.title,
+          description: mission.description,
+          progress: userMission?.progress ?? 0,
+          target: mission.target_value,
+          rewardPoints: mission.reward_points,
+          completed: userMission?.completed ?? false,
+          type: mission.type,
+          icon: (mission as any).icon || "lucide:Target",
+          reward_type: (mission as any).reward_type || "points",
+          reward_value: (mission as any).reward_value || null,
+          category: mission.category || null,
+          target_action: (mission as any)?.target_action || "event_attended",
+          expires_at: (mission as any)?.expires_at || null,
+        };
+      })
+    : userMissions.map((mission) => ({
+        id: mission.mission_id,
+        title: mission.missions?.title || "",
+        description: mission.missions?.description || "",
+        progress: mission.progress,
+        target: mission.missions?.target_value || 1,
+        rewardPoints: mission.missions?.reward_points || 0,
+        completed: mission.completed,
+        type: mission.missions?.type || "one_time",
+        icon: (mission.missions as any)?.icon || "lucide:Target",
+        reward_type: (mission.missions as any)?.reward_type || "points",
+        reward_value: (mission.missions as any)?.reward_value || null,
+        category: (mission.missions as any)?.category || null,
+        target_action: (mission.missions as any)?.target_action || "event_attended",
+        expires_at: (mission.missions as any)?.expires_at || null,
       }));
 
   const handleMissionClick = (mission: any) => {
@@ -123,7 +129,7 @@ const ProfileMissions = () => {
                     {mission.completed ? (
                       <CheckCircle className="h-4 w-4 text-primary" />
                     ) : (
-                      <span>{mission.icon}</span>
+                      <DynamicIcon value={mission.icon} size={16} className="text-foreground" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -133,19 +139,23 @@ const ProfileMissions = () => {
                     </div>
                     <p className="text-[11px] font-body text-muted-foreground">{mission.description}</p>
 
-                    {!mission.completed && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Progress
-                          value={(mission.progress / mission.target) * 100}
-                          className="h-1.5 flex-1"
-                        />
-                        <span className="text-[10px] font-display text-muted-foreground font-bold whitespace-nowrap">
-                          {mission.progress} di {mission.target}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Progress
+                        value={(Math.min(mission.progress, mission.target) / mission.target) * 100}
+                        className="h-1.5 flex-1"
+                      />
+                      <span className="text-[10px] font-display text-muted-foreground font-bold whitespace-nowrap">
+                        {Math.min(mission.progress, mission.target)} di {mission.target}
+                      </span>
+                    </div>
+
+                    {mission.completed && (
+                      <p className="text-[10px] font-body text-primary mt-1 flex items-center gap-1 font-semibold">
+                        <CheckCircle className="h-3 w-3" />
+                        Completata
+                      </p>
                     )}
 
-                    {/* Reward hint under progress */}
                     {!mission.completed && hasReward && (
                       <p className="text-[10px] font-body text-primary mt-1 flex items-center gap-1">
                         {RewardIcon && <RewardIcon className="h-3 w-3" />}

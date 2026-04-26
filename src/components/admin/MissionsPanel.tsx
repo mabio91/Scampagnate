@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit3, Trash2, Target, Gift, Trophy, Ticket } from "lucide-react";
+import DynamicIcon from "@/components/DynamicIcon";
 
 interface MissionFormData {
   title: string;
@@ -201,7 +202,9 @@ const MissionsPanel = () => {
           <Card key={m.id} className="p-4 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="text-lg">{m.icon}</span>
+                <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                  <DynamicIcon value={m.icon} size={18} className="text-foreground" />
+                </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="font-display font-bold text-sm text-foreground truncate">{m.title}</h4>
                   <p className="text-xs font-body text-muted-foreground line-clamp-1">{m.description}</p>
