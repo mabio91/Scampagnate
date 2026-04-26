@@ -5,6 +5,7 @@ import { useSearch } from "@/contexts/SearchContext";
 import { Progress } from "@/components/ui/progress";
 import { Target, Gift, CheckCircle, ChevronRight, Clock, Ticket, Trophy, Beer } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
+import DynamicIcon from "@/components/DynamicIcon";
 
 const TYPE_LABELS: Record<string, string> = {
   one_time: "Una tantum",
@@ -123,7 +124,7 @@ const ProfileMissions = () => {
                     {mission.completed ? (
                       <CheckCircle className="h-4 w-4 text-primary" />
                     ) : (
-                      <span>{mission.icon}</span>
+                      <DynamicIcon value={mission.icon} size={16} className="text-foreground" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
