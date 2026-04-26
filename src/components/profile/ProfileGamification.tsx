@@ -3,13 +3,13 @@ import { useCommunityLevel, useAllCommunityLevels } from "@/hooks/useCommunityLe
 import { Progress } from "@/components/ui/progress";
 import { Star, TrendingUp } from "lucide-react";
 
-const LEVEL_VISUALS: Record<number, { icon: string; decoration: string }> = {
-  1: { icon: "🌱", decoration: "" },
-  2: { icon: "🥾", decoration: "⭐" },
-  3: { icon: "🗺️", decoration: "⭐" },
-  4: { icon: "⛰️", decoration: "⭐⭐" },
-  5: { icon: "👑", decoration: "👑" },
-  6: { icon: "👑🔥", decoration: "👑🔥" },
+const LEVEL_VISUALS: Record<number, { icon: string[]; decoration: string }> = {
+  1: { icon: ["🌱"], decoration: "" },
+  2: { icon: ["🥾"], decoration: "⭐" },
+  3: { icon: ["🗺️"], decoration: "⭐" },
+  4: { icon: ["⛰️"], decoration: "⭐⭐" },
+  5: { icon: ["👑"], decoration: "👑" },
+  6: { icon: ["👑", "🔥"], decoration: "👑🔥" },
 };
 
 const ProfileGamification = () => {
@@ -20,8 +20,7 @@ const ProfileGamification = () => {
 
   if (!currentLevel) return null;
 
-  // Find next level
-  const nextLevel = allLevels.find(l => l.min_points > points);
+  const nextLevel = allLevels.find((l) => l.min_points > points);
   const progressToNext = nextLevel
     ? ((points - currentLevel.min_points) / (nextLevel.min_points - currentLevel.min_points)) * 100
     : 100;
@@ -36,7 +35,6 @@ const ProfileGamification = () => {
       </h2>
 
       <div className="p-4 rounded-2xl bg-card border border-border">
-        {/* Points */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Star className="h-5 w-5 text-primary" />
@@ -46,13 +44,19 @@ const ProfileGamification = () => {
           </div>
         </div>
 
-        {/* Current Level */}
         <div className="flex items-center gap-3 mb-3">
           <div
-            className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-2xl leading-none whitespace-nowrap"
+            className="relative w-12 h-12 shrink-0 rounded-full"
             style={{ backgroundColor: `${currentLevel.color}20`, border: `2px solid ${currentLevel.color}` }}
           >
-            {visual.icon}
+            <span className="absolute left-1/2 top-[22%] -translate-x-1/2 -translate-y-1/2 text-lg leading-none">
+              {visual.icon[0]}
+            </span>
+            {visual.icon[1] && (
+              <span className="absolute left-1/2 top-[68%] -translate-x-1/2 -translate-y-1/2 text-base leading-none">
+                {visual.icon[1]}
+              </span>
+            )}
           </div>
           <div className="flex-1">
             <p className="text-sm font-display font-bold text-foreground">
@@ -70,7 +74,6 @@ const ProfileGamification = () => {
           </div>
         </div>
 
-        {/* Progress bar */}
         {nextLevel && (
           <div className="flex items-center gap-2">
             <Progress value={progressToNext} className="h-2 flex-1" />
