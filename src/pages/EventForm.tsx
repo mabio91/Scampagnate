@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import { MANUAL_BADGE_OPTIONS } from "@/lib/eventBadges";
 import { FIT_SCORE_EVENT_SECONDARY_MAX, INTEREST_CATEGORY_OPTIONS } from "@/lib/fitScoreAffinityTables";
-import { getRandomEventClosingSentence } from "@/lib/eventClosingSentences";
+import { getRandomEventClosingSentence, normalizeEventClosingSentence } from "@/lib/eventClosingSentences";
 
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { Button } from "@/components/ui/button";
@@ -368,7 +368,12 @@ const EventForm = () => {
 
       if (event.additional_fields) {
         const af = event.additional_fields as any;
-        setClosingSentence(isDuplicating ? getRandomEventClosingSentence() : (af.closing_sentence || getRandomEventClosingSentence()));
+        const normalized = normalizeEventClosingSentence(af.closing_sentence);
+        setClosingSentence(
+          isDuplicating
+            ? getRandomEventClosingSentence()
+            : (normalized as ReturnType<typeof getRandomEventClosingSentence>) || getRandomEventClosingSentence()
+        );
         setFitScoreMainCategory(af.fit_score_main_category || "");
         setFitScoreSecondaryCategories(
           Array.isArray(af.fit_score_secondary_categories)
@@ -676,7 +681,7 @@ const EventForm = () => {
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: {
-          closing_sentence: closingSentence,
+          closing_sentence: normalizeEventClosingSentence(closingSentence),
           fit_score_main_category: fitScoreMainCategory,
           fit_score_secondary_categories: fitScoreSecondaryCategories,
           fields: additionalFields.filter((f) => f.label.trim()),

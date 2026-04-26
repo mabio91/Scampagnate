@@ -7,6 +7,12 @@ export const EVENT_CLOSING_SENTENCES = [
   "Qui si conoscono persone, non solo posti",
 ] as const;
 
+export const normalizeEventClosingSentence = (sentence?: string | null) => {
+  if (!sentence) return "";
+
+  return sentence.replace(/^(?:\u2728\s*)+/u, "").trim();
+};
+
 export const getRandomEventClosingSentence = () =>
   EVENT_CLOSING_SENTENCES[Math.floor(Math.random() * EVENT_CLOSING_SENTENCES.length)];
 

@@ -28,6 +28,7 @@ import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImag
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getDeterministicEventClosingSentence, normalizeEventClosingSentence } from "@/lib/eventClosingSentences";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
@@ -46,7 +47,6 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
-import { getDeterministicEventClosingSentence } from "@/lib/eventClosingSentences";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 
 const EDGE_GATEWAY_JWT =
@@ -1202,9 +1202,10 @@ const getCTALabel = () => {
 
         {/* REGOLE & INFO – collapsible, dynamic based on cancellation policy */}
         {(() => {
-          const closingSentence =
+          const closingSentence = normalizeEventClosingSentence(
             (event.additional_fields as any)?.closing_sentence ||
-            getDeterministicEventClosingSentence(event.id);
+            getDeterministicEventClosingSentence(event.id)
+          );
 
           const policy = getPolicyDefinition(event.cancellation_policy);
           const isFlexible = policy.type !== "non_refundable";
