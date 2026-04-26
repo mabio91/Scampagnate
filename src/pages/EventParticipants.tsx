@@ -262,6 +262,20 @@ const EventParticipants = () => {
   const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
 
   const participantIds = useMemo(() => (participants || []).map((p: any) => p.user_id), [participants]);
+
+  const { data: publicParticipantProfiles } = useQuery({
+    queryKey: ["participant-public-profiles", participantIds],
+    queryFn: async () => {
+      if (participantIds.length === 0) return {};
+      const { data } = await supabase.rpc("get_public_profiles", { profile_ids: participantIds });
+      const map: Record<string, any> = {};
+      ((data as any[]) || []).forEach((profile: any) => {
+        map[profile.id] = profile;
+      });
+      return map;
+    },
+    enabled: participantIds.length > 0,
+  });
   
   // Fetch full profiles (for fit score calc + points)
   const { data: fullProfiles } = useQuery({
@@ -323,7 +337,7 @@ const EventParticipants = () => {
     enabled: !!event?.organizer_id,
   });
 
-  const organizerPoints = organizerFullProfile?.total_points || 0;
+  const organizerPoints = organizerFullProfile?.total_points ?? (organizerProfile as any)?.total_points ?? 0;
   const { data: organizerLevel } = useCommunityLevel(organizerPoints);
 
   const accessRules = (event?.access_rules as AccessRulesConfig | null)?.rules || [];
@@ -528,7 +542,7 @@ const EventParticipants = () => {
             <div>
               {participants.map((p: any) => {
                 const pProfile = fullProfiles?.[p.user_id];
-                const points = pProfile?.total_points || 0;
+                const points = pProfile?.total_points ?? publicParticipantProfiles?.[p.user_id]?.total_points ?? 0;
 
                 if (isOrgOrAdmin) {
                   const fitScore = pProfile
