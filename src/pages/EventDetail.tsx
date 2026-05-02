@@ -1667,7 +1667,7 @@ const getCTALabel = () => {
           <DialogHeader>
             <DialogTitle className="font-display">Completa i dati per il tesseramento</DialogTitle>
             <DialogDescription className="font-body text-sm leading-relaxed">
-              Per partecipare a questo evento e necessario completare i dati richiesti per il tesseramento all'associazione.
+              Per partecipare a questo evento è necessario completare i dati richiesti per il tesseramento all'associazione.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-col gap-2">

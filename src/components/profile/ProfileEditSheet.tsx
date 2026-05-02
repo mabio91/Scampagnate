@@ -373,7 +373,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <MembershipLabel>Citta di residenza</MembershipLabel>
+                    <MembershipLabel>Città di residenza</MembershipLabel>
                     <Input value={cityOfResidence} onChange={(e) => { setCityOfResidence(e.target.value); markChanged(); }} className="mt-1" />
                   </div>
                   <div>

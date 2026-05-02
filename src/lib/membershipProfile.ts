@@ -12,7 +12,7 @@ export const MEMBERSHIP_REQUIRED_FIELDS = [
   { key: "birth_place", label: "Luogo di nascita" },
   { key: "province_of_birth", label: "Provincia di nascita" },
   { key: "residential_address", label: "Indirizzo di residenza" },
-  { key: "city_of_residence", label: "Citta di residenza" },
+  { key: "city_of_residence", label: "Città di residenza" },
   { key: "province_of_residence", label: "Provincia di residenza" },
 ] as const;
 
