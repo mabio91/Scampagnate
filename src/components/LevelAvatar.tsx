@@ -23,9 +23,9 @@ const LEVEL_ICONS: Record<number, string> = {
 };
 
 const SIZE_MAP = {
-  sm: { avatar: "w-9 h-9", ring: 2, badge: "text-[8px] -bottom-0.5 -right-0.5 w-4 h-4" },
-  md: { avatar: "w-11 h-11", ring: 2.5, badge: "text-[9px] -bottom-0.5 -right-0.5 w-5 h-5" },
-  lg: { avatar: "w-16 h-16", ring: 3, badge: "text-xs -bottom-1 -right-1 w-6 h-6" },
+  sm: { avatar: "w-9 h-9", ring: 2, badge: "text-[8px] -bottom-0.5 -right-0.5 w-4 h-4", multiBadge: "text-[8px] -bottom-0.5 -right-1.5 w-6 h-4" },
+  md: { avatar: "w-11 h-11", ring: 2.5, badge: "text-[9px] -bottom-0.5 -right-0.5 w-5 h-5", multiBadge: "text-[9px] -bottom-0.5 -right-2 w-7 h-5" },
+  lg: { avatar: "w-16 h-16", ring: 3, badge: "text-xs -bottom-1 -right-1 w-6 h-6", multiBadge: "text-xs -bottom-1 -right-3 w-9 h-6" },
 };
 
 const LevelAvatar = ({
@@ -43,7 +43,7 @@ const LevelAvatar = ({
   const level = externalLevel ?? fetchedLevel;
   const sizeConfig = SIZE_MAP[size];
   const levelIcon = level ? LEVEL_ICONS[level.level_number] || "" : "";
-  const stackedLevelIcons = level?.level_number === 6 ? Array.from(levelIcon) : [];
+  const levelIconParts = Array.from(levelIcon);
   const levelColor = level?.color || "hsl(var(--muted-foreground))";
   const isHighLevel = level && level.level_number >= 5;
 
@@ -71,13 +71,13 @@ const LevelAvatar = ({
       {/* Level badge overlay */}
       {showBadge && levelIcon && level && level.level_number >= 2 && (
         <span
-          className={`absolute ${sizeConfig.badge} rounded-full bg-background border border-border flex items-center justify-center overflow-hidden leading-none`}
+          className={`absolute ${levelIconParts.length > 1 ? sizeConfig.multiBadge : sizeConfig.badge} rounded-full bg-background border border-border flex items-center justify-center overflow-hidden leading-none`}
           title={level.name}
         >
-          {stackedLevelIcons.length > 0 ? (
-            <span className="flex h-full w-full flex-col items-center justify-center leading-[0.72] -translate-y-px">
-              {stackedLevelIcons.map((icon, index) => (
-                <span key={`${icon}-${index}`} className="block text-center leading-[0.72]">
+          {levelIconParts.length > 1 ? (
+            <span className="flex h-full w-full flex-row items-center justify-center gap-0.5 px-0.5 leading-none">
+              {levelIconParts.map((icon, index) => (
+                <span key={`${icon}-${index}`} className="block shrink-0 text-center leading-none">
                   {icon}
                 </span>
               ))}
