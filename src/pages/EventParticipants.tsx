@@ -362,7 +362,7 @@ const EventParticipants = () => {
   if (eventLoading || participantsLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top min-h-[calc(56px+env(safe-area-inset-top,0px))] flex items-center gap-3">
+        <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top [--header-safe-offset:0.75rem] min-h-[calc(56px+env(safe-area-inset-top,0px))] flex items-center gap-3">
           <Skeleton className="w-8 h-8 rounded-full" />
           <Skeleton className="h-6 w-32" />
         </div>
@@ -399,7 +399,7 @@ const EventParticipants = () => {
     return (
       <div className="min-h-screen bg-background relative">
         {/* Header */}
-        <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top min-h-[calc(56px+env(safe-area-inset-top,0px))] flex items-center gap-3">
+        <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top [--header-safe-offset:0.75rem] min-h-[calc(56px+env(safe-area-inset-top,0px))] flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft className="h-5 w-5 text-foreground" /></button>
           <h2 className="font-display text-lg font-bold text-foreground">Partecipanti</h2>
           {totalParticipants > 0 && (
@@ -498,7 +498,7 @@ const EventParticipants = () => {
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top min-h-[calc(56px+env(safe-area-inset-top,0px))] flex items-center gap-3">
+      <div className="sticky top-0 bg-background z-10 px-4 py-3 header-safe-top [--header-safe-offset:0.75rem] min-h-[calc(56px+env(safe-area-inset-top,0px))] flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
