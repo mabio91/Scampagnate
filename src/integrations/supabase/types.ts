@@ -1262,6 +1262,9 @@ export type Database = {
           activity_frequency: string | null
           avatar_url: string | null
           bio: string | null
+          birth_date: string | null
+          birth_place: string | null
+          city_of_residence: string | null
           created_at: string
           email: string | null
           event_motivation: string | null
@@ -1283,6 +1286,9 @@ export type Database = {
           phone_verified: boolean | null
           phone_verified_at: string | null
           preferences: Json | null
+          province_of_birth: string | null
+          province_of_residence: string | null
+          residential_address: string | null
           self_level: string | null
           total_points: number
           trekking_experience: string | null
@@ -1293,6 +1299,9 @@ export type Database = {
           activity_frequency?: string | null
           avatar_url?: string | null
           bio?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          city_of_residence?: string | null
           created_at?: string
           email?: string | null
           event_motivation?: string | null
@@ -1314,6 +1323,9 @@ export type Database = {
           phone_verified?: boolean | null
           phone_verified_at?: string | null
           preferences?: Json | null
+          province_of_birth?: string | null
+          province_of_residence?: string | null
+          residential_address?: string | null
           self_level?: string | null
           total_points?: number
           trekking_experience?: string | null
@@ -1324,6 +1336,9 @@ export type Database = {
           activity_frequency?: string | null
           avatar_url?: string | null
           bio?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          city_of_residence?: string | null
           created_at?: string
           email?: string | null
           event_motivation?: string | null
@@ -1345,6 +1360,9 @@ export type Database = {
           phone_verified?: boolean | null
           phone_verified_at?: string | null
           preferences?: Json | null
+          province_of_birth?: string | null
+          province_of_residence?: string | null
+          residential_address?: string | null
           self_level?: string | null
           total_points?: number
           trekking_experience?: string | null

@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { isMembershipActive, isMembershipExpired } from "@/lib/membership";
+import { hasCompleteMembershipProfile } from "@/lib/membershipProfile";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
@@ -31,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getDeterministicEventClosingSentence, normalizeEventClosingSentence } from "@/lib/eventClosingSentences";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -109,6 +110,7 @@ const EventDetail = () => {
   const { id } = useParams();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, isOrganizer, isAdmin } = useAuth();
   const { toast } = useToast();
   const { data: event, isLoading } = useEvent(id!);
@@ -134,6 +136,7 @@ const EventDetail = () => {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [showAccessWarning, setShowAccessWarning] = useState(false);
+  const [showMembershipDataDialog, setShowMembershipDataDialog] = useState(false);
   const [isRequestingOverride, setIsRequestingOverride] = useState(false);
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
   const [sportLevel, setSportLevel] = useState("");
@@ -189,6 +192,7 @@ const EventDetail = () => {
   const showStickyHeader = scrollY > heroHeight - 60;
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
+  const eventRequiresMembership = !!eventAccessRules?.rules?.some((rule) => rule.type === "require_membership");
   const { data: accessData, isLoading: accessLoading } = useCheckEventAccessRules(eventAccessRules, event?.difficulty || null);
   const exclusivityIndicators = getExclusivityIndicators(eventAccessRules);
 
@@ -363,6 +367,19 @@ const EventDetail = () => {
     }
   };
 
+  const redirectToMembershipProfile = () => {
+    const returnTo = `${location.pathname}${location.search}`;
+    setShowMembershipDataDialog(false);
+    setShowRegisterDialog(false);
+    navigate(`/profile?section=membership&returnTo=${encodeURIComponent(returnTo)}`);
+  };
+
+  const ensureMembershipDataForMembershipFlow = () => {
+    if (hasCompleteMembershipProfile(profile)) return true;
+    setShowMembershipDataDialog(true);
+    return false;
+  };
+
   const handleCTA = () => {
     if (!user) {
       navigate("/auth");
@@ -374,6 +391,10 @@ const EventDetail = () => {
       return;
     }
     if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "past") return;
+
+    if ((eventRequiresMembership || !isMembershipActive(profile) || needsPayment) && !ensureMembershipDataForMembershipFlow()) {
+      return;
+    }
 
     // Waitlisted user with spot available → go directly to payment/checkout
     if (waitlistSpotAvailable) {
@@ -467,6 +488,7 @@ const EventDetail = () => {
 
 
   const handleMembershipCheckout = async () => {
+    if (!ensureMembershipDataForMembershipFlow()) return;
     setMembershipLoading(true);
     try {
       const { data, error } = await invokeAuthenticatedFunction("create-membership-checkout", { eventId: event.id });
@@ -484,6 +506,7 @@ const EventDetail = () => {
 
   const handleEventPayment = async () => {
     if (!myRegistration) return;
+    if (!isMembershipActive(profile) && !ensureMembershipDataForMembershipFlow()) return;
     setPaymentLoading(true);
     try {
       const body: any = { eventId: event.id, registrationId: myRegistration.id };
@@ -514,6 +537,10 @@ const EventDetail = () => {
   };
 
   const handleRegister = async (requestApproval = false) => {
+    if ((eventRequiresMembership || !isMembershipActive(profile)) && !ensureMembershipDataForMembershipFlow()) {
+      return;
+    }
+
     if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
       await handleMembershipCheckout();
       return;
@@ -1551,6 +1578,10 @@ const getCTALabel = () => {
           if (opts.appliedDiscount) setAppliedDiscount(opts.appliedDiscount);
           if (opts.priceOptionId) setSelectedPriceOption(opts.priceOptionId);
 
+          if ((eventRequiresMembership || !isMembershipActive(profile)) && !ensureMembershipDataForMembershipFlow()) {
+            return;
+          }
+
           // Check membership for free/location events
           if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
             await handleMembershipCheckout();
@@ -1629,6 +1660,30 @@ const getCTALabel = () => {
         requiresApproval={accessData?.requiresApproval}
         isSportCategory={isSportCategory}
       />
+
+      {/* Missing membership data Dialog */}
+      <Dialog open={showMembershipDataDialog} onOpenChange={setShowMembershipDataDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Completa i dati per il tesseramento</DialogTitle>
+            <DialogDescription className="font-body text-sm leading-relaxed">
+              Per partecipare a questo evento e necessario completare i dati richiesti per il tesseramento all'associazione.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <Button onClick={redirectToMembershipProfile} className="w-full font-body">
+              Completa profilo
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full font-body"
+              onClick={() => setShowMembershipDataDialog(false)}
+            >
+              Annulla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Access Warning Dialog */}
       <Dialog open={showAccessWarning} onOpenChange={setShowAccessWarning}>

@@ -10,6 +10,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const hasCompleteMembershipData = (profile: Record<string, unknown> | null) =>
+  !!profile &&
+  [
+    "birth_date",
+    "birth_place",
+    "province_of_birth",
+    "residential_address",
+    "city_of_residence",
+    "province_of_residence",
+  ].every((key) => {
+    const value = profile[key];
+    return typeof value === "string" ? value.trim().length > 0 : value != null;
+  });
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -76,7 +90,7 @@ serve(async (req) => {
     // Fetch event details using admin client to bypass RLS
     const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
-      .select("id, title, price, deposit, payment_type, balance_payment_mode, spots_total, spots_taken, cancellation_policy")
+      .select("id, title, price, deposit, payment_type, balance_payment_mode, spots_total, spots_taken, cancellation_policy, access_rules")
       .eq("id", eventId)
       .single();
 
@@ -95,7 +109,7 @@ serve(async (req) => {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("membership_status, membership_registration_date")
+      .select("membership_status, membership_registration_date, birth_date, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
       .eq("id", userId)
       .maybeSingle();
 
@@ -113,6 +127,16 @@ serve(async (req) => {
       const expiry = new Date(year, 11, 31, 23, 59, 59, 999);
       return new Date() < expiry;
     })();
+
+    const eventRequiresMembership = Array.isArray(event.access_rules?.rules) &&
+      event.access_rules.rules.some((rule: { type?: string }) => rule.type === "require_membership");
+
+    if ((eventRequiresMembership || !hasActiveMembership) && !hasCompleteMembershipData(profile)) {
+      return new Response(
+        JSON.stringify({ error: "Completa i dati per il tesseramento prima di procedere." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
     // Fetch membership fee from platform_settings
     let membershipFeeEuros = 10; // fallback

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
@@ -24,11 +24,18 @@ const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [showProposalForm, setShowProposalForm] = useState(false);
   const [showPointsInfo, setShowPointsInfo] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("section") === "membership") {
+      setShowEditSheet(true);
+    }
+  }, [searchParams]);
 
   if (!user) {
     return (
