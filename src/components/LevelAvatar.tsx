@@ -43,6 +43,7 @@ const LevelAvatar = ({
   const level = externalLevel ?? fetchedLevel;
   const sizeConfig = SIZE_MAP[size];
   const levelIcon = level ? LEVEL_ICONS[level.level_number] || "" : "";
+  const stackedLevelIcons = level?.level_number === 6 ? Array.from(levelIcon) : [];
   const levelColor = level?.color || "hsl(var(--muted-foreground))";
   const isHighLevel = level && level.level_number >= 5;
 
@@ -70,10 +71,22 @@ const LevelAvatar = ({
       {/* Level badge overlay */}
       {showBadge && levelIcon && level && level.level_number >= 2 && (
         <span
-          className={`absolute ${sizeConfig.badge} rounded-full bg-background border border-border flex items-center justify-center`}
+          className={`absolute ${sizeConfig.badge} rounded-full bg-background border border-border flex items-center justify-center overflow-hidden leading-none`}
           title={level.name}
         >
-          {levelIcon}
+          {stackedLevelIcons.length > 0 ? (
+            <span className="flex h-full w-full flex-col items-center justify-center leading-[0.72] -translate-y-px">
+              {stackedLevelIcons.map((icon, index) => (
+                <span key={`${icon}-${index}`} className="block text-center leading-[0.72]">
+                  {icon}
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span className="block translate-y-px text-center leading-none">
+              {levelIcon}
+            </span>
+          )}
         </span>
       )}
     </div>
