@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
+import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
+import { countUniqueAttendedEvents } from "@/lib/eventRegistrations";
 
 export interface PriceOption {
   id: string;
@@ -44,13 +46,13 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
         isMember = isMembershipActiveFn(profile);
 
         // Count attended events
-        const { count } = await supabase
+        const { data: attendedRows } = await supabase
           .from("event_registrations")
-          .select("id", { count: "exact", head: true })
+          .select("event_id, status, checked_in, created_at")
           .eq("user_id", user.id)
-          .eq("checked_in", true)
-          .in("status", ["registered", "paid"]);
-        attendedCount = count || 0;
+          .or("status.eq.attended,checked_in.eq.true")
+          .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
+        attendedCount = countUniqueAttendedEvents(attendedRows || []);
 
         // Get user badges
         const { data: badges } = await supabase

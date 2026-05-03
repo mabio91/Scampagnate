@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit3, Trash2, Target, Gift, Trophy, Ticket } from "lucide-react";
+import { Plus, Edit3, Trash2, Target, Gift, Trophy, Ticket, ArrowUp, ArrowDown } from "lucide-react";
 import DynamicIcon from "@/components/DynamicIcon";
 
 interface MissionFormData {
@@ -88,7 +88,8 @@ const MissionsPanel = () => {
       const { data, error } = await supabase
         .from("missions")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -155,7 +156,10 @@ const MissionsPanel = () => {
         const { error } = await supabase.from("missions").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("missions").insert(payload);
+        const nextSortOrder = missions?.length
+          ? Math.max(...missions.map((mission: any) => Number(mission.sort_order ?? 0))) + 1
+          : 0;
+        const { error } = await supabase.from("missions").insert({ ...payload, sort_order: nextSortOrder });
         if (error) throw error;
       }
 
@@ -184,6 +188,32 @@ const MissionsPanel = () => {
     if (!error) queryClient.invalidateQueries({ queryKey: ["admin-missions"] });
   };
 
+  const moveMission = async (index: number, direction: -1 | 1) => {
+    if (!missions) return;
+    const targetIndex = index + direction;
+    const current = missions[index] as any;
+    const target = missions[targetIndex] as any;
+    if (!current || !target) return;
+
+    const currentOrder = Number(current.sort_order ?? index);
+    const targetOrder = Number(target.sort_order ?? targetIndex);
+
+    const { error } = await supabase
+      .from("missions")
+      .upsert([
+        { id: current.id, sort_order: targetOrder, updated_at: new Date().toISOString() },
+        { id: target.id, sort_order: currentOrder, updated_at: new Date().toISOString() },
+      ] as any);
+
+    if (error) {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["admin-missions"] });
+    queryClient.invalidateQueries({ queryKey: ["active-missions"] });
+  };
+
   if (isLoading) {
     return <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>;
   }
@@ -198,7 +228,7 @@ const MissionsPanel = () => {
       </div>
 
       <div className="space-y-3">
-        {missions?.map((m: any) => (
+        {missions?.map((m: any, index: number) => (
           <Card key={m.id} className="p-4 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -234,6 +264,26 @@ const MissionsPanel = () => {
             </div>
 
             <div className="flex gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-7 px-2"
+                onClick={() => moveMission(index, -1)}
+                disabled={index === 0}
+                title="Sposta su"
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-7 px-2"
+                onClick={() => moveMission(index, 1)}
+                disabled={index === (missions?.length || 0) - 1}
+                title="Sposta giu"
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
               <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => openEdit(m)}>
                 <Edit3 className="h-3 w-3 mr-1" /> Modifica
               </Button>

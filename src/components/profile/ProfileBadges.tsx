@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { countUniqueAttendedEvents } from "@/lib/eventRegistrations";
 
 const PROGRESSION_BADGES = [
   { name: "Nuovo Arrivato", required: 1, description: "Partecipa al tuo primo evento" },
@@ -75,12 +76,12 @@ const ProfileBadges = () => {
     queryKey: ["attended-count", user?.id],
     queryFn: async () => {
       if (!user) return 0;
-      const { count } = await supabase
+      const { data } = await supabase
         .from("event_registrations")
-        .select("*", { count: "exact", head: true })
+        .select("event_id, status, checked_in, created_at")
         .eq("user_id", user.id)
         .or("status.eq.attended,checked_in.eq.true");
-      return count || 0;
+      return countUniqueAttendedEvents(data || []);
     },
     enabled: !!user,
   });

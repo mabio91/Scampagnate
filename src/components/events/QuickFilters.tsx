@@ -18,25 +18,27 @@ interface Props {
 }
 
 const QuickFilters = memo(({ active, onToggle }: Props) => (
-  <div className="overflow-hidden">
-    <div className="flex gap-2 overflow-x-auto px-4 pb-1 no-scrollbar">
-    {FILTERS.map(({ key, label, icon: Icon }) => {
-      const isActive = active.includes(key);
-      return (
-        <button
-          key={key}
-          onClick={() => onToggle(key)}
-          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium transition-all active:scale-95 ${
-            isActive
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          }`}
-        >
-          <Icon className="h-3.5 w-3.5" />
-          {label}
-        </button>
-      );
-    })}
+  <div>
+    <div className="overflow-x-auto pb-1 no-scrollbar">
+      <div className="flex gap-2 px-4">
+        {FILTERS.map(({ key, label, icon: Icon }) => {
+          const isActive = active.includes(key);
+          return (
+            <button
+              key={key}
+              onClick={() => onToggle(key)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium transition-all active:scale-95 ${
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   </div>
 ));

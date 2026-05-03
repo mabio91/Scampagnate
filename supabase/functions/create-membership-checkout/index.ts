@@ -8,6 +8,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const hasCompleteMembershipData = (profile: Record<string, unknown> | null) =>
+  !!profile &&
+  [
+    "birth_date",
+    "birth_place",
+    "province_of_birth",
+    "residential_address",
+    "city_of_residence",
+    "province_of_residence",
+  ].every((key) => {
+    const value = profile[key];
+    return typeof value === "string" ? value.trim().length > 0 : value != null;
+  });
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -33,9 +47,16 @@ serve(async (req) => {
     // Check if already an active member FOR THE CURRENT YEAR
     const { data: profile } = await supabaseClient
       .from("profiles")
-      .select("membership_status, membership_registration_date")
+      .select("membership_status, membership_registration_date, birth_date, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
       .eq("id", user.id)
       .single();
+
+    if (!hasCompleteMembershipData(profile)) {
+      return new Response(
+        JSON.stringify({ error: "Completa i dati per il tesseramento prima di acquistare la tessera." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
     if (profile?.membership_status === "Active" && profile?.membership_registration_date) {
       const regDate = new Date(profile.membership_registration_date);

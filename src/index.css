@@ -133,20 +133,6 @@
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
-  /* Header safe area: ensures status bar never covers buttons on iOS standalone PWA */
-  .header-safe-top {
-    padding-top: max(env(safe-area-inset-top, 0px), 0px);
-  }
-  @supports (padding-top: env(safe-area-inset-top)) {
-    .header-safe-top {
-      padding-top: calc(env(safe-area-inset-top, 0px) + 2px);
-    }
-  }
-  @media all and (display-mode: standalone) {
-    .header-safe-top {
-      padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
-    }
-  }
 }
 
 @layer utilities {
@@ -170,6 +156,16 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Header safe area: keeps iOS status bars from covering sticky page headers. */
+  .header-safe-top {
+    padding-top: calc(env(safe-area-inset-top, 0px) + var(--header-safe-offset, 0px));
+  }
+  @media all and (display-mode: standalone) {
+    .header-safe-top {
+      padding-top: calc(env(safe-area-inset-top, 0px) + var(--header-safe-offset, 0px) + 4px);
+    }
   }
 
   /* Smooth card lift on hover */

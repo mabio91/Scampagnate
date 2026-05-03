@@ -49,14 +49,13 @@ const ProfileGamification = () => {
             className="relative w-12 h-12 shrink-0 rounded-full"
             style={{ backgroundColor: `${currentLevel.color}20`, border: `2px solid ${currentLevel.color}` }}
           >
-            <span className="absolute left-1/2 top-[22%] -translate-x-1/2 -translate-y-1/2 text-lg leading-none">
-              {visual.icon[0]}
+            <span className="flex h-full w-full flex-row items-center justify-center gap-0.5 text-lg leading-none">
+              {visual.icon.map((icon, index) => (
+                <span key={`${icon}-${index}`} className="block shrink-0 translate-y-px text-center leading-none">
+                  {icon}
+                </span>
+              ))}
             </span>
-            {visual.icon[1] && (
-              <span className="absolute left-1/2 top-[68%] -translate-x-1/2 -translate-y-1/2 text-base leading-none">
-                {visual.icon[1]}
-              </span>
-            )}
           </div>
           <div className="flex-1">
             <p className="text-sm font-display font-bold text-foreground">

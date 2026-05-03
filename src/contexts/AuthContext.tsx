@@ -29,6 +29,11 @@ interface Profile {
   phone_verified_at?: string;
   phone_verification_method?: string;
   birth_date?: string | null;
+  birth_place?: string | null;
+  province_of_birth?: string | null;
+  residential_address?: string | null;
+  city_of_residence?: string | null;
+  province_of_residence?: string | null;
 }
 
 type AppRole = "admin" | "organizer" | "user";

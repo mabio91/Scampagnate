@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Camera, Mail, Lock, Link2, Eye, EyeOff, Loader2, CheckCircle2, ChevronRight, Settings } from "lucide-react";
+import { Camera, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, ChevronRight, Settings, HelpCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import LevelAvatar from "@/components/LevelAvatar";
 
@@ -33,14 +39,22 @@ interface ProfileEditSheetProps {
 const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const membershipSectionRef = useRef<HTMLDivElement>(null);
 
   // Profile fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [birthPlace, setBirthPlace] = useState("");
+  const [provinceOfBirth, setProvinceOfBirth] = useState("");
+  const [residentialAddress, setResidentialAddress] = useState("");
+  const [cityOfResidence, setCityOfResidence] = useState("");
+  const [provinceOfResidence, setProvinceOfResidence] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -65,12 +79,19 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     user?.identities?.some((i) => i.provider === "google");
   const isEmailProvider = user?.app_metadata?.providers?.includes("email") ||
     user?.identities?.some((i) => i.provider === "email");
+  const shouldFocusMembershipSection = searchParams.get("section") === "membership";
+  const returnTo = searchParams.get("returnTo");
 
   const initFields = () => {
     setFirstName(profile?.first_name || "");
     setLastName(profile?.last_name || "");
     setPhone(profile?.phone || "");
     setDateOfBirth(profile?.birth_date || "");
+    setBirthPlace(profile?.birth_place || "");
+    setProvinceOfBirth(profile?.province_of_birth || "");
+    setResidentialAddress(profile?.residential_address || "");
+    setCityOfResidence(profile?.city_of_residence || "");
+    setProvinceOfResidence(profile?.province_of_residence || "");
     setBio(profile?.bio || "");
     setHasChanges(false);
   };
@@ -84,7 +105,28 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     if (open && profile && !hasChanges) {
       initFields();
     }
-  }, [open, profile?.first_name, profile?.last_name, profile?.phone, profile?.birth_date, profile?.bio, hasChanges]);
+  }, [
+    open,
+    profile?.first_name,
+    profile?.last_name,
+    profile?.phone,
+    profile?.birth_date,
+    profile?.birth_place,
+    profile?.province_of_birth,
+    profile?.residential_address,
+    profile?.city_of_residence,
+    profile?.province_of_residence,
+    profile?.bio,
+    hasChanges,
+  ]);
+
+  useEffect(() => {
+    if (!open || !shouldFocusMembershipSection) return;
+    const timer = window.setTimeout(() => {
+      membershipSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [open, shouldFocusMembershipSection]);
 
   const markChanged = () => setHasChanges(true);
 
@@ -116,6 +158,11 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
       last_name: lastName,
       phone,
       birth_date: dateOfBirth || null,
+      birth_place: birthPlace.trim() || null,
+      province_of_birth: provinceOfBirth.trim().toUpperCase() || null,
+      residential_address: residentialAddress.trim() || null,
+      city_of_residence: cityOfResidence.trim() || null,
+      province_of_residence: provinceOfResidence.trim().toUpperCase() || null,
       bio,
       updated_at: new Date().toISOString(),
     }).eq("id", user!.id);
@@ -125,9 +172,37 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
       await refreshProfile();
       toast({ title: "Profilo aggiornato" });
       setHasChanges(false);
+      if (returnTo) {
+        onOpenChange(false);
+        navigate(returnTo, { replace: true });
+      } else if (shouldFocusMembershipSection) {
+        const params = new URLSearchParams(location.search);
+        params.delete("section");
+        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+      }
     }
     setSaving(false);
   };
+
+  const MembershipLabel = ({ children, tooltip }: { children: string; tooltip?: string }) => (
+    <div className="flex items-center gap-1.5">
+      <Label className="font-body text-xs">{children}</Label>
+      {tooltip && (
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-muted-foreground hover:text-foreground">
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-64 text-xs leading-relaxed">
+              {tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+  );
 
   const handleChangeEmail = async () => {
     if (!newEmail.trim()) return;
@@ -251,27 +326,72 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                   <Input value={phone} onChange={(e) => { setPhone(e.target.value); markChanged(); }} className="mt-1" />
                 </div>
                 <div>
-                  <Label className="font-body text-xs">Data di nascita</Label>
-                  <Input 
-                    type="date" 
-                    value={dateOfBirth} 
-                    onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }} 
-                    className="mt-1" 
-                  />
-                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Visible only to organizers and admin</p>
-                </div>
-                <div>
                   <Label className="font-body text-xs">Bio</Label>
                   <Textarea value={bio} onChange={(e) => { setBio(e.target.value); markChanged(); }} className="mt-1" rows={2} placeholder="Parlaci di te..." />
                 </div>
-                {hasChanges && (
-                  <Button onClick={saveProfile} disabled={saving} className="w-full bg-primary text-primary-foreground font-body font-semibold">
-                    {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                    Salva modifiche
-                  </Button>
-                )}
               </div>
             </div>
+
+            {/* MEMBERSHIP DATA SECTION */}
+            <div
+              ref={membershipSectionRef}
+              className={`rounded-xl border p-4 transition-colors ${
+                shouldFocusMembershipSection ? "border-primary bg-primary/5" : "border-border bg-muted/20"
+              }`}
+            >
+              <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati per tesseramento</p>
+              <p className="text-xs font-body text-muted-foreground mb-4">
+                Questi dati sono richiesti solo per la gestione della tessera associativa della ASD Gruppo Scampagnate.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <MembershipLabel>Data di nascita</MembershipLabel>
+                  <Input
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <MembershipLabel tooltip={'Inserisci il comune di nascita. Se sei nato/a all\'estero, inserisci il nome della nazione (es. "Francia", "Romania").'}>
+                    Luogo di nascita
+                  </MembershipLabel>
+                  <Input value={birthPlace} onChange={(e) => { setBirthPlace(e.target.value); markChanged(); }} className="mt-1" />
+                </div>
+                <div>
+                  <MembershipLabel tooltip={'Inserisci la sigla della provincia (es. "RM", "MI"). Se sei nato/a all\'estero, scrivi EE.'}>
+                    Provincia di nascita
+                  </MembershipLabel>
+                  <Input value={provinceOfBirth} onChange={(e) => { setProvinceOfBirth(e.target.value); markChanged(); }} className="mt-1 uppercase" maxLength={2} />
+                </div>
+                <div>
+                  <MembershipLabel tooltip={'Inserisci via e numero civico (es. "Via Roma 12").'}>
+                    Indirizzo di residenza
+                  </MembershipLabel>
+                  <Input value={residentialAddress} onChange={(e) => { setResidentialAddress(e.target.value); markChanged(); }} className="mt-1" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <MembershipLabel>Città di residenza</MembershipLabel>
+                    <Input value={cityOfResidence} onChange={(e) => { setCityOfResidence(e.target.value); markChanged(); }} className="mt-1" />
+                  </div>
+                  <div>
+                    <MembershipLabel tooltip={'Inserisci la sigla della provincia (es. "RM", "MI"). Se sei residente all\'estero, scrivi EE.'}>
+                      Provincia di residenza
+                    </MembershipLabel>
+                    <Input value={provinceOfResidence} onChange={(e) => { setProvinceOfResidence(e.target.value); markChanged(); }} className="mt-1 uppercase" maxLength={2} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {hasChanges && (
+              <Button onClick={saveProfile} disabled={saving} className="w-full bg-primary text-primary-foreground font-body font-semibold">
+                {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Salva modifiche
+              </Button>
+            )}
 
             {/* PREFERENCES SECTION */}
             <div>

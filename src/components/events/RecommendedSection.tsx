@@ -7,7 +7,6 @@ import { DifficultyBadge } from "./DifficultyBadge";
 import { EventBadgePill } from "./EventBadgePill";
 import { UI_LABELS } from "@/lib/labels";
 import { EventWithDetails } from "@/hooks/useEvents";
-import EventCarousel from "./EventCarousel";
 
 interface Props {
   events: Array<{ event: EventWithDetails; whyText: string; score: number }>;
@@ -146,23 +145,24 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
   if (events.length === 0) return null;
 
   return (
-    <section className="mb-6 px-4">
-      <div className="mb-1 flex items-center gap-2">
+    <section className="mb-6">
+      <div className="mb-1 flex items-center gap-2 px-4">
         <Sparkles className="h-5 w-5 text-primary" />
         <h2 className="font-display text-lg font-bold text-foreground">
           {UI_LABELS.recommended}
         </h2>
       </div>
-      <p className="mb-3 ml-7 text-xs font-body text-muted-foreground">
+      <p className="mb-3 px-4 pl-11 text-xs font-body text-muted-foreground">
         {UI_LABELS.recommendedSubtitle}
       </p>
 
-      <div className="-mx-4 overflow-hidden pl-4 pb-2">
-        <EventCarousel
-          items={events.slice(0, 6)}
-          itemClassName="h-[22.5rem]"
-          renderItem={(item, i) => (
-            <div key={item.event.id} className="h-full">
+      <div className="overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+        <div className="flex gap-3 px-4">
+          {events.slice(0, 6).map((item, i) => (
+            <div
+              key={item.event.id}
+              className="h-[22.5rem] w-[84%] shrink-0 sm:w-[68%] lg:w-[78%] xl:w-[76%]"
+            >
               <RecommendedCarouselCard
                 event={item.event}
                 whyText={item.whyText}
@@ -170,8 +170,8 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
                 isUserRegistered={!!registeredEventIds?.has(item.event.id)}
               />
             </div>
-          )}
-        />
+          ))}
+        </div>
       </div>
     </section>
   );
