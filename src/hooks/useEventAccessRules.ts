@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
+import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
 
 export interface AccessRule {
   type:
@@ -137,7 +138,7 @@ export const useCheckEventAccessRules = (
               .select("id, events!inner(category_id, event_categories(name))")
               .eq("user_id", user.id)
               .eq("checked_in", true)
-              .in("status", ["registered", "paid"]);
+              .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
             const trekkingCount = (pastEvents || []).filter((r: any) => {
               const catName = r.events?.event_categories?.name?.toLowerCase() || "";
@@ -160,7 +161,7 @@ export const useCheckEventAccessRules = (
               .select("id", { count: "exact", head: true })
               .eq("user_id", user.id)
               .eq("checked_in", true)
-              .in("status", ["registered", "paid"]);
+              .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
             if ((count || 0) < minCount) {
               target.push({
@@ -335,7 +336,7 @@ async function checkDifficultyAccess(
     .select("*, events(difficulty)")
     .eq("user_id", userId)
     .eq("checked_in", true)
-    .in("status", ["registered", "paid"]);
+    .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
   const easyCount = (pastEvents || []).filter(r => {
     const d = parseInt((r.events as any)?.difficulty);

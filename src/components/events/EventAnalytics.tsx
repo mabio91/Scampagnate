@@ -1,17 +1,20 @@
 import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts";
 import { format, parseISO, eachDayOfInterval, startOfDay, subDays } from "date-fns";
 import { Users, CheckCircle2, UserX, TrendingUp } from "lucide-react";
+import { isActiveParticipantRegistration } from "@/lib/eventPayments";
 
 interface Registration {
   id: string;
   created_at: string;
   status: string;
+  payment_status?: string | null;
   checked_in: boolean;
   meeting_point_id: string | null;
   profiles: any;
@@ -43,7 +46,7 @@ const CHART_COLORS = [
 ];
 
 const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsProps) => {
-  const registered = registrations.filter((r) => r.status === "registered" || r.status === "paid");
+  const registered = registrations.filter(isActiveParticipantRegistration);
   const checkedIn = registered.filter((r) => r.checked_in);
   const noShows = registered.filter((r) => !r.checked_in && new Date(event.date) < new Date());
   const cancelled = registrations.filter((r) => r.status === "cancelled");

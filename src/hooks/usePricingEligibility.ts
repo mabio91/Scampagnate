@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
+import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
 
 export interface PriceOption {
   id: string;
@@ -49,7 +50,7 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
           .eq("checked_in", true)
-          .in("status", ["registered", "paid"]);
+          .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
         attendedCount = count || 0;
 
         // Get user badges

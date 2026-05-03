@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventRegistrations, useEventMeetingPoints } from "@/hooks/useOrganizerEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ACTIVE_PARTICIPANT_STATUSES, getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration } from "@/lib/eventPayments";
+import { getDepositPaymentLabel, getEventBalancePaymentMode, isActiveParticipantRegistration, isDepositRegistration } from "@/lib/eventPayments";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -148,7 +148,7 @@ const EventManage = () => {
   if (authLoading) return null;
   if (!user || !isOrganizer) return <Navigate to="/" replace />;
 
-  const registered = registrations?.filter((r) => ACTIVE_PARTICIPANT_STATUSES.includes(r.status as any)) || [];
+  const registered = registrations?.filter(isActiveParticipantRegistration) || [];
   const waitlisted = registrations?.filter((r) => r.status === "waitlist") || [];
   const cancelled = registrations?.filter((r) => r.status === "cancelled") || [];
   const pending = registrations?.filter((r) => r.status === "pending_approval") || [];
@@ -158,6 +158,15 @@ const EventManage = () => {
   const reservedSpots = (event as any)?.reserved_spots || 0;
   const hasDepositPayments = event?.payment_type === "deposit";
   const balancePaymentMode = getEventBalancePaymentMode(event || {});
+
+  const invalidateParticipantCounts = () => {
+    queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+    queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+    queryClient.invalidateQueries({ queryKey: ["event", id] });
+    queryClient.invalidateQueries({ queryKey: ["event-participants", id] });
+    queryClient.invalidateQueries({ queryKey: ["events"] });
+    queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
+  };
 
   const getParticipantName = (reg: any) => {
     if (reg.sport_level?.startsWith("manual:")) {
@@ -175,7 +184,7 @@ const EventManage = () => {
     : registered.filter((r) => r.meeting_point_id === meetingPointFilter);
 
   const filteredRegistered = filteredRegisteredBase.filter((r) => {
-    if (participantFilter === "participants") return ACTIVE_PARTICIPANT_STATUSES.includes(r.status as any);
+    if (participantFilter === "participants") return isActiveParticipantRegistration(r);
     if (participantFilter === "deposit_paid") return r.status === "deposit_paid";
     if (participantFilter === "attended") return r.status === "attended";
     if (participantFilter === "waitlist") return false;
@@ -206,7 +215,7 @@ const EventManage = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+      invalidateParticipantCounts();
     }
   };
 
@@ -221,8 +230,7 @@ const EventManage = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
-      queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+      invalidateParticipantCounts();
       toast({ title: `Status updated to ${newStatus}` });
     }
   };
@@ -285,7 +293,7 @@ const EventManage = () => {
         .update({ last_balance_reminder_sent_at: nowIso } as any)
         .in("id", candidates.map((reg) => reg.id));
 
-      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+      invalidateParticipantCounts();
       toast({ title: "Notifica inviata con successo" });
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
@@ -313,8 +321,7 @@ const EventManage = () => {
         payment_status: manualPaymentStatus,
       });
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
-      queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+      invalidateParticipantCounts();
       setShowAddParticipant(false);
       setSelectedSearchUser(null);
       setSearchQuery("");
@@ -337,7 +344,7 @@ const EventManage = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+      invalidateParticipantCounts();
       setEditingParticipant(null);
       toast({ title: "Participant updated" });
     }
@@ -359,8 +366,7 @@ const EventManage = () => {
         sport_level: `manual:${manualName.trim()}${levelPayload}`,
       });
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
-      queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+      invalidateParticipantCounts();
       setShowAddParticipant(false);
       setManualName("");
       setManualLevel("none");
@@ -396,7 +402,7 @@ const EventManage = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+      invalidateParticipantCounts();
       setShowCapacityDialog(false);
       toast({ title: `Capacity updated to ${newCapacity}` });
     }
@@ -1526,8 +1532,7 @@ const EventManage = () => {
                     throw new Error(data?.error || "Errore durante la cancellazione dell'evento");
                   }
 
-                  queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
-                  queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
+                  invalidateParticipantCounts();
                   toast({ title: "Evento annullato", description: "I partecipanti riceveranno il rimborso completo dell'importo versato." });
                 } catch (err: any) {
                   toast({ title: "Errore", description: err.message, variant: "destructive" });

@@ -69,7 +69,10 @@ export const isPendingPaymentRegistration = (
 
 export const isActiveParticipantRegistration = (registration: {
   status?: string | null;
-}) => ACTIVE_PARTICIPANT_STATUSES.includes((registration.status || "") as never);
+  payment_status?: string | null;
+}) =>
+  ACTIVE_PARTICIPANT_STATUSES.includes((registration.status || "") as never) &&
+  registration.payment_status !== "pending";
 
 export const getDepositPaymentLabel = (
   registration: {

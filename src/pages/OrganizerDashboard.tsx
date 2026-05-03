@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizerEvents } from "@/hooks/useOrganizerEvents";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ import DiscountCodesPanel from "@/components/admin/DiscountCodesPanel";
 import MissionsPanel from "@/components/admin/MissionsPanel";
 import BroadcastTemplatesPanel from "@/components/admin/BroadcastTemplatesPanel";
 import { format } from "date-fns";
+import { isActiveParticipantRegistration } from "@/lib/eventPayments";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, PieChart, Pie, AreaChart, Area, Legend, CartesianGrid,
@@ -56,7 +58,7 @@ const OrganizerDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("id, event_id, status, checked_in, created_at")
+        .select("id, event_id, status, payment_status, checked_in, created_at")
         .in("event_id", eventIds);
       if (error) throw error;
       return data;
@@ -88,7 +90,7 @@ const OrganizerDashboard = () => {
 
     const pastEventStats = pe.map((evt) => {
       const regs = regsByEvent[evt.id] || [];
-      const active = regs.filter((r) => r.status === "registered" || r.status === "paid");
+      const active = regs.filter(isActiveParticipantRegistration);
       const checkedIn = active.filter((r) => r.checked_in);
       const noShows = active.filter((r) => !r.checked_in);
       const cancelled = regs.filter((r) => r.status === "cancelled");
