@@ -991,6 +991,7 @@ export type Database = {
           reward_points: number
           reward_type: string
           reward_value: string | null
+          sort_order: number
           starts_at: string | null
           streak_count: number | null
           target_action: string
@@ -1016,6 +1017,7 @@ export type Database = {
           reward_points?: number
           reward_type?: string
           reward_value?: string | null
+          sort_order?: number
           starts_at?: string | null
           streak_count?: number | null
           target_action?: string
@@ -1041,6 +1043,7 @@ export type Database = {
           reward_points?: number
           reward_type?: string
           reward_value?: string | null
+          sort_order?: number
           starts_at?: string | null
           streak_count?: number | null
           target_action?: string
@@ -1055,6 +1058,85 @@ export type Database = {
             columns: ["reward_badge_id"]
             isOneToOne: false
             referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mission_rewards: {
+        Row: {
+          approval_required: boolean
+          badge_config: Json
+          badge_id: string | null
+          coupon_config: Json
+          created_at: string
+          id: string
+          metadata: Json
+          mission_id: string
+          physical_config: Json
+          points_value: number | null
+          reward_kind: string
+          sort_order: number
+          source_discount_code_id: string | null
+          title: string
+          updated_at: string
+          visible_on_profile: boolean
+        }
+        Insert: {
+          approval_required?: boolean
+          badge_config?: Json
+          badge_id?: string | null
+          coupon_config?: Json
+          created_at?: string
+          id?: string
+          metadata?: Json
+          mission_id: string
+          physical_config?: Json
+          points_value?: number | null
+          reward_kind: string
+          sort_order?: number
+          source_discount_code_id?: string | null
+          title?: string
+          updated_at?: string
+          visible_on_profile?: boolean
+        }
+        Update: {
+          approval_required?: boolean
+          badge_config?: Json
+          badge_id?: string | null
+          coupon_config?: Json
+          created_at?: string
+          id?: string
+          metadata?: Json
+          mission_id?: string
+          physical_config?: Json
+          points_value?: number | null
+          reward_kind?: string
+          sort_order?: number
+          source_discount_code_id?: string | null
+          title?: string
+          updated_at?: string
+          visible_on_profile?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_rewards_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_rewards_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_rewards_source_discount_code_id_fkey"
+            columns: ["source_discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -1587,6 +1669,7 @@ export type Database = {
           id: string
           mission_id: string | null
           redeemed_at: string | null
+          source_mission_reward_id: string | null
           status: string
           title: string
           type: string
@@ -1599,6 +1682,7 @@ export type Database = {
           id?: string
           mission_id?: string | null
           redeemed_at?: string | null
+          source_mission_reward_id?: string | null
           status?: string
           title?: string
           type?: string
@@ -1611,6 +1695,7 @@ export type Database = {
           id?: string
           mission_id?: string | null
           redeemed_at?: string | null
+          source_mission_reward_id?: string | null
           status?: string
           title?: string
           type?: string
@@ -1623,6 +1708,13 @@ export type Database = {
             columns: ["mission_id"]
             isOneToOne: false
             referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_rewards_source_mission_reward_id_fkey"
+            columns: ["source_mission_reward_id"]
+            isOneToOne: false
+            referencedRelation: "mission_rewards"
             referencedColumns: ["id"]
           },
         ]

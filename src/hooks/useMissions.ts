@@ -10,7 +10,29 @@ export interface Mission {
   target_value: number;
   reward_points: number;
   reward_badge_id: string | null;
+  reward_type?: string;
+  reward_value?: string | null;
   category: string | null;
+  sort_order?: number | null;
+  mission_rewards?: MissionReward[];
+}
+
+export interface MissionReward {
+  id: string;
+  mission_id: string;
+  sort_order: number;
+  reward_kind: "points" | "badge" | "coupon" | "physical";
+  title: string;
+  points_value: number | null;
+  badge_id: string | null;
+  source_discount_code_id?: string | null;
+  visible_on_profile?: boolean;
+  coupon_config?: any;
+  badge_config?: any;
+  badges?: {
+    name: string;
+    icon: string;
+  } | null;
 }
 
 export interface UserMission {
@@ -31,8 +53,9 @@ export const useUserMissions = (userId: string | undefined) => {
       if (!userId) return [];
       const { data } = await supabase
         .from("user_missions")
-        .select("*, missions(*)")
-        .eq("user_id", userId);
+        .select("*, missions(*, mission_rewards(*, badges(name, icon)))")
+        .eq("user_id", userId)
+        .order("sort_order", { referencedTable: "missions", ascending: true });
       return (data || []) as unknown as UserMission[];
     },
     enabled: !!userId,
@@ -71,9 +94,11 @@ export const useActiveMissions = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("missions")
-        .select("*")
+        .select("*, mission_rewards(*, badges(name, icon))")
         .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true })
+        .order("sort_order", { referencedTable: "mission_rewards", ascending: true });
       return (data || []) as Mission[];
     },
   });

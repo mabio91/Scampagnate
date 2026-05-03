@@ -1,9 +1,22 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserMissions, useActiveMissions } from "@/hooks/useMissions";
 import { useSearch } from "@/contexts/SearchContext";
+import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
-import { Target, Gift, CheckCircle, ChevronRight, Clock, Ticket, Trophy, Beer } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Target,
+  Gift,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  Ticket,
+  Trophy,
+  Beer,
+  ChevronDown,
+} from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import DynamicIcon from "@/components/DynamicIcon";
 
@@ -17,6 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const REWARD_ICONS: Record<string, typeof Gift> = {
+  points: Gift,
   coupon: Ticket,
   badge: Trophy,
   physical: Beer,
@@ -29,16 +43,73 @@ const getFilterForMission = (mission: any): { category?: string; quickFilter?: s
   return {};
 };
 
+const normalizeRewards = (mission: any) => {
+  const configuredRewards = Array.isArray(mission.mission_rewards)
+    ? mission.mission_rewards
+        .filter((reward: any) => reward.visible_on_profile !== false)
+        .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    : [];
+
+  if (configuredRewards.length > 0) return configuredRewards;
+
+  const legacyRewards = [];
+  if (Number(mission.rewardPoints || 0) > 0) {
+    legacyRewards.push({
+      id: `${mission.id}-points`,
+      reward_kind: "points",
+      points_value: Number(mission.rewardPoints),
+    });
+  }
+  if (mission.reward_type && mission.reward_type !== "points") {
+    legacyRewards.push({
+      id: `${mission.id}-${mission.reward_type}`,
+      reward_kind: mission.reward_type,
+      title: mission.reward_value,
+    });
+  }
+  return legacyRewards;
+};
+
+const getRewardLabel = (reward: any) => {
+  if (reward.reward_kind === "points") return `+${reward.points_value || 0} punti`;
+  if (reward.reward_kind === "coupon") return "Sblocca uno sconto";
+  if (reward.reward_kind === "badge") return "Sblocca un badge";
+  return reward.title || "Premio al completamento";
+};
+
+const getCompletionRewardText = (mission: any) => {
+  const parts = normalizeRewards(mission)
+    .map((reward: any) => {
+      if (reward.reward_kind === "points" && Number(reward.points_value || 0) > 0) {
+        return `+${reward.points_value} punti`;
+      }
+      if (reward.reward_kind === "badge") {
+        return reward.badges?.name ? `badge ${reward.badges.name}` : "un badge";
+      }
+      if (reward.reward_kind === "coupon") return "uno sconto";
+      return reward.title || null;
+    })
+    .filter(Boolean);
+
+  return parts.length > 0 ? `Hai sbloccato ${parts.join(", ")}.` : mission.title;
+};
+
 const ProfileMissions = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { setSelectedCategory, toggleQuickFilter, clearAllFilters } = useSearch();
   const { data: userMissions = [] } = useUserMissions(user?.id);
   const { data: activeMissions = [] } = useActiveMissions();
-  const userMissionMap = new Map(userMissions.map((mission) => [mission.mission_id, mission]));
+  const [completedOpen, setCompletedOpen] = useState(false);
+  const initializedCompletions = useRef(false);
+  const previousCompletedIds = useRef<Set<string>>(new Set());
 
-  const missionsToShow = activeMissions.length > 0
-    ? activeMissions.map((mission) => {
+  const missionsToShow = useMemo(() => {
+    const userMissionMap = new Map(userMissions.map((mission) => [mission.mission_id, mission]));
+
+    if (activeMissions.length > 0) {
+      return activeMissions.map((mission) => {
         const userMission = userMissionMap.get(mission.id);
 
         return {
@@ -53,27 +124,56 @@ const ProfileMissions = () => {
           icon: (mission as any).icon || "lucide:Target",
           reward_type: (mission as any).reward_type || "points",
           reward_value: (mission as any).reward_value || null,
+          mission_rewards: (mission as any).mission_rewards || [],
           category: mission.category || null,
           target_action: (mission as any)?.target_action || "event_attended",
           expires_at: (mission as any)?.expires_at || null,
         };
-      })
-    : userMissions.map((mission) => ({
-        id: mission.mission_id,
-        title: mission.missions?.title || "",
-        description: mission.missions?.description || "",
-        progress: mission.progress,
-        target: mission.missions?.target_value || 1,
-        rewardPoints: mission.missions?.reward_points || 0,
-        completed: mission.completed,
-        type: mission.missions?.type || "one_time",
-        icon: (mission.missions as any)?.icon || "lucide:Target",
-        reward_type: (mission.missions as any)?.reward_type || "points",
-        reward_value: (mission.missions as any)?.reward_value || null,
-        category: (mission.missions as any)?.category || null,
-        target_action: (mission.missions as any)?.target_action || "event_attended",
-        expires_at: (mission.missions as any)?.expires_at || null,
-      }));
+      });
+    }
+
+    return userMissions.map((mission) => ({
+      id: mission.mission_id,
+      title: mission.missions?.title || "",
+      description: mission.missions?.description || "",
+      progress: mission.progress,
+      target: mission.missions?.target_value || 1,
+      rewardPoints: mission.missions?.reward_points || 0,
+      completed: mission.completed,
+      type: mission.missions?.type || "one_time",
+      icon: (mission.missions as any)?.icon || "lucide:Target",
+      reward_type: (mission.missions as any)?.reward_type || "points",
+      reward_value: (mission.missions as any)?.reward_value || null,
+      mission_rewards: (mission.missions as any)?.mission_rewards || [],
+      category: (mission.missions as any)?.category || null,
+      target_action: (mission.missions as any)?.target_action || "event_attended",
+      expires_at: (mission.missions as any)?.expires_at || null,
+    }));
+  }, [activeMissions, userMissions]);
+
+  const activeMissionCards = missionsToShow.filter((mission) => !mission.completed);
+  const completedMissionCards = missionsToShow.filter((mission) => mission.completed);
+
+  useEffect(() => {
+    const currentCompleted = new Set(completedMissionCards.map((mission) => mission.id));
+
+    if (!initializedCompletions.current) {
+      previousCompletedIds.current = currentCompleted;
+      initializedCompletions.current = true;
+      return;
+    }
+
+    completedMissionCards
+      .filter((mission) => !previousCompletedIds.current.has(mission.id))
+      .forEach((mission) => {
+        toast({
+          title: "Missione completata",
+          description: getCompletionRewardText(mission),
+        });
+      });
+
+    previousCompletedIds.current = currentCompleted;
+  }, [completedMissionCards, toast]);
 
   const handleMissionClick = (mission: any) => {
     clearAllFilters();
@@ -96,6 +196,91 @@ const ProfileMissions = () => {
     return `${days} giorni rimasti`;
   };
 
+  const renderMissionCard = (mission: any) => {
+    const rewards = normalizeRewards(mission);
+    const countdown = getCountdown(mission.expires_at);
+    const isUrgent = countdown && !countdown.includes("Scaduta") && parseInt(countdown) <= 3;
+    const hasNonPointReward = rewards.some((reward: any) => reward.reward_kind !== "points");
+
+    return (
+      <button
+        key={mission.id}
+        onClick={() => handleMissionClick(mission)}
+        className={`w-full text-left p-3 rounded-xl border transition-all duration-200 group ${
+          mission.completed
+            ? "bg-primary/5 border-primary/20"
+            : hasNonPointReward
+              ? "bg-card border-primary/10 hover:border-primary/30"
+              : "bg-card border-border hover:border-primary/20"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${
+            mission.completed ? "bg-primary/10" : "bg-muted"
+          }`}>
+            {mission.completed ? (
+              <CheckCircle className="h-4 w-4 text-primary" />
+            ) : (
+              <DynamicIcon value={mission.icon} size={16} className="text-foreground" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-1">
+              <p className="text-sm font-body font-semibold text-foreground">{mission.title}</p>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+            </div>
+            <p className="text-[11px] font-body text-muted-foreground">{mission.description}</p>
+
+            <div className="flex items-center gap-2 mt-2">
+              <Progress
+                value={(Math.min(mission.progress, mission.target) / mission.target) * 100}
+                className="h-1.5 flex-1"
+              />
+              <span className="text-[10px] font-display text-muted-foreground font-bold whitespace-nowrap">
+                {Math.min(mission.progress, mission.target)} di {mission.target}
+              </span>
+            </div>
+
+            {mission.completed && (
+              <p className="text-[10px] font-body text-primary mt-1 flex items-center gap-1 font-semibold">
+                <CheckCircle className="h-3 w-3" />
+                Completata
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              {rewards.map((reward: any) => {
+                if (reward.reward_kind === "points" && Number(reward.points_value || 0) <= 0) return null;
+                const RewardIcon = REWARD_ICONS[reward.reward_kind] || Gift;
+
+                return (
+                  <div key={reward.id || `${mission.id}-${reward.reward_kind}`} className="flex items-center gap-1">
+                    <RewardIcon className="h-3 w-3 text-primary" />
+                    <span className="text-[10px] font-body font-semibold text-primary">
+                      {getRewardLabel(reward)}
+                    </span>
+                  </div>
+                );
+              })}
+              {mission.type !== "one_time" && (
+                <span className="text-[10px] font-body text-muted-foreground">
+                  • {TYPE_LABELS[mission.type] || mission.type}
+                </span>
+              )}
+              {countdown && (
+                <span className={`text-[10px] font-body flex items-center gap-0.5 ${
+                  isUrgent ? "text-destructive font-bold" : "text-muted-foreground"
+                }`}>
+                  <Clock className="h-3 w-3" /> {countdown}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div className="mb-6 animate-fade-in">
       <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
@@ -103,95 +288,31 @@ const ProfileMissions = () => {
       </h2>
 
       {missionsToShow.length > 0 ? (
-        <div className="space-y-2">
-          {missionsToShow.map((mission) => {
-            const hasReward = mission.reward_type !== "points";
-            const RewardIcon = REWARD_ICONS[mission.reward_type];
-            const countdown = getCountdown(mission.expires_at);
-            const isUrgent = countdown && !countdown.includes("Scaduta") && parseInt(countdown) <= 3;
+        <div className="space-y-3">
+          {activeMissionCards.length > 0 ? (
+            <div className="space-y-2">{activeMissionCards.map(renderMissionCard)}</div>
+          ) : (
+            <EmptyState
+              icon={Target}
+              title="Nessuna missione attiva"
+              description="Hai completato tutte le missioni disponibili"
+              compact
+            />
+          )}
 
-            return (
-              <button
-                key={mission.id}
-                onClick={() => handleMissionClick(mission)}
-                className={`w-full text-left p-3 rounded-xl border transition-all duration-200 group ${
-                  mission.completed
-                    ? "bg-primary/5 border-primary/20"
-                    : hasReward
-                    ? "bg-card border-primary/10 hover:border-primary/30"
-                    : "bg-card border-border hover:border-primary/20"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${
-                    mission.completed ? "bg-primary/10" : "bg-muted"
-                  }`}>
-                    {mission.completed ? (
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                    ) : (
-                      <DynamicIcon value={mission.icon} size={16} className="text-foreground" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                      <p className="text-sm font-body font-semibold text-foreground">{mission.title}</p>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                    </div>
-                    <p className="text-[11px] font-body text-muted-foreground">{mission.description}</p>
-
-                    <div className="flex items-center gap-2 mt-2">
-                      <Progress
-                        value={(Math.min(mission.progress, mission.target) / mission.target) * 100}
-                        className="h-1.5 flex-1"
-                      />
-                      <span className="text-[10px] font-display text-muted-foreground font-bold whitespace-nowrap">
-                        {Math.min(mission.progress, mission.target)} di {mission.target}
-                      </span>
-                    </div>
-
-                    {mission.completed && (
-                      <p className="text-[10px] font-body text-primary mt-1 flex items-center gap-1 font-semibold">
-                        <CheckCircle className="h-3 w-3" />
-                        Completata
-                      </p>
-                    )}
-
-                    {!mission.completed && hasReward && (
-                      <p className="text-[10px] font-body text-primary mt-1 flex items-center gap-1">
-                        {RewardIcon && <RewardIcon className="h-3 w-3" />}
-                        {mission.reward_type === "coupon"
-                          ? "Sblocca uno sconto"
-                          : mission.reward_type === "badge"
-                            ? "Sblocca un badge"
-                            : "Premio al completamento"}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <Gift className="h-3 w-3 text-primary" />
-                        <span className="text-[10px] font-body font-semibold text-primary">
-                          +{mission.rewardPoints} punti
-                        </span>
-                      </div>
-                      {mission.type !== "one_time" && (
-                        <span className="text-[10px] font-body text-muted-foreground">
-                          • {TYPE_LABELS[mission.type] || mission.type}
-                        </span>
-                      )}
-                      {countdown && (
-                        <span className={`text-[10px] font-body flex items-center gap-0.5 ${
-                          isUrgent ? "text-destructive font-bold" : "text-muted-foreground"
-                        }`}>
-                          <Clock className="h-3 w-3" /> {countdown}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+          {completedMissionCards.length > 0 && (
+            <Collapsible open={completedOpen} onOpenChange={setCompletedOpen}>
+              <CollapsibleTrigger className="w-full flex items-center justify-between py-2 text-left">
+                <span className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">
+                  Missioni completate
+                </span>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${completedOpen ? "rotate-180" : ""}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2">
+                {completedMissionCards.map(renderMissionCard)}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
       ) : (
         <EmptyState
