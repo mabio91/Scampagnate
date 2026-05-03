@@ -262,7 +262,7 @@ BEGIN
       now(),
       cycle_start_value,
       cycle_end_value,
-      CASE WHEN completed_flag THEN 'completed' ELSE 'active' END,
+      '{}'::jsonb,
       progress_row_id
     )
     ON CONFLICT (user_id, mission_id, cycle_key)
@@ -280,7 +280,6 @@ BEGIN
       last_progress_at = now(),
       cycle_started_at = coalesce(public.user_mission_progress.cycle_started_at, EXCLUDED.cycle_started_at),
       cycle_ends_at = EXCLUDED.cycle_ends_at,
-      state = EXCLUDED.state,
       legacy_user_mission_id = EXCLUDED.legacy_user_mission_id;
 
     IF completed_flag THEN
