@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import EmptyState from "@/components/EmptyState";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { dedupeRegistrationsByEvent, isAttendedRegistration } from "@/lib/eventRegistrations";
 import {
   Activity, CalendarCheck, CalendarX, AlertCircle, CheckCircle2,
   Flame, Clock, TrendingUp, ChevronDown, ChevronUp, BarChart3, Shield,
@@ -16,6 +17,7 @@ import {
 
 interface RegistrationWithEvent {
   id: string;
+  event_id: string;
   status: string;
   checked_in: boolean;
   created_at: string;
@@ -53,7 +55,7 @@ export const ActivityHistory = () => {
       if (!user) return null;
       const { data: regs, error } = await supabase
         .from("event_registrations")
-        .select("id, status, checked_in, created_at, events(id, title, date, time, event_categories(name, icon))")
+        .select("id, event_id, status, checked_in, created_at, events(id, title, date, time, event_categories(name, icon))")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -64,40 +66,37 @@ export const ActivityHistory = () => {
 
   const metrics = useMemo(() => {
     if (!data || data.length === 0) return null;
+    const uniqueData = dedupeRegistrationsByEvent(data);
     const now = new Date();
     let attended = 0, cancelled = 0, noShows = 0, joined = 0;
     const categoryMap: Record<string, number> = {};
     const attendedDates: Date[] = [];
 
-    data.forEach((reg) => {
+    uniqueData.forEach((reg) => {
       const eventDate = reg.events?.date ? new Date(reg.events.date) : null;
       const isPast = eventDate ? eventDate < now : false;
-      if (reg.status === "registered" || reg.status === "paid") joined++;
-      if (reg.checked_in) {
+      if (reg.status === "registered" || reg.status === "deposit_paid" || reg.status === "paid") joined++;
+      if (isAttendedRegistration(reg)) {
         attended++;
         if (eventDate) attendedDates.push(eventDate);
         const catName = reg.events?.event_categories?.name;
         if (catName) categoryMap[catName] = (categoryMap[catName] || 0) + 1;
       }
       if (reg.status === "cancelled") cancelled++;
-      if ((reg.status === "registered" || reg.status === "paid") && isPast && !reg.checked_in) noShows++;
+      if ((reg.status === "registered" || reg.status === "deposit_paid" || reg.status === "paid") && isPast && !reg.checked_in) noShows++;
     });
 
     // Streak
-    const pastRegs = data
-      .filter(r => r.events?.date && new Date(r.events.date) < now && (r.status === "registered" || r.status === "paid" || r.checked_in))
+    const pastRegs = uniqueData
+      .filter(r => r.events?.date && new Date(r.events.date) < now && (r.status === "registered" || r.status === "deposit_paid" || r.status === "paid" || r.status === "attended" || r.checked_in))
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
     const streakEvents: RegistrationWithEvent[] = [];
     let streak = 0;
     for (const reg of pastRegs) {
-      if (!reg.checked_in) break;
+      if (!isAttendedRegistration(reg)) break;
       streak++;
       streakEvents.push(reg);
     }
-
-    const lastAttended = data
-      .filter(r => r.checked_in && r.events)
-      .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime())[0];
 
     const totalPastWithSpot = attended + noShows;
     const reliability = totalPastWithSpot > 0 ? Math.round((attended / totalPastWithSpot) * 100) : 100;
@@ -109,19 +108,19 @@ export const ActivityHistory = () => {
     const topCategory = Object.entries(categoryMap).sort((a, b) => b[1] - a[1])[0];
     const topCategoryPct = topCategory && attended > 0 ? Math.round((topCategory[1] / attended) * 100) : 0;
     const topCategoryIcon = topCategory
-      ? data.find(r => r.events?.event_categories?.name === topCategory[0])?.events?.event_categories?.icon
+      ? uniqueData.find(r => r.events?.event_categories?.name === topCategory[0])?.events?.event_categories?.icon
       : undefined;
 
-    const allTimeline = data
+    const allTimeline = uniqueData
       .filter(r => r.events?.date && new Date(r.events.date) < now)
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
 
-    return { attended, cancelled, noShows, joined, streak, streakEvents, lastAttended, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline };
+    return { attended, cancelled, noShows, joined, streak, streakEvents, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline };
   }, [data]);
 
   const getStatusLabel = useCallback((reg: RegistrationWithEvent) => {
     const now = new Date();
-    if (reg.checked_in) return { label: "Partecipato", color: "text-success", Icon: CheckCircle2 };
+    if (isAttendedRegistration(reg)) return { label: "Partecipato", color: "text-success", Icon: CheckCircle2 };
     if (reg.status === "cancelled") return { label: "Cancellato", color: "text-destructive", Icon: CalendarX };
     if (reg.status === "no_show") return { label: "No-show", color: "text-destructive", Icon: AlertCircle };
     const isPast = reg.events?.date ? new Date(reg.events.date) < now : false;
@@ -157,7 +156,7 @@ export const ActivityHistory = () => {
     );
   }
 
-  const { attended, cancelled, noShows, joined, streak, streakEvents, lastAttended, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline } = metrics;
+  const { attended, cancelled, noShows, joined, streak, streakEvents, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline } = metrics;
   const visibleTimeline = allTimeline.slice(0, timelineLimit);
   const hasMoreTimeline = allTimeline.length > timelineLimit;
 
@@ -260,22 +259,6 @@ export const ActivityHistory = () => {
             {streak === 1 ? "evento consecutivo completato" : "eventi consecutivi completati"}
           </p>
         </div>
-
-        {lastAttended?.events && (
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-border/60 bg-background/30 p-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-base">
-              {lastAttended.events.event_categories?.icon || <Clock className="h-5 w-5 text-secondary" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-body font-semibold text-foreground">
-                {lastAttended.events.title}
-              </p>
-              <p className="mt-1 text-[11px] font-body text-muted-foreground">
-                {new Date(lastAttended.events.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}
-              </p>
-            </div>
-          </div>
-        )}
       </button>
 
       {/* Performance Insights */}
@@ -342,7 +325,7 @@ export const ActivityHistory = () => {
                     style={{ animationDelay: `${idx * 40}ms` }}
                   >
                     <div className={`absolute left-[-19px] top-4 w-3 h-3 rounded-full border-2 border-background transition-transform duration-200 group-hover:scale-125 ${
-                      reg.checked_in ? "bg-success" : reg.status === "cancelled" ? "bg-destructive" : "bg-warning"
+                      isAttendedRegistration(reg) ? "bg-success" : reg.status === "cancelled" ? "bg-destructive" : "bg-warning"
                     }`} />
                     <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{reg.events!.title}</p>
                     <div className="flex items-center gap-3 mt-0.5">

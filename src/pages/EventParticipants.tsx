@@ -12,6 +12,7 @@ import { useCommunityLevel, type CommunityLevel } from "@/hooks/useCommunityLeve
 import type { FitScoreResult } from "@/hooks/useEventFitScore";
 import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
 import { useMemo } from "react";
+import { countUniqueAttendedEvents, dedupeRegistrationsByEvent } from "@/lib/eventRegistrations";
 
 // --- Fit score calc (organizer/admin only) ---
 const LEVEL_MAP: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
@@ -114,9 +115,10 @@ function calcFitScore(
 
 // --- Reliability calc helper ---
 function calcReliabilityLabel(registrations: any[]): string {
-  if (!registrations || registrations.length === 0) return "Ottima";
-  const noShows = registrations.filter((r: any) => r.status === "no_show").length;
-  const cancellations = registrations.filter((r: any) => r.status === "cancelled").length;
+  const uniqueRegistrations = dedupeRegistrationsByEvent(registrations || []);
+  if (uniqueRegistrations.length === 0) return "Ottima";
+  const noShows = uniqueRegistrations.filter((r: any) => r.status === "no_show").length;
+  const cancellations = uniqueRegistrations.filter((r: any) => r.status === "cancelled").length;
   const score = Math.max(0, Math.min(100, 100 - (noShows * 10) - (cancellations * 3)));
   if (score >= 80) return "Ottima";
   if (score >= 60) return "Buona";
@@ -300,7 +302,7 @@ const EventParticipants = () => {
       if (participantIds.length === 0) return {};
       const { data } = await supabase
         .from("event_registrations")
-        .select("user_id, status, checked_in")
+        .select("user_id, event_id, status, checked_in, created_at")
         .in("user_id", participantIds);
       const map: Record<string, any[]> = {};
       (data || []).forEach((r: any) => {
@@ -487,7 +489,7 @@ const EventParticipants = () => {
   // Helper: get completed events count from registrations
   const getCompletedEvents = (userId: string) => {
     const regs = allRegistrations?.[userId] || [];
-    return regs.filter((r: any) => r.status === "attended" || r.checked_in).length;
+    return countUniqueAttendedEvents(regs);
   };
 
   const getReliabilityLabel = (userId: string) => {

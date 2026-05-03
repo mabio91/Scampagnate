@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { dedupeRegistrationsByEvent, isAttendedRegistration } from "@/lib/eventRegistrations";
 
 export interface ReliabilityData {
   score: number;
@@ -22,11 +23,11 @@ export const useReliability = (userId: string | undefined) => {
         .select("status, checked_in, created_at, event_id")
         .eq("user_id", userId);
 
-      const all = registrations || [];
+      const all = dedupeRegistrationsByEvent(registrations || []);
       const total = all.length;
       if (total === 0) return { score: 100, label: "Ottima affidabilità", totalRegistrations: 0, attended: 0, noShows: 0, cancellations: 0, lateCancellations: 0 };
 
-      const attended = all.filter(r => r.status === "attended" || r.checked_in).length;
+      const attended = all.filter(isAttendedRegistration).length;
       const noShows = all.filter(r => r.status === "no_show").length;
       const cancellations = all.filter(r => r.status === "cancelled").length;
       // For late cancellations we'd need event date comparison; approximate for now

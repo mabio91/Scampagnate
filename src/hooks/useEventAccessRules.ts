@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
+import { countUniqueAttendedEvents, dedupeRegistrationsByEvent } from "@/lib/eventRegistrations";
 
 export interface AccessRule {
   type:
@@ -135,12 +136,12 @@ export const useCheckEventAccessRules = (
             const minCount = Number(rule.value) || 1;
             const { data: pastEvents } = await supabase
               .from("event_registrations")
-              .select("id, events!inner(category_id, event_categories(name))")
+              .select("event_id, status, checked_in, created_at, events!inner(category_id, event_categories(name))")
               .eq("user_id", user.id)
-              .eq("checked_in", true)
+              .or("status.eq.attended,checked_in.eq.true")
               .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-            const trekkingCount = (pastEvents || []).filter((r: any) => {
+            const trekkingCount = dedupeRegistrationsByEvent(pastEvents || []).filter((r: any) => {
               const catName = r.events?.event_categories?.name?.toLowerCase() || "";
               return catName.includes("trekking") || catName.includes("escursion");
             }).length;
@@ -156,14 +157,14 @@ export const useCheckEventAccessRules = (
 
           case "min_attended_events": {
             const minCount = Number(rule.value) || 1;
-            const { count } = await supabase
+            const { data: attendedRows } = await supabase
               .from("event_registrations")
-              .select("id", { count: "exact", head: true })
+              .select("event_id, status, checked_in, created_at")
               .eq("user_id", user.id)
-              .eq("checked_in", true)
+              .or("status.eq.attended,checked_in.eq.true")
               .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-            if ((count || 0) < minCount) {
+            if (countUniqueAttendedEvents(attendedRows || []) < minCount) {
               target.push({
                 rule,
                 reason: rule.message || `Questo evento richiede almeno ${minCount} presenze totali.`,
@@ -202,14 +203,14 @@ export const useCheckEventAccessRules = (
 
           case "min_activities": {
             const minCount = Number(rule.value) || 1;
-            const { count } = await supabase
+            const { data: attendedRows } = await supabase
               .from("event_registrations")
-              .select("id", { count: "exact", head: true })
+              .select("event_id, status, checked_in, created_at")
               .eq("user_id", user.id)
-              .eq("checked_in", true)
-              .in("status", ["registered", "paid"]);
+              .or("status.eq.attended,checked_in.eq.true")
+              .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-            if ((count || 0) < minCount) {
+            if (countUniqueAttendedEvents(attendedRows || []) < minCount) {
               target.push({
                 rule,
                 reason: rule.message || `Questo evento richiede almeno ${minCount} attività completate.`,
@@ -333,17 +334,19 @@ async function checkDifficultyAccess(
 
   const { data: pastEvents } = await supabase
     .from("event_registrations")
-    .select("*, events(difficulty)")
+    .select("event_id, status, checked_in, created_at, events(difficulty)")
     .eq("user_id", userId)
-    .eq("checked_in", true)
+    .or("status.eq.attended,checked_in.eq.true")
     .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-  const easyCount = (pastEvents || []).filter(r => {
+  const uniquePastEvents = dedupeRegistrationsByEvent(pastEvents || []);
+
+  const easyCount = uniquePastEvents.filter(r => {
     const d = parseInt((r.events as any)?.difficulty);
     return !isNaN(d) && d <= 2;
   }).length;
 
-  const interCount = (pastEvents || []).filter(r => {
+  const interCount = uniquePastEvents.filter(r => {
     const d = parseInt((r.events as any)?.difficulty);
     return !isNaN(d) && d >= 3;
   }).length;
