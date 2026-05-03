@@ -18,9 +18,9 @@ interface Props {
 }
 
 const QuickFilters = memo(({ active, onToggle }: Props) => (
-  <div>
-    <div className="overflow-x-auto pb-1 no-scrollbar">
-      <div className="flex gap-2 px-4">
+  <div className="px-4">
+    <div className="-mx-4 overflow-x-auto px-4 py-1 no-scrollbar scroll-px-4">
+      <div className="flex w-max min-w-full gap-2 pr-4">
         {FILTERS.map(({ key, label, icon: Icon }) => {
           const isActive = active.includes(key);
           return (
