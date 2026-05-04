@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventRegistrations, useEventMeetingPoints } from "@/hooks/useOrganizerEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getDepositPaymentLabel, getEventBalancePaymentMode, isActiveParticipantRegistration, isDepositRegistration } from "@/lib/eventPayments";
+import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration } from "@/lib/eventPayments";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -148,7 +148,9 @@ const EventManage = () => {
   if (authLoading) return null;
   if (!user || !isOrganizer) return <Navigate to="/" replace />;
 
-  const registered = registrations?.filter(isActiveParticipantRegistration) || [];
+  const registered = registrations?.filter((r) =>
+    ["registered", "deposit_paid", "paid", "attended", "no_show"].includes(r.status)
+  ) || [];
   const waitlisted = registrations?.filter((r) => r.status === "waitlist") || [];
   const cancelled = registrations?.filter((r) => r.status === "cancelled") || [];
   const pending = registrations?.filter((r) => r.status === "pending_approval") || [];
@@ -184,7 +186,7 @@ const EventManage = () => {
     : registered.filter((r) => r.meeting_point_id === meetingPointFilter);
 
   const filteredRegistered = filteredRegisteredBase.filter((r) => {
-    if (participantFilter === "participants") return isActiveParticipantRegistration(r);
+    if (participantFilter === "participants") return true;
     if (participantFilter === "deposit_paid") return r.status === "deposit_paid";
     if (participantFilter === "attended") return r.status === "attended";
     if (participantFilter === "waitlist") return false;
