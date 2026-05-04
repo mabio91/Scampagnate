@@ -1361,7 +1361,7 @@ const getCTALabel = () => {
             </p>
           </div>
         )}
-        <div className="max-w-lg mx-auto flex items-end justify-between gap-3 p-3 pb-safe">
+        <div className="max-w-lg mx-auto flex items-center justify-between gap-3 px-3 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+14px)]">
           <div className="min-w-0 flex-1">
             {/* Price display */}
             <div className="flex items-baseline gap-1.5">
@@ -1392,7 +1392,7 @@ const getCTALabel = () => {
               </p>
             )}
           </div>
-          <div className="relative shrink-0 pt-5">
+          <div className="relative shrink-0 pt-4">
             {showUrgencyBadge && (
               <span className="pointer-events-none absolute right-2 top-0 z-10 rounded-full bg-black px-2.5 py-1 text-[11px] font-body font-bold text-white shadow-sm dark:bg-white dark:text-black">
                 Ultimi posti!
@@ -1400,7 +1400,7 @@ const getCTALabel = () => {
             )}
           <Button
             onClick={handleCTA}
-            className={`px-6 py-3 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
+            className={`px-6 py-2.5 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
             disabled={
               paymentLoading ||
               isEventPast ||

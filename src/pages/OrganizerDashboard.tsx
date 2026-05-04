@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizerEvents } from "@/hooks/useOrganizerEvents";
 import { useQuery } from "@tanstack/react-query";

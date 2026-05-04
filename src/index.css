@@ -115,7 +115,6 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
-    overscroll-behavior-y: none;
   }
 
   h1, h2, h3, h4 {

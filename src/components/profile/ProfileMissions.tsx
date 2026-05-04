@@ -94,13 +94,26 @@ const getCompletionRewardText = (mission: any) => {
   return parts.length > 0 ? `Hai sbloccato ${parts.join(", ")}.` : mission.title;
 };
 
+const getMissionCompletionToastKey = (userId: string, mission: any) =>
+  `scampagnate:mission-toast:${userId}:${mission.id}:${mission.completed_at || "completed"}`;
+
+const hasSeenMissionCompletionToast = (key: string) => {
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(key) === "1";
+};
+
+const markMissionCompletionToastSeen = (key: string) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(key, "1");
+};
+
 const ProfileMissions = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setSelectedCategory, toggleQuickFilter, clearAllFilters } = useSearch();
-  const { data: userMissions = [] } = useUserMissions(user?.id);
-  const { data: activeMissions = [] } = useActiveMissions();
+  const { data: userMissions = [], isFetched: userMissionsFetched } = useUserMissions(user?.id);
+  const { data: activeMissions = [], isFetched: activeMissionsFetched } = useActiveMissions();
   const [completedOpen, setCompletedOpen] = useState(false);
   const initializedCompletions = useRef(false);
   const previousCompletedIds = useRef<Set<string>>(new Set());
@@ -125,6 +138,7 @@ const ProfileMissions = () => {
           reward_type: (mission as any).reward_type || "points",
           reward_value: (mission as any).reward_value || null,
           mission_rewards: (mission as any).mission_rewards || [],
+          completed_at: userMission?.completed_at || null,
           category: mission.category || null,
           target_action: (mission as any)?.target_action || "event_attended",
           expires_at: (mission as any)?.expires_at || null,
@@ -145,6 +159,7 @@ const ProfileMissions = () => {
       reward_type: (mission.missions as any)?.reward_type || "points",
       reward_value: (mission.missions as any)?.reward_value || null,
       mission_rewards: (mission.missions as any)?.mission_rewards || [],
+      completed_at: mission.completed_at || null,
       category: (mission.missions as any)?.category || null,
       target_action: (mission.missions as any)?.target_action || "event_attended",
       expires_at: (mission.missions as any)?.expires_at || null,
@@ -155,17 +170,26 @@ const ProfileMissions = () => {
   const completedMissionCards = missionsToShow.filter((mission) => mission.completed);
 
   useEffect(() => {
+    if (!user?.id || !userMissionsFetched || !activeMissionsFetched) return;
+
     const currentCompleted = new Set(completedMissionCards.map((mission) => mission.id));
 
     if (!initializedCompletions.current) {
       previousCompletedIds.current = currentCompleted;
       initializedCompletions.current = true;
+      completedMissionCards.forEach((mission) => {
+        markMissionCompletionToastSeen(getMissionCompletionToastKey(user.id, mission));
+      });
       return;
     }
 
     completedMissionCards
       .filter((mission) => !previousCompletedIds.current.has(mission.id))
       .forEach((mission) => {
+        const toastKey = getMissionCompletionToastKey(user.id, mission);
+        if (hasSeenMissionCompletionToast(toastKey)) return;
+
+        markMissionCompletionToastSeen(toastKey);
         toast({
           title: "Missione completata",
           description: getCompletionRewardText(mission),
@@ -173,7 +197,7 @@ const ProfileMissions = () => {
       });
 
     previousCompletedIds.current = currentCompleted;
-  }, [completedMissionCards, toast]);
+  }, [activeMissionsFetched, completedMissionCards, toast, user?.id, userMissionsFetched]);
 
   const handleMissionClick = (mission: any) => {
     clearAllFilters();

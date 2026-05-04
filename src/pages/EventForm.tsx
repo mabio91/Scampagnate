@@ -828,13 +828,13 @@ const EventForm = () => {
                 placeholder="Descrivi l'evento..." 
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+              <div className="min-w-0">
                 <Label htmlFor="date">Data *</Label>
                 <Input id="date" type="date" value={form.date} onChange={(e) => { updateForm("date", e.target.value); setValidationErrors(prev => ({ ...prev, date: false })); }} className={validationErrors.date ? "border-destructive ring-destructive/20 ring-2" : ""} />
                 {validationErrors.date && <p className="text-xs text-destructive mt-1">Obbligatorio</p>}
               </div>
-              <div>
+              <div className="min-w-0">
                 <Label htmlFor="time">Ora *</Label>
                 <Input id="time" type="time" value={form.time} onChange={(e) => { updateForm("time", e.target.value); setValidationErrors(prev => ({ ...prev, time: false })); }} className={validationErrors.time ? "border-destructive ring-destructive/20 ring-2" : ""} />
                 {validationErrors.time && <p className="text-xs text-destructive mt-1">Obbligatorio</p>}
@@ -1792,7 +1792,7 @@ const EventForm = () => {
                 onChange={(val) => updateMeetingPoint(index, "location", val)}
                 placeholder="Luogo/Indirizzo"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
                 <Input type="time" value={point.time} onChange={(e) => updateMeetingPoint(index, "time", e.target.value)} />
                 <Input placeholder="Note" value={point.notes} onChange={(e) => updateMeetingPoint(index, "notes", e.target.value)} />
               </div>
