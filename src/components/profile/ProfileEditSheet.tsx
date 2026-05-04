@@ -362,13 +362,13 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 Questi dati sono richiesti solo per la gestione della tessera associativa della ASD Gruppo Scampagnate.
               </p>
               <div className="space-y-3">
-                <div>
+                <div className="min-w-0">
                   <MembershipLabel>Data di nascita</MembershipLabel>
                   <Input
                     type="date"
                     value={dateOfBirth}
                     onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }}
-                    className="mt-1"
+                    className="mt-1 max-w-full [min-inline-size:0]"
                   />
                 </div>
                 <div>
@@ -389,12 +389,12 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                   </MembershipLabel>
                   <Input value={residentialAddress} onChange={(e) => { setResidentialAddress(e.target.value); markChanged(); }} className="mt-1" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+                  <div className="min-w-0">
                     <MembershipLabel>Città di residenza</MembershipLabel>
                     <Input value={cityOfResidence} onChange={(e) => { setCityOfResidence(e.target.value); markChanged(); }} className="mt-1" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <MembershipLabel tooltip={'Inserisci la sigla della provincia (es. "RM", "MI"). Se sei residente all\'estero, scrivi EE.'}>
                       Provincia di residenza
                     </MembershipLabel>
