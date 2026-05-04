@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import LevelAvatar from "@/components/LevelAvatar";
+import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
 
 interface ProfileEditSheetProps {
   open: boolean;
@@ -72,11 +73,14 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  // Google
+  // Social links
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   const isGoogleLinked = user?.app_metadata?.providers?.includes("google") ||
     user?.identities?.some((i) => i.provider === "google");
+  const isAppleLinked = user?.app_metadata?.providers?.includes("apple") ||
+    user?.identities?.some((i) => i.provider === "apple");
   const isEmailProvider = user?.app_metadata?.providers?.includes("email") ||
     user?.identities?.some((i) => i.provider === "email");
   const shouldFocusMembershipSection = searchParams.get("section") === "membership";
@@ -255,6 +259,20 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
       setGoogleLoading(false);
+    }
+  };
+
+  const handleLinkApple = async () => {
+    setAppleLoading(true);
+    try {
+      const { error } = await supabase.auth.linkIdentity({
+        provider: "apple",
+        options: { redirectTo: window.location.origin + "/profile" },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      setAppleLoading(false);
     }
   };
 
@@ -450,12 +468,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                     isGoogleLinked ? "opacity-70 cursor-default" : "hover:bg-muted/50"
                   }`}
                 >
-                  <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24">
-                    <path d="M12.0003 4.75C13.7703 4.75 15.3553 5.36 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z" fill="#EA4335" />
-                    <path d="M23.49 12.275C23.49 11.49 23.415 10.73 23.3 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.945 21.1C22.2 19.01 23.49 15.92 23.49 12.275Z" fill="#4285F4" />
-                    <path d="M5.26498 14.2949C5.02498 13.5699 4.88501 12.7999 4.88501 11.9999C4.88501 11.1999 5.01998 10.4299 5.26498 9.7049L1.275 6.60986C0.46 8.22986 0 10.0599 0 11.9999C0 13.9399 0.46 15.7699 1.28 17.3899L5.26498 14.2949Z" fill="#FBBC05" />
-                    <path d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.26538 14.29L1.27539 17.385C3.25539 21.31 7.3104 24.0001 12.0004 24.0001Z" fill="#34A853" />
-                  </svg>
+                  <GoogleIcon className="h-[18px] w-[18px] shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-body font-semibold text-foreground">
                       {isGoogleLinked ? "Google collegato" : "Collega account Google"}
@@ -466,6 +479,27 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                   </div>
                   {isGoogleLinked && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
                   {googleLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />}
+                </button>
+
+                {/* Link Apple */}
+                <button
+                  onClick={isAppleLinked ? undefined : handleLinkApple}
+                  disabled={isAppleLinked || appleLoading}
+                  className={`flex items-center gap-3 py-3 px-1 rounded-lg transition-colors group w-full text-left ${
+                    isAppleLinked ? "opacity-70 cursor-default" : "hover:bg-muted/50"
+                  }`}
+                >
+                  <AppleIcon className="h-[18px] w-[18px] shrink-0 text-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-body font-semibold text-foreground">
+                      {isAppleLinked ? "Apple collegato" : "Collega account Apple"}
+                    </p>
+                    <p className="text-xs font-body text-muted-foreground">
+                      {isAppleLinked ? "Il tuo account Apple è già collegato" : "Accedi anche con Apple"}
+                    </p>
+                  </div>
+                  {isAppleLinked && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
+                  {appleLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />}
                 </button>
               </div>
             </div>
