@@ -32,6 +32,8 @@ import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import LevelAvatar from "@/components/LevelAvatar";
 import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
 
+const HIDE_SOCIAL_AUTH = true;
+
 interface ProfileEditSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -462,6 +464,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 
                 {/* Link Google */}
                 <button
+                  hidden={HIDE_SOCIAL_AUTH}
                   onClick={isGoogleLinked ? undefined : handleLinkGoogle}
                   disabled={isGoogleLinked || googleLoading}
                   className={`flex items-center gap-3 py-3 px-1 rounded-lg transition-colors group w-full text-left ${
@@ -483,6 +486,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 
                 {/* Link Apple */}
                 <button
+                  hidden={HIDE_SOCIAL_AUTH}
                   onClick={isAppleLinked ? undefined : handleLinkApple}
                   disabled={isAppleLinked || appleLoading}
                   className={`flex items-center gap-3 py-3 px-1 rounded-lg transition-colors group w-full text-left ${

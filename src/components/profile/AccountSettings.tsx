@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dialog";
 import { Mail, Lock, Link2, Eye, EyeOff, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 
+const HIDE_SOCIAL_AUTH = true;
+
 const AccountSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -156,6 +158,7 @@ const AccountSettings = () => {
 
         {/* Link Google */}
         <button
+          hidden={HIDE_SOCIAL_AUTH}
           onClick={isGoogleLinked ? undefined : handleLinkGoogle}
           disabled={isGoogleLinked || googleLoading}
           className={`flex items-center gap-3 py-3 px-1 rounded-lg transition-colors group w-full text-left ${
@@ -181,6 +184,7 @@ const AccountSettings = () => {
 
         {/* Link Apple */}
         <button
+          hidden={HIDE_SOCIAL_AUTH}
           onClick={isAppleLinked ? undefined : handleLinkApple}
           disabled={isAppleLinked || appleLoading}
           className={`flex items-center gap-3 py-3 px-1 rounded-lg transition-colors group w-full text-left ${

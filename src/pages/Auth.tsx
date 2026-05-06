@@ -15,6 +15,8 @@ import { saveRegistrationConsents } from "@/hooks/useUserConsents";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
 
+const HIDE_SOCIAL_AUTH = true;
+
 /** Reusable consent checkbox for registration */
 const ConsentCheckbox = ({
   checked, onChange, label, description, error, required,
@@ -230,7 +232,7 @@ const Auth = () => {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 mb-6">
+        <div className={`flex flex-col gap-3 mb-6 ${HIDE_SOCIAL_AUTH ? "hidden" : ""}`}>
           <Button type="button" variant="outline" className="w-full h-11 bg-white text-gray-900 border border-gray-200 shadow-sm font-body font-semibold flex items-center justify-center gap-2" onClick={() => handleOAuthLogin('google')}>
             <GoogleIcon />
             {t("continueWithGoogle")}
@@ -241,7 +243,7 @@ const Auth = () => {
           </Button>
         </div>
 
-        <div className="relative mb-6">
+        <div className={`relative mb-6 ${HIDE_SOCIAL_AUTH ? "hidden" : ""}`}>
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground font-body">{t("orContinueWithEmail")}</span>
