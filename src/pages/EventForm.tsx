@@ -14,13 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain, Route,
-  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield, Car
+  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield, Car, Award
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
@@ -74,6 +77,22 @@ const useBadges = () => {
   });
 };
 
+const useSpecialBadges = () => {
+  return useQuery({
+    queryKey: ["special-badges-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("badges")
+        .select("id, name, icon, description")
+        .eq("category", "special")
+        .neq("name", "Founding Member")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
 const MultiBadgeSelector = ({ selectedIds, onChange, label }: { selectedIds: string[]; onChange: (ids: string[]) => void; label?: string }) => {
   const { data: badges } = useBadges();
   const toggleBadge = (id: string) => {
@@ -101,6 +120,60 @@ const MultiBadgeSelector = ({ selectedIds, onChange, label }: { selectedIds: str
           <span className="text-xs text-muted-foreground">Nessun badge disponibile</span>
         )}
       </div>
+    </div>
+  );
+};
+
+const EventSpecialBadgeSelector = ({
+  selectedIds,
+  onChange,
+}: {
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+}) => {
+  const { data: badges, isLoading } = useSpecialBadges();
+  const selectedBadges = (badges || []).filter((badge) => selectedIds.includes(badge.id));
+
+  const toggleBadge = (id: string) => {
+    onChange(selectedIds.includes(id) ? selectedIds.filter((badgeId) => badgeId !== id) : [...selectedIds, id]);
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-semibold">Seleziona badge speciali</Label>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="outline" className="w-full justify-between gap-2 text-left font-normal">
+            <span className="min-w-0 flex-1 truncate">
+              {selectedBadges.length > 0
+                ? selectedBadges.map((badge) => `${badge.icon} ${badge.name}`).join(", ")
+                : "Nessun badge speciale selezionato"}
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-72 overflow-y-auto">
+          {isLoading && (
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">Caricamento...</div>
+          )}
+          {!isLoading && (!badges || badges.length === 0) && (
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nessun badge speciale selezionato</div>
+          )}
+          {badges?.map((badge) => (
+            <DropdownMenuCheckboxItem
+              key={badge.id}
+              checked={selectedIds.includes(badge.id)}
+              onCheckedChange={() => toggleBadge(badge.id)}
+              onSelect={(event) => event.preventDefault()}
+            >
+              <span className="truncate">{badge.icon} {badge.name}</span>
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <p className="text-xs text-muted-foreground font-body">
+        Questi badge verranno assegnati solo agli utenti segnati come presenti all'evento.
+      </p>
     </div>
   );
 };
@@ -234,6 +307,7 @@ const EventForm = () => {
   const [restrictionMessage, setRestrictionMessage] = useState("");
   const [manualBadges, setManualBadges] = useState<string[]>([]);
   const [customBadge, setCustomBadge] = useState("");
+  const [eventSpecialBadgeIds, setEventSpecialBadgeIds] = useState<string[]>([]);
 
   interface PriceOptionInput {
     name: string;
@@ -423,6 +497,21 @@ const EventForm = () => {
         setManualBadges(badges.filter(b => knownManual.includes(b)));
         const custom = badges.find(b => !knownManual.includes(b));
         if (custom) setCustomBadge(custom);
+      }
+
+      if (!isDuplicating) {
+        const { data: specialBadgeLinks } = await supabase
+          .from("event_special_badges")
+          .select("badge_id")
+          .eq("event_id", eventId);
+
+        setEventSpecialBadgeIds(
+          (specialBadgeLinks || [])
+            .map((link) => link.badge_id)
+            .filter(Boolean)
+        );
+      } else {
+        setEventSpecialBadgeIds([]);
       }
 
       const { data: options } = await supabase
@@ -757,6 +846,25 @@ const EventForm = () => {
         if (error) throw error;
       }
 
+      if (isEditing) {
+        const { error: deleteSpecialBadgesError } = await supabase
+          .from("event_special_badges")
+          .delete()
+          .eq("event_id", eventId!);
+        if (deleteSpecialBadgesError) throw deleteSpecialBadgesError;
+      }
+
+      if (eventSpecialBadgeIds.length > 0) {
+        const specialBadgeLinks = Array.from(new Set(eventSpecialBadgeIds)).map((badgeId) => ({
+          event_id: eventId!,
+          badge_id: badgeId,
+        }));
+        const { error: specialBadgesError } = await supabase
+          .from("event_special_badges")
+          .insert(specialBadgeLinks);
+        if (specialBadgesError) throw specialBadgesError;
+      }
+
       // Handle price options
       if (isEditing) {
         await supabase.from("event_price_options").delete().eq("event_id", eventId!);
@@ -929,6 +1037,16 @@ const EventForm = () => {
                   );
                 })}
               </div>
+            </div>
+            <div className="space-y-3 border-t border-border/50 pt-3">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Badge speciali evento</h3>
+              </div>
+              <EventSpecialBadgeSelector
+                selectedIds={eventSpecialBadgeIds}
+                onChange={setEventSpecialBadgeIds}
+              />
             </div>
           </div>
         </Card>
