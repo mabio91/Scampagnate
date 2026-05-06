@@ -22,15 +22,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Camera, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, ChevronRight, Settings, HelpCircle } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import LevelAvatar from "@/components/LevelAvatar";
 import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
+
+const HIDE_SOCIAL_AUTH = true;
 
 interface ProfileEditSheetProps {
   open: boolean;
@@ -192,18 +189,26 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     <div className="flex items-center gap-1.5">
       <Label className="font-body text-xs">{children}</Label>
       {tooltip && (
-        <TooltipProvider delayDuration={150}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button type="button" className="text-muted-foreground hover:text-foreground">
-                <HelpCircle className="h-3.5 w-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-64 text-xs leading-relaxed">
-              {tooltip}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Aiuto: ${children}`}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="center"
+            sideOffset={8}
+            collisionPadding={16}
+            className="w-[min(18rem,calc(100vw-2rem))] p-3 text-xs leading-relaxed"
+          >
+            {tooltip}
+          </PopoverContent>
+        </Popover>
       )}
     </div>
   );
@@ -462,6 +467,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 
                 {/* Link Google */}
                 <button
+                  hidden={HIDE_SOCIAL_AUTH}
                   onClick={isGoogleLinked ? undefined : handleLinkGoogle}
                   disabled={isGoogleLinked || googleLoading}
                   className={`flex items-center gap-3 py-3 px-1 rounded-lg transition-colors group w-full text-left ${
@@ -483,6 +489,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 
                 {/* Link Apple */}
                 <button
+                  hidden={HIDE_SOCIAL_AUTH}
                   onClick={isAppleLinked ? undefined : handleLinkApple}
                   disabled={isAppleLinked || appleLoading}
                   className={`flex items-center gap-3 py-3 px-1 rounded-lg transition-colors group w-full text-left ${

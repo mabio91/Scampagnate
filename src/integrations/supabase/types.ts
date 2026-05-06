@@ -652,6 +652,42 @@ export type Database = {
           },
         ]
       }
+      event_special_badges: {
+        Row: {
+          badge_id: string
+          created_at: string
+          event_id: string
+          id: string
+        }
+        Insert: {
+          badge_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+        }
+        Update: {
+          badge_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_special_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_special_badges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_registrations: {
         Row: {
           additional_responses: Json | null
