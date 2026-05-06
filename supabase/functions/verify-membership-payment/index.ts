@@ -8,6 +8,37 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+
+const getBearerToken = (req: Request) => {
+  const authHeader = req.headers.get("Authorization");
+  return authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+};
+
+const getSessionId = async (req: Request) => {
+  const url = new URL(req.url);
+  const sessionIdFromUrl =
+    url.searchParams.get("session_id") || url.searchParams.get("sessionId");
+
+  if (sessionIdFromUrl) return sessionIdFromUrl;
+  if (req.method === "GET" || req.method === "HEAD") return null;
+
+  const rawBody = await req.text();
+  if (!rawBody.trim()) return null;
+
+  try {
+    const body = JSON.parse(rawBody);
+    return typeof body.sessionId === "string" ? body.sessionId : null;
+  } catch (error) {
+    console.error("Invalid verify-membership-payment JSON body:", error);
+    return null;
+  }
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,14 +55,10 @@ serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user) throw new Error("User not authenticated");
-
-    const { sessionId } = await req.json();
-    if (!sessionId) throw new Error("Session ID required");
+    const sessionId = await getSessionId(req);
+    if (!sessionId) {
+      return jsonResponse({ success: false, error: "Session ID required" }, 400);
+    }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -40,42 +67,45 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== "paid") {
-      return new Response(
-        JSON.stringify({ success: false, error: "Payment not completed" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
+      return jsonResponse({ success: false, error: "Payment not completed" }, 400);
     }
 
-    // Verify the session belongs to this user
-    if (session.metadata?.user_id !== user.id) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Session mismatch" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
+    const sessionUserId = session.metadata?.user_id;
+    if (!sessionUserId) {
+      return jsonResponse({ success: false, error: "Session missing user metadata" }, 400);
     }
 
-    // Activate membership using the existing function (uses service role to bypass RLS)
+    if (session.metadata?.type && session.metadata.type !== "membership") {
+      return jsonResponse({ success: false, error: "Invalid membership session" }, 400);
+    }
+
+    const token = getBearerToken(req);
+    if (token) {
+      const { data: authData, error: authError } = await supabaseClient.auth.getUser(token);
+      if (!authError && authData.user && authData.user.id !== sessionUserId) {
+        return jsonResponse({ success: false, error: "Session mismatch" }, 403);
+      }
+    }
+
+    // Activate membership using the existing RPC (uses service role to bypass RLS).
     const { error: rpcError } = await supabaseAdmin.rpc("activate_membership", {
-      user_id_param: user.id,
+      user_id_param: sessionUserId,
     });
 
     if (rpcError) {
       console.error("Membership activation error:", rpcError);
-      throw new Error("Failed to activate membership");
+      return jsonResponse({ success: false, error: "Failed to activate membership" }, 500);
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        eventId: session.metadata?.event_id || null 
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-    );
+    return jsonResponse({
+      success: true,
+      eventId: session.metadata?.event_id || null,
+    });
   } catch (error) {
     console.error("Verify membership error:", error);
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return jsonResponse(
+      { success: false, error: error instanceof Error ? error.message : "Verification failed" },
+      500
+    );
   }
 });
