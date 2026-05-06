@@ -35,8 +35,18 @@ const MembershipSuccess = () => {
 
     const verify = async () => {
       try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+
+        if (sessionError || !accessToken) {
+          throw new Error("Devi effettuare l'accesso per verificare il pagamento.");
+        }
+
         const { data, error } = await supabase.functions.invoke("verify-membership-payment", {
           body: { sessionId },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         });
 
         if (error || !data?.success) {
