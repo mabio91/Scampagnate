@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/EmptyState";
+import DynamicIcon from "@/components/DynamicIcon";
 import { Gift, Ticket, Trophy, Clock, CheckCircle, ArrowLeft, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +28,33 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   expired: { label: "Scaduto", color: "text-destructive" },
 };
 
+interface RewardCardRow {
+  id: string;
+  type: string;
+  title: string;
+  value: string | null;
+  status: string;
+  expiry_date: string | null;
+  missions?: {
+    title: string | null;
+    icon: string | null;
+  } | null;
+  source_reward?: {
+    title: string | null;
+    reward_kind: string | null;
+    badges?: {
+      name: string | null;
+      icon: string | null;
+      description: string | null;
+    } | null;
+  } | null;
+}
+
+const isGenericBadgeTitle = (title: string | null | undefined) => {
+  const normalized = (title || "").trim().toLowerCase();
+  return normalized === "badge" || normalized === "badge missione";
+};
+
 const Rewards = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -38,11 +66,11 @@ const Rewards = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_rewards")
-        .select("*, missions(title, icon)")
+        .select("*, missions(title, icon), source_reward:mission_rewards!user_rewards_source_mission_reward_id_fkey(title, reward_kind, badges(name, icon, description))")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data || []) as RewardCardRow[];
     },
   });
 
@@ -60,11 +88,19 @@ const Rewards = () => {
     toast({ title: "Codice copiato!" });
   };
 
-  const renderRewardCard = (r: any, showActions = false) => {
+  const renderRewardCard = (r: RewardCardRow, showActions = false) => {
+    const sourceReward = r.source_reward;
+    const sourceBadge = sourceReward?.badges;
+    const badgeName = sourceBadge?.name || (r.type === "badge" ? r.value : null);
+    const badgeDescription = sourceBadge?.description || null;
+    const displayTitle = r.type === "badge" && isGenericBadgeTitle(r.title) && badgeName
+      ? badgeName
+      : r.title;
     const Icon = REWARD_ICON[r.type] || Gift;
     const status = STATUS_LABELS[r.status] || STATUS_LABELS.active;
     const isExpired = r.expiry_date && new Date(r.expiry_date) < new Date();
     const actualStatus = isExpired && r.status === "active" ? STATUS_LABELS.expired : status;
+    const iconValue = r.type === "badge" ? sourceBadge?.icon : null;
 
     return (
       <Card key={r.id} className={`p-4 space-y-2 ${r.status === "active" || r.status === "pending" ? "" : "opacity-60"}`}>
@@ -72,13 +108,21 @@ const Rewards = () => {
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
             r.type === "coupon" ? "bg-primary/10" : r.type === "badge" ? "bg-accent/10" : "bg-secondary/10"
           }`}>
-            <Icon className={`h-5 w-5 ${
-              r.type === "coupon" ? "text-primary" : r.type === "badge" ? "text-accent" : "text-secondary"
-            }`} />
+            {iconValue ? (
+              <DynamicIcon
+                value={iconValue}
+                className={`h-5 w-5 ${r.type === "badge" ? "text-accent" : "text-secondary"}`}
+                size={20}
+              />
+            ) : (
+              <Icon className={`h-5 w-5 ${
+                r.type === "coupon" ? "text-primary" : r.type === "badge" ? "text-accent" : "text-secondary"
+              }`} />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-display font-bold text-foreground truncate">{r.title}</p>
+              <p className="text-sm font-display font-bold text-foreground truncate">{displayTitle}</p>
               <span className={`text-[10px] font-body font-bold ${actualStatus.color}`}>
                 {actualStatus.label}
               </span>
@@ -96,6 +140,12 @@ const Rewards = () => {
             {r.value && r.type === "physical" && (
               <p className="text-xs font-body text-muted-foreground mt-0.5">{r.value}</p>
             )}
+            {r.type === "badge" && badgeName && displayTitle !== badgeName && (
+              <p className="text-xs font-body text-muted-foreground mt-0.5">{badgeName}</p>
+            )}
+            {r.type === "badge" && badgeDescription && (
+              <p className="text-[10px] font-body text-muted-foreground mt-0.5 line-clamp-2">{badgeDescription}</p>
+            )}
             {r.type === "physical" && r.status === "pending" && (
               <p className="text-xs font-body text-warning mt-1 flex items-center gap-1">
                 <Gift className="h-3 w-3" /> Da ritirare al prossimo evento
@@ -106,9 +156,12 @@ const Rewards = () => {
                 <Clock className="h-3 w-3" /> Scade il {new Date(r.expiry_date).toLocaleDateString("it-IT")}
               </p>
             )}
-            {(r as any).missions?.title && (
-              <p className="text-[10px] font-body text-muted-foreground mt-0.5">
-                {(r as any).missions.icon} {(r as any).missions.title}
+            {r.missions?.title && (
+              <p className="text-[10px] font-body text-muted-foreground mt-0.5 flex items-center gap-1">
+                {r.missions.icon && (
+                  <DynamicIcon value={r.missions.icon} className="h-3 w-3 shrink-0" size={12} />
+                )}
+                <span className="truncate">{r.missions.title}</span>
               </p>
             )}
           </div>
