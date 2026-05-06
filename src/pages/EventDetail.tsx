@@ -50,10 +50,6 @@ import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 
-const EDGE_GATEWAY_JWT =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
-
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
   const [isClamped, setIsClamped] = useState(false);
@@ -93,15 +89,17 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
 };
 
 const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
-  if (!EDGE_GATEWAY_JWT) {
-    throw new Error("Configurazione Supabase mancante per la funzione.");
+  const { data, error } = await supabase.auth.getSession();
+  const accessToken = data.session?.access_token;
+
+  if (error || !accessToken) {
+    throw new Error("Devi effettuare l'accesso per completare il checkout.");
   }
 
   return supabase.functions.invoke(functionName, {
     body,
     headers: {
-      apikey: EDGE_GATEWAY_JWT,
-      Authorization: `Bearer ${EDGE_GATEWAY_JWT}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 };

@@ -38,18 +38,38 @@ serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+    if (!token) {
+      return new Response(JSON.stringify({ error: "User not authenticated" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    const { data, error: authError } = await supabaseClient.auth.getUser(token);
     const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated");
+    if (authError || !user?.email) {
+      return new Response(JSON.stringify({ error: "User not authenticated" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
 
     // Check if already an active member FOR THE CURRENT YEAR
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("membership_status, membership_registration_date, birth_date, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("Membership profile lookup error:", profileError);
+      return new Response(JSON.stringify({ error: "Unable to verify membership status" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
 
     if (!hasCompleteMembershipData(profile)) {
       return new Response(
