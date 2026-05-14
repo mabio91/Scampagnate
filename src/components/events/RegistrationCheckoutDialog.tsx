@@ -84,10 +84,16 @@ const RegistrationCheckoutDialog = ({
   const balancePaymentMode = getOptionBalancePaymentMode(selectedOpt, event);
   const canPayFullAmount = selectedPaymentType === "deposit" && balancePaymentMode === "online";
   const effectivePaymentChoice = canPayFullAmount ? paymentChoice : "deposit";
-  const selectedOptionBookable = !hasPriceOptions || isOptionBookable(selectedOpt, event);
-  const selectedOptionCanWaitlist = Boolean(hasPriceOptions && selectedOpt && !selectedOptionBookable && canOptionJoinWaitlist(selectedOpt, event));
-  const selectedOptionIsWaitlist = event.status === "full" || selectedOptionCanWaitlist;
-  const selectedOptionUnavailable = Boolean(hasPriceOptions && selectedPriceOption && !selectedOptionBookable && !selectedOptionCanWaitlist);
+  const selectedOptionBookable = hasPriceOptions
+    ? Boolean(selectedOpt && isOptionBookable(selectedOpt, event))
+    : isOptionBookable(null, event);
+  const selectedOptionCanWaitlist = hasPriceOptions
+    ? Boolean(selectedOpt && canOptionJoinWaitlist(selectedOpt, event))
+    : canOptionJoinWaitlist(null, event);
+  const selectedOptionIsWaitlist = selectedOptionCanWaitlist;
+  const selectedOptionUnavailable = Boolean(
+    (hasPriceOptions ? selectedPriceOption : true) && !selectedOptionBookable && !selectedOptionCanWaitlist
+  );
 
   // Custom fields
   const af = event.additional_fields as any;

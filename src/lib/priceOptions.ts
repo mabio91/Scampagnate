@@ -114,8 +114,11 @@ export const getOptionRemainingSpots = (
   option: PriceOptionLike | null | undefined,
   event: EventPricingLike,
 ) => {
-  if (!optionUsesDedicatedSpots(option)) return getEventRemainingSpots(event);
-  return Math.max(0, Number(option?.dedicated_spots || 0) - Number(option?.spots_taken || 0));
+  const eventRemaining = getEventRemainingSpots(event);
+  if (!optionUsesDedicatedSpots(option)) return eventRemaining;
+
+  const dedicatedRemaining = Math.max(0, Number(option?.dedicated_spots || 0) - Number(option?.spots_taken || 0));
+  return Math.min(eventRemaining, dedicatedRemaining);
 };
 
 export const isOptionBookable = (
@@ -129,7 +132,10 @@ export const isOptionBookable = (
 export const canOptionJoinWaitlist = (
   option: PriceOptionLike | null | undefined,
   event: EventPricingLike,
-) => Boolean(option?.waitlist_enabled || event.status === "full");
+) => {
+  if (event.status === "closed" || event.status === "cancelled" || event.status === "past") return false;
+  return !isOptionBookable(option, event) && option?.waitlist_enabled !== false;
+};
 
 export const getOptionAvailabilityLabel = (
   option: PriceOptionLike | null | undefined,
