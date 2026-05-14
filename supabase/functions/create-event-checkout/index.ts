@@ -24,6 +24,72 @@ const hasCompleteMembershipData = (profile: Record<string, unknown> | null) =>
     return typeof value === "string" ? value.trim().length > 0 : value != null;
   });
 
+const isAllowedReturnUrl = (value: unknown, allowedHosts: string[]) => {
+  if (typeof value !== "string" || value.trim().length === 0) return false;
+  try {
+    const url = new URL(value);
+    if (url.protocol === "scampagnate:") {
+      return ["payment-success", "payment-cancelled"].includes(url.hostname);
+    }
+    if (url.protocol === "https:") return allowedHosts.includes(url.hostname);
+    return false;
+  } catch (_error) {
+    return false;
+  }
+};
+
+const withCheckoutParams = (baseUrl: string, params: string) => {
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}${params}`;
+};
+
+type PaymentType = "free" | "paid" | "deposit" | "location";
+type BalancePaymentMode = "online" | "on_site" | null;
+
+type PaymentConfig = {
+  paymentType: PaymentType;
+  totalPrice: number;
+  depositAmount: number;
+  balancePaymentMode: BalancePaymentMode;
+  priceOptionName: string;
+};
+
+const normalizePaymentType = (value: unknown, fallback: PaymentType): PaymentType => {
+  if (value === "free" || value === "paid" || value === "deposit" || value === "location") return value;
+  return fallback;
+};
+
+const normalizeBalancePaymentMode = (value: unknown): BalancePaymentMode =>
+  value === "on_site" ? "on_site" : value === "online" ? "online" : null;
+
+const resolvePaymentConfig = (
+  event: Record<string, any>,
+  priceOption: Record<string, any> | null
+): PaymentConfig => {
+  const eventPaymentType = normalizePaymentType(event.payment_type, "free");
+  const paymentType = normalizePaymentType(priceOption?.payment_type, eventPaymentType);
+  const totalPrice = Number(priceOption?.price ?? event.price ?? 0);
+  const depositAmount = paymentType === "deposit"
+    ? Number(priceOption?.deposit_amount ?? event.deposit ?? 0)
+    : 0;
+  const balancePaymentMode = paymentType === "deposit"
+    ? (normalizeBalancePaymentMode(priceOption?.balance_payment_mode) ??
+      normalizeBalancePaymentMode(event.balance_payment_mode) ??
+      "online")
+    : null;
+
+  return {
+    paymentType,
+    totalPrice,
+    depositAmount,
+    balancePaymentMode,
+    priceOptionName: String(priceOption?.name ?? ""),
+  };
+};
+
+const requiresOnlinePayment = (paymentType: PaymentType) =>
+  paymentType === "paid" || paymentType === "deposit";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,7 +106,7 @@ serve(async (req) => {
   );
 
   try {
-    const { eventId, registrationId, discountCodeId, priceOptionId, paymentChoice } = await req.json();
+    const { eventId, registrationId, discountCodeId, priceOptionId, paymentChoice, returnUrlBase, cancelUrlBase } = await req.json();
     if (!eventId || !registrationId) throw new Error("Event ID and Registration ID required");
 
     const { data: registration, error: registrationError } = await supabaseAdmin
@@ -90,22 +156,11 @@ serve(async (req) => {
     // Fetch event details using admin client to bypass RLS
     const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
-      .select("id, title, price, deposit, payment_type, balance_payment_mode, spots_total, spots_taken, cancellation_policy, access_rules")
+      .select("id, title, price, deposit, payment_type, balance_payment_mode, spots_total, spots_taken, status, cancellation_policy, access_rules")
       .eq("id", eventId)
       .single();
 
     if (eventError || !event) throw new Error("Event not found");
-
-    // Check if registration is from waitlist — if so, verify spot availability
-    if (registration.status === "waitlist") {
-      const availableSpots = event.spots_total - event.spots_taken;
-      if (availableSpots <= 0) {
-        return new Response(
-          JSON.stringify({ error: "Non ci sono posti disponibili al momento. Resti in lista d'attesa." }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-    }
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
@@ -151,22 +206,22 @@ serve(async (req) => {
     }
     const membershipFeeCents = hasActiveMembership ? 0 : Math.round(membershipFeeEuros * 100);
 
-    // Check if registration has a price option
-    let priceOptionName = "";
-    let effectivePriceOptionId = priceOptionId;
-    
-    if (!effectivePriceOptionId) {
-      // Check the registration for a stored price_option_id
-      if (registration.price_option_id) {
-        effectivePriceOptionId = registration.price_option_id;
-      }
+    const effectivePriceOptionId = priceOptionId || registration.price_option_id || null;
+    let priceOption: Record<string, any> | null = null;
+
+    if (effectivePriceOptionId) {
+      const { data: option, error: poError } = await supabaseAdmin
+        .from("event_price_options")
+        .select("id, event_id, name, price, payment_type, deposit_amount, balance_amount, balance_payment_mode, has_dedicated_spots, dedicated_spots, spots_taken, waitlist_enabled")
+        .eq("id", effectivePriceOptionId)
+        .eq("event_id", eventId)
+        .single();
+      if (poError || !option) throw new Error("Price option not found");
+      priceOption = option;
     }
 
-    const totalEventPrice = effectivePriceOptionId ? 0 : Number(event.price || 0);
-    const configuredDepositAmount = Number(event.deposit || 0);
-    const balancePaymentMode = event.payment_type === "deposit"
-      ? (event.balance_payment_mode === "on_site" ? "on_site" : "online")
-      : null;
+    const paymentConfig = resolvePaymentConfig(event, priceOption);
+    const { paymentType, totalPrice, depositAmount, balancePaymentMode, priceOptionName } = paymentConfig;
     const isBalanceCheckout = registration.payment_status === "deposit_paid";
     const normalizedPaymentChoice = paymentChoice === "full" ? "full" : "deposit";
 
@@ -175,59 +230,54 @@ serve(async (req) => {
     let originalPrice: number;
     let checkoutKind: "full" | "deposit" | "balance" = "full";
 
-    if (effectivePriceOptionId) {
-      const { data: priceOption, error: poError } = await supabaseClient
-        .from("event_price_options")
-        .select("name, price")
-        .eq("id", effectivePriceOptionId)
-        .single();
-      if (poError || !priceOption) throw new Error("Price option not found");
-
-      const optionPrice = Number(priceOption.price);
-      originalPrice = optionPrice;
-      priceOptionName = priceOption.name;
-      description = `"${event.title}" — ${priceOption.name}`;
-
-      if (event.payment_type === "deposit") {
-        if (isBalanceCheckout) {
-          checkoutKind = "balance";
-          originalPrice = Math.max(0, optionPrice - Number(registration.deposit_amount || configuredDepositAmount));
-          description = `Saldo per "${event.title}" — ${priceOption.name}`;
-        } else if (normalizedPaymentChoice === "deposit") {
-          checkoutKind = "deposit";
-          originalPrice = configuredDepositAmount;
-          description = `Acconto per "${event.title}" — ${priceOption.name}`;
-        } else {
-          checkoutKind = "full";
-          description = `Pagamento completo per "${event.title}" — ${priceOption.name}`;
-        }
-      }
-    } else if (event.payment_type === "deposit" && isBalanceCheckout) {
+    const optionSuffix = priceOptionName ? ` — ${priceOptionName}` : "";
+    if (paymentType === "deposit" && isBalanceCheckout) {
       checkoutKind = "balance";
-      originalPrice = Number(registration.balance_due_amount ?? Math.max(0, totalEventPrice - Number(registration.deposit_amount || configuredDepositAmount)));
-      description = `Saldo per "${event.title}"`;
-    } else if (event.payment_type === "deposit" && event.deposit) {
+      originalPrice = Number(registration.balance_due_amount ?? Math.max(0, totalPrice - Number(registration.deposit_amount || depositAmount)));
+      description = `Saldo per "${event.title}"${optionSuffix}`;
+    } else if (paymentType === "deposit") {
       checkoutKind = normalizedPaymentChoice === "full" ? "full" : "deposit";
-      originalPrice = checkoutKind === "full" ? totalEventPrice : configuredDepositAmount;
+      originalPrice = checkoutKind === "full" ? totalPrice : depositAmount;
       description = checkoutKind === "full"
-        ? `Pagamento completo per "${event.title}"`
-        : `Acconto per "${event.title}" (Totale: €${Number(event.price).toFixed(2)})`;
-    } else if (event.payment_type === "paid") {
-      originalPrice = Number(event.price);
-      description = `Pagamento completo per "${event.title}"`;
+        ? `Pagamento completo per "${event.title}"${optionSuffix}`
+        : `Acconto per "${event.title}"${optionSuffix} (Totale: €${Number(totalPrice).toFixed(2)})`;
+    } else if (paymentType === "paid") {
+      originalPrice = totalPrice;
+      description = `Pagamento completo per "${event.title}"${optionSuffix}`;
     } else {
       throw new Error("This event does not require online payment");
     }
 
-    if (event.payment_type === "deposit" && balancePaymentMode === "on_site" && !isBalanceCheckout && normalizedPaymentChoice === "full") {
+    if (paymentType === "deposit" && balancePaymentMode === "on_site" && !isBalanceCheckout && normalizedPaymentChoice === "full") {
       throw new Error("Per questo evento è possibile pagare online solo l'acconto.");
     }
 
-    if (event.payment_type === "deposit" && balancePaymentMode === "on_site" && isBalanceCheckout) {
+    if (paymentType === "deposit" && balancePaymentMode === "on_site" && isBalanceCheckout) {
       throw new Error("Il saldo di questo evento va pagato sul posto.");
     }
 
+    if (checkoutKind !== "balance") {
+      let optionIsBookable = false;
+      if (effectivePriceOptionId) {
+        const { data: availabilityRows, error: availabilityError } = await supabaseAdmin
+          .rpc("get_event_option_availability", { p_event_id: eventId });
+        if (availabilityError) throw availabilityError;
+        const availability = (availabilityRows || []).find((row: any) => row.option_id === effectivePriceOptionId);
+        optionIsBookable = Boolean(availability?.is_bookable);
+      } else {
+        optionIsBookable = Number(event.spots_total || 0) - Number(event.spots_taken || 0) > 0;
+      }
+
+      if (!optionIsBookable) {
+        return new Response(
+          JSON.stringify({ error: "Non ci sono posti disponibili al momento. Resti in lista d'attesa." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+    }
+
     let finalPrice = originalPrice;
+    let waivesServiceFee = false;
 
     // Apply discount if provided
     if (discountCodeId) {
@@ -240,6 +290,8 @@ serve(async (req) => {
         .single();
 
       if (discountError || !discount) throw new Error("Invalid discount code");
+
+      waivesServiceFee = discount.waives_service_fee === true;
 
       // Validate expiration
       if (discount.expires_at && new Date(discount.expires_at) < new Date()) {
@@ -291,14 +343,14 @@ serve(async (req) => {
     const eventAmountCents = Math.round(finalPrice * 100);
     const serviceFeeCents = checkoutKind === "balance"
       ? 0
-      : (event.payment_type === "paid" || event.payment_type === "deposit" ? SERVICE_FEE_EUR * 100 : 0);
+      : waivesServiceFee
+        ? 0
+        : (requiresOnlinePayment(paymentType) ? SERVICE_FEE_EUR * 100 : 0);
     const bookingAmountCents = eventAmountCents + serviceFeeCents;
     const totalAmountCents = bookingAmountCents + membershipFeeCents;
-    const totalPriceAmount = effectivePriceOptionId
-      ? Math.max(originalPrice, Number(registration.total_price_amount || 0), Number(finalPrice || 0))
-      : Number(event.price || 0);
-    const depositAmountValue = event.payment_type === "deposit"
-      ? Number(registration.deposit_amount || configuredDepositAmount)
+    const totalPriceAmount = Math.max(totalPrice, Number(registration.total_price_amount || 0), Number(finalPrice || 0));
+    const depositAmountValue = paymentType === "deposit"
+      ? Number(registration.deposit_amount || depositAmount)
       : null;
 
     await supabaseAdmin
@@ -312,24 +364,24 @@ serve(async (req) => {
         refund_percentage: 0,
         refund_amount: 0,
         refund_status: registration.payment_status === "paid" ? "completed" : "pending",
-        total_price_amount: event.payment_type === "deposit" ? totalPriceAmount : null,
+        total_price_amount: paymentType === "deposit" ? totalPriceAmount : null,
         deposit_amount: depositAmountValue,
-        balance_due_amount: event.payment_type === "deposit"
+        balance_due_amount: paymentType === "deposit"
           ? (checkoutKind === "deposit" ? Math.max(0, totalPriceAmount - Number(finalPrice)) : 0)
           : null,
-        balance_payment_mode: event.payment_type === "deposit" ? balancePaymentMode : null,
+        balance_payment_mode: paymentType === "deposit" ? balancePaymentMode : null,
       })
       .eq("id", registrationId);
 
     if (totalAmountCents <= 0) {
-      const freeStatus = event.payment_type === "deposit" && checkoutKind === "deposit" ? "deposit_paid" : "paid";
+      const freeStatus = paymentType === "deposit" && checkoutKind === "deposit" ? "deposit_paid" : "paid";
       await supabaseAdmin
         .from("event_registrations")
         .update({
           payment_status: freeStatus,
           status: freeStatus,
           balance_due_amount: freeStatus === "deposit_paid" ? Math.max(0, totalPriceAmount - Number(finalPrice)) : 0,
-          balance_payment_mode: event.payment_type === "deposit" ? balancePaymentMode : null,
+          balance_payment_mode: paymentType === "deposit" ? balancePaymentMode : null,
         })
         .eq("id", registrationId);
 
@@ -351,6 +403,18 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "https://scampagnate.app";
+    const originHost = (() => {
+      try {
+        return new URL(origin).hostname;
+      } catch (_error) {
+        return "scampagnate.app";
+      }
+    })();
+    const allowedHosts = [originHost, "scampagnate.app", "scampagnate.com"];
+    const successBase = typeof returnUrlBase === "string" && isAllowedReturnUrl(returnUrlBase, allowedHosts) ? returnUrlBase : `${origin}/payment-success`;
+    const cancelBase = typeof cancelUrlBase === "string" && isAllowedReturnUrl(cancelUrlBase, allowedHosts) ? cancelUrlBase : `${origin}/event/${eventId}`;
+    const successParams = `session_id={CHECKOUT_SESSION_ID}&event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}`;
+    const cancelParams = `event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}`;
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
@@ -402,13 +466,14 @@ serve(async (req) => {
       payment_method_types: ["card", "link"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId}&registration_id=${registrationId}`,
-      cancel_url: `${origin}/event/${eventId}`,
+      success_url: withCheckoutParams(successBase, successParams),
+      cancel_url: withCheckoutParams(cancelBase, cancelParams),
       metadata: {
         user_id: userId,
         event_id: eventId,
         registration_id: registrationId,
-        payment_type: event.payment_type,
+        payment_type: paymentType,
+        price_option_id: effectivePriceOptionId || "",
         checkout_kind: checkoutKind,
         balance_payment_mode: balancePaymentMode || "",
         discount_code_id: discountCodeId || "",

@@ -56,12 +56,12 @@ serve(async (req) => {
       : session.payment_intent?.id || null;
 
     // Check if registration still exists
-    const { data: reg, error: regError } = await supabaseAdmin
-      .from("event_registrations")
-      .select("id, status, payment_status, event_id, amount_paid, service_fee_amount, total_price_amount, deposit_amount, balance_due_amount")
-      .eq("id", registrationId)
-      .eq("user_id", userId)
-      .single();
+      const { data: reg, error: regError } = await supabaseAdmin
+        .from("event_registrations")
+        .select("id, status, payment_status, event_id, price_option_id, amount_paid, service_fee_amount, total_price_amount, deposit_amount, balance_due_amount")
+        .eq("id", registrationId)
+        .eq("user_id", userId)
+        .single();
 
     if (regError || !reg) {
       // Registration was cleaned up — auto-refund
@@ -102,9 +102,24 @@ serve(async (req) => {
 
     if (eventError || !event) throw new Error("Event not found");
 
-    const spotsAvailable = event.spots_total - event.spots_taken;
+      let spotsAvailable = Number(event.spots_total || 0) - Number(event.spots_taken || 0);
+      let selectedOptionName = "";
+      if (reg.price_option_id) {
+        const { data: availabilityRows, error: availabilityError } = await supabaseAdmin
+          .rpc("get_event_option_availability", { p_event_id: reg.event_id });
+        if (availabilityError) throw availabilityError;
+        const availability = (availabilityRows || []).find((row: any) => row.option_id === reg.price_option_id);
+        spotsAvailable = Number(availability?.real_remaining ?? 0);
 
-    if (checkoutKind !== "balance" && spotsAvailable <= 0) {
+        const { data: option } = await supabaseAdmin
+          .from("event_price_options")
+          .select("name")
+          .eq("id", reg.price_option_id)
+          .maybeSingle();
+        selectedOptionName = option?.name ? ` - ${option.name}` : "";
+      }
+
+      if (checkoutKind !== "balance" && spotsAvailable <= 0) {
       // RACE CONDITION: Another user got the spot first
       // Auto-refund this payment
       if (stripePaymentIntentId && bookingAmountCents > 0) {
@@ -131,13 +146,13 @@ serve(async (req) => {
         .eq("user_id", userId);
 
       // Notify user
-      await supabaseAdmin.from("notifications").insert({
-        user_id: userId,
-        type: "waitlist_spot_lost",
-        title: "Posto già assegnato",
-        message: `Il posto per "${event.title}" è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente. Resti in lista d'attesa.`,
-        event_id: reg.event_id,
-      });
+        await supabaseAdmin.from("notifications").insert({
+          user_id: userId,
+          type: "waitlist_spot_lost",
+          title: "Posto già assegnato",
+          message: `Il posto per "${event.title}${selectedOptionName}" è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente. Resti in lista d'attesa.`,
+          event_id: reg.event_id,
+        });
 
       // Activate membership if included (they still paid for it)
       if (membershipIncluded) {

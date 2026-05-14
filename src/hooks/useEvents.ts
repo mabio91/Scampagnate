@@ -42,8 +42,29 @@ export interface EventWithDetails {
   access_rules: any;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
-  price_options?: { id: string; name: string; price: number; sort_order: number; original_price: number | null; eligible_group: string; is_promotional: boolean; promo_start: string | null; promo_end: string | null }[];
+  price_options?: {
+    id: string;
+    name: string;
+    price: number;
+    sort_order: number;
+    original_price: number | null;
+    eligible_group: string;
+    is_promotional: boolean;
+    promo_start: string | null;
+    promo_end: string | null;
+    payment_type: "free" | "paid" | "deposit" | "location" | null;
+    deposit_amount: number | null;
+    balance_amount: number | null;
+    balance_payment_mode: "online" | "on_site" | null;
+    has_dedicated_spots: boolean | null;
+    dedicated_spots: number | null;
+    spots_taken: number | null;
+    waitlist_enabled: boolean | null;
+  }[];
 }
+
+const PRICE_OPTION_SELECT =
+  "id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end, payment_type, deposit_amount, balance_amount, balance_payment_mode, has_dedicated_spots, dedicated_spots, spots_taken, waitlist_enabled";
 
 export const useEvents = (categoryName?: string | null) => {
   const { user, isOrganizer, isAdmin } = useAuth();
@@ -52,7 +73,7 @@ export const useEvents = (categoryName?: string | null) => {
     queryFn: async () => {
       let query = supabase
         .from("events")
-        .select("id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, balance_payment_mode, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
+        .select(`id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, balance_payment_mode, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(${PRICE_OPTION_SELECT})`)
         .order("date", { ascending: true });
 
       if (categoryName) {
@@ -98,7 +119,7 @@ export const useEvent = (id: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("*, event_categories(name, icon), event_meeting_points(*), event_price_options(id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end)")
+        .select(`*, event_categories(name, icon), event_meeting_points(*), event_price_options(${PRICE_OPTION_SELECT})`)
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -120,7 +141,7 @@ export const useEventParticipants = (eventId: string) => {
       // Fetch registrations with meeting points (no profile join — use RPC for public profile data)
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, meeting_point:event_meeting_points(id, name)")
+        .select(`*, meeting_point:event_meeting_points(id, name), price_option:event_price_options(${PRICE_OPTION_SELECT})`)
         .eq("event_id", eventId)
         .in("status", [...ACTIVE_PARTICIPANT_STATUSES])
         .neq("payment_status", "pending");
@@ -400,7 +421,7 @@ export const useMyEvents = () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, events(*, event_categories(name, icon), event_meeting_points(id, name, location, time, notes)), meeting_point:event_meeting_points(id, name, location, time)")
+        .select(`*, events(*, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(${PRICE_OPTION_SELECT})), meeting_point:event_meeting_points(id, name, location, time)`)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -411,6 +432,7 @@ export const useMyEvents = () => {
               ...registration.events,
               category: registration.events.event_categories,
               meeting_points: registration.events.event_meeting_points || [],
+              price_options: (registration.events.event_price_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
             }
           : registration.events,
       }));

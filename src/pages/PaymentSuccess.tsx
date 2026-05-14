@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const EDGE_GATEWAY_JWT =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -46,12 +47,18 @@ const PaymentSuccess = () => {
           throw new Error("Configurazione Supabase mancante per la verifica del pagamento.");
         }
 
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (sessionError || !accessToken) {
+          throw new Error("Sessione scaduta. Effettua di nuovo l'accesso per verificare il pagamento.");
+        }
+
         const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/functions/v1/verify-event-payment`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             apikey: EDGE_GATEWAY_JWT,
-            Authorization: `Bearer ${EDGE_GATEWAY_JWT}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ sessionId }),
         });

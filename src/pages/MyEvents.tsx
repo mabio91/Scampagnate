@@ -27,6 +27,13 @@ import {
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
 import { getDepositPaymentLabel, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
+import {
+  findPriceOptionById,
+  getOptionPaymentSummary,
+  getOptionPaymentType,
+  isOnlinePaymentType,
+  isOptionBookable,
+} from "@/lib/priceOptions";
 
 const statusStyles: Record<string, string> = {
   iscritto: "bg-success/10 text-success",
@@ -67,15 +74,20 @@ function canEditRegistration(event: any): boolean {
 function resolveMyEventStatus(registration: any, isPast: boolean): string {
   const event = registration.events;
   if (!event) return "iscritto";
+  const selectedPriceOption = findPriceOptionById(event.price_options, registration.price_option_id);
 
-  const depositLabel = getDepositPaymentLabel(registration, event);
+  const depositLabel = getDepositPaymentLabel(registration, event, selectedPriceOption);
   if (depositLabel) return depositLabel;
-  if (isPendingPaymentRegistration(registration, event)) return "pagamento_in_sospeso";
+  if (isPendingPaymentRegistration(registration, event, selectedPriceOption)) return "pagamento_in_sospeso";
   if (isPast && registration.checked_in) return "partecipato";
   if (registration.status === "registered" || registration.status === "paid" || registration.status === "attended") {
     return "iscritto";
   }
-  if (registration.status === "waitlist" && event.spots_total > 0 && event.spots_taken < event.spots_total) {
+  if (registration.status === "waitlist" && (
+    selectedPriceOption
+      ? isOptionBookable(selectedPriceOption, event)
+      : event.spots_total > 0 && event.spots_taken < event.spots_total
+  )) {
     return "posto_disponibile";
   }
   if (registration.status === "waitlist") return "in_attesa";
@@ -239,6 +251,21 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const [paymentLoading, setPaymentLoading] = useState(false);
   const navigate = useNavigate();
 
+  const selectedPriceOption = event ? findPriceOptionById(event.price_options, registration.price_option_id) : null;
+  const registrationPaymentType = event ? getOptionPaymentType(selectedPriceOption, event) : "free";
+  const needsOnlinePayment = isOnlinePaymentType(registrationPaymentType);
+  const refundInfo = useMemo(() => {
+    if (!event?.date || !event?.time) return null;
+    return getRefundInfo(
+      event.cancellation_policy,
+      event.date,
+      event.time,
+      0,
+      getServiceFeeAmount(registrationPaymentType)
+    );
+  }, [event?.cancellation_policy, event?.date, event?.time, registrationPaymentType]);
+  const cancellationDialogMessage = useMemo(() => getCancellationDialogMessage(refundInfo), [refundInfo]);
+
   if (!event) return null;
 
   const resolvedStatus = resolveMyEventStatus(registration, !!isPast);
@@ -246,21 +273,8 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const statusStyle = statusStyles[resolvedStatus] || statusStyles.iscritto;
 
   const hasSpotAvailable = resolvedStatus === "posto_disponibile";
-  const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
   const meetingPoint = registration.meeting_point;
   const displayLocation = event.location_label || event.location;
-
-  const refundInfo = useMemo(() => {
-    if (!event.date || !event.time) return null;
-    return getRefundInfo(
-      event.cancellation_policy,
-      event.date,
-      event.time,
-      0,
-      getServiceFeeAmount(event.payment_type)
-    );
-  }, [event.cancellation_policy, event.date, event.time, event.payment_type]);
-  const cancellationDialogMessage = useMemo(() => getCancellationDialogMessage(refundInfo), [refundInfo]);
 
   const hasPaidPayment = registration.payment_status === "paid" || isDepositRegistration(registration);
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
@@ -380,6 +394,21 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               <div className="flex items-center gap-2 mt-0.5 text-xs font-body text-secondary">
                 <Clock className="h-3 w-3" />
                 <span className="truncate">{meetingPoint.name} · {meetingPoint.time?.slice(0, 5)}</span>
+              </div>
+            )}
+            {(selectedPriceOption || registration.amount_paid || registration.balance_due_amount) && (
+              <div className="mt-1.5 text-[11px] font-body text-muted-foreground space-y-0.5">
+                {selectedPriceOption && (
+                  <p className="truncate">
+                    {selectedPriceOption.name} · {getOptionPaymentSummary(selectedPriceOption, event)}
+                  </p>
+                )}
+                {(registration.amount_paid || registration.balance_due_amount) && (
+                  <p>
+                    {registration.amount_paid ? `Pagato €${Number(registration.amount_paid).toFixed(2)}` : ""}
+                    {registration.balance_due_amount ? `${registration.amount_paid ? " · " : ""}Saldo €${Number(registration.balance_due_amount).toFixed(2)}` : ""}
+                  </p>
+                )}
               </div>
             )}
           </div>

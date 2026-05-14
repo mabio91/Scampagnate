@@ -49,6 +49,13 @@ import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
+import {
+  findPriceOptionById,
+  getEventRemainingSpots,
+  getOptionPaymentType,
+  isOnlinePaymentType,
+  isOptionBookable,
+} from "@/lib/priceOptions";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
@@ -285,17 +292,22 @@ const EventDetail = () => {
 
   const imageSrc = resolveEventImageSrc(event.image_url);
   const galleryImages = normalizeGalleryImages(event.gallery_images);
-  const isPaymentEvent = event.payment_type === "paid" || event.payment_type === "deposit";
+  const registrationPriceOption = findPriceOptionById(event.price_options, (myRegistration as any)?.price_option_id);
+  const registrationPaymentType = getOptionPaymentType(registrationPriceOption, event);
+  const currentRegistrationRequiresOnlinePayment = isOnlinePaymentType(registrationPaymentType);
+  const isPaymentEvent = (event.price_options || []).length > 0
+    ? (event.price_options || []).some((option: any) => isOnlinePaymentType(getOptionPaymentType(option, event)))
+    : isOnlinePaymentType(event.payment_type);
   const hasCurrentRegistration = !!myRegistration && myRegistration.status !== "cancelled";
   const isLegacyPendingPayment = hasCurrentRegistration
     && myRegistration.status === "registered"
-    && isPaymentEvent
+    && currentRegistrationRequiresOnlinePayment
     && myRegistration.payment_status === "pending";
-  const hasPendingPayment = hasCurrentRegistration && isPendingPaymentRegistration(myRegistration, event);
-  const balancePaymentMode = getEventBalancePaymentMode(event);
+  const hasPendingPayment = hasCurrentRegistration && isPendingPaymentRegistration(myRegistration, event, registrationPriceOption);
+  const balancePaymentMode = getEventBalancePaymentMode(event, registrationPriceOption);
   const isDepositPaid = hasCurrentRegistration && isDepositRegistration(myRegistration);
   const hasOnlineBalanceDue = isDepositPaid && balancePaymentMode === "online";
-  const depositStatusMessage = hasCurrentRegistration ? getDepositPaymentLabel(myRegistration, event) : null;
+  const depositStatusMessage = hasCurrentRegistration ? getDepositPaymentLabel(myRegistration, event, registrationPriceOption) : null;
   const isRegistered = hasCurrentRegistration
     && myRegistration.status !== "pending_payment"
     && !isLegacyPendingPayment;
@@ -454,7 +466,7 @@ const EventDetail = () => {
   // Handle waitlist user completing booking when spot becomes available
   const handleWaitlistBooking = async () => {
     if (!myRegistration) return;
-    const needsOnlinePayment = event.payment_type === "paid" || event.payment_type === "deposit";
+    const needsOnlinePayment = currentRegistrationRequiresOnlinePayment;
     
     if (needsOnlinePayment) {
       setPaymentLoading(true);
@@ -483,20 +495,32 @@ const EventDetail = () => {
     } else {
       // Free/location event — check availability first, then update status
       try {
-        // Re-fetch event to get current spots
-        const { data: freshEvent } = await supabase
-          .from("events")
-          .select("spots_total, spots_taken")
-          .eq("id", event.id)
-          .single();
-        
-        if (!freshEvent || freshEvent.spots_taken >= freshEvent.spots_total) {
-          toast({ title: "Posto non disponibile", description: "Il posto è stato preso da un altro partecipante. Resti in lista d'attesa.", variant: "destructive" });
-          return;
+        const regPriceOptionId = (myRegistration as any).price_option_id;
+        if (regPriceOptionId) {
+          const { data: availabilityRows, error: availabilityError } = await supabase
+            .rpc("get_event_option_availability", { p_event_id: event.id });
+          if (availabilityError) throw availabilityError;
+          const availability = (availabilityRows || []).find((row: any) => row.option_id === regPriceOptionId);
+          if (!availability?.is_bookable) {
+            toast({ title: "Posto non disponibile", description: "Il posto è stato preso da un altro partecipante. Resti in lista d'attesa.", variant: "destructive" });
+            return;
+          }
+        } else {
+          // Re-fetch event to get current spots
+          const { data: freshEvent } = await supabase
+            .from("events")
+            .select("spots_total, spots_taken")
+            .eq("id", event.id)
+            .single();
+
+          if (!freshEvent || freshEvent.spots_taken >= freshEvent.spots_total) {
+            toast({ title: "Posto non disponibile", description: "Il posto è stato preso da un altro partecipante. Resti in lista d'attesa.", variant: "destructive" });
+            return;
+          }
         }
 
         await supabase.from("event_registrations")
-          .update({ status: "registered" as any, payment_status: event.payment_type === "location" ? "pay_on_location" : "not_required" })
+          .update({ status: "registered" as any, payment_status: registrationPaymentType === "location" ? "pay_on_location" : "not_required" })
           .eq("id", myRegistration.id)
           .eq("user_id", user!.id);
         toast({ title: "Prenotazione completata!", description: "Il posto è tuo!" });
@@ -563,7 +587,10 @@ const EventDetail = () => {
       return;
     }
 
-    if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
+    const selectedOption = findPriceOptionById(event.price_options, selectedPriceOption);
+    const selectedPaymentType = getOptionPaymentType(selectedOption, event);
+
+    if (!isMembershipActive(profile) && (selectedPaymentType === "free" || selectedPaymentType === "location")) {
       await handleMembershipCheckout();
       return;
     }
@@ -576,14 +603,14 @@ const EventDetail = () => {
         sportLevel: sportLevel || undefined,
         asWaitlist: isWaitlist,
         requestApproval: requestApproval,
-        paymentType: event.payment_type,
+        paymentType: selectedPaymentType,
         priceOptionId: selectedPriceOption || undefined,
       });
       setShowRegisterDialog(false);
       setShowAccessWarning(false);
       setIsRequestingOverride(false);
 
-      const requiresPayment = !isWaitlist && !requestApproval && (event.payment_type === "paid" || event.payment_type === "deposit");
+      const requiresPayment = !isWaitlist && !requestApproval && isOnlinePaymentType(selectedPaymentType);
       if (requiresPayment && result?.registrationId) {
         setPaymentLoading(true);
         try {
@@ -635,7 +662,7 @@ const EventDetail = () => {
 
 
   // Policy-based refund info for cancel dialog messaging
-  const serviceFeeAmount = event ? getServiceFeeAmount(event.payment_type) : 0;
+  const serviceFeeAmount = event ? getServiceFeeAmount(registrationPaymentType) : 0;
   const refundInfo = event ? getRefundInfo(event.cancellation_policy, event.date, event.time, 0, serviceFeeAmount) : null;
   const cancellationDialogMessage = getCancellationDialogMessage(refundInfo);
   const hasPaidPayment = hasCurrentRegistration && (myRegistration.payment_status === "paid" || myRegistration.payment_status === "deposit_paid");
@@ -665,14 +692,18 @@ const EventDetail = () => {
   const needsPayment = hasCurrentRegistration
     && myRegistration.status !== "waitlist"
     && myRegistration.status !== "pending_approval"
-    && isPaymentEvent
+    && currentRegistrationRequiresOnlinePayment
     && (myRegistration.payment_status === "pending" || hasOnlineBalanceDue);
   const isPendingApproval = hasCurrentRegistration && myRegistration.status === "pending_approval";
   const isOnWaitlist = hasCurrentRegistration && myRegistration.status === "waitlist";
 
   // Detect if a spot has become available for a waitlisted user
-  const remainingSpots = event.spots_total - event.spots_taken;
-  const waitlistSpotAvailable = isOnWaitlist && remainingSpots > 0;
+  const remainingSpots = getEventRemainingSpots(event);
+  const waitlistSpotAvailable = isOnWaitlist && (
+    registrationPriceOption
+      ? isOptionBookable(registrationPriceOption, event)
+      : remainingSpots > 0
+  );
   const availabilityText = remainingSpots <= 0
     ? "Sold out"
     : remainingSpots === 1
@@ -1604,13 +1635,16 @@ const getCTALabel = () => {
             return;
           }
 
-          // Check membership for free/location events
-          if (!isMembershipActive(profile) && (event.payment_type === "free" || event.payment_type === "location")) {
+          const dialogPriceOption = findPriceOptionById(event.price_options, opts.priceOptionId);
+          const dialogPaymentType = opts.paymentType || getOptionPaymentType(dialogPriceOption, event);
+          const isWaitlist = opts.asWaitlist ?? event.status === "full";
+
+          // Check membership for free/location events that are not entering waitlist
+          if (!isWaitlist && !isMembershipActive(profile) && (dialogPaymentType === "free" || dialogPaymentType === "location")) {
             await handleMembershipCheckout();
             return;
           }
 
-          const isWaitlist = event.status === "full";
           try {
             const result = await registerMutation.mutateAsync({
               eventId: event.id,
@@ -1620,14 +1654,14 @@ const getCTALabel = () => {
               additionalResponses: opts.additionalResponses,
               asWaitlist: isWaitlist,
               requestApproval: opts.requestApproval,
-              paymentType: event.payment_type,
+              paymentType: dialogPaymentType,
               priceOptionId: opts.priceOptionId,
             });
             setShowRegisterDialog(false);
             setShowAccessWarning(false);
             setIsRequestingOverride(false);
 
-            const requiresPayment = !isWaitlist && !opts.requestApproval && (event.payment_type === "paid" || event.payment_type === "deposit");
+            const requiresPayment = !isWaitlist && !opts.requestApproval && isOnlinePaymentType(dialogPaymentType);
             if (requiresPayment && result?.registrationId) {
               setPaymentLoading(true);
               try {

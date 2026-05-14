@@ -22,6 +22,25 @@ const hasCompleteMembershipData = (profile: Record<string, unknown> | null) =>
     return typeof value === "string" ? value.trim().length > 0 : value != null;
   });
 
+const isAllowedReturnUrl = (value: unknown, allowedHosts: string[]) => {
+  if (typeof value !== "string" || value.trim().length === 0) return false;
+  try {
+    const url = new URL(value);
+    if (url.protocol === "scampagnate:") {
+      return ["membership-success", "payment-cancelled"].includes(url.hostname);
+    }
+    if (url.protocol === "https:") return allowedHosts.includes(url.hostname);
+    return false;
+  } catch (_error) {
+    return false;
+  }
+};
+
+const withCheckoutParams = (baseUrl: string, params: string) => {
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}${params}`;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -90,7 +109,7 @@ serve(async (req) => {
       }
     }
 
-    const { eventId } = await req.json();
+    const { eventId, returnUrlBase, cancelUrlBase } = await req.json();
 
     // Fetch membership fee from platform_settings
     let membershipFeeEuros = 1; // fallback changed to 1 as requested
@@ -118,6 +137,18 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "https://scampagnate.app";
+    const originHost = (() => {
+      try {
+        return new URL(origin).hostname;
+      } catch (_error) {
+        return "scampagnate.app";
+      }
+    })();
+    const allowedHosts = [originHost, "scampagnate.app", "scampagnate.com"];
+    const successBase = typeof returnUrlBase === "string" && isAllowedReturnUrl(returnUrlBase, allowedHosts) ? returnUrlBase : `${origin}/membership-success`;
+    const cancelBase = typeof cancelUrlBase === "string" && isAllowedReturnUrl(cancelUrlBase, allowedHosts) ? cancelUrlBase : eventId ? `${origin}/event/${eventId}` : `${origin}/`;
+    const successParams = `session_id={CHECKOUT_SESSION_ID}&event_id=${encodeURIComponent(eventId || "")}`;
+    const cancelParams = `event_id=${encodeURIComponent(eventId || "")}`;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -137,8 +168,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/membership-success?session_id={CHECKOUT_SESSION_ID}&event_id=${eventId || ""}`,
-      cancel_url: eventId ? `${origin}/event/${eventId}` : `${origin}/`,
+      success_url: withCheckoutParams(successBase, successParams),
+      cancel_url: withCheckoutParams(cancelBase, cancelParams),
       metadata: {
         user_id: user.id,
         event_id: eventId || "",

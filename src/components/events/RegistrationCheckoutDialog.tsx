@@ -3,7 +3,6 @@ import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from
 import { useMembershipFee } from "@/hooks/useMembershipFee";
 import { getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { useAuth } from "@/contexts/AuthContext";
-import { getEventBalancePaymentMode } from "@/lib/eventPayments";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import DiscountCodeInput from "@/components/events/DiscountCodeInput";
 import { ResolvedPriceOption } from "@/hooks/usePricingEligibility";
+import {
+  canOptionJoinWaitlist,
+  findPriceOptionById,
+  getEligibilityLabel,
+  getOptionAvailabilityLabel,
+  getOptionBalanceAmount,
+  getOptionBalancePaymentMode,
+  getOptionDepositAmount,
+  getOptionPaymentSummary,
+  getOptionPaymentType,
+  getOptionTotalPrice,
+  isOnlinePaymentType,
+  isOptionBookable,
+} from "@/lib/priceOptions";
 import {
   MapPin, Clock, Car, CreditCard, Loader2, Tag, Lock, Sparkles, ShieldCheck,
   AlertTriangle, ChevronRight
@@ -32,6 +45,8 @@ interface RegistrationCheckoutDialogProps {
     appliedDiscount?: any;
     requestApproval?: boolean;
     paymentChoice?: "deposit" | "full";
+    asWaitlist?: boolean;
+    paymentType?: "free" | "paid" | "deposit" | "location";
   }) => void;
   isSubmitting: boolean;
   isRequestingOverride?: boolean;
@@ -63,28 +78,34 @@ const RegistrationCheckoutDialog = ({
   const needsMembership = !isMembershipActive(profile);
   const membershipActive = isMembershipActive(profile);
   const membershipExpired = isMembershipExpired(profile);
-  const isPaymentEvent = event.payment_type === "paid" || event.payment_type === "deposit";
-  const balancePaymentMode = getEventBalancePaymentMode(event);
-  const canPayFullAmount = event.payment_type === "deposit" && balancePaymentMode === "online";
+  const selectedOpt = findPriceOptionById(event.price_options, selectedPriceOption);
+  const selectedPaymentType = getOptionPaymentType(selectedOpt, event);
+  const isPaymentEvent = isOnlinePaymentType(selectedPaymentType);
+  const balancePaymentMode = getOptionBalancePaymentMode(selectedOpt, event);
+  const canPayFullAmount = selectedPaymentType === "deposit" && balancePaymentMode === "online";
+  const effectivePaymentChoice = canPayFullAmount ? paymentChoice : "deposit";
+  const selectedOptionBookable = !hasPriceOptions || isOptionBookable(selectedOpt, event);
+  const selectedOptionCanWaitlist = Boolean(hasPriceOptions && selectedOpt && !selectedOptionBookable && canOptionJoinWaitlist(selectedOpt, event));
+  const selectedOptionIsWaitlist = event.status === "full" || selectedOptionCanWaitlist;
+  const selectedOptionUnavailable = Boolean(hasPriceOptions && selectedPriceOption && !selectedOptionBookable && !selectedOptionCanWaitlist);
 
   // Custom fields
   const af = event.additional_fields as any;
   const customFields = af && af.fields ? af.fields : (Array.isArray(af) ? af : []);
 
   // Compute pricing
-  const selectedOpt = event.price_options?.find((o: any) => o.id === selectedPriceOption);
-  const totalEventPrice = selectedOpt ? Number(selectedOpt.price) : Number(event.price);
-  const depositAmount = event.payment_type === "deposit" ? Number(event.deposit || 0) : 0;
-  const isDepositPayment = event.payment_type === "deposit" && paymentChoice === "deposit";
-  const displayPrice = event.payment_type === "deposit"
+  const totalEventPrice = getOptionTotalPrice(selectedOpt, event);
+  const depositAmount = getOptionDepositAmount(selectedOpt, event);
+  const isDepositPayment = selectedPaymentType === "deposit" && effectivePaymentChoice === "deposit";
+  const displayPrice = selectedPaymentType === "deposit"
     ? (isDepositPayment ? depositAmount : totalEventPrice)
     : totalEventPrice;
   const membershipFee = needsMembership ? membershipFeeAmount : 0;
-  const serviceFee = isPaymentEvent ? getServiceFeeAmount(event.payment_type) : 0;
+  const serviceFee = isPaymentEvent && !selectedOptionIsWaitlist ? getServiceFeeAmount(selectedPaymentType) : 0;
   const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
   const totalDueToday = discountedEventPrice + serviceFee + membershipFee;
-  const remainingAmount = event.payment_type === "deposit" && isDepositPayment
-    ? Math.max(0, totalEventPrice - depositAmount)
+  const remainingAmount = selectedPaymentType === "deposit" && isDepositPayment
+    ? getOptionBalanceAmount(selectedOpt, event)
     : 0;
 
   // Membership expiry display
@@ -98,7 +119,7 @@ const RegistrationCheckoutDialog = ({
   const priceOptionRequired = hasPriceOptions && !selectedPriceOption;
   const customFieldsInvalid = customFields.some((f: any) => f.required && !additionalResponses[f.label]?.trim());
   const equipmentRequired = hasMandatoryEquipment && !equipmentConfirmed;
-  const isDisabled = isSubmitting || meetingPointRequired || priceOptionRequired || customFieldsInvalid || equipmentRequired;
+  const isDisabled = isSubmitting || meetingPointRequired || priceOptionRequired || customFieldsInvalid || equipmentRequired || selectedOptionUnavailable;
 
   const handleSubmit = () => {
     onRegister({
@@ -109,7 +130,9 @@ const RegistrationCheckoutDialog = ({
       additionalResponses,
       appliedDiscount,
       requestApproval: isRequestingOverride || requiresApproval,
-      paymentChoice: event.payment_type === "deposit" ? paymentChoice : undefined,
+      paymentChoice: selectedPaymentType === "deposit" && !selectedOptionIsWaitlist ? effectivePaymentChoice : undefined,
+      asWaitlist: selectedOptionIsWaitlist,
+      paymentType: selectedPaymentType,
     });
   };
 
@@ -117,9 +140,9 @@ const RegistrationCheckoutDialog = ({
   const ctaLabel = (() => {
     if (isSubmitting) return null;
     if (isRequestingOverride || requiresApproval) return "Invia richiesta di iscrizione";
-    if (event.status === "full") return "Iscriviti alla lista d'attesa";
-    if (needsMembership && !isPaymentEvent && event.payment_type === "free") return "Attiva tessera e iscriviti";
-    if (event.payment_type === "deposit") return paymentChoice === "full" ? "Paga tutto e iscriviti" : "Paga acconto e iscriviti";
+    if (selectedOptionIsWaitlist) return "Iscriviti alla lista d'attesa";
+    if (needsMembership && !isPaymentEvent && selectedPaymentType === "free") return "Attiva tessera e iscriviti";
+    if (selectedPaymentType === "deposit") return effectivePaymentChoice === "full" ? "Paga tutto e iscriviti" : "Paga acconto e iscriviti";
     if (isPaymentEvent) return "Paga e completa l'iscrizione";
     if (needsMembership) return "Attiva tessera e iscriviti";
     return "Conferma iscrizione";
@@ -128,10 +151,11 @@ const RegistrationCheckoutDialog = ({
   // Helper text above CTA
   const ctaHelperText = (() => {
     if (isRequestingOverride || requiresApproval) return "La tua richiesta verrà inviata agli organizzatori per l'approvazione.";
-    if (event.payment_type === "deposit" && paymentChoice === "deposit" && balancePaymentMode === "on_site") {
+    if (selectedOptionIsWaitlist) return "Entrerai in lista d'attesa per questa opzione: nessun pagamento viene avviato ora.";
+    if (selectedPaymentType === "deposit" && effectivePaymentChoice === "deposit" && balancePaymentMode === "on_site") {
       return "Pagherai l'acconto online ora. Il saldo rimanente andrà versato sul posto.";
     }
-    if (event.payment_type === "deposit" && paymentChoice === "deposit") {
+    if (selectedPaymentType === "deposit" && effectivePaymentChoice === "deposit") {
       return "Pagherai l'acconto online ora. Il saldo rimanente resterà da completare online.";
     }
     if (isPaymentEvent || needsMembership) return "Verrai reindirizzato al pagamento sicuro per completare l'iscrizione.";
@@ -147,7 +171,7 @@ const RegistrationCheckoutDialog = ({
   const hasSection1 = hasMeetingPoints || isSportCategory || carEnabled || customFields.length > 0 || hasMandatoryEquipment;
 
   // Check if Section 2 has any content (pricing/membership)
-  const hasSection2 = hasPriceOptions || isPaymentEvent || event.payment_type === "location" || needsMembership;
+  const hasSection2 = hasPriceOptions || isPaymentEvent || selectedPaymentType === "location" || needsMembership;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -321,47 +345,55 @@ const RegistrationCheckoutDialog = ({
                 <div>
                   <Label className="font-body text-sm font-semibold mb-2 block">Scegli l'opzione di prezzo *</Label>
                   <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
-                    {resolvedPriceOptions.map((opt: ResolvedPriceOption) => (
-                      <label
-                        key={opt.id}
-                        className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
-                          !opt.isEligible ? "bg-muted/30 opacity-60 cursor-not-allowed border-transparent" :
-                          selectedPriceOption === opt.id ? "bg-primary/5 border-primary/30 shadow-sm" :
-                          "bg-muted/40 border-transparent hover:bg-muted/60"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem value={opt.id} disabled={!opt.isEligible} />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
-                              {opt.isEligible && opt.eligible_group !== "all" && (
-                                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
-                                  <Sparkles className="h-2.5 w-2.5" />
-                                  {opt.eligible_group === "members" ? "Soci" : opt.eligible_group === "new_users" ? "Nuovo" : opt.eligible_group === "experienced" ? "Esperto" : opt.eligible_group === "loyal" ? "Fedele" : opt.eligible_group.startsWith("badge:") ? "Badge" : opt.eligible_group}
-                                </span>
-                              )}
-                              {opt.is_promotional && opt.isPromoActive && (
-                                <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-body font-semibold">Promo</span>
+                    {resolvedPriceOptions.map((opt: ResolvedPriceOption) => {
+                      const bookable = isOptionBookable(opt, event);
+                      const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
+                      const disabled = !opt.isEligible || (!bookable && !canWaitlist);
+                      return (
+                        <label
+                          key={opt.id}
+                          className={`flex items-start justify-between gap-3 p-3 rounded-xl transition-all border ${
+                            disabled ? "bg-muted/30 opacity-60 cursor-not-allowed border-transparent" :
+                            selectedPriceOption === opt.id ? "bg-primary/5 border-primary/30 shadow-sm cursor-pointer" :
+                            "bg-muted/40 border-transparent hover:bg-muted/60 cursor-pointer"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            <RadioGroupItem value={opt.id} disabled={disabled} className="mt-1" />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
+                                {opt.isEligible && opt.eligible_group !== "all" && (
+                                  <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
+                                    <Sparkles className="h-2.5 w-2.5" />
+                                    {getEligibilityLabel(opt.eligible_group)}
+                                  </span>
+                                )}
+                                {opt.is_promotional && opt.isPromoActive && (
+                                  <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-body font-semibold">Promo</span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground font-body mt-0.5">
+                                {getOptionPaymentSummary(opt, event)} · {getOptionAvailabilityLabel(opt, event)}
+                              </p>
+                              {!opt.isEligible && opt.eligibilityReason && (
+                                <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1 mt-0.5">
+                                  <Lock className="h-2.5 w-2.5" /> {opt.eligibilityReason}
+                                </p>
                               )}
                             </div>
-                            {!opt.isEligible && opt.eligibilityReason && (
-                              <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1 mt-0.5">
-                                <Lock className="h-2.5 w-2.5" /> {opt.eligibilityReason}
-                              </p>
-                            )}
                           </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          {opt.original_price && opt.original_price > opt.price && (
-                            <span className="text-xs font-body text-muted-foreground line-through block">€{opt.original_price.toFixed(2)}</span>
-                          )}
-                          <span className={`text-sm font-display font-bold ${opt.isEligible && opt.original_price && opt.original_price > opt.price ? "text-green-600" : "text-foreground"}`}>
-                            €{Number(opt.price).toFixed(2)}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
+                          <div className="text-right shrink-0">
+                            {opt.original_price && opt.original_price > opt.price && (
+                              <span className="text-xs font-body text-muted-foreground line-through block">€{opt.original_price.toFixed(2)}</span>
+                            )}
+                            <span className={`text-sm font-display font-bold ${opt.isEligible && opt.original_price && opt.original_price > opt.price ? "text-green-600" : "text-foreground"}`}>
+                              €{Number(opt.price).toFixed(2)}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </RadioGroup>
                 </div>
               )}
@@ -371,17 +403,28 @@ const RegistrationCheckoutDialog = ({
                 <div>
                   <Label className="font-body text-sm font-semibold mb-2 block">Scegli l'opzione di prezzo *</Label>
                   <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
-                    {event.price_options.map((opt: any) => (
-                      <label key={opt.id} className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
-                        selectedPriceOption === opt.id ? "bg-primary/5 border-primary/30 shadow-sm" : "bg-muted/40 border-transparent hover:bg-muted/60"
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem value={opt.id} />
-                          <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
-                        </div>
-                        <span className="text-sm font-display font-bold text-foreground">€{Number(opt.price).toFixed(2)}</span>
-                      </label>
-                    ))}
+                    {event.price_options.map((opt: any) => {
+                      const bookable = isOptionBookable(opt, event);
+                      const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
+                      const disabled = !bookable && !canWaitlist;
+                      return (
+                        <label key={opt.id} className={`flex items-start justify-between gap-3 p-3 rounded-xl transition-all border ${
+                          disabled ? "bg-muted/30 opacity-60 cursor-not-allowed border-transparent" :
+                          selectedPriceOption === opt.id ? "bg-primary/5 border-primary/30 shadow-sm cursor-pointer" : "bg-muted/40 border-transparent hover:bg-muted/60 cursor-pointer"
+                        }`}>
+                          <div className="flex items-start gap-3 min-w-0">
+                            <RadioGroupItem value={opt.id} disabled={disabled} className="mt-1" />
+                            <div className="min-w-0">
+                              <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
+                              <p className="text-[10px] text-muted-foreground font-body mt-0.5">
+                                {getOptionPaymentSummary(opt, event)} · {getOptionAvailabilityLabel(opt, event)}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-sm font-display font-bold text-foreground shrink-0">€{Number(opt.price).toFixed(2)}</span>
+                        </label>
+                      );
+                    })}
                   </RadioGroup>
                 </div>
               )}
@@ -419,7 +462,7 @@ const RegistrationCheckoutDialog = ({
               )}
 
               {/* Discount code */}
-              {isPaymentEvent && user && (
+              {isPaymentEvent && user && !selectedOptionIsWaitlist && (
                 <div>
                   <p className="text-sm font-body text-muted-foreground mb-2">Hai un codice sconto?</p>
                   <DiscountCodeInput
@@ -430,12 +473,12 @@ const RegistrationCheckoutDialog = ({
                 </div>
               )}
 
-              {event.payment_type === "deposit" && (
+              {selectedPaymentType === "deposit" && !selectedOptionIsWaitlist && (
                 <div>
                   <Label className="font-body text-sm font-semibold mb-2 block">Come vuoi pagare?</Label>
-                  <RadioGroup value={paymentChoice} onValueChange={(value) => setPaymentChoice(value as "deposit" | "full")} className="space-y-2">
+                  <RadioGroup value={effectivePaymentChoice} onValueChange={(value) => setPaymentChoice(value as "deposit" | "full")} className="space-y-2">
                     <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
-                      paymentChoice === "deposit" ? "bg-primary/5 border-primary/30 shadow-sm" : "bg-muted/40 border-transparent hover:bg-muted/60"
+                      effectivePaymentChoice === "deposit" ? "bg-primary/5 border-primary/30 shadow-sm" : "bg-muted/40 border-transparent hover:bg-muted/60"
                     }`}>
                       <RadioGroupItem value="deposit" />
                       <div>
@@ -448,7 +491,7 @@ const RegistrationCheckoutDialog = ({
                     </label>
                     {canPayFullAmount && (
                       <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
-                        paymentChoice === "full" ? "bg-primary/5 border-primary/30 shadow-sm" : "bg-muted/40 border-transparent hover:bg-muted/60"
+                        effectivePaymentChoice === "full" ? "bg-primary/5 border-primary/30 shadow-sm" : "bg-muted/40 border-transparent hover:bg-muted/60"
                       }`}>
                         <RadioGroupItem value="full" />
                         <div>
@@ -473,15 +516,15 @@ const RegistrationCheckoutDialog = ({
             <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider">Riepilogo</p>
 
             {/* Amount due today */}
-            {(isPaymentEvent || event.payment_type === "location" || needsMembership) && (
+            {((!selectedOptionIsWaitlist && (isPaymentEvent || selectedPaymentType === "location")) || needsMembership) && (
               <div className="p-3 rounded-xl bg-muted/50 space-y-2">
                 {/* Da pagare oggi */}
                 <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-1">Da pagare oggi</p>
 
-                {(isPaymentEvent || event.payment_type === "location") && displayPrice > 0 && (
+                {!selectedOptionIsWaitlist && (isPaymentEvent || selectedPaymentType === "location") && displayPrice > 0 && (
                   <div className="flex justify-between text-sm font-body">
                     <span className="text-muted-foreground">
-                      {event.payment_type === "deposit" && isDepositPayment ? "Acconto evento" : (selectedOpt?.name || "Evento")}
+                      {selectedPaymentType === "deposit" && isDepositPayment ? "Acconto evento" : (selectedOpt?.name || "Evento")}
                     </span>
                     <span className={`font-semibold ${appliedDiscount ? "line-through text-muted-foreground" : "text-foreground"}`}>
                       €{displayPrice.toFixed(2)}
@@ -498,7 +541,7 @@ const RegistrationCheckoutDialog = ({
                   </div>
                 )}
 
-                {event.payment_type === "location" && displayPrice > 0 && (
+                {!selectedOptionIsWaitlist && selectedPaymentType === "location" && displayPrice > 0 && (
                   <p className="text-xs font-body text-muted-foreground italic">Da saldare in loco</p>
                 )}
 
@@ -518,7 +561,7 @@ const RegistrationCheckoutDialog = ({
                   </div>
                 )}
 
-                {(isPaymentEvent || needsMembership) && (
+                {((!selectedOptionIsWaitlist && isPaymentEvent) || needsMembership) && (
                   <div className="flex justify-between text-sm font-body pt-2 mt-1 border-t border-border">
                     <span className="font-bold text-foreground">Totale da pagare oggi</span>
                     <span className="font-bold text-foreground text-base">€{totalDueToday.toFixed(2)}</span>
@@ -539,7 +582,11 @@ const RegistrationCheckoutDialog = ({
             )}
 
             {/* Cancellation policy */}
-            {event.payment_type === "free" ? (
+            {selectedOptionIsWaitlist ? (
+              <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/10 border border-amber-200/40 dark:border-amber-800/20">
+                <p className="text-sm font-body font-semibold text-amber-700 dark:text-amber-400">Lista d'attesa - nessun pagamento ora</p>
+              </div>
+            ) : selectedPaymentType === "free" ? (
               <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-2">
                 <p className="text-sm font-body font-semibold text-foreground">Regole e info</p>
                 <div className="space-y-1 text-xs font-body text-muted-foreground">
@@ -566,13 +613,13 @@ const RegistrationCheckoutDialog = ({
             )}
 
             {/* Free event notice */}
-            {event.payment_type === "free" && !needsMembership && (
+            {selectedPaymentType === "free" && !needsMembership && !selectedOptionIsWaitlist && (
               <div className="p-3 rounded-xl bg-green-50/60 dark:bg-green-950/10 border border-green-200/40 dark:border-green-800/20">
                 <p className="text-sm font-body font-semibold text-green-700 dark:text-green-400">Evento gratuito — nessun pagamento richiesto</p>
               </div>
             )}
 
-            {event.payment_type === "free" && needsMembership && (
+            {selectedPaymentType === "free" && needsMembership && !selectedOptionIsWaitlist && (
               <div className="p-3 rounded-xl bg-muted/50 space-y-2">
                 <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-1">Da pagare oggi</p>
                 <div className="flex justify-between text-sm font-body">

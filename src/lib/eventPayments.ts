@@ -1,3 +1,12 @@
+import {
+  getOptionBalanceAmount,
+  getOptionBalancePaymentMode,
+  getOptionDepositAmount,
+  getOptionPaymentType,
+  type EventPricingLike,
+  type PriceOptionLike,
+} from "@/lib/priceOptions";
+
 export type BalancePaymentMode = "online" | "on_site";
 
 export const ACTIVE_PARTICIPANT_STATUSES = [
@@ -14,30 +23,25 @@ export const ORGANIZER_VISIBLE_STATUSES = [
   "pending_approval",
 ] as const;
 
-export const getEventBalancePaymentMode = (event: {
-  payment_type?: string | null;
-  balance_payment_mode?: string | null;
-}) => {
-  if (event.payment_type !== "deposit") return null;
-  return event.balance_payment_mode === "on_site" ? "on_site" : "online";
+export const getEventBalancePaymentMode = (
+  event: EventPricingLike,
+  priceOption?: PriceOptionLike | null,
+) => {
+  return getOptionBalancePaymentMode(priceOption, event);
 };
 
-export const getDepositAmount = (event: {
-  payment_type?: string | null;
-  deposit?: number | null;
-  price?: number | null;
-}) => {
-  if (event.payment_type !== "deposit") return 0;
-  return Number(event.deposit || 0);
+export const getDepositAmount = (
+  event: EventPricingLike,
+  priceOption?: PriceOptionLike | null,
+) => {
+  return getOptionDepositAmount(priceOption, event);
 };
 
-export const getRemainingBalanceAmount = (event: {
-  payment_type?: string | null;
-  deposit?: number | null;
-  price?: number | null;
-}) => {
-  if (event.payment_type !== "deposit") return 0;
-  return Math.max(0, Number(event.price || 0) - Number(event.deposit || 0));
+export const getRemainingBalanceAmount = (
+  event: EventPricingLike,
+  priceOption?: PriceOptionLike | null,
+) => {
+  return getOptionBalanceAmount(priceOption, event);
 };
 
 export const isDepositRegistration = (registration: {
@@ -57,11 +61,11 @@ export const isPendingPaymentRegistration = (
     status?: string | null;
     payment_status?: string | null;
   },
-  event?: {
-    payment_type?: string | null;
-  } | null,
+  event?: EventPricingLike | null,
+  priceOption?: PriceOptionLike | null,
 ) => {
-  const isPaymentEvent = event?.payment_type === "paid" || event?.payment_type === "deposit";
+  const paymentType = event ? getOptionPaymentType(priceOption, event) : null;
+  const isPaymentEvent = paymentType === "paid" || paymentType === "deposit";
   if (!isPaymentEvent) return false;
   if (registration.status === "pending_payment") return true;
   return registration.status === "registered" && registration.payment_status === "pending";
@@ -79,13 +83,11 @@ export const getDepositPaymentLabel = (
     status?: string | null;
     payment_status?: string | null;
   },
-  event: {
-    payment_type?: string | null;
-    balance_payment_mode?: string | null;
-  },
+  event: EventPricingLike,
+  priceOption?: PriceOptionLike | null,
 ) => {
   if (!isDepositRegistration(registration)) return null;
-  return getEventBalancePaymentMode(event) === "on_site"
+  return getEventBalancePaymentMode(event, priceOption) === "on_site"
     ? "Acconto pagato - saldo sul posto"
     : "Acconto pagato - saldo da completare";
 };

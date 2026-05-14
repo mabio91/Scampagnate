@@ -310,6 +310,7 @@ const EventForm = () => {
   const [eventSpecialBadgeIds, setEventSpecialBadgeIds] = useState<string[]>([]);
 
   interface PriceOptionInput {
+    id?: string;
     name: string;
     price: number;
     eligible_group: string;
@@ -318,7 +319,35 @@ const EventForm = () => {
     is_promotional: boolean;
     promo_start: string;
     promo_end: string;
+    payment_type: PaymentType;
+    deposit_amount: number | null;
+    balance_amount: number | null;
+    balance_payment_mode: BalancePaymentMode;
+    has_dedicated_spots: boolean;
+    dedicated_spots: number | null;
+    spots_taken?: number | null;
+    waitlist_enabled: boolean;
   }
+
+  const createBlankPriceOption = (): PriceOptionInput => ({
+    name: "",
+    price: 0,
+    eligible_group: "all",
+    badge_ids: [],
+    original_price: null,
+    is_promotional: false,
+    promo_start: "",
+    promo_end: "",
+    payment_type: form.payment_type,
+    deposit_amount: form.payment_type === "deposit" ? form.deposit : null,
+    balance_amount: form.payment_type === "deposit" ? Math.max(0, form.price - form.deposit) : null,
+    balance_payment_mode: form.balance_payment_mode,
+    has_dedicated_spots: false,
+    dedicated_spots: null,
+    spots_taken: 0,
+    waitlist_enabled: false,
+  });
+
   const [priceOptions, setPriceOptions] = useState<PriceOptionInput[]>([]);
 
   useEffect(() => {
@@ -523,7 +552,15 @@ const EventForm = () => {
         setPriceOptions(options.map((o: any) => {
           const group = o.eligible_group || 'all';
           const badgeIds = group.startsWith("badge:") ? group.replace("badge:", "").split(",") : [];
+          const paymentType = (o.payment_type || event.payment_type || "free") as PaymentType;
+          const depositAmount = o.deposit_amount != null ? Number(o.deposit_amount) : (paymentType === "deposit" ? Number(event.deposit || 0) : null);
+          const balanceAmount = o.balance_amount != null
+            ? Number(o.balance_amount)
+            : paymentType === "deposit"
+              ? Math.max(0, Number(o.price || 0) - Number(depositAmount || 0))
+              : null;
           return {
+            id: isDuplicating ? undefined : o.id,
             name: o.name,
             price: Number(o.price),
             eligible_group: group,
@@ -532,6 +569,14 @@ const EventForm = () => {
             is_promotional: o.is_promotional || false,
             promo_start: o.promo_start ? o.promo_start.split('T')[0] : '',
             promo_end: o.promo_end ? o.promo_end.split('T')[0] : '',
+            payment_type: paymentType,
+            deposit_amount: depositAmount,
+            balance_amount: balanceAmount,
+            balance_payment_mode: (o.balance_payment_mode || event.balance_payment_mode || "online") as BalancePaymentMode,
+            has_dedicated_spots: !!o.has_dedicated_spots,
+            dedicated_spots: o.dedicated_spots != null ? Number(o.dedicated_spots) : null,
+            spots_taken: o.spots_taken != null ? Number(o.spots_taken) : 0,
+            waitlist_enabled: !!o.waitlist_enabled,
           };
         }));
       }
@@ -742,6 +787,16 @@ const EventForm = () => {
       let distanceFormatted = form.distance ? `${form.distance} km` : null;
       // Format elevation with m
       let elevationFormatted = form.elevation ? `${form.elevation} m` : null;
+      const validPriceOptions = priceOptions.filter(o => o.name.trim());
+      const primaryPriceOption = validPriceOptions[0] || null;
+      const primaryPaymentType = (primaryPriceOption?.payment_type || form.payment_type) as PaymentType;
+      const primaryPrice = primaryPriceOption ? Number(primaryPriceOption.price || 0) : form.price;
+      const primaryDeposit = primaryPaymentType === "deposit"
+        ? Number(primaryPriceOption?.deposit_amount ?? form.deposit ?? 0)
+        : null;
+      const primaryBalancePaymentMode = primaryPaymentType === "deposit"
+        ? ((primaryPriceOption?.balance_payment_mode || form.balance_payment_mode) as BalancePaymentMode)
+        : null;
 
       const eventData = {
         title: form.title,
@@ -753,10 +808,10 @@ const EventForm = () => {
         category_id: form.category_id || null,
         spots_total: form.spots_total,
         reserved_spots: form.reserved_spots,
-        price: form.price,
-        deposit: form.payment_type === "deposit" ? form.deposit : null,
-        payment_type: form.payment_type,
-        balance_payment_mode: form.payment_type === "deposit" ? form.balance_payment_mode : null,
+        price: primaryPrice,
+        deposit: primaryDeposit,
+        payment_type: primaryPaymentType,
+        balance_payment_mode: primaryBalancePaymentMode,
         difficulty: form.difficulty || null,
         distance: distanceFormatted,
         elevation: elevationFormatted,
@@ -865,25 +920,77 @@ const EventForm = () => {
         if (specialBadgesError) throw specialBadgesError;
       }
 
-      // Handle price options
+      // Handle price options without breaking existing price_option_id registrations.
+      const retainedOptionIds = validPriceOptions
+        .map((option) => option.id)
+        .filter((optionId): optionId is string => Boolean(optionId));
+
       if (isEditing) {
-        await supabase.from("event_price_options").delete().eq("event_id", eventId!);
+        const { data: existingOptions, error: existingOptionsError } = await supabase
+          .from("event_price_options")
+          .select("id")
+          .eq("event_id", eventId!);
+        if (existingOptionsError) throw existingOptionsError;
+
+        const removedOptions = (existingOptions || []).filter((option) => !retainedOptionIds.includes(option.id));
+        for (const removedOption of removedOptions) {
+          const { data: linkedRegistrations, error: linkedRegistrationsError } = await supabase
+            .from("event_registrations")
+            .select("id")
+            .eq("price_option_id", removedOption.id)
+            .limit(1);
+          if (linkedRegistrationsError) throw linkedRegistrationsError;
+          if ((linkedRegistrations || []).length > 0) continue;
+
+          const { error: deleteOptionError } = await supabase
+            .from("event_price_options")
+            .delete()
+            .eq("id", removedOption.id)
+            .eq("event_id", eventId!);
+          if (deleteOptionError) throw deleteOptionError;
+        }
       }
-      const validPriceOptions = priceOptions.filter(o => o.name.trim());
-      if (validPriceOptions.length > 0) {
-        const optionsData = validPriceOptions.map((o, i) => ({
+
+      for (const [index, option] of validPriceOptions.entries()) {
+        const optionPaymentType = option.payment_type || primaryPaymentType;
+        const optionDepositAmount = optionPaymentType === "deposit"
+          ? Number(option.deposit_amount ?? Math.min(Number(option.price || 0), Number(form.deposit || 0)))
+          : null;
+        const optionBalanceAmount = optionPaymentType === "deposit"
+          ? Number(option.balance_amount ?? Math.max(0, Number(option.price || 0) - Number(optionDepositAmount || 0)))
+          : null;
+        const optionPayload = {
           event_id: eventId!,
-          name: o.name,
-          price: o.price,
-          sort_order: i,
-          eligible_group: o.eligible_group || 'all',
-          original_price: o.original_price || null,
-          is_promotional: o.is_promotional || false,
-          promo_start: o.promo_start || null,
-          promo_end: o.promo_end || null,
-        }));
-        const { error: poError } = await supabase.from("event_price_options").insert(optionsData);
-        if (poError) throw poError;
+          name: option.name.trim(),
+          price: Number(option.price || 0),
+          sort_order: index,
+          eligible_group: option.eligible_group || "all",
+          original_price: option.original_price || null,
+          is_promotional: option.is_promotional || false,
+          promo_start: option.promo_start || null,
+          promo_end: option.promo_end || null,
+          payment_type: optionPaymentType,
+          deposit_amount: optionDepositAmount,
+          balance_amount: optionBalanceAmount,
+          balance_payment_mode: optionPaymentType === "deposit" ? option.balance_payment_mode : null,
+          has_dedicated_spots: !!option.has_dedicated_spots,
+          dedicated_spots: option.has_dedicated_spots ? Number(option.dedicated_spots || 0) : null,
+          waitlist_enabled: !!option.waitlist_enabled,
+        };
+
+        if (isEditing && option.id) {
+          const { error: updateOptionError } = await supabase
+            .from("event_price_options")
+            .update(optionPayload)
+            .eq("id", option.id)
+            .eq("event_id", eventId!);
+          if (updateOptionError) throw updateOptionError;
+        } else {
+          const { error: insertOptionError } = await supabase
+            .from("event_price_options")
+            .insert(optionPayload);
+          if (insertOptionError) throw insertOptionError;
+        }
       }
 
       toast({ title: isEditing ? "Evento aggiornato!" : "Evento creato!" });
@@ -1319,7 +1426,7 @@ const EventForm = () => {
                     </Label>
                     <p className="text-[11px] text-muted-foreground font-body">Definisci chi vede quale prezzo. Configura prezzi per community, badge o promozioni.</p>
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, { name: "", price: 0, eligible_group: "all", badge_ids: [], original_price: null, is_promotional: false, promo_start: "", promo_end: "" }])} className="gap-1 shrink-0">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, createBlankPriceOption()])} className="gap-1 shrink-0">
                     <Plus className="h-3.5 w-3.5" /> Aggiungi
                   </Button>
                 </div>
@@ -1340,12 +1447,126 @@ const EventForm = () => {
                           step={0.01}
                           placeholder="€ Prezzo"
                           value={opt.price || ""}
-                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, price: parseFloat(e.target.value) || 0 } : o))}
+                          onChange={(e) => setPriceOptions(prev => prev.map((o, i) => {
+                            if (i !== index) return o;
+                            const price = parseFloat(e.target.value) || 0;
+                            return {
+                              ...o,
+                              price,
+                              balance_amount: o.payment_type === "deposit" ? Math.max(0, price - Number(o.deposit_amount || 0)) : o.balance_amount,
+                            };
+                          }))}
                         />
                       </div>
                       <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1">
                         <Trash2 className="h-4 w-4" />
                       </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Pagamento opzione</Label>
+                        <Select
+                          value={opt.payment_type}
+                          onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => {
+                            if (i !== index) return o;
+                            const paymentType = v as PaymentType;
+                            const depositAmount = paymentType === "deposit" ? (o.deposit_amount ?? form.deposit ?? 0) : null;
+                            return {
+                              ...o,
+                              payment_type: paymentType,
+                              deposit_amount: depositAmount,
+                              balance_amount: paymentType === "deposit" ? Math.max(0, Number(o.price || 0) - Number(depositAmount || 0)) : null,
+                              balance_payment_mode: paymentType === "deposit" ? o.balance_payment_mode : form.balance_payment_mode,
+                            };
+                          }))}
+                        >
+                          <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Gratis</SelectItem>
+                            <SelectItem value="paid">Online completo</SelectItem>
+                            <SelectItem value="location">Sul posto</SelectItem>
+                            <SelectItem value="deposit">Acconto + saldo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Lista d'attesa opzione</Label>
+                        <div className="h-8 mt-0.5 flex items-center gap-2">
+                          <Switch
+                            checked={opt.waitlist_enabled}
+                            onCheckedChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, waitlist_enabled: v } : o))}
+                          />
+                          <span className="text-xs text-muted-foreground">{opt.waitlist_enabled ? "Attiva" : "Disattiva"}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {opt.payment_type === "deposit" && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-[11px] text-muted-foreground">Acconto (€)</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            className="h-8 text-xs mt-0.5"
+                            value={opt.deposit_amount ?? ""}
+                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => {
+                              if (i !== index) return o;
+                              const depositAmount = e.target.value ? parseFloat(e.target.value) || 0 : 0;
+                              return {
+                                ...o,
+                                deposit_amount: depositAmount,
+                                balance_amount: Math.max(0, Number(o.price || 0) - depositAmount),
+                              };
+                            }))}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] text-muted-foreground">Saldo (€)</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            className="h-8 text-xs mt-0.5"
+                            value={opt.balance_amount ?? ""}
+                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, balance_amount: e.target.value ? parseFloat(e.target.value) || 0 : 0 } : o))}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] text-muted-foreground">Saldo</Label>
+                          <Select value={opt.balance_payment_mode} onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, balance_payment_mode: v as BalancePaymentMode } : o))}>
+                            <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="online">Online</SelectItem>
+                              <SelectItem value="on_site">Sul posto</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={opt.has_dedicated_spots}
+                          onCheckedChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, has_dedicated_spots: v, dedicated_spots: v ? (o.dedicated_spots ?? 1) : null } : o))}
+                        />
+                        <Label className="text-xs">Posti dedicati</Label>
+                      </div>
+                      {opt.has_dedicated_spots && (
+                        <div>
+                          <Label className="text-[11px] text-muted-foreground">Posti opzione</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="h-8 text-xs mt-0.5"
+                            value={opt.dedicated_spots ?? ""}
+                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, dedicated_spots: e.target.value ? parseInt(e.target.value) || 0 : 0 } : o))}
+                          />
+                          {opt.spots_taken ? (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{opt.spots_taken} gia presi</p>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>

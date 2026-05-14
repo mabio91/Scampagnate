@@ -15,6 +15,14 @@ export interface PriceOption {
   promo_start: string | null;
   promo_end: string | null;
   sort_order: number;
+  payment_type?: "free" | "paid" | "deposit" | "location" | null;
+  deposit_amount?: number | null;
+  balance_amount?: number | null;
+  balance_payment_mode?: "online" | "on_site" | null;
+  has_dedicated_spots?: boolean | null;
+  dedicated_spots?: number | null;
+  spots_taken?: number | null;
+  waitlist_enabled?: boolean | null;
 }
 
 export interface ResolvedPriceOption extends PriceOption {
@@ -81,7 +89,7 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
         // Check group eligibility
         const { eligible, reason } = checkGroupEligibility(
           opt.eligible_group,
-          { isLoggedIn: !!user, isMember, attendedCount, userBadgeIds }
+          { isLoggedIn: !!user, userId: user?.id || null, profile, isMember, attendedCount, userBadgeIds }
         );
 
         return {
@@ -109,10 +117,18 @@ function isWithinPromoWindow(
 
 interface UserContext {
   isLoggedIn: boolean;
+  userId: string | null;
+  profile: any;
   isMember: boolean;
   attendedCount: number;
   userBadgeIds: string[];
 }
+
+const thresholdFrom = (group: string, prefix: string) => {
+  const raw = group.startsWith(`${prefix}:`) ? group.split(":")[1] : "";
+  const parsed = Number.parseInt(raw || "0", 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 function checkGroupEligibility(
   group: string,
@@ -134,12 +150,18 @@ function checkGroupEligibility(
 
     case "experienced":
       if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
-      if (ctx.attendedCount < 1) return { eligible: false, reason: "Prezzo riservato a chi ha già partecipato ad almeno 1 evento" };
+      if (
+        ctx.profile?.self_level !== "advanced" &&
+        Number(ctx.profile?.experience_grade || 0) < 3 &&
+        ctx.profile?.trekking_experience !== "advanced"
+      ) {
+        return { eligible: false, reason: "Prezzo riservato agli utenti esperti" };
+      }
       return { eligible: true, reason: "" };
 
     case "loyal":
       if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
-      if (ctx.attendedCount < 5) return { eligible: false, reason: "Prezzo riservato ai partecipanti più attivi (5+ eventi)" };
+      if (ctx.attendedCount < 3) return { eligible: false, reason: "Prezzo riservato ai partecipanti più attivi (3+ eventi)" };
       return { eligible: true, reason: "" };
 
     default:
@@ -149,6 +171,29 @@ function checkGroupEligibility(
         if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
         const hasAny = badgeIds.some(id => ctx.userBadgeIds.includes(id));
         if (!hasAny) return { eligible: false, reason: "Prezzo riservato a chi possiede un badge specifico" };
+        return { eligible: true, reason: "" };
+      }
+      if (group.startsWith("trekking_gt:")) {
+        if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
+        const threshold = thresholdFrom(group, "trekking_gt");
+        if (ctx.attendedCount <= threshold) return { eligible: false, reason: `Prezzo riservato a chi ha piu di ${threshold} trekking` };
+        return { eligible: true, reason: "" };
+      }
+      if (group.startsWith("events_gt:")) {
+        if (!ctx.isLoggedIn) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
+        const threshold = thresholdFrom(group, "events_gt");
+        if (ctx.attendedCount <= threshold) return { eligible: false, reason: `Prezzo riservato a chi ha piu di ${threshold} eventi` };
+        return { eligible: true, reason: "" };
+      }
+      if (
+        group.startsWith("user:") ||
+        group.startsWith("user_id:") ||
+        group.startsWith("profile:") ||
+        group.startsWith("assigned_user:")
+      ) {
+        if (!ctx.isLoggedIn || !ctx.userId) return { eligible: false, reason: "Effettua il login per vedere questo prezzo" };
+        const targetUserId = group.split(":").slice(1).join(":").trim().toLowerCase();
+        if (targetUserId !== ctx.userId.toLowerCase()) return { eligible: false, reason: "Prezzo riservato a un utente specifico" };
         return { eligible: true, reason: "" };
       }
       return { eligible: true, reason: "" };
