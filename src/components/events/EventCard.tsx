@@ -8,6 +8,7 @@ import { EventBadgePill } from "./EventBadgePill";
 import DynamicIcon from "@/components/DynamicIcon";
 import { UI_LABELS } from "@/lib/labels";
 import SoldOutOverlay from "./SoldOutOverlay";
+import { canOptionJoinWaitlist, isOptionBookable, type PriceOptionLike } from "@/lib/priceOptions";
 
 export interface EventDiscount {
   discount_type: string;
@@ -54,18 +55,31 @@ export type UserRegistrationInfo = {
   payment_status?: string | null;
 } | null;
 
+type EventCardDetails = EventWithDetails & {
+  event_price_options?: PriceOptionLike[];
+  location_label?: string | null;
+};
+
 function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInfo): CardStatus {
   const isEventPast = event.status === "past" || event.status === "cancelled" || event.status === "closed";
   const isPastDate = new Date(event.date) < new Date(new Date().toDateString());
+  const eventDetails = event as EventCardDetails;
+  const priceOptions = eventDetails.price_options || eventDetails.event_price_options || [];
+  const hasPriceOptions = priceOptions.length > 0;
+  const hasBookableOption = hasPriceOptions
+    ? priceOptions.some((option) => isOptionBookable(option, event))
+    : event.spots_taken < event.spots_total;
+  const hasWaitlistOption = hasPriceOptions
+    ? priceOptions.some((option) => canOptionJoinWaitlist(option, event))
+    : event.status === "full" || event.spots_taken >= event.spots_total;
 
   if ((isEventPast || isPastDate) && userReg?.checked_in) return "attended";
   if (userReg && (userReg.status === "registered" || userReg.status === "paid" || userReg.status === "attended")) return "joined";
-  if (userReg?.status === "waitlist" && event.spots_taken < event.spots_total) return "spot_available";
+  if (userReg?.status === "waitlist" && hasBookableOption) return "spot_available";
   if (event.status === "draft") return "coming_soon";
   if (userReg?.status === "waitlist") return "waitlist";
   if (isEventPast || isPastDate) return "closed";
-  // SOLD OUT: full event -> show "Waitlist" instead of "Chiuso"
-  if (event.status === "full" || event.spots_taken >= event.spots_total) return "waitlist";
+  if (!hasBookableOption) return hasWaitlistOption ? "waitlist" : "closed";
   return "open";
 }
 
@@ -93,8 +107,10 @@ const EventCard = memo(({
   // Fill bar color: 0-49% green, 50-69% amber, 70%+ red
   const fillColor = fillPercent >= 70 ? "bg-destructive" : fillPercent >= 50 ? "bg-warning" : "bg-success";
 
-  const regInfo: UserRegistrationInfo = userRegistration || (isUserRegistered ? { status: "registered" } : null);
-  const cardStatus = useMemo(() => resolveCardStatus(event, regInfo), [event, regInfo]);
+  const cardStatus = useMemo(
+    () => resolveCardStatus(event, userRegistration || (isUserRegistered ? { status: "registered" } : null)),
+    [event, isUserRegistered, userRegistration],
+  );
   const statusConfig = STATUS_CONFIG[cardStatus];
 
   const hasPromo = !!discount;
@@ -113,7 +129,7 @@ const EventCard = memo(({
   }, [event.date]);
 
   const formattedTime = event.time?.slice(0, 5) || "";
-  const locationLabel = (event as any).location_label || event.location;
+  const locationLabel = (event as EventCardDetails).location_label || event.location;
   const hasDifficulty = Boolean(event.difficulty);
   const hasMetrics = Boolean(event.distance || event.elevation || event.duration);
   const useCompactCardLayout = !hasDifficulty && !hasMetrics;

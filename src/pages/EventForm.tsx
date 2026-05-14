@@ -10,6 +10,7 @@ import { FIT_SCORE_EVENT_SECONDARY_MAX, INTEREST_CATEGORY_OPTIONS } from "@/lib/
 import { getRandomEventClosingSentence, normalizeEventClosingSentence } from "@/lib/eventClosingSentences";
 
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import ImageCropDialog from "@/components/ImageCropDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -226,6 +227,7 @@ const EventForm = () => {
   const [loadingEvent, setLoadingEvent] = useState(isEditing || isDuplicating);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [coverCropFile, setCoverCropFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
@@ -234,6 +236,9 @@ const EventForm = () => {
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState(0);
   const [galleryUploadTotal, setGalleryUploadTotal] = useState(0);
+  const [activeGalleryCropFile, setActiveGalleryCropFile] = useState<File | null>(null);
+  const [galleryCropQueue, setGalleryCropQueue] = useState<File[]>([]);
+  const [croppedGalleryFiles, setCroppedGalleryFiles] = useState<File[]>([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -598,8 +603,8 @@ const EventForm = () => {
       toast({ title: "L'immagine deve essere inferiore a 5MB", variant: "destructive" });
       return;
     }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    setCoverCropFile(file);
+    e.target.value = "";
   };
 
   const removeImage = () => {
@@ -704,6 +709,33 @@ const EventForm = () => {
     setGalleryUploading(false);
   };
 
+  const startGalleryCrop = (files: File[]) => {
+    const filesToCrop = normalizeGalleryFiles(files);
+    if (filesToCrop.length === 0) return;
+
+    const [first, ...rest] = filesToCrop;
+    setCroppedGalleryFiles([]);
+    setGalleryCropQueue(rest);
+    setActiveGalleryCropFile(first);
+  };
+
+  const handleGalleryCropComplete = async (file: File) => {
+    const nextCropped = [...croppedGalleryFiles, file];
+    const [nextFile, ...restQueue] = galleryCropQueue;
+
+    if (nextFile) {
+      setCroppedGalleryFiles(nextCropped);
+      setGalleryCropQueue(restQueue);
+      setActiveGalleryCropFile(nextFile);
+      return;
+    }
+
+    setActiveGalleryCropFile(null);
+    setGalleryCropQueue([]);
+    setCroppedGalleryFiles([]);
+    await uploadGalleryFiles(nextCropped);
+  };
+
   const handleGalleryPaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
     const items = Array.from(event.clipboardData?.items || []);
     const pastedImages = items
@@ -714,7 +746,7 @@ const EventForm = () => {
     if (pastedImages.length === 0) return;
 
     event.preventDefault();
-    await uploadGalleryFiles(
+    startGalleryCrop(
       pastedImages.map((file, index) => {
         if (file.name) return file;
         const extension = file.type.split("/")[1] || "png";
@@ -1014,6 +1046,37 @@ const EventForm = () => {
 
   return (
     <>
+      <ImageCropDialog
+        open={!!coverCropFile}
+        file={coverCropFile}
+        title="Ritaglia copertina"
+        aspect={{ width: 16, height: 9 }}
+        outputWidth={1600}
+        outputHeight={900}
+        onCancel={() => setCoverCropFile(null)}
+        onCropped={(croppedFile) => {
+          setCoverCropFile(null);
+          setImageFile(croppedFile);
+          setImagePreview(URL.createObjectURL(croppedFile));
+        }}
+      />
+      <ImageCropDialog
+        open={!!activeGalleryCropFile}
+        file={activeGalleryCropFile}
+        title="Ritaglia immagine galleria"
+        description={`Immagine ${croppedGalleryFiles.length + 1} di ${croppedGalleryFiles.length + galleryCropQueue.length + (activeGalleryCropFile ? 1 : 0)}`}
+        aspect={{ width: 1, height: 1 }}
+        outputWidth={1200}
+        outputHeight={1200}
+        onCancel={() => {
+          setActiveGalleryCropFile(null);
+          setGalleryCropQueue([]);
+          setCroppedGalleryFiles([]);
+        }}
+        onCropped={(croppedFile) => {
+          void handleGalleryCropComplete(croppedFile);
+        }}
+      />
       <form onSubmit={handleSubmit} className="px-4 pt-4 pb-8 space-y-6">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate(-1)} className="p-1">
@@ -1272,7 +1335,7 @@ const EventForm = () => {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       onChange={async (e) => {
                         const files = Array.from(e.target.files || []);
-                        await uploadGalleryFiles(files);
+                        startGalleryCrop(files);
                         e.target.value = '';
                       }}
                     />

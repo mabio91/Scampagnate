@@ -4,7 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventRegistrations, useEventMeetingPoints } from "@/hooks/useOrganizerEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration } from "@/lib/eventPayments";
+import { getDepositPaymentLabel, isDepositRegistration } from "@/lib/eventPayments";
+import {
+  getOptionBalancePaymentMode,
+  getOptionPaymentSummary,
+  getOptionPaymentType,
+  getOptionRemainingSpots,
+  type PriceOptionLike,
+} from "@/lib/priceOptions";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +34,31 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import EventAnalytics from "@/components/events/EventAnalytics";
 
+const NO_PRICE_OPTION = "__none__";
+const NO_MEETING_POINT = "__no_meeting_point__";
+const ALL_PRICE_OPTIONS = "__all_price_options__";
+
+const PAYMENT_STATUS_OPTIONS = [
+  { value: "deposit_paid", label: "Deposit Paid" },
+  { value: "paid", label: "Paid" },
+  { value: "pending", label: "Pending" },
+  { value: "pay_on_location", label: "Pay on location" },
+  { value: "not_required", label: "Not Required" },
+  { value: "failed", label: "Failed" },
+];
+
+const REGISTRATION_STATUS_OPTIONS = [
+  { value: "registered", label: "Registered" },
+  { value: "deposit_paid", label: "Deposit Paid" },
+  { value: "paid", label: "Paid" },
+  { value: "attended", label: "Attended" },
+  { value: "no_show", label: "No-show" },
+  { value: "pending_payment", label: "Pending Payment" },
+  { value: "pending_approval", label: "Pending Approval" },
+  { value: "waitlist", label: "Waitlist" },
+  { value: "cancelled", label: "Cancel" },
+];
+
 const EventManage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,7 +77,7 @@ const EventManage = () => {
   const [showCapacityDialog, setShowCapacityDialog] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancellingEvent, setCancellingEvent] = useState(false);
-  const [participantFilter, setParticipantFilter] = useState<"all" | "participants" | "deposit_paid" | "attended" | "waitlist">("all");
+  const [participantFilter, setParticipantFilter] = useState<"all" | "participants" | "deposit_paid" | "attended" | "waitlist" | "price_option">("all");
   const [pendingCancelRegistrationId, setPendingCancelRegistrationId] = useState<string | null>(null);
 
   // Add participant state
@@ -55,10 +87,13 @@ const EventManage = () => {
   const [manualLevel, setManualLevel] = useState<string>("none");
   const [manualMeetingPoint, setManualMeetingPoint] = useState("");
   const [manualPaymentStatus, setManualPaymentStatus] = useState("pending");
+  const [manualPriceOptionId, setManualPriceOptionId] = useState("");
+  const [selectedPriceOptionFilter, setSelectedPriceOptionFilter] = useState(ALL_PRICE_OPTIONS);
   const [selectedSearchUser, setSelectedSearchUser] = useState<any>(null);
   const [editingParticipant, setEditingParticipant] = useState<string | null>(null);
   const [editMeetingPoint, setEditMeetingPoint] = useState("");
   const [editPaymentStatus, setEditPaymentStatus] = useState("");
+  const [editPriceOptionId, setEditPriceOptionId] = useState(NO_PRICE_OPTION);
   const [addingParticipant, setAddingParticipant] = useState(false);
 
   // Message state
@@ -154,12 +189,23 @@ const EventManage = () => {
   const waitlisted = registrations?.filter((r) => r.status === "waitlist") || [];
   const cancelled = registrations?.filter((r) => r.status === "cancelled") || [];
   const pending = registrations?.filter((r) => r.status === "pending_approval") || [];
+  const sortedPriceOptions = ((priceOptions || []) as PriceOptionLike[]).slice().sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+  const hasPriceOptions = sortedPriceOptions.length > 0;
+  const defaultPriceOptionId = sortedPriceOptions[0]?.id || "";
+  const currentManualPriceOptionId = manualPriceOptionId || defaultPriceOptionId;
+  const normalizePriceOptionId = (value: string) => value && value !== NO_PRICE_OPTION ? value : null;
+  const getPriceOptionForRegistration = (reg: any) =>
+    sortedPriceOptions.find((option) => option.id === reg.price_option_id) || null;
+  const getOptionActiveCount = (optionId: string | null | undefined) =>
+    registered.filter((reg) => reg.price_option_id === optionId).length;
+  const getOptionWaitlistCount = (optionId: string | null | undefined) =>
+    waitlisted.filter((reg) => reg.price_option_id === optionId).length;
   const depositPaid = registered.filter((r) => isDepositRegistration(r));
   const attended = registered.filter((r) => r.status === "attended");
   const checkedIn = attended;
   const reservedSpots = (event as any)?.reserved_spots || 0;
-  const hasDepositPayments = event?.payment_type === "deposit";
-  const balancePaymentMode = getEventBalancePaymentMode(event || {});
+  const hasDepositPayments = event?.payment_type === "deposit"
+    || sortedPriceOptions.some((option) => getOptionPaymentType(option, event || {}) === "deposit");
 
   const invalidateParticipantCounts = () => {
     queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
@@ -168,6 +214,12 @@ const EventManage = () => {
     queryClient.invalidateQueries({ queryKey: ["event-participants", id] });
     queryClient.invalidateQueries({ queryKey: ["events"] });
     queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
+  };
+
+  const openAddParticipantDialog = (mode: "search" | "manual") => {
+    setAddMode(mode);
+    setManualPriceOptionId(defaultPriceOptionId);
+    setShowAddParticipant(true);
   };
 
   const getParticipantName = (reg: any) => {
@@ -190,12 +242,16 @@ const EventManage = () => {
     if (participantFilter === "deposit_paid") return r.status === "deposit_paid";
     if (participantFilter === "attended") return r.status === "attended";
     if (participantFilter === "waitlist") return false;
+    if (participantFilter === "price_option") {
+      if (selectedPriceOptionFilter === ALL_PRICE_OPTIONS) return true;
+      return (r as any).price_option_id === selectedPriceOptionFilter;
+    }
     return true;
   });
 
   const depositReminderCandidates = depositPaid.filter((r) => {
     if (r.sport_level?.startsWith("manual:")) return false;
-    return true;
+    return getOptionBalancePaymentMode(getPriceOptionForRegistration(r), event || {}) === "online";
   });
 
   // Check-in filtered list (by meeting point + search)
@@ -313,12 +369,17 @@ const EventManage = () => {
   // Confirm adding the selected searched user
   const handleConfirmAddSearchUser = async () => {
     if (!selectedSearchUser) return;
+    if (hasPriceOptions && !currentManualPriceOptionId) {
+      toast({ title: "Seleziona un'opzione prezzo", variant: "destructive" });
+      return;
+    }
     setAddingParticipant(true);
     try {
       const { error } = await supabase.from("event_registrations").insert({
         event_id: id!,
         user_id: selectedSearchUser.id,
         meeting_point_id: manualMeetingPoint || null,
+        price_option_id: hasPriceOptions ? normalizePriceOptionId(currentManualPriceOptionId) : null,
         status: "registered",
         payment_status: manualPaymentStatus,
       });
@@ -329,6 +390,7 @@ const EventManage = () => {
       setSearchQuery("");
       setManualMeetingPoint("");
       setManualPaymentStatus("pending");
+      setManualPriceOptionId(defaultPriceOptionId);
       toast({ title: "Participant added!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -338,7 +400,7 @@ const EventManage = () => {
   };
 
   // Update meeting point or payment status on existing registration
-  const handleUpdateRegistration = async (regId: string, updates: { meeting_point_id?: string | null; payment_status?: string }) => {
+  const handleUpdateRegistration = async (regId: string, updates: { meeting_point_id?: string | null; payment_status?: string; price_option_id?: string | null }) => {
     const { error } = await supabase
       .from("event_registrations")
       .update(updates)
@@ -356,6 +418,10 @@ const EventManage = () => {
   // We'll use the organizer's user_id but mark it as a manual entry with sport_level = "manual:Name|level:value"
   const handleAddManualParticipant = async () => {
     if (!manualName.trim()) return;
+    if (hasPriceOptions && !currentManualPriceOptionId) {
+      toast({ title: "Seleziona un'opzione prezzo", variant: "destructive" });
+      return;
+    }
     setAddingParticipant(true);
     try {
       const levelPayload = manualLevel && manualLevel !== "none" ? `|level:${manualLevel}` : "";
@@ -363,6 +429,7 @@ const EventManage = () => {
         event_id: id!,
         user_id: user.id, // organizer's id as placeholder
         meeting_point_id: manualMeetingPoint || null,
+        price_option_id: hasPriceOptions ? normalizePriceOptionId(currentManualPriceOptionId) : null,
         status: "registered",
         payment_status: manualPaymentStatus,
         sport_level: `manual:${manualName.trim()}${levelPayload}`,
@@ -372,6 +439,7 @@ const EventManage = () => {
       setShowAddParticipant(false);
       setManualName("");
       setManualLevel("none");
+      setManualPriceOptionId(defaultPriceOptionId);
       toast({ title: `${manualName.trim()} added as participant!` });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -383,10 +451,13 @@ const EventManage = () => {
   // Delete event
   const handleDeleteEvent = async () => {
     try {
+      await supabase.from("event_special_badges").delete().eq("event_id", id!);
+      await supabase.from("event_broadcasts").delete().eq("event_id", id!);
       // Delete meeting points first
       await supabase.from("event_meeting_points").delete().eq("event_id", id!);
       // Delete registrations
       await supabase.from("event_registrations").delete().eq("event_id", id!);
+      await supabase.from("event_price_options").delete().eq("event_id", id!);
       // Delete event
       const { error } = await supabase.from("events").delete().eq("id", id!);
       if (error) throw error;
@@ -411,13 +482,15 @@ const EventManage = () => {
   };
 
   const exportCSV = () => {
-    if (!registered.length) return;
-    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Price Option", "Status", "Payment", "Meeting Point", "Checked In", "Registered At"];
-    const rows = registered.map((r) => {
+    const exportRows = registrations || [];
+    if (!exportRows.length) return;
+    const escapeCsv = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Price Option", "Status", "Payment", "Amount Paid", "Refund", "Meeting Point", "Checked In", "Registered At"];
+    const rows = exportRows.map((r) => {
       const mp = meetingPoints?.find((p) => p.id === r.meeting_point_id);
       const isManual = r.sport_level?.startsWith("manual:");
       const manualName = isManual ? r.sport_level!.replace("manual:", "") : "";
-      const po = priceOptions?.find((p: any) => p.id === (r as any).price_option_id);
+      const po = getPriceOptionForRegistration(r);
       return [
         isManual ? manualName : ((r.profiles as any)?.first_name || ""),
         isManual ? "(manual)" : ((r.profiles as any)?.last_name || ""),
@@ -426,13 +499,15 @@ const EventManage = () => {
         po?.name || "-",
         r.status,
         r.payment_status || "-",
+        (r as any).amount_paid ?? 0,
+        (r as any).refund_amount ?? 0,
         mp?.name || "-",
         r.checked_in ? "Yes" : "No",
         format(new Date(r.created_at), "dd/MM/yyyy HH:mm"),
       ];
     });
 
-    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const csv = [headers, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -440,6 +515,33 @@ const EventManage = () => {
     a.download = `${event?.title || "event"}-participants.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const renderPriceOptionSelect = (value: string, onChange: (value: string) => void) => {
+    if (!hasPriceOptions) return null;
+
+    return (
+      <div>
+        <Label className="font-body text-xs">Opzione prezzo</Label>
+        <Select value={value || defaultPriceOptionId} onValueChange={onChange}>
+          <SelectTrigger className="mt-1">
+            <SelectValue placeholder="Seleziona opzione" />
+          </SelectTrigger>
+          <SelectContent>
+            {sortedPriceOptions.map((option) => (
+              <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
+                <div className="flex flex-col py-0.5">
+                  <span>{option.name || "Opzione"}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {getOptionPaymentSummary(option, event || {})}
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    );
   };
 
 
@@ -556,7 +658,7 @@ const EventManage = () => {
         )}
 
         {/* Quick Stats */}
-        <div className={`grid gap-2 ${hasDepositPayments ? "grid-cols-5" : "grid-cols-4"}`}>
+        <div className={`grid gap-2 ${hasDepositPayments || hasPriceOptions ? "grid-cols-3 sm:grid-cols-6" : "grid-cols-4"}`}>
           <Card className={`p-2 text-center cursor-pointer transition-colors ${participantFilter === "participants" ? "ring-1 ring-primary bg-primary/5" : "hover:bg-muted/50"}`} onClick={() => setParticipantFilter(participantFilter === "participants" ? "all" : "participants")}>
             <p className="text-lg font-bold font-display text-foreground">{registered.length}</p>
             <p className="text-[10px] text-muted-foreground font-body">Partecipanti</p>
@@ -575,6 +677,12 @@ const EventManage = () => {
             <p className="text-lg font-bold font-display text-foreground">{waitlisted.length}</p>
             <p className="text-[10px] text-muted-foreground font-body">Lista d'attesa</p>
           </Card>
+          {hasPriceOptions && (
+            <Card className={`p-2 text-center cursor-pointer transition-colors ${participantFilter === "price_option" ? "ring-1 ring-primary bg-primary/5" : "hover:bg-muted/50"}`} onClick={() => setParticipantFilter(participantFilter === "price_option" ? "all" : "price_option")}>
+              <p className="text-lg font-bold font-display text-foreground">{sortedPriceOptions.length}</p>
+              <p className="text-[10px] text-muted-foreground font-body">Opzioni</p>
+            </Card>
+          )}
           <Card className="p-2 text-center cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { setNewCapacity(event.spots_total); setShowCapacityDialog(true); }}>
             <p className="text-lg font-bold font-display text-foreground">{event.spots_total - registered.length - reservedSpots}</p>
             <p className="text-[10px] text-muted-foreground font-body">Disponibili</p>
@@ -584,9 +692,64 @@ const EventManage = () => {
           </Card>
         </div>
 
+        {hasPriceOptions && (
+          <Card className="p-3 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-body font-semibold text-foreground">Opzioni di partecipazione</p>
+                <p className="text-[11px] text-muted-foreground font-body">Posti, acconti e waitlist separati per opzione.</p>
+              </div>
+              <Select
+                value={selectedPriceOptionFilter}
+                onValueChange={(value) => {
+                  setSelectedPriceOptionFilter(value);
+                  setParticipantFilter("price_option");
+                }}
+              >
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="Filtro opzione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_PRICE_OPTIONS}>Tutte</SelectItem>
+                  {sortedPriceOptions.map((option) => (
+                    <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
+                      {option.name || "Opzione"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {sortedPriceOptions.map((option) => {
+                const remaining = getOptionRemainingSpots(option, event);
+                const active = getOptionActiveCount(option.id);
+                const waitlistCount = getOptionWaitlistCount(option.id);
+                return (
+                  <div key={option.id || option.name || "option"} className="rounded-lg border border-border p-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold font-body text-foreground">{option.name || "Opzione"}</p>
+                        <p className="text-[11px] font-body text-muted-foreground">{getOptionPaymentSummary(option, event)}</p>
+                      </div>
+                      <Badge variant={remaining > 0 ? "secondary" : waitlistCount > 0 ? "outline" : "destructive"} className="shrink-0 text-[10px]">
+                        {remaining > 0 ? `${remaining} liberi` : option.waitlist_enabled === false ? "Esaurita" : "Waitlist"}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground font-body">
+                      <span>{active} iscritti</span>
+                      <span>{waitlistCount} waitlist</span>
+                      {option.has_dedicated_spots && <span>{Number(option.dedicated_spots || 0)} dedicati</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
         {/* Action Bar */}
         <div className="grid grid-cols-3 gap-2 min-w-0">
-          <Button size="sm" variant="outline" className="w-full min-w-0 gap-1 px-2 text-xs" onClick={() => { setAddMode("manual"); setShowAddParticipant(true); }}>
+          <Button size="sm" variant="outline" className="w-full min-w-0 gap-1 px-2 text-xs" onClick={() => openAddParticipantDialog("manual")}>
             <UserPlus className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">Add Participant</span>
           </Button>
@@ -594,7 +757,7 @@ const EventManage = () => {
             <Send className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">Message All</span>
           </Button>
-          {hasDepositPayments && balancePaymentMode === "online" && (
+          {hasDepositPayments && (
             <Button
               size="sm"
               variant="outline"
@@ -659,7 +822,8 @@ const EventManage = () => {
                 {filteredRegistered.map((reg) => {
                   const mp = meetingPoints?.find((p) => p.id === reg.meeting_point_id);
                   const { firstName, lastName, isManual } = getParticipantName(reg);
-                  const depositLabel = getDepositPaymentLabel(reg, event);
+                  const regPriceOption = getPriceOptionForRegistration(reg);
+                  const depositLabel = getDepositPaymentLabel(reg, event, regPriceOption);
                   return (
                     <Card key={reg.id} className="p-3 space-y-2">
                       <div className="flex items-center gap-3">
@@ -678,10 +842,9 @@ const EventManage = () => {
                             {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
                               <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
                             )}
-                            {(reg as any).price_option_id && priceOptions?.length > 0 && (() => {
-                              const po = priceOptions.find((p: any) => p.id === (reg as any).price_option_id);
-                              return po ? <span className="text-secondary ml-1">· {po.name}</span> : null;
-                            })()}
+                            {regPriceOption && (
+                              <span className="text-secondary ml-1">· {regPriceOption.name}</span>
+                            )}
                             {(depositLabel || (reg.payment_status && reg.payment_status !== "not_required")) && (
                               <span className={`ml-1 ${(reg.payment_status === "paid" || reg.status === "paid") ? "text-success" : "text-warning"}`}>
                                 · {depositLabel || reg.payment_status}
@@ -729,8 +892,9 @@ const EventManage = () => {
                                 setEditingParticipant(null);
                               } else {
                                 setEditingParticipant(reg.id);
-                                setEditMeetingPoint(reg.meeting_point_id || "");
+                                setEditMeetingPoint(reg.meeting_point_id || NO_MEETING_POINT);
                                 setEditPaymentStatus(reg.payment_status || "pending");
+                                setEditPriceOptionId((reg as any).price_option_id || NO_PRICE_OPTION);
                               }
                             }}
                           >
@@ -747,24 +911,22 @@ const EventManage = () => {
                               <span className="sr-only">Actions</span>
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="registered">Registered</SelectItem>
-                              <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="attended">Attended</SelectItem>
-                              <SelectItem value="no_show">No-show</SelectItem>
-                              <SelectItem value="cancelled">Cancel</SelectItem>
+                              {REGISTRATION_STATUS_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       {editingParticipant === reg.id && (
-                        <div className="flex items-end gap-2 pt-1 border-t border-border">
+                        <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto] pt-1 border-t border-border">
                           {meetingPoints && meetingPoints.length > 0 && (
-                            <div className="flex-1">
+                            <div>
                               <Label className="font-body text-[10px] text-muted-foreground">Meeting Point</Label>
                               <Select value={editMeetingPoint} onValueChange={setEditMeetingPoint}>
                                 <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue placeholder="None" /></SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value={NO_MEETING_POINT}>None</SelectItem>
                                   {meetingPoints.map((mp) => (
                                     <SelectItem key={mp.id} value={mp.id}>{mp.name}</SelectItem>
                                   ))}
@@ -772,15 +934,30 @@ const EventManage = () => {
                               </Select>
                             </div>
                           )}
-                          <div className="flex-1">
+                          {hasPriceOptions && (
+                            <div>
+                              <Label className="font-body text-[10px] text-muted-foreground">Price Option</Label>
+                              <Select value={editPriceOptionId} onValueChange={setEditPriceOptionId}>
+                                <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue placeholder="None" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={NO_PRICE_OPTION}>None</SelectItem>
+                                  {sortedPriceOptions.map((option) => (
+                                    <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
+                                      {option.name || "Opzione"}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          <div>
                             <Label className="font-body text-[10px] text-muted-foreground">Payment</Label>
                             <Select value={editPaymentStatus} onValueChange={setEditPaymentStatus}>
                               <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
-                                <SelectItem value="paid">Paid</SelectItem>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="not_required">Not Required</SelectItem>
+                                {PAYMENT_STATUS_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -788,8 +965,9 @@ const EventManage = () => {
                             size="sm"
                             className="h-8 text-xs"
                             onClick={() => handleUpdateRegistration(reg.id, {
-                              meeting_point_id: editMeetingPoint || null,
+                              meeting_point_id: !editMeetingPoint || editMeetingPoint === NO_MEETING_POINT ? null : editMeetingPoint,
                               payment_status: editPaymentStatus,
+                              price_option_id: hasPriceOptions ? normalizePriceOptionId(editPriceOptionId) : undefined,
                             })}
                           >
                             Save
@@ -1080,22 +1258,23 @@ const EventManage = () => {
                       </div>
                     )}
 
+                    {renderPriceOptionSelect(currentManualPriceOptionId, setManualPriceOptionId)}
+
                     <div>
                       <Label className="font-body text-xs">Payment Status</Label>
                       <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
                         <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
-                          <SelectItem value="paid">Paid</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="not_required">Not Required</SelectItem>
+                          {PAYMENT_STATUS_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
 
                     <Button
                       onClick={handleConfirmAddSearchUser}
-                      disabled={addingParticipant}
+                      disabled={addingParticipant || (hasPriceOptions && !currentManualPriceOptionId)}
                       className="w-full font-body"
                     >
                       {addingParticipant ? "Adding..." : "Confirm & Add Participant"}
@@ -1164,6 +1343,7 @@ const EventManage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {renderPriceOptionSelect(currentManualPriceOptionId, setManualPriceOptionId)}
               </div>
             )}
 
@@ -1188,17 +1368,16 @@ const EventManage = () => {
                   <Select value={manualPaymentStatus} onValueChange={setManualPaymentStatus}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="not_required">Not Required</SelectItem>
+                      {PAYMENT_STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <Button
                   onClick={handleAddManualParticipant}
-                  disabled={!manualName.trim() || addingParticipant}
+                  disabled={!manualName.trim() || addingParticipant || (hasPriceOptions && !currentManualPriceOptionId)}
                   className="w-full font-body"
                 >
                   {addingParticipant ? "Adding..." : "Add Participant"}

@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import LevelAvatar from "@/components/LevelAvatar";
 import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
+import ImageCropDialog from "@/components/ImageCropDialog";
 
 const HIDE_SOCIAL_AUTH = true;
 
@@ -57,6 +58,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null);
 
   // Email dialog
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -285,6 +287,19 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 
   return (
     <>
+      <ImageCropDialog
+        open={!!avatarCropFile}
+        file={avatarCropFile}
+        title="Ritaglia foto profilo"
+        aspect={{ width: 1, height: 1 }}
+        outputWidth={900}
+        outputHeight={900}
+        onCancel={() => setAvatarCropFile(null)}
+        onCropped={(croppedFile) => {
+          setAvatarCropFile(null);
+          void uploadAvatar(croppedFile);
+        }}
+      />
       <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl overflow-y-auto pb-safe">
           <SheetHeader className="pb-4">
@@ -305,7 +320,8 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) uploadAvatar(file);
+                    if (file) setAvatarCropFile(file);
+                    e.target.value = "";
                   }}
                 />
                 <button
