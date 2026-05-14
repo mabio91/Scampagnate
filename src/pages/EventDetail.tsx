@@ -104,6 +104,29 @@ const invokeAuthenticatedFunction = async (functionName: string, body: Record<st
   });
 };
 
+type GalleryImage = { url: string; order: number };
+
+const normalizeGalleryImages = (value: unknown): GalleryImage[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item, index): GalleryImage | null => {
+      if (typeof item === "string") {
+        return item ? { url: item, order: index } : null;
+      }
+
+      if (item && typeof item === "object" && typeof (item as any).url === "string") {
+        const order = typeof (item as any).order === "number" ? (item as any).order : index;
+        return { url: (item as any).url, order };
+      }
+
+      return null;
+    })
+    .filter((item): item is GalleryImage => Boolean(item?.url))
+    .sort((a, b) => a.order - b.order)
+    .map((item, index) => ({ ...item, order: index }));
+};
+
 const EventDetail = () => {
   const { id } = useParams();
   const { t, language } = useLanguage();
@@ -261,6 +284,7 @@ const EventDetail = () => {
   }
 
   const imageSrc = resolveEventImageSrc(event.image_url);
+  const galleryImages = normalizeGalleryImages(event.gallery_images);
   const isPaymentEvent = event.payment_type === "paid" || event.payment_type === "deposit";
   const hasCurrentRegistration = !!myRegistration && myRegistration.status !== "cancelled";
   const isLegacyPendingPayment = hasCurrentRegistration
@@ -1091,11 +1115,11 @@ const getCTALabel = () => {
         )}
 
         {/* 5. GALLERY → click opens fullscreen */}
-        {event.gallery_images && event.gallery_images.length > 0 && (
+        {galleryImages.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="py-4 border-b border-border">
             <h3 className="font-display text-lg font-bold text-foreground mb-3">{t("gallery")}</h3>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-              {event.gallery_images.sort((a: any, b: any) => a.order - b.order).map((img: any, idx: number) => (
+              {galleryImages.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => { setGalleryStartIndex(idx); setShowGalleryModal(true); }}
@@ -1420,7 +1444,7 @@ const getCTALabel = () => {
 
       {/* 5. Gallery Fullscreen Modal */}
       <AnimatePresence>
-        {showGalleryModal && event.gallery_images && (
+        {showGalleryModal && galleryImages.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1434,7 +1458,7 @@ const getCTALabel = () => {
             </div>
             <div className="flex-1 overflow-hidden" ref={emblaRef}>
               <div className="flex h-full">
-                {event.gallery_images.sort((a: any, b: any) => a.order - b.order).map((img: any, idx: number) => (
+                {galleryImages.map((img, idx) => (
                   <div key={idx} className="flex-[0_0_100%] min-w-0 flex items-center justify-center p-4">
                     <img
                       src={img.url}
