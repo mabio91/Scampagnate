@@ -1,9 +1,11 @@
-const SUPABASE_URL =
-  process.env.SUPABASE_URL || "https://etiynvukviykquqcsjln.supabase.co";
+const SUPABASE_URL = (
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  "https://istotjnoqtrtthnyreyv.supabase.co"
+).replace(/\/$/, "");
 const SUPABASE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aXludnVrdml5a3F1cWNzamxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDAxNDMsImV4cCI6MjA4ODQxNjE0M30.IHz7Uu8AN4p9Ufewn1vPo1ECA_LcOrcDVZSPK8vORPI";
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const DEFAULT_IMAGE_PATH = "/pwa-512x512.png";
 const SUPABASE_PUBLIC_STORAGE_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/`;
 
@@ -74,6 +76,10 @@ function buildTransformedSupabaseUrl(imageUrl: string): string {
 }
 
 async function getEventImageUrl(eventId: string, origin: string): Promise<string> {
+  if (!SUPABASE_KEY) {
+    return `${origin}${DEFAULT_IMAGE_PATH}`;
+  }
+
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/events?id=eq.${encodeURIComponent(
       eventId

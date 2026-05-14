@@ -1,4 +1,4 @@
-project_id = "etiynvukviykquqcsjln"
+project_id = "istotjnoqtrtthnyreyv"
 
 [functions.create-event-checkout]
 verify_jwt = false
@@ -7,13 +7,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.verify-event-payment]
-verify_jwt = false
+verify_jwt = true
 
 [functions.verify-membership-payment]
 verify_jwt = false
 
 [functions.process-refund]
-verify_jwt = false
+verify_jwt = true
 
 [functions.notify-event-cancelled]
-verify_jwt = false
+verify_jwt = true

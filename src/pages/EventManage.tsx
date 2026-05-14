@@ -1517,10 +1517,10 @@ const EventManage = () => {
                   if (error) throw error;
 
                   // Trigger cancellation notifications via edge function
-                  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'etiynvukviykquqcsjln';
-                  const gatewayJwt = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.SUPABASE_PUBLISHABLE_KEY;
+                  const supabaseFunctionsUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://istotjnoqtrtthnyreyv.supabase.co').replace(/\/$/, '');
+                  const gatewayJwt = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
                   if (!gatewayJwt) throw new Error("Configurazione Supabase mancante per la funzione.");
-                  const response = await fetch(`https://${projectId}.supabase.co/functions/v1/notify-event-cancelled`, {
+                  const response = await fetch(`${supabaseFunctionsUrl}/functions/v1/notify-event-cancelled`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',

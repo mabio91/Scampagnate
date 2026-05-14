@@ -6,8 +6,10 @@ import { parseEventDateTime } from "@/lib/timezone";
 import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
 
 const EDGE_GATEWAY_JWT =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_FUNCTIONS_URL = (
+  import.meta.env.VITE_SUPABASE_URL || "https://istotjnoqtrtthnyreyv.supabase.co"
+).replace(/\/$/, "");
 
 export interface EventWithDetails {
   id: string;
@@ -361,8 +363,7 @@ export const useCancelRegistration = () => {
         throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
       }
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "etiynvukviykquqcsjln";
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/process-refund`, {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/functions/v1/process-refund`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

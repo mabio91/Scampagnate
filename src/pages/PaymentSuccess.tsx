@@ -7,8 +7,10 @@ import { Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const EDGE_GATEWAY_JWT =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.SUPABASE_PUBLISHABLE_KEY;
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_FUNCTIONS_URL = (
+  import.meta.env.VITE_SUPABASE_URL || "https://istotjnoqtrtthnyreyv.supabase.co"
+).replace(/\/$/, "");
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -44,8 +46,7 @@ const PaymentSuccess = () => {
           throw new Error("Configurazione Supabase mancante per la verifica del pagamento.");
         }
 
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "etiynvukviykquqcsjln";
-        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/verify-event-payment`, {
+        const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/functions/v1/verify-event-payment`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
