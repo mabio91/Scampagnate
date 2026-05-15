@@ -313,6 +313,7 @@ const EventForm = () => {
   const [manualBadges, setManualBadges] = useState<string[]>([]);
   const [customBadge, setCustomBadge] = useState("");
   const [eventSpecialBadgeIds, setEventSpecialBadgeIds] = useState<string[]>([]);
+  const [existingOrganizer, setExistingOrganizer] = useState<{ id: string | null; name: string | null }>({ id: null, name: null });
 
   interface PriceOptionInput {
     id?: string;
@@ -441,6 +442,14 @@ const EventForm = () => {
         visibility: isDuplicating ? "private" : (event.visibility || "public"),
         gallery_images: (event.gallery_images as any[]) || [],
       });
+      setExistingOrganizer(
+        isDuplicating
+          ? { id: null, name: null }
+          : {
+              id: event.organizer_id || null,
+              name: event.organizer_name || null,
+            }
+      );
       setRegistrationOpen(event.status !== "closed");
       const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
       setPolicyType(pt || "flexible_24h");
@@ -559,11 +568,9 @@ const EventForm = () => {
           const badgeIds = group.startsWith("badge:") ? group.replace("badge:", "").split(",") : [];
           const paymentType = (o.payment_type || event.payment_type || "free") as PaymentType;
           const depositAmount = o.deposit_amount != null ? Number(o.deposit_amount) : (paymentType === "deposit" ? Number(event.deposit || 0) : null);
-          const balanceAmount = o.balance_amount != null
-            ? Number(o.balance_amount)
-            : paymentType === "deposit"
-              ? Math.max(0, Number(o.price || 0) - Number(depositAmount || 0))
-              : null;
+          const balanceAmount = paymentType === "deposit"
+            ? Math.max(0, Number(o.price || 0) - Number(depositAmount || 0))
+            : null;
           return {
             id: isDuplicating ? undefined : o.id,
             name: o.name,
@@ -829,6 +836,9 @@ const EventForm = () => {
       const primaryBalancePaymentMode = primaryPaymentType === "deposit"
         ? ((primaryPriceOption?.balance_payment_mode || form.balance_payment_mode) as BalancePaymentMode)
         : null;
+      const currentOrganizerName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer";
+      const resolvedOrganizerId = isEditing && !isDuplicating && existingOrganizer.id ? existingOrganizer.id : user.id;
+      const resolvedOrganizerName = isEditing && !isDuplicating && existingOrganizer.name ? existingOrganizer.name : currentOrganizerName;
 
       const eventData = {
         title: form.title,
@@ -873,8 +883,8 @@ const EventForm = () => {
           restriction_message: restrictionMessage || undefined,
         } as any : null,
         event_badges: [...manualBadges, ...(customBadge.trim() ? [customBadge.trim()] : [])] as any,
-        organizer_id: user.id,
-        organizer_name: profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Organizer",
+        organizer_id: resolvedOrganizerId,
+        organizer_name: resolvedOrganizerName,
         status: (registrationOpen ? "published" : "closed") as Database["public"]["Enums"]["event_status"],
       };
 
@@ -989,7 +999,7 @@ const EventForm = () => {
           ? Number(option.deposit_amount ?? Math.min(Number(option.price || 0), Number(form.deposit || 0)))
           : null;
         const optionBalanceAmount = optionPaymentType === "deposit"
-          ? Number(option.balance_amount ?? Math.max(0, Number(option.price || 0) - Number(optionDepositAmount || 0)))
+          ? Math.max(0, Number(option.price || 0) - Number(optionDepositAmount || 0))
           : null;
         const optionPayload = {
           event_id: eventId!,
@@ -1585,15 +1595,10 @@ const EventForm = () => {
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] text-muted-foreground">Saldo (€)</Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            className="h-8 text-xs mt-0.5"
-                            value={opt.balance_amount ?? ""}
-                            onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, balance_amount: e.target.value ? parseFloat(e.target.value) || 0 : 0 } : o))}
-                          />
+                          <Label className="text-[11px] text-muted-foreground">Saldo calcolato</Label>
+                          <div className="h-8 mt-0.5 flex items-center rounded-md border border-input bg-muted/40 px-3 text-xs font-semibold text-foreground">
+                            €{Math.max(0, Number(opt.price || 0) - Number(opt.deposit_amount || 0)).toFixed(2)}
+                          </div>
                         </div>
                         <div>
                           <Label className="text-[11px] text-muted-foreground">Saldo</Label>

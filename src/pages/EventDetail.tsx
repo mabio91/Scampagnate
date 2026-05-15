@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage, getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
+import { isEventPastByDate } from "@/lib/eventDates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
 import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
@@ -323,8 +324,7 @@ const EventDetail = () => {
     event_badges: (event as any).event_badges,
   });
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
-  const eventStartDate = parseEventDateTime(event.date, event.time);
-  const isEventPast = eventStartDate < new Date();
+  const isEventPast = isEventPastByDate(event.date);
 
   const canViewParticipants = !!user && (!!isRegistered || user.id === event.organizer_id || isAdmin);
   const canViewMeetingPoints = !!user && (

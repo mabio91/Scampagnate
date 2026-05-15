@@ -8,6 +8,7 @@ import {
 import { format, parseISO, eachDayOfInterval, startOfDay, subDays } from "date-fns";
 import { Users, CheckCircle2, UserX, TrendingUp } from "lucide-react";
 import { isActiveParticipantRegistration } from "@/lib/eventPayments";
+import { isEventPastByDate, parseEventCalendarDate } from "@/lib/eventDates";
 
 interface Registration {
   id: string;
@@ -47,9 +48,9 @@ const CHART_COLORS = [
 const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsProps) => {
   const registered = registrations.filter(isActiveParticipantRegistration);
   const checkedIn = registered.filter((r) => r.checked_in);
-  const noShows = registered.filter((r) => !r.checked_in && new Date(event.date) < new Date());
+  const isPast = isEventPastByDate(event.date);
+  const noShows = registered.filter((r) => !r.checked_in && isPast);
   const cancelled = registrations.filter((r) => r.status === "cancelled");
-  const isPast = new Date(event.date) < new Date();
 
   const attendanceRate = registered.length > 0 ? Math.round((checkedIn.length / registered.length) * 100) : 0;
   const noShowRate = registered.length > 0 ? Math.round((noShows.length / registered.length) * 100) : 0;
@@ -65,7 +66,8 @@ const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsP
     if (validRegs.length === 0) return [];
 
     const firstDate = startOfDay(parseISO(validRegs[0].created_at));
-    const lastDate = startOfDay(new Date(event.date) < new Date() ? new Date(event.date) : new Date());
+    const eventDate = parseEventCalendarDate(event.date) || new Date();
+    const lastDate = startOfDay(isPast ? eventDate : new Date());
     const days = eachDayOfInterval({ start: firstDate, end: lastDate });
 
     let cumulative = 0;
@@ -80,7 +82,7 @@ const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsP
         daily: dayRegs.length,
       };
     });
-  }, [registrations, event.date]);
+  }, [registrations, event.date, isPast]);
 
   // Attendance pie chart data
   const attendanceData = useMemo(() => {

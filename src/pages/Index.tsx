@@ -26,6 +26,7 @@ import { useSearch } from "@/contexts/SearchContext";
 import { UI_LABELS } from "@/lib/labels";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
+import { isEventUpcomingByDate } from "@/lib/eventDates";
 
 const Index = () => {
   const {
@@ -145,8 +146,7 @@ const Index = () => {
   // All upcoming, non-draft/past/cancelled events
   const allUpcoming = useMemo(() => {
     if (!events) return [];
-    const now = startOfDay(new Date());
-    return events.filter(e => new Date(e.date) >= now && e.status !== "draft" && e.status !== "past" && e.status !== "cancelled");
+    return events.filter(e => isEventUpcomingByDate(e.date) && e.status !== "draft" && e.status !== "past" && e.status !== "cancelled");
   }, [events]);
 
   // Featured event

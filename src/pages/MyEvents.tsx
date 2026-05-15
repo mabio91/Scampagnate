@@ -34,6 +34,7 @@ import {
   isOnlinePaymentType,
   isOptionBookable,
 } from "@/lib/priceOptions";
+import { isEventPastByDate, isEventUpcomingByDate } from "@/lib/eventDates";
 
 const statusStyles: Record<string, string> = {
   iscritto: "bg-success/10 text-success",
@@ -168,10 +169,9 @@ const MyEvents = () => {
     );
   }
 
-  const now = new Date();
   const active = registrations?.filter((r: any) => r.status !== "cancelled") || [];
-  const upcoming = active.filter((r: any) => new Date(r.events?.date) >= now);
-  const past = active.filter((r: any) => new Date(r.events?.date) < now);
+  const upcoming = active.filter((r: any) => isEventUpcomingByDate(r.events?.date));
+  const past = active.filter((r: any) => isEventPastByDate(r.events?.date));
 
   return (
     <>
@@ -531,7 +531,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
   const { t, language } = useLanguage();
 
   if (!event) return null;
-  const isPast = new Date(event.date) < new Date();
+  const isPast = isEventPastByDate(event.date);
   const displayLocation = event.location_label || event.location;
 
   const handleUnsave = async (e: React.MouseEvent) => {

@@ -3,16 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const useOrganizerEvents = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   return useQuery({
-    queryKey: ["organizer-events", user?.id],
+    queryKey: ["organizer-events", user?.id, isAdmin],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("events")
         .select("*, event_categories(name, icon)")
-        .eq("organizer_id", user!.id)
         .order("date", { ascending: true });
+      if (!isAdmin) {
+        query = query.eq("organizer_id", user!.id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },

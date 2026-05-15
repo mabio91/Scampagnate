@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
+import { isEventPastByDate, isEventUpcomingByDate } from "@/lib/eventDates";
 
 const OrganizerProfile = () => {
   const { id } = useParams();
@@ -61,8 +62,8 @@ const OrganizerProfile = () => {
 
   const { profile, eventCount, events } = organizer;
   const fullName = profile?.first_name || "Organizer";
-  const upcomingEvents = events?.filter(e => new Date(e.date) >= new Date()) || [];
-  const pastEvents = events?.filter(e => new Date(e.date) < new Date()) || [];
+  const upcomingEvents = events?.filter(e => isEventUpcomingByDate(e.date)) || [];
+  const pastEvents = events?.filter(e => isEventPastByDate(e.date)) || [];
 
   return (
     <>

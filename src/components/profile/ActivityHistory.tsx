@@ -9,6 +9,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, Dr
 import EmptyState from "@/components/EmptyState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { dedupeRegistrationsByEvent, isAttendedRegistration } from "@/lib/eventRegistrations";
+import { isEventPastByDate, parseEventCalendarDate } from "@/lib/eventDates";
 import {
   Activity, CalendarCheck, CalendarX, AlertCircle, CheckCircle2,
   Flame, Clock, TrendingUp, ChevronDown, ChevronUp, BarChart3, Shield,
@@ -67,14 +68,13 @@ export const ActivityHistory = () => {
   const metrics = useMemo(() => {
     if (!data || data.length === 0) return null;
     const uniqueData = dedupeRegistrationsByEvent(data);
-    const now = new Date();
     let attended = 0, cancelled = 0, noShows = 0, joined = 0;
     const categoryMap: Record<string, number> = {};
     const attendedDates: Date[] = [];
 
     uniqueData.forEach((reg) => {
-      const eventDate = reg.events?.date ? new Date(reg.events.date) : null;
-      const isPast = eventDate ? eventDate < now : false;
+      const eventDate = parseEventCalendarDate(reg.events?.date);
+      const isPast = isEventPastByDate(reg.events?.date);
       if (reg.status === "registered" || reg.status === "deposit_paid" || reg.status === "paid") joined++;
       if (isAttendedRegistration(reg)) {
         attended++;
@@ -88,7 +88,7 @@ export const ActivityHistory = () => {
 
     // Streak
     const pastRegs = uniqueData
-      .filter(r => r.events?.date && new Date(r.events.date) < now && (r.status === "registered" || r.status === "deposit_paid" || r.status === "paid" || r.status === "attended" || r.checked_in))
+      .filter(r => r.events?.date && isEventPastByDate(r.events.date) && (r.status === "registered" || r.status === "deposit_paid" || r.status === "paid" || r.status === "attended" || r.checked_in))
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
     const streakEvents: RegistrationWithEvent[] = [];
     let streak = 0;
@@ -112,18 +112,17 @@ export const ActivityHistory = () => {
       : undefined;
 
     const allTimeline = uniqueData
-      .filter(r => r.events?.date && new Date(r.events.date) < now)
+      .filter(r => r.events?.date && isEventPastByDate(r.events.date))
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
 
     return { attended, cancelled, noShows, joined, streak, streakEvents, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline };
   }, [data]);
 
   const getStatusLabel = useCallback((reg: RegistrationWithEvent) => {
-    const now = new Date();
     if (isAttendedRegistration(reg)) return { label: "Partecipato", color: "text-success", Icon: CheckCircle2 };
     if (reg.status === "cancelled") return { label: "Cancellato", color: "text-destructive", Icon: CalendarX };
     if (reg.status === "no_show") return { label: "No-show", color: "text-destructive", Icon: AlertCircle };
-    const isPast = reg.events?.date ? new Date(reg.events.date) < now : false;
+    const isPast = isEventPastByDate(reg.events?.date);
     if (isPast && !reg.checked_in) return { label: "Non presentato", color: "text-warning", Icon: AlertCircle };
     return { label: "Iscritto", color: "text-primary", Icon: CalendarCheck };
   }, []);

@@ -28,7 +28,7 @@ import {
   ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus,
   Loader2, Zap, BarChart3, Trash2, Send, Search, Copy,
   MessageCircle, Bell, AlertTriangle, History,
-  FileEdit, Eye, CircleOff, Lock, XCircle, Archive
+  FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -62,7 +62,7 @@ const REGISTRATION_STATUS_OPTIONS = [
 const EventManage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isOrganizer, loading: authLoading } = useAuth();
+  const { user, isOrganizer, isAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [quickCheckIn, setQuickCheckIn] = useState(false);
@@ -76,6 +76,7 @@ const EventManage = () => {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showCapacityDialog, setShowCapacityDialog] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showOwnerDialog, setShowOwnerDialog] = useState(false);
   const [cancellingEvent, setCancellingEvent] = useState(false);
   const [participantFilter, setParticipantFilter] = useState<"all" | "participants" | "deposit_paid" | "attended" | "waitlist" | "price_option">("all");
   const [pendingCancelRegistrationId, setPendingCancelRegistrationId] = useState<string | null>(null);
@@ -86,7 +87,7 @@ const EventManage = () => {
   const [manualName, setManualName] = useState("");
   const [manualLevel, setManualLevel] = useState<string>("none");
   const [manualMeetingPoint, setManualMeetingPoint] = useState("");
-  const [manualPaymentStatus, setManualPaymentStatus] = useState("pending");
+  const [manualPaymentStatus, setManualPaymentStatus] = useState("not_required");
   const [manualPriceOptionId, setManualPriceOptionId] = useState("");
   const [selectedPriceOptionFilter, setSelectedPriceOptionFilter] = useState(ALL_PRICE_OPTIONS);
   const [selectedSearchUser, setSelectedSearchUser] = useState<any>(null);
@@ -95,6 +96,8 @@ const EventManage = () => {
   const [editPaymentStatus, setEditPaymentStatus] = useState("");
   const [editPriceOptionId, setEditPriceOptionId] = useState(NO_PRICE_OPTION);
   const [addingParticipant, setAddingParticipant] = useState(false);
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [savingOwnerId, setSavingOwnerId] = useState<string | null>(null);
 
   // Message state
   const [messageText, setMessageText] = useState("");
@@ -165,6 +168,46 @@ const EventManage = () => {
     enabled: !!id,
   });
 
+  const { data: ownerOptions = [] } = useQuery({
+    queryKey: ["organizer-owner-options"],
+    queryFn: async () => {
+      const { data: roles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "organizer"]);
+      if (rolesError) throw rolesError;
+
+      const userIds = Array.from(new Set((roles || []).map((role: any) => role.user_id).filter(Boolean)));
+      if (userIds.length === 0) return [];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email, avatar_url")
+        .in("id", userIds);
+      if (profilesError) throw profilesError;
+
+      const roleMap = new Map<string, string[]>();
+      (roles || []).forEach((role: any) => {
+        if (!role.user_id) return;
+        roleMap.set(role.user_id, [...(roleMap.get(role.user_id) || []), role.role]);
+      });
+
+      return (profiles || [])
+        .map((profile: any) => ({
+          id: profile.id,
+          name: `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.email || `Utente ${String(profile.id).slice(0, 8)}`,
+          email: profile.email,
+          avatarUrl: profile.avatar_url,
+          role: roleMap.get(profile.id)?.includes("admin") ? "admin" : "organizer",
+        }))
+        .sort((a, b) => {
+          if (a.role !== b.role) return a.role === "admin" ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
+    },
+    enabled: !!user && isAdmin,
+  });
+
   // Search users for adding existing participants
   const { data: searchResults } = useQuery({
     queryKey: ["search-users", searchQuery],
@@ -206,6 +249,13 @@ const EventManage = () => {
   const reservedSpots = (event as any)?.reserved_spots || 0;
   const hasDepositPayments = event?.payment_type === "deposit"
     || sortedPriceOptions.some((option) => getOptionPaymentType(option, event || {}) === "deposit");
+  const filteredOwnerOptions = ownerOptions.filter((option) => {
+    const query = ownerSearch.trim().toLowerCase();
+    if (!query) return true;
+    return option.name.toLowerCase().includes(query)
+      || (option.email || "").toLowerCase().includes(query)
+      || option.role.toLowerCase().includes(query);
+  });
 
   const invalidateParticipantCounts = () => {
     queryClient.invalidateQueries({ queryKey: ["event-registrations", id] });
@@ -224,7 +274,7 @@ const EventManage = () => {
 
   const getParticipantName = (reg: any) => {
     if (reg.sport_level?.startsWith("manual:")) {
-      return { firstName: reg.sport_level.replace("manual:", ""), lastName: "(manual)", isManual: true };
+      return { firstName: reg.sport_level.replace("manual:", "").split("|")[0], lastName: "(manual)", isManual: true };
     }
     return {
       firstName: (reg.profiles as any)?.first_name || "?",
@@ -389,7 +439,7 @@ const EventManage = () => {
       setSelectedSearchUser(null);
       setSearchQuery("");
       setManualMeetingPoint("");
-      setManualPaymentStatus("pending");
+      setManualPaymentStatus("not_required");
       setManualPriceOptionId(defaultPriceOptionId);
       toast({ title: "Participant added!" });
     } catch (err: any) {
@@ -439,6 +489,8 @@ const EventManage = () => {
       setShowAddParticipant(false);
       setManualName("");
       setManualLevel("none");
+      setManualMeetingPoint("");
+      setManualPaymentStatus("not_required");
       setManualPriceOptionId(defaultPriceOptionId);
       toast({ title: `${manualName.trim()} added as participant!` });
     } catch (err: any) {
@@ -478,6 +530,32 @@ const EventManage = () => {
       invalidateParticipantCounts();
       setShowCapacityDialog(false);
       toast({ title: `Capacity updated to ${newCapacity}` });
+    }
+  };
+
+  const handleChangeOrganizer = async (owner: { id: string; name: string }) => {
+    if (!id || savingOwnerId) return;
+    setSavingOwnerId(owner.id);
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({
+          organizer_id: owner.id,
+          organizer_name: owner.name,
+        })
+        .eq("id", id);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["event-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["event", id] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
+      setShowOwnerDialog(false);
+      toast({ title: "Organizzatore aggiornato" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingOwnerId(null);
     }
   };
 
@@ -616,6 +694,21 @@ const EventManage = () => {
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
+
+        {isAdmin && (
+          <Card className="p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <UserCog className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-body font-semibold text-muted-foreground">Organizzatore evento</p>
+              <p className="text-sm font-body font-bold text-foreground truncate">{event.organizer_name || "Non assegnato"}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setShowOwnerDialog(true)}>
+              Cambia
+            </Button>
+          </Card>
+        )}
 
         {/* Private/Hidden event link sharing */}
         {event && event.visibility !== "public" && (
@@ -828,7 +921,7 @@ const EventManage = () => {
                     <Card key={reg.id} className="p-3 space-y-2">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
-                          {isManual ? "M" : ((reg.profiles as any)?.avatar_url ? (
+                          {isManual ? (firstName[0] || "?") : ((reg.profiles as any)?.avatar_url ? (
                             <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
                           ) : firstName[0])}
                         </div>
@@ -1194,6 +1287,59 @@ const EventManage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={showOwnerDialog} onOpenChange={setShowOwnerDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Cambia organizzatore</DialogTitle>
+            <DialogDescription className="font-body text-sm">
+              Seleziona l'account che deve gestire questo evento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Input
+              value={ownerSearch}
+              onChange={(e) => setOwnerSearch(e.target.value)}
+              placeholder="Cerca nome, email o ruolo"
+            />
+            <div className="max-h-72 overflow-y-auto space-y-1">
+              {filteredOwnerOptions.length === 0 ? (
+                <p className="text-sm font-body text-muted-foreground text-center py-6">Nessun organizzatore disponibile</p>
+              ) : (
+                filteredOwnerOptions.map((owner) => (
+                  <button
+                    key={owner.id}
+                    type="button"
+                    disabled={savingOwnerId != null || owner.id === event.organizer_id}
+                    onClick={() => handleChangeOrganizer(owner)}
+                    className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/60 disabled:opacity-60"
+                  >
+                    {owner.avatarUrl ? (
+                      <img src={owner.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                        {owner.name[0] || "O"}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-body font-semibold text-foreground truncate">{owner.name}</span>
+                      <span className="block text-[11px] font-body text-muted-foreground truncate">
+                        {owner.role === "admin" ? "Admin" : "Organizzatore"}{owner.email ? ` · ${owner.email}` : ""}
+                      </span>
+                    </span>
+                    {savingOwnerId === owner.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : owner.id === event.organizer_id ? (
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                    ) : null}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Participant Dialog */}
       <Dialog open={showAddParticipant} onOpenChange={setShowAddParticipant}>

@@ -9,6 +9,7 @@ import DynamicIcon from "@/components/DynamicIcon";
 import { UI_LABELS } from "@/lib/labels";
 import SoldOutOverlay from "./SoldOutOverlay";
 import { canOptionJoinWaitlist, isOptionBookable, type PriceOptionLike } from "@/lib/priceOptions";
+import { isEventPastByDate } from "@/lib/eventDates";
 
 export interface EventDiscount {
   discount_type: string;
@@ -62,7 +63,7 @@ type EventCardDetails = EventWithDetails & {
 
 function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInfo): CardStatus {
   const isEventPast = event.status === "past" || event.status === "cancelled" || event.status === "closed";
-  const isPastDate = new Date(event.date) < new Date(new Date().toDateString());
+  const isPastDate = isEventPastByDate(event.date);
   const eventDetails = event as EventCardDetails;
   const priceOptions = eventDetails.price_options || eventDetails.event_price_options || [];
   const hasPriceOptions = priceOptions.length > 0;
