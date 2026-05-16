@@ -5,10 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle, Trash2, AlertTriangle, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -20,8 +17,7 @@ import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog
 import ActivityProposalForm from "@/components/ActivityProposalForm";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
 import ProfileEditSheet from "@/components/profile/ProfileEditSheet";
-
-const DELETE_CONFIRMATION_PHRASE = "CANCELLA IL MIO ACCOUNT";
+import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
@@ -33,9 +29,11 @@ const Profile = () => {
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [showProposalForm, setShowProposalForm] = useState(false);
   const [showPointsInfo, setShowPointsInfo] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const [deletingAccount, setDeletingAccount] = useState(false);
+  const profileMeta = profile as typeof profile & {
+    created_at?: string;
+    is_founding_member?: boolean;
+    membership_year?: number;
+  };
 
   useEffect(() => {
     if (searchParams.get("section") === "membership") {
@@ -59,35 +57,6 @@ const Profile = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
-  };
-
-  const handleDeleteAccount = async () => {
-    if (deleteConfirmation.trim() !== DELETE_CONFIRMATION_PHRASE) {
-      toast({
-        title: "Conferma non valida",
-        description: `Scrivi esattamente: ${DELETE_CONFIRMATION_PHRASE}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setDeletingAccount(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("delete-account", {
-        body: { confirmation: DELETE_CONFIRMATION_PHRASE },
-      });
-      if (error || data?.success === false) {
-        throw new Error(data?.error || error?.message || "Cancellazione account non riuscita");
-      }
-      await signOut();
-      setDeleteDialogOpen(false);
-      toast({ title: "Account cancellato", description: "La sessione e stata chiusa." });
-      navigate("/");
-    } catch (err: any) {
-      toast({ title: "Errore cancellazione", description: err.message, variant: "destructive" });
-    } finally {
-      setDeletingAccount(false);
-    }
   };
 
   return (
@@ -172,7 +141,7 @@ const Profile = () => {
                   }`}>
                     {isMembershipActive(profile) ? 'Attiva' : isMembershipExpired(profile) ? 'Scaduta' : 'Non attiva'}
                   </span>
-                  {(profile as any)?.is_founding_member && (
+                  {profileMeta?.is_founding_member && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">
                       <Crown className="h-3 w-3" /> Fondatore
                     </span>
@@ -211,7 +180,7 @@ const Profile = () => {
                     <p className="text-[10px] font-body text-muted-foreground uppercase font-bold">Membro dal</p>
                     <p className="text-sm font-body font-semibold text-foreground">
                       {(() => {
-                        const dateStr = profile.membership_registration_date || (profile as any).created_at;
+                        const dateStr = profile.membership_registration_date || profileMeta?.created_at;
                         return dateStr ? new Date(dateStr).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/D';
                       })()}
                     </p>
@@ -245,7 +214,7 @@ const Profile = () => {
               <div className="mt-3 space-y-3">
                 <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
                   <p className="text-sm font-body font-bold text-warning">
-                    La tua tessera è scaduta il 31/12/{(profile as any)?.membership_year || new Date().getFullYear() - 1}
+                    La tua tessera è scaduta il 31/12/{profileMeta?.membership_year || new Date().getFullYear() - 1}
                   </p>
                   <p className="text-xs font-body text-muted-foreground mt-1">
                     Rinnova per continuare a partecipare agli eventi
@@ -362,20 +331,17 @@ const Profile = () => {
             <ReportIssueDialog />
           </div>
 
-          {/* Logout */}
+          {/* Consensi e documenti legali */}
+          <ConsentPrivacySection />
+
+          {/* Impostazioni account */}
+          <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Impostazioni account</p>
           <div className="space-y-1 mt-1">
             <button onClick={handleSignOut} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-muted/50 transition-colors group w-full text-left">
               <LogOut className="h-[18px] w-[18px] text-secondary shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-body font-semibold text-foreground">Esci</p>
                 <p className="text-xs font-body text-muted-foreground">Termina la sessione</p>
-              </div>
-            </button>
-            <button onClick={() => setDeleteDialogOpen(true)} className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-destructive/5 transition-colors group w-full text-left">
-              <Trash2 className="h-[18px] w-[18px] text-destructive shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-body font-semibold text-destructive">Cancella account</p>
-                <p className="text-xs font-body text-muted-foreground">Rimuove accesso, dati personali e sessione</p>
               </div>
             </button>
           </div>
@@ -391,42 +357,6 @@ const Profile = () => {
         open={showProposalForm}
         onOpenChange={setShowProposalForm}
       />
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" /> Cancella account
-            </DialogTitle>
-            <DialogDescription className="font-body text-sm">
-              Questa azione cancella l'accesso e anonimizza i dati personali collegati al profilo. Non puo essere annullata.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs font-body text-foreground">
-              Per confermare scrivi <span className="font-bold">{DELETE_CONFIRMATION_PHRASE}</span>.
-            </div>
-            <Input
-              value={deleteConfirmation}
-              onChange={(event) => setDeleteConfirmation(event.target.value)}
-              placeholder={DELETE_CONFIRMATION_PHRASE}
-              disabled={deletingAccount}
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setDeleteDialogOpen(false)} disabled={deletingAccount}>
-                Annulla
-              </Button>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={handleDeleteAccount}
-                disabled={deletingAccount || deleteConfirmation.trim() !== DELETE_CONFIRMATION_PHRASE}
-              >
-                {deletingAccount ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Attendi...</> : "Cancella"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

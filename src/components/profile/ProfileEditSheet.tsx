@@ -21,14 +21,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Camera, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, ChevronRight, Settings, HelpCircle } from "lucide-react";
+import { Camera, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, ChevronRight, Settings, HelpCircle, Trash2, AlertTriangle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import LevelAvatar from "@/components/LevelAvatar";
 import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
 import ImageCropDialog from "@/components/ImageCropDialog";
 
 const HIDE_SOCIAL_AUTH = true;
+const DELETE_CONFIRMATION_PHRASE = "CANCELLA IL MIO ACCOUNT";
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "Errore imprevisto";
 
 interface ProfileEditSheetProps {
   open: boolean;
@@ -36,7 +37,7 @@ interface ProfileEditSheetProps {
 }
 
 const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -71,6 +72,9 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Social links
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -147,8 +151,8 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
       if (updateError) throw updateError;
       await refreshProfile();
       toast({ title: "Foto profilo aggiornata" });
-    } catch (err: any) {
-      toast({ title: "Errore upload", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Errore upload", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -224,8 +228,8 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
       toast({ title: "Email di conferma inviata", description: "Controlla la tua nuova casella email per confermare il cambio." });
       setShowEmailDialog(false);
       setNewEmail("");
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Errore", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setEmailLoading(false);
     }
@@ -248,10 +252,40 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
       setShowPasswordDialog(false);
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Errore", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation.trim() !== DELETE_CONFIRMATION_PHRASE) {
+      toast({
+        title: "Conferma non valida",
+        description: `Scrivi esattamente: ${DELETE_CONFIRMATION_PHRASE}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: { confirmation: DELETE_CONFIRMATION_PHRASE },
+      });
+      if (error || data?.success === false) {
+        throw new Error(data?.error || error?.message || "Cancellazione account non riuscita");
+      }
+      await signOut();
+      setDeleteDialogOpen(false);
+      onOpenChange(false);
+      toast({ title: "Account cancellato", description: "La sessione e stata chiusa." });
+      navigate("/");
+    } catch (err: unknown) {
+      toast({ title: "Errore cancellazione", description: getErrorMessage(err), variant: "destructive" });
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -263,8 +297,8 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
         options: { redirectTo: window.location.origin + "/profile" },
       });
       if (error) throw error;
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Errore", description: getErrorMessage(err), variant: "destructive" });
       setGoogleLoading(false);
     }
   };
@@ -277,8 +311,8 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
         options: { redirectTo: window.location.origin + "/profile" },
       });
       if (error) throw error;
-    } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Errore", description: getErrorMessage(err), variant: "destructive" });
       setAppleLoading(false);
     }
   };
@@ -481,6 +515,18 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                   </button>
                 )}
 
+                {/* Delete Account */}
+                <button
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="flex items-center gap-3 py-3 px-1 rounded-lg hover:bg-destructive/5 transition-colors group w-full text-left"
+                >
+                  <Trash2 className="h-[18px] w-[18px] text-destructive shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-body font-semibold text-destructive">Cancella account</p>
+                    <p className="text-xs font-body text-muted-foreground">Rimuove accesso, dati personali e sessione</p>
+                  </div>
+                </button>
+
                 {/* Link Google */}
                 <button
                   hidden={HIDE_SOCIAL_AUTH}
@@ -527,8 +573,6 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
               </div>
             </div>
 
-            {/* CONSENSI & PRIVACY SECTION */}
-            <ConsentPrivacySection />
           </div>
         </SheetContent>
       </Sheet>
@@ -598,6 +642,49 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
               Aggiorna password
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> Cancella account
+            </DialogTitle>
+            <DialogDescription className="font-body text-sm">
+              Questa azione cancella l'accesso e anonimizza i dati personali collegati al profilo. Non puo essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs font-body text-foreground">
+              Per confermare scrivi <span className="font-bold">{DELETE_CONFIRMATION_PHRASE}</span>.
+            </div>
+            <Input
+              value={deleteConfirmation}
+              onChange={(event) => setDeleteConfirmation(event.target.value)}
+              placeholder={DELETE_CONFIRMATION_PHRASE}
+              disabled={deletingAccount}
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={deletingAccount}
+              >
+                Annulla
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount || deleteConfirmation.trim() !== DELETE_CONFIRMATION_PHRASE}
+              >
+                {deletingAccount ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Attendi...</> : "Cancella"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

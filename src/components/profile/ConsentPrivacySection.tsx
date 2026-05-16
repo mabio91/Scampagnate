@@ -41,10 +41,6 @@ const ConsentPrivacySection = () => {
 
   return (
     <div className="mb-8 animate-fade-in">
-      <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-        <Shield className="h-5 w-5 text-secondary" /> Consensi & Privacy
-      </h2>
-
       {/* Toggles for optional consents */}
       <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">
         Le tue preferenze
