@@ -225,22 +225,19 @@ const EventCard = memo(({
             </div>
           </div>
 
-          <div className="relative flex-shrink-0">
+          <div className="relative h-20 w-20 flex-shrink-0 self-start overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28">
             <OptimizedImage
               src={event.image_url}
               alt={event.title}
               width={112}
               height={112}
               eager={isAboveFold}
-              className={`w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover bg-muted transition-all duration-300 ${
+              className={`h-full w-full object-cover transition-all duration-300 ${
                 isSoldOut ? "grayscale" : ""
               }`}
             />
             {isSoldOut && (
-              <SoldOutOverlay
-                size="card"
-                className="rounded-xl"
-              />
+              <SoldOutOverlay size="card" />
             )}
           </div>
         </div>
