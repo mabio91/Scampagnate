@@ -336,6 +336,34 @@ const EventForm = () => {
   const [customBadge, setCustomBadge] = useState("");
   const [eventSpecialBadgeIds, setEventSpecialBadgeIds] = useState<string[]>([]);
   const [existingOrganizer, setExistingOrganizer] = useState<{ id: string | null; name: string | null }>({ id: null, name: null });
+  const { data: remoteClosingSentences = [] } = useQuery({
+    queryKey: ["event-closing-sentences"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_closing_sentences" as any)
+        .select("sentence")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("sentence", { ascending: true });
+
+      if (error) throw error;
+      return ((data as Array<{ sentence?: string | null }> | null) || [])
+        .map((row) => normalizeEventClosingSentence(row.sentence))
+        .filter(Boolean);
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const closingSentenceOptions =
+    remoteClosingSentences.length > 0 ? remoteClosingSentences : [...EVENT_CLOSING_SENTENCES];
+
+  useEffect(() => {
+    const normalized = normalizeEventClosingSentence(closingSentence);
+    if (closingSentenceMode === "manual" && normalized && closingSentenceOptions.includes(normalized)) {
+      setClosingSentenceMode("preset");
+      setClosingSentence(normalized);
+    }
+  }, [remoteClosingSentences, closingSentenceMode, closingSentence]);
 
   interface PriceOptionInput {
     id?: string;
@@ -521,7 +549,7 @@ const EventForm = () => {
           if (isDuplicating || !normalized) {
             setClosingSentenceMode("random");
             setClosingSentence("");
-          } else if ((EVENT_CLOSING_SENTENCES as readonly string[]).includes(normalized)) {
+          } else if ((closingSentenceOptions as readonly string[]).includes(normalized)) {
             setClosingSentenceMode("preset");
             setClosingSentence(normalized);
           } else {
@@ -1938,7 +1966,7 @@ const EventForm = () => {
                 const mode = value as "random" | "preset" | "manual";
                 setClosingSentenceMode(mode);
                 if (mode === "random") setClosingSentence("");
-                if (mode === "preset" && !closingSentence) setClosingSentence(EVENT_CLOSING_SENTENCES[0]);
+                if (mode === "preset" && !closingSentence) setClosingSentence(closingSentenceOptions[0]);
               }}
             >
               <SelectTrigger>
@@ -1952,12 +1980,12 @@ const EventForm = () => {
             </Select>
 
             {closingSentenceMode === "preset" && (
-              <Select value={closingSentence || EVENT_CLOSING_SENTENCES[0]} onValueChange={setClosingSentence}>
+              <Select value={closingSentence || closingSentenceOptions[0]} onValueChange={setClosingSentence}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {EVENT_CLOSING_SENTENCES.map((sentence) => (
+                  {closingSentenceOptions.map((sentence) => (
                     <SelectItem key={sentence} value={sentence}>
                       {sentence}
                     </SelectItem>
