@@ -1175,6 +1175,55 @@ const EventForm = () => {
                 placeholder="Descrivi l'evento..." 
               />
             </div>
+            <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+              <Label className="text-sm font-semibold flex items-center gap-1.5">
+                Frase conclusiva
+              </Label>
+              <Select
+                value={closingSentenceMode}
+                onValueChange={(value) => {
+                  const mode = value as "random" | "preset" | "manual";
+                  setClosingSentenceMode(mode);
+                  if (mode === "random") setClosingSentence("");
+                  if (mode === "preset" && !closingSentence) setClosingSentence(closingSentenceOptions[0]);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="random">Random</SelectItem>
+                  <SelectItem value="preset">Scegli frase</SelectItem>
+                  <SelectItem value="manual">Frase manuale</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {closingSentenceMode === "preset" && (
+                <Select value={closingSentence || closingSentenceOptions[0]} onValueChange={setClosingSentence}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {closingSentenceOptions.map((sentence) => (
+                      <SelectItem key={sentence} value={sentence}>
+                        {sentence}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {closingSentenceMode === "manual" && (
+                <Input
+                  value={closingSentence}
+                  onChange={(event) => setClosingSentence(event.target.value)}
+                  placeholder="Inserisci una frase conclusiva"
+                />
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Le frasi disponibili si gestiscono da Admin &gt; Frasi evento. Random usa automaticamente una frase attiva.
+              </p>
+            </div>
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
               <div className="min-w-0">
                 <Label htmlFor="date">Data *</Label>
@@ -1952,54 +2001,6 @@ const EventForm = () => {
                   <Input type="number" value={weatherOverrideTempAvg} onChange={(e) => setWeatherOverrideTempAvg(e.target.value)} placeholder="es. 15" />
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Frase conclusiva */}
-          <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
-            <Label className="text-sm font-semibold flex items-center gap-1.5">
-              Frase conclusiva
-            </Label>
-            <Select
-              value={closingSentenceMode}
-              onValueChange={(value) => {
-                const mode = value as "random" | "preset" | "manual";
-                setClosingSentenceMode(mode);
-                if (mode === "random") setClosingSentence("");
-                if (mode === "preset" && !closingSentence) setClosingSentence(closingSentenceOptions[0]);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="random">Random</SelectItem>
-                <SelectItem value="preset">Scegli frase</SelectItem>
-                <SelectItem value="manual">Frase manuale</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {closingSentenceMode === "preset" && (
-              <Select value={closingSentence || closingSentenceOptions[0]} onValueChange={setClosingSentence}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {closingSentenceOptions.map((sentence) => (
-                    <SelectItem key={sentence} value={sentence}>
-                      {sentence}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {closingSentenceMode === "manual" && (
-              <Input
-                value={closingSentence}
-                onChange={(event) => setClosingSentence(event.target.value)}
-                placeholder="Inserisci una frase conclusiva"
-              />
             )}
           </div>
         </Card>
