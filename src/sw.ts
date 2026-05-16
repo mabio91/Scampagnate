@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
@@ -7,6 +8,11 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare let self: ServiceWorkerGlobalScope;
+
+// Activate new app versions immediately so organizers do not keep editing
+// with stale cached bundles after a production deploy.
+self.skipWaiting();
+clientsClaim();
 
 // Clean old caches
 cleanupOutdatedCaches();
