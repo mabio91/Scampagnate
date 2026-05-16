@@ -47,4 +47,21 @@ describe("event availability helpers", () => {
     expect(isOptionBookable(null, event)).toBe(false);
     expect(canOptionJoinWaitlist(null, event)).toBe(false);
   });
+
+  it("ignores per-formula waitlist when the event waitlist is off", () => {
+    const event = {
+      status: "published",
+      spots_total: 1,
+      spots_taken: 1,
+      additional_fields: { waiting_list_enabled: false },
+    };
+    const option = {
+      has_dedicated_spots: true,
+      dedicated_spots: 1,
+      spots_taken: 1,
+      waitlist_enabled: true,
+    };
+
+    expect(canOptionJoinWaitlist(option, event)).toBe(false);
+  });
 });

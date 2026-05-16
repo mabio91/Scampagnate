@@ -29,6 +29,11 @@ export interface MissionReward {
   visible_on_profile?: boolean;
   coupon_config?: any;
   badge_config?: any;
+  physical_config?: {
+    reward_name?: string | null;
+    claim_instructions?: string | null;
+    [key: string]: unknown;
+  } | null;
   badges?: {
     name: string;
     icon: string;

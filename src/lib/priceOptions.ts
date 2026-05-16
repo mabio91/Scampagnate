@@ -158,8 +158,7 @@ export const canOptionJoinWaitlist = (
 ) => {
   if (isEventClosedForRegistration(event)) return false;
   if (!isEventSoldOut(event) && getOptionRemainingSpots(option, event) > 0) return false;
-  const optionAllowsWaitlist = option?.waitlist_enabled === true;
-  return !isOptionBookable(option, event) && (optionAllowsWaitlist || isWaitlistEnabledForEvent(event));
+  return !isOptionBookable(option, event) && isWaitlistEnabledForEvent(event);
 };
 
 export const getOptionAvailabilityLabel = (

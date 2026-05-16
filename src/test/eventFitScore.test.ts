@@ -33,7 +33,7 @@ describe("event fit score helpers", () => {
 
   it("hides low interest-only scores at or below 30%", () => {
     const fitScore = calculateEventFitScore(
-      { interests: ["aperitivi_cene"] },
+      { interests: ["aperitivi_cene", "giochi_sfide"] },
       {
         category: { name: "Trekking giornalieri" },
         secondaryCategories: [],
@@ -47,7 +47,7 @@ describe("event fit score helpers", () => {
 
   it("shows interest-only scores above 30%", () => {
     const fitScore = calculateEventFitScore(
-      { interests: ["Cammini plurigiornalieri"] },
+      { interests: ["Cammini plurigiornalieri", "giochi_sfide"] },
       {
         category: { name: "Trekking giornalieri" },
         secondaryCategories: [],
@@ -61,7 +61,7 @@ describe("event fit score helpers", () => {
 
   it("keeps low level-aware scores visible", () => {
     const fitScore = calculateEventFitScore(
-      { interests: ["aperitivi_cene"], self_level: "beginner" },
+      { interests: ["aperitivi_cene", "giochi_sfide"], self_level: "beginner" },
       {
         difficulty: "5",
         category: { name: "Trekking giornalieri" },

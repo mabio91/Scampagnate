@@ -10,6 +10,7 @@ import {
   getOptionPaymentSummary,
   getOptionPaymentType,
   getOptionRemainingSpots,
+  isWaitlistEnabledForEvent,
   type PriceOptionLike,
 } from "@/lib/priceOptions";
 
@@ -851,7 +852,7 @@ const EventManage = () => {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-body font-semibold text-foreground">Modalità di partecipazione</p>
-                <p className="text-[11px] text-muted-foreground font-body">Posti, acconti e waitlist separati per formula.</p>
+                <p className="text-[11px] text-muted-foreground font-body">Posti e acconti separati per formula. La lista d'attesa usa l'impostazione generale dell'evento.</p>
               </div>
               <Select
                 value={selectedPriceOptionFilter}
@@ -886,7 +887,7 @@ const EventManage = () => {
                         <p className="text-[11px] font-body text-muted-foreground">{getOptionPaymentSummary(option, event)}</p>
                       </div>
                       <Badge variant={remaining > 0 ? "secondary" : waitlistCount > 0 ? "outline" : "destructive"} className="shrink-0 text-[10px]">
-                        {remaining > 0 ? `${remaining} liberi` : option.waitlist_enabled === false ? "Esaurita" : "Waitlist"}
+                        {remaining > 0 ? `${remaining} liberi` : isWaitlistEnabledForEvent(event) ? "Waitlist" : "Esaurita"}
                       </Badge>
                     </div>
                     <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground font-body">

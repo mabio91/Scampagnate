@@ -5,7 +5,9 @@ import { useUserMissions, useActiveMissions } from "@/hooks/useMissions";
 import { useSearch } from "@/contexts/SearchContext";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Target,
   Gift,
@@ -115,6 +117,7 @@ const ProfileMissions = () => {
   const { data: userMissions = [], isFetched: userMissionsFetched } = useUserMissions(user?.id);
   const { data: activeMissions = [], isFetched: activeMissionsFetched } = useActiveMissions();
   const [completedOpen, setCompletedOpen] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<any | null>(null);
   const initializedCompletions = useRef(false);
   const previousCompletedIds = useRef<Set<string>>(new Set());
 
@@ -130,7 +133,7 @@ const ProfileMissions = () => {
           title: mission.title,
           description: mission.description,
           progress: userMission?.progress ?? 0,
-          target: mission.target_value,
+          target: mission.target_value || 1,
           rewardPoints: mission.reward_points,
           completed: userMission?.completed ?? false,
           type: mission.type,
@@ -199,7 +202,7 @@ const ProfileMissions = () => {
     previousCompletedIds.current = currentCompleted;
   }, [activeMissionsFetched, completedMissionCards, toast, user?.id, userMissionsFetched]);
 
-  const handleMissionClick = (mission: any) => {
+  const openEventsForMission = (mission: any) => {
     clearAllFilters();
     const filter = getFilterForMission(mission);
     if (filter.category) {
@@ -209,6 +212,10 @@ const ProfileMissions = () => {
       toggleQuickFilter(filter.quickFilter as any);
     }
     navigate("/");
+  };
+
+  const handleMissionClick = (mission: any) => {
+    setSelectedMission(mission);
   };
 
   const getCountdown = (expiresAt: string | null): string | null => {
@@ -225,6 +232,7 @@ const ProfileMissions = () => {
     const countdown = getCountdown(mission.expires_at);
     const isUrgent = countdown && !countdown.includes("Scaduta") && parseInt(countdown) <= 3;
     const hasNonPointReward = rewards.some((reward: any) => reward.reward_kind !== "points");
+    const progressValue = mission.target > 0 ? (Math.min(mission.progress, mission.target) / mission.target) * 100 : 0;
 
     return (
       <button
@@ -257,7 +265,7 @@ const ProfileMissions = () => {
 
             <div className="flex items-center gap-2 mt-2">
               <Progress
-                value={(Math.min(mission.progress, mission.target) / mission.target) * 100}
+                value={progressValue}
                 className="h-1.5 flex-1"
               />
               <span className="text-[10px] font-display text-muted-foreground font-bold whitespace-nowrap">
@@ -306,47 +314,101 @@ const ProfileMissions = () => {
   };
 
   return (
-    <div className="mb-6 animate-fade-in">
-      <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-        <Target className="h-5 w-5 text-secondary" /> Missioni
-      </h2>
+    <>
+      <div className="mb-6 animate-fade-in">
+        <h2 className="font-display text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+          <Target className="h-5 w-5 text-secondary" /> Missioni
+        </h2>
 
-      {missionsToShow.length > 0 ? (
-        <div className="space-y-3">
-          {activeMissionCards.length > 0 ? (
-            <div className="space-y-2">{activeMissionCards.map(renderMissionCard)}</div>
-          ) : (
-            <EmptyState
-              icon={Target}
-              title="Nessuna missione attiva"
-              description="Hai completato tutte le missioni disponibili"
-              compact
-            />
-          )}
+        {missionsToShow.length > 0 ? (
+          <div className="space-y-3">
+            {activeMissionCards.length > 0 ? (
+              <div className="space-y-2">{activeMissionCards.map(renderMissionCard)}</div>
+            ) : (
+              <EmptyState
+                icon={Target}
+                title="Nessuna missione attiva"
+                description="Hai completato tutte le missioni disponibili"
+                compact
+              />
+            )}
 
-          {completedMissionCards.length > 0 && (
-            <Collapsible open={completedOpen} onOpenChange={setCompletedOpen}>
-              <CollapsibleTrigger className="w-full flex items-center justify-between py-2 text-left">
-                <span className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">
-                  Missioni completate
-                </span>
-                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${completedOpen ? "rotate-180" : ""}`} />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2">
-                {completedMissionCards.map(renderMissionCard)}
-              </CollapsibleContent>
-            </Collapsible>
+            {completedMissionCards.length > 0 && (
+              <Collapsible open={completedOpen} onOpenChange={setCompletedOpen}>
+                <CollapsibleTrigger className="w-full flex items-center justify-between py-2 text-left">
+                  <span className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">
+                    Missioni completate
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${completedOpen ? "rotate-180" : ""}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2">
+                  {completedMissionCards.map(renderMissionCard)}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
+        ) : (
+          <EmptyState
+            icon={Target}
+            title="Nessuna missione attiva"
+            description="Le nuove missioni saranno presto disponibili"
+            compact
+          />
+        )}
+      </div>
+
+      <Dialog open={!!selectedMission} onOpenChange={(open) => !open && setSelectedMission(null)}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          {selectedMission && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {selectedMission.completed ? (
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  ) : (
+                    <DynamicIcon value={selectedMission.icon} size={20} className="text-secondary" />
+                  )}
+                  {selectedMission.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {selectedMission.description && (
+                  <p className="text-sm font-body text-muted-foreground">{selectedMission.description}</p>
+                )}
+                <div className="rounded-xl border bg-muted/30 p-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-body font-semibold">
+                    <span>Avanzamento</span>
+                    <span className="text-primary">{Math.min(selectedMission.progress, selectedMission.target)} di {selectedMission.target}</span>
+                  </div>
+                  <Progress
+                    value={selectedMission.target > 0 ? (Math.min(selectedMission.progress, selectedMission.target) / selectedMission.target) * 100 : 0}
+                    className="h-1.5"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {selectedMission.completed ? "Missione completata. La ricompensa collegata è stata sbloccata." : "Continua con gli eventi adatti per completarla."}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  {normalizeRewards(selectedMission).map((reward: any) => {
+                    if (reward.reward_kind === "points" && Number(reward.points_value || 0) <= 0) return null;
+                    const RewardIcon = REWARD_ICONS[reward.reward_kind] || Gift;
+                    return (
+                      <div key={reward.id || `${selectedMission.id}-${reward.reward_kind}`} className="flex items-center gap-2 text-xs font-body font-semibold text-primary">
+                        <RewardIcon className="h-3.5 w-3.5" />
+                        {getRewardLabel(reward)}
+                      </div>
+                    );
+                  })}
+                </div>
+                <Button className="w-full" onClick={() => openEventsForMission(selectedMission)}>
+                  Scopri gli eventi
+                </Button>
+              </div>
+            </>
           )}
-        </div>
-      ) : (
-        <EmptyState
-          icon={Target}
-          title="Nessuna missione attiva"
-          description="Le nuove missioni saranno presto disponibili"
-          compact
-        />
-      )}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

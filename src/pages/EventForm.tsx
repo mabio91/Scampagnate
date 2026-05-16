@@ -57,7 +57,7 @@ const EVENT_STATUS_OPTIONS: Array<{ value: EventStatus; label: string; descripti
   { value: "upcoming", label: "In arrivo", description: "Evento annunciabile, ma iscrizioni non ancora aperte." },
   { value: "open", label: "Aperto", description: "Evento visibile e iscrizioni attive." },
   { value: "closed", label: "Iscrizioni chiuse", description: "Evento visibile, ma iscrizioni bloccate." },
-  { value: "full", label: "Sold out", description: "Evento sold out. La lista d'attesa dipende dalla formula dedicata." },
+  { value: "full", label: "Sold out", description: "Evento sold out. La lista d'attesa dipende dall'impostazione generale dell'evento." },
   { value: "rescheduled", label: "Riprogrammato", description: "Evento da riprogrammare. Iscrizioni non attive." },
   { value: "cancelled", label: "Annullato", description: "Evento annullato. Usa il flusso di annullamento per notifiche e rimborsi." },
 ];
@@ -322,7 +322,7 @@ const EventForm = () => {
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
   const [askCarAvailability, setAskCarAvailability] = useState(false);
-  const [waitingListEnabled, setWaitingListEnabled] = useState(false);
+  const [waitingListEnabled, setWaitingListEnabled] = useState(true);
   const [weatherOverrideCondition, setWeatherOverrideCondition] = useState("");
   const [weatherOverrideTempMin, setWeatherOverrideTempMin] = useState("");
   const [weatherOverrideTempMax, setWeatherOverrideTempMax] = useState("");
@@ -544,6 +544,7 @@ const EventForm = () => {
               options: Array.isArray(f.options) ? f.options : (typeof f.options === 'string' && f.options ? f.options.split(',').map((o: string) => o.trim()) : []),
             }))
           );
+          setWaitingListEnabled(false);
         } else {
           const normalized = normalizeEventClosingSentence(af.closing_sentence);
           if (isDuplicating || !normalized) {
@@ -584,6 +585,8 @@ const EventForm = () => {
             );
           }
         }
+      } else {
+        setWaitingListEnabled(false);
       }
 
       if ((event as any).access_rules) {
@@ -646,7 +649,7 @@ const EventForm = () => {
             has_dedicated_spots: !!o.has_dedicated_spots,
             dedicated_spots: o.dedicated_spots != null ? Number(o.dedicated_spots) : null,
             spots_taken: o.spots_taken != null ? Number(o.spots_taken) : 0,
-            waitlist_enabled: !!o.waitlist_enabled,
+            waitlist_enabled: false,
           };
         }));
       }
@@ -1076,7 +1079,7 @@ const EventForm = () => {
           balance_payment_mode: optionPaymentType === "deposit" ? option.balance_payment_mode : null,
           has_dedicated_spots: !!option.has_dedicated_spots,
           dedicated_spots: option.has_dedicated_spots ? Number(option.dedicated_spots || 0) : null,
-          waitlist_enabled: !!option.waitlist_enabled,
+          waitlist_enabled: false,
         };
 
         if (isEditing && option.id) {
@@ -1643,7 +1646,7 @@ const EventForm = () => {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div>
                         <Label className="text-[11px] text-muted-foreground">Pagamento formula</Label>
                         <Select
@@ -1669,16 +1672,6 @@ const EventForm = () => {
                             <SelectItem value="deposit">Acconto + saldo</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div>
-                        <Label className="text-[11px] text-muted-foreground">Lista d'attesa formula</Label>
-                        <div className="h-8 mt-0.5 flex items-center gap-2">
-                          <Switch
-                            checked={opt.waitlist_enabled}
-                            onCheckedChange={(v) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, waitlist_enabled: v } : o))}
-                          />
-                          <span className="text-xs text-muted-foreground">{opt.waitlist_enabled ? "Attiva" : "Disattiva"}</span>
-                        </div>
                       </div>
                     </div>
                     {opt.payment_type === "deposit" && (

@@ -4,13 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/EmptyState";
 import DynamicIcon from "@/components/DynamicIcon";
-import { Gift, Ticket, Trophy, Clock, CheckCircle, ArrowLeft, Copy } from "lucide-react";
+import { Gift, Ticket, Trophy, Clock, ArrowLeft, Copy, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const REWARD_ICON: Record<string, typeof Gift> = {
   coupon: Ticket,
@@ -42,6 +42,10 @@ interface RewardCardRow {
   source_reward?: {
     title: string | null;
     reward_kind: string | null;
+    physical_config?: {
+      reward_name?: string | null;
+      claim_instructions?: string | null;
+    } | null;
     badges?: {
       name: string | null;
       icon: string | null;
@@ -59,6 +63,7 @@ const Rewards = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedPhysicalReward, setSelectedPhysicalReward] = useState<RewardCardRow | null>(null);
 
   const { data: rewards, isLoading } = useQuery({
     queryKey: ["user-rewards", user?.id],
@@ -66,7 +71,7 @@ const Rewards = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_rewards")
-        .select("*, missions(title, icon), source_reward:mission_rewards!user_rewards_source_mission_reward_id_fkey(title, reward_kind, badges(name, icon, description))")
+        .select("*, missions(title, icon), source_reward:mission_rewards!user_rewards_source_mission_reward_id_fkey(title, reward_kind, physical_config, badges(name, icon, description))")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -79,31 +84,48 @@ const Rewards = () => {
     return null;
   }
 
-  const activeCoupons = rewards?.filter(r => r.type === "coupon" && r.status === "active") || [];
-  const unlockedRewards = rewards?.filter(r => r.status === "active" && r.type !== "coupon" || r.status === "pending") || [];
-  const history = rewards?.filter(r => ["used", "redeemed", "expired"].includes(r.status)) || [];
+  const badgeRewards = rewards?.filter(r => r.type === "badge") || [];
+  const physicalRewards = rewards?.filter(r => r.type === "physical" || r.type === "other") || [];
+  const pointRewards = rewards?.filter(r => r.type === "points") || [];
+  const couponRewards = rewards?.filter(r => r.type === "coupon") || [];
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     toast({ title: "Codice copiato!" });
   };
 
-  const renderRewardCard = (r: RewardCardRow, showActions = false) => {
+  const renderRewardCard = (r: RewardCardRow) => {
     const sourceReward = r.source_reward;
     const sourceBadge = sourceReward?.badges;
     const badgeName = sourceBadge?.name || (r.type === "badge" ? r.value : null);
     const badgeDescription = sourceBadge?.description || null;
     const displayTitle = r.type === "badge" && isGenericBadgeTitle(r.title) && badgeName
       ? badgeName
-      : r.title;
+      : r.type === "physical" && sourceReward?.physical_config?.reward_name
+        ? sourceReward.physical_config.reward_name
+        : r.title;
     const Icon = REWARD_ICON[r.type] || Gift;
     const status = STATUS_LABELS[r.status] || STATUS_LABELS.active;
     const isExpired = r.expiry_date && new Date(r.expiry_date) < new Date();
     const actualStatus = isExpired && r.status === "active" ? STATUS_LABELS.expired : status;
     const iconValue = r.type === "badge" ? sourceBadge?.icon : null;
 
+    const isPhysical = r.type === "physical" || r.type === "other";
+    const claimInstructions = sourceReward?.physical_config?.claim_instructions?.trim();
     return (
-      <Card key={r.id} className={`p-4 space-y-2 ${r.status === "active" || r.status === "pending" ? "" : "opacity-60"}`}>
+      <Card
+        key={r.id}
+        role={isPhysical ? "button" : undefined}
+        tabIndex={isPhysical ? 0 : undefined}
+        onClick={isPhysical ? () => setSelectedPhysicalReward(r) : undefined}
+        onKeyDown={isPhysical ? (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setSelectedPhysicalReward(r);
+          }
+        } : undefined}
+        className={`p-4 space-y-2 ${isPhysical ? "cursor-pointer transition-colors hover:bg-muted/30" : ""} ${r.status === "active" || r.status === "pending" ? "" : "opacity-60"}`}
+      >
         <div className="flex items-start gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
             r.type === "coupon" ? "bg-primary/10" : r.type === "badge" ? "bg-accent/10" : "bg-secondary/10"
@@ -137,7 +159,7 @@ const Rewards = () => {
                 )}
               </div>
             )}
-            {r.value && r.type === "physical" && (
+            {r.value && isPhysical && (
               <p className="text-xs font-body text-muted-foreground mt-0.5">{r.value}</p>
             )}
             {r.type === "badge" && badgeName && displayTitle !== badgeName && (
@@ -146,10 +168,13 @@ const Rewards = () => {
             {r.type === "badge" && badgeDescription && (
               <p className="text-[10px] font-body text-muted-foreground mt-0.5 line-clamp-2">{badgeDescription}</p>
             )}
-            {r.type === "physical" && r.status === "pending" && (
+            {isPhysical && r.status === "pending" && (
               <p className="text-xs font-body text-warning mt-1 flex items-center gap-1">
                 <Gift className="h-3 w-3" /> Da ritirare al prossimo evento
               </p>
+            )}
+            {isPhysical && claimInstructions && (
+              <p className="text-[10px] font-body text-primary mt-1 font-semibold">Tocca per vedere le istruzioni di riscatto</p>
             )}
             {r.expiry_date && (
               <p className="text-[10px] font-body text-muted-foreground mt-1 flex items-center gap-1">
@@ -167,6 +192,24 @@ const Rewards = () => {
           </div>
         </div>
       </Card>
+    );
+  };
+
+  const renderSection = (
+    title: string,
+    icon: typeof Gift,
+    className: string,
+    items: RewardCardRow[],
+  ) => {
+    if (items.length === 0) return null;
+    const Icon = icon;
+    return (
+      <div>
+        <h2 className="font-display text-base font-bold text-foreground mb-3 flex items-center gap-2">
+          <Icon className={`h-4 w-4 ${className}`} /> {title}
+        </h2>
+        <div className="space-y-2">{items.map(r => renderRewardCard(r))}</div>
+      </div>
     );
   };
 
@@ -190,38 +233,45 @@ const Rewards = () => {
           />
         ) : (
           <>
-            {/* Active Coupons */}
-            {activeCoupons.length > 0 && (
-              <div>
-                <h2 className="font-display text-base font-bold text-foreground mb-3 flex items-center gap-2">
-                  <Ticket className="h-4 w-4 text-primary" /> Coupon attivi
-                </h2>
-                <div className="space-y-2">{activeCoupons.map(r => renderRewardCard(r, true))}</div>
-              </div>
-            )}
-
-            {/* Unlocked rewards */}
-            {unlockedRewards.length > 0 && (
-              <div>
-                <h2 className="font-display text-base font-bold text-foreground mb-3 flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-secondary" /> Ricompense sbloccate
-                </h2>
-                <div className="space-y-2">{unlockedRewards.map(r => renderRewardCard(r))}</div>
-              </div>
-            )}
-
-            {/* History */}
-            {history.length > 0 && (
-              <div>
-                <h2 className="font-display text-base font-bold text-foreground mb-3 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" /> Storico ricompense
-                </h2>
-                <div className="space-y-2">{history.map(r => renderRewardCard(r))}</div>
-              </div>
-            )}
+            {renderSection("Badge", Trophy, "text-accent", badgeRewards)}
+            {renderSection("Ricompense fisiche", Gift, "text-secondary", physicalRewards)}
+            {renderSection("Punti", Star, "text-secondary", pointRewards)}
+            {renderSection("Coupon", Ticket, "text-primary", couponRewards)}
           </>
         )}
       </div>
+
+      <Dialog open={!!selectedPhysicalReward} onOpenChange={(open) => !open && setSelectedPhysicalReward(null)}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          {selectedPhysicalReward && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedPhysicalReward.source_reward?.physical_config?.reward_name || selectedPhysicalReward.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {selectedPhysicalReward.value && (
+                  <p className="text-sm text-muted-foreground">{selectedPhysicalReward.value}</p>
+                )}
+                {selectedPhysicalReward.source_reward?.physical_config?.claim_instructions?.trim() ? (
+                  <div className="rounded-xl border bg-muted/30 p-3">
+                    <p className="text-xs font-display font-bold uppercase tracking-wider text-muted-foreground mb-1">Istruzioni di riscatto</p>
+                    <p className="text-sm font-body text-foreground whitespace-pre-wrap">
+                      {selectedPhysicalReward.source_reward?.physical_config?.claim_instructions}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Riceverai le indicazioni dal team Scampagnate.</p>
+                )}
+                {selectedPhysicalReward.missions?.title && (
+                  <p className="text-xs text-muted-foreground">Missione: {selectedPhysicalReward.missions.title}</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
