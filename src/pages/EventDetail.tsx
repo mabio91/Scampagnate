@@ -24,6 +24,7 @@ import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
 import { WeatherForecast } from "@/components/events/WeatherForecast";
+import SoldOutOverlay from "@/components/events/SoldOutOverlay";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
@@ -904,9 +905,24 @@ const getCTALabel = () => {
             inset: 0,
           }}
         >
-          <OptimizedImage src={event.image_url} alt={event.title} className="w-full h-full object-cover bg-muted" width={600} height={320} loading="eager" />
+          <OptimizedImage
+            src={event.image_url}
+            alt={event.title}
+            className={`w-full h-full object-cover bg-muted transition-all duration-300 ${isSoldOut ? "grayscale" : ""}`}
+            width={600}
+            height={320}
+            loading="eager"
+          />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" style={{ opacity: heroOpacity }} />
+        <div
+          className={`absolute inset-0 bg-gradient-to-t ${
+            isSoldOut
+              ? "from-foreground/75 via-foreground/15 to-transparent"
+              : "from-foreground/80 via-foreground/20 to-transparent"
+          }`}
+          style={{ opacity: heroOpacity }}
+        />
+        {isSoldOut && <SoldOutOverlay size="hero" />}
         
         {/* Top buttons with Apple safe area */}
         <div className="absolute top-0 left-0 right-0 pt-safe">
