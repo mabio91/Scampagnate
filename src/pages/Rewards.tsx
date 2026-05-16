@@ -89,6 +89,12 @@ const getPhysicalClaimInstructions = (reward: RewardCardRow) =>
   || (isPhysicalReward(reward) ? reward.value?.trim() : null)
   || null;
 
+const getPhysicalDisplayValue = (reward: RewardCardRow) => {
+  const value = reward.value?.trim();
+  if (!value) return null;
+  return value === getPhysicalClaimInstructions(reward) ? null : value;
+};
+
 const Rewards = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -142,6 +148,7 @@ const Rewards = () => {
 
     const isPhysical = isPhysicalReward(r);
     const claimInstructions = getPhysicalClaimInstructions(r);
+    const physicalDisplayValue = isPhysical ? getPhysicalDisplayValue(r) : null;
     return (
       <Card
         key={r.id}
@@ -189,8 +196,8 @@ const Rewards = () => {
                 )}
               </div>
             )}
-            {r.value && isPhysical && (
-              <p className="text-xs font-body text-muted-foreground mt-0.5">{r.value}</p>
+            {physicalDisplayValue && (
+              <p className="text-xs font-body text-muted-foreground mt-0.5">{physicalDisplayValue}</p>
             )}
             {r.type === "badge" && badgeName && displayTitle !== badgeName && (
               <p className="text-xs font-body text-muted-foreground mt-0.5">{badgeName}</p>
