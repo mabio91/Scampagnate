@@ -15,6 +15,10 @@ interface Props {
   registeredEventIds?: Set<string>;
 }
 
+type RecommendedEventDetails = EventWithDetails & {
+  location_label?: string | null;
+};
+
 const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered = false }: { event: EventWithDetails; whyText: string; index: number; isUserRegistered?: boolean }) => {
   const isAboveFold = index < 2;
   const formattedDate = useMemo(() => {
@@ -31,7 +35,7 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
   }, [event.date]);
 
   const formattedTime = event.time?.slice(0, 5) || "";
-  const locationLabel = (event as any).location_label || event.location;
+  const locationLabel = (event as RecommendedEventDetails).location_label || event.location;
   const isSoldOut = isEventSoldOut(event);
   const showPublicCapacity = shouldShowPublicCapacity(event);
   const eventStatus = String(event.status || "");
@@ -68,8 +72,7 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
             eager={isAboveFold}
             className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${isSoldOut ? "grayscale" : ""}`}
           />
-          {isSoldOut && <SoldOutOverlay size="card" />}
-          <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+          <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between p-3">
             {event.featured ? (
               <EventBadgePill className="bg-primary uppercase tracking-[0.08em] text-primary-foreground">
                 Nuovo
@@ -77,11 +80,13 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
             ) : (
               <span />
             )}
-            <EventBadgePill className={`border ${statusClassName}`}>
-              {statusLabel}
-            </EventBadgePill>
+            {!isSoldOut && (
+              <EventBadgePill className={`border ${statusClassName}`}>
+                {statusLabel}
+              </EventBadgePill>
+            )}
           </div>
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent px-4 pb-4 pt-10">
+          <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/70 via-black/25 to-transparent px-4 pb-4 pt-10">
             <div className="flex items-center gap-2 text-[11px] text-white/90">
               <span className="flex items-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5" />
@@ -95,6 +100,7 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
               )}
             </div>
           </div>
+          {isSoldOut && <SoldOutOverlay size="card" className="z-20" />}
         </div>
 
         <div className="grid min-h-0 flex-1 grid-rows-[auto_auto_auto_1fr_auto] px-4 pb-4 pt-3">
