@@ -62,7 +62,7 @@ const REGISTRATION_STATUS_OPTIONS = [
 const EVENT_STATUS_OPTIONS = [
   { value: "draft", label: "Non pubblicato", icon: FileEdit, iconClassName: "text-muted-foreground" },
   { value: "upcoming", label: "In arrivo", icon: Archive, iconClassName: "text-warning" },
-  { value: "published", label: "Aperto", icon: Eye, iconClassName: "text-success" },
+  { value: "open", label: "Aperto", icon: Eye, iconClassName: "text-success" },
   { value: "closed", label: "Iscrizioni chiuse", icon: Lock, iconClassName: "text-muted-foreground" },
   { value: "full", label: "Sold out", icon: CircleOff, iconClassName: "text-destructive" },
   { value: "rescheduled", label: "Riprogrammato", icon: Archive, iconClassName: "text-warning" },
@@ -70,10 +70,10 @@ const EVENT_STATUS_OPTIONS = [
 ];
 
 const normalizeEditableEventStatus = (status?: string | null) => {
-  if (status === "available" || status === "open") return "published";
+  if (status === "available" || status === "published") return "open";
   if (status === "unpublished") return "draft";
   if (status === "past" || status === "completed") return "closed";
-  return EVENT_STATUS_OPTIONS.some((option) => option.value === status) ? status! : "published";
+  return EVENT_STATUS_OPTIONS.some((option) => option.value === status) ? status! : "open";
 };
 
 const EventManage = () => {
@@ -656,16 +656,16 @@ const EventManage = () => {
 
     return (
       <div>
-        <Label className="font-body text-xs">Opzione prezzo</Label>
+        <Label className="font-body text-xs">Formula</Label>
         <Select value={value || defaultPriceOptionId} onValueChange={onChange}>
           <SelectTrigger className="mt-1">
-            <SelectValue placeholder="Seleziona opzione" />
+            <SelectValue placeholder="Seleziona formula" />
           </SelectTrigger>
           <SelectContent>
             {sortedPriceOptions.map((option) => (
               <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
                 <div className="flex flex-col py-0.5">
-                  <span>{option.name || "Opzione"}</span>
+                  <span>{option.name || "Formula"}</span>
                   <span className="text-[10px] text-muted-foreground">
                     {getOptionPaymentSummary(option, event || {})}
                   </span>
@@ -850,8 +850,8 @@ const EventManage = () => {
           <Card className="p-3 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-body font-semibold text-foreground">Opzioni di partecipazione</p>
-                <p className="text-[11px] text-muted-foreground font-body">Posti, acconti e waitlist separati per opzione.</p>
+                <p className="text-sm font-body font-semibold text-foreground">Modalità di partecipazione</p>
+                <p className="text-[11px] text-muted-foreground font-body">Posti, acconti e waitlist separati per formula.</p>
               </div>
               <Select
                 value={selectedPriceOptionFilter}
@@ -861,13 +861,13 @@ const EventManage = () => {
                 }}
               >
                 <SelectTrigger className="w-[150px] h-8 text-xs">
-                  <SelectValue placeholder="Filtro opzione" />
+                  <SelectValue placeholder="Filtro formula" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ALL_PRICE_OPTIONS}>Tutte</SelectItem>
                   {sortedPriceOptions.map((option) => (
                     <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
-                      {option.name || "Opzione"}
+                      {option.name || "Formula"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -882,7 +882,7 @@ const EventManage = () => {
                   <div key={option.id || option.name || "option"} className="rounded-lg border border-border p-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold font-body text-foreground">{option.name || "Opzione"}</p>
+                        <p className="truncate text-sm font-semibold font-body text-foreground">{option.name || "Formula"}</p>
                         <p className="text-[11px] font-body text-muted-foreground">{getOptionPaymentSummary(option, event)}</p>
                       </div>
                       <Badge variant={remaining > 0 ? "secondary" : waitlistCount > 0 ? "outline" : "destructive"} className="shrink-0 text-[10px]">
@@ -1090,14 +1090,14 @@ const EventManage = () => {
                           )}
                           {hasPriceOptions && (
                             <div>
-                              <Label className="font-body text-[10px] text-muted-foreground">Price Option</Label>
+                              <Label className="font-body text-[10px] text-muted-foreground">Formula</Label>
                               <Select value={editPriceOptionId} onValueChange={setEditPriceOptionId}>
-                                <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue placeholder="None" /></SelectTrigger>
+                                <SelectTrigger className="h-8 text-xs mt-0.5"><SelectValue placeholder="Nessuna" /></SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value={NO_PRICE_OPTION}>None</SelectItem>
+                                  <SelectItem value={NO_PRICE_OPTION}>Nessuna</SelectItem>
                                   {sortedPriceOptions.map((option) => (
                                     <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
-                                      {option.name || "Opzione"}
+                                      {option.name || "Formula"}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

@@ -55,20 +55,20 @@ interface AdditionalField {
 const EVENT_STATUS_OPTIONS: Array<{ value: EventStatus; label: string; description: string }> = [
   { value: "draft", label: "Non pubblicato", description: "Visibile solo ad admin e organizzatori. Iscrizioni non attive." },
   { value: "upcoming", label: "In arrivo", description: "Evento annunciabile, ma iscrizioni non ancora aperte." },
-  { value: "published", label: "Aperto", description: "Evento visibile e iscrizioni attive." },
+  { value: "open", label: "Aperto", description: "Evento visibile e iscrizioni attive." },
   { value: "closed", label: "Iscrizioni chiuse", description: "Evento visibile, ma iscrizioni bloccate." },
-  { value: "full", label: "Sold out", description: "Evento sold out. La lista d'attesa dipende dall'opzione dedicata." },
+  { value: "full", label: "Sold out", description: "Evento sold out. La lista d'attesa dipende dalla formula dedicata." },
   { value: "rescheduled", label: "Riprogrammato", description: "Evento da riprogrammare. Iscrizioni non attive." },
   { value: "cancelled", label: "Annullato", description: "Evento annullato. Usa il flusso di annullamento per notifiche e rimborsi." },
 ];
 
 const normalizeEditableEventStatus = (status: string | null | undefined): EventStatus => {
-  if (status === "available" || status === "open") return "published";
+  if (status === "available" || status === "published") return "open";
   if (status === "unpublished") return "draft";
   if (status === "past" || status === "completed") return "closed";
   return EVENT_STATUS_OPTIONS.some((option) => option.value === status)
     ? status as EventStatus
-    : "published";
+    : "open";
 };
 
 const useEquipmentTemplates = () => {
@@ -287,7 +287,7 @@ const EventForm = () => {
   const [fitScoreMainCategory, setFitScoreMainCategory] = useState("");
   const [fitScoreSecondaryCategories, setFitScoreSecondaryCategories] = useState<string[]>([]);
 
-  const [eventStatus, setEventStatus] = useState<EventStatus>("published");
+  const [eventStatus, setEventStatus] = useState<EventStatus>("open");
   const [policyType, setPolicyType] = useState<PolicyType | "">("flexible_24h");
   const [policyCustomText, setPolicyCustomText] = useState("");
 
@@ -472,7 +472,7 @@ const EventForm = () => {
               name: event.organizer_name || null,
             }
       );
-      setEventStatus(isDuplicating ? "published" : normalizeEditableEventStatus(event.status));
+      setEventStatus(isDuplicating ? "open" : normalizeEditableEventStatus(event.status));
       const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
       setPolicyType(pt || "flexible_24h");
       setPolicyCustomText(ct);

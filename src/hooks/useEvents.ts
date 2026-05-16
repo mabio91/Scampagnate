@@ -19,7 +19,7 @@ export interface EventWithDetails {
   time: string;
   location: string;
   category_id: string | null;
-  status: "draft" | "published" | "full" | "closed" | "cancelled" | "past";
+  status: "draft" | "unpublished" | "upcoming" | "published" | "available" | "open" | "full" | "closed" | "rescheduled" | "cancelled" | "past" | "completed";
   price: number;
   deposit: number | null;
   payment_type: "free" | "paid" | "deposit" | "location";

@@ -20,12 +20,13 @@ serve(async (req) => {
     const now = new Date();
     const romeDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' }); // YYYY-MM-DD
 
-    // Update all events whose date is before today and status is not already past/cancelled/draft
+    // Mark elapsed public/active events as completed. Do not overwrite hidden,
+    // unpublished, cancelled, or rescheduled organizer/admin states.
     const { data, error } = await supabase
       .from('events')
-      .update({ status: 'past' })
+      .update({ status: 'completed' })
       .lt('date', romeDateStr)
-      .in('status', ['published', 'full', 'closed'])
+      .in('status', ['available', 'published', 'open', 'full', 'closed'])
       .select('id, title');
 
     if (error) {
@@ -37,7 +38,7 @@ serve(async (req) => {
     }
 
     const count = data?.length || 0;
-    console.log(`Marked ${count} events as past:`, data?.map(e => e.title));
+    console.log(`Marked ${count} events as completed:`, data?.map(e => e.title));
 
     // Clean up stale pending registrations (older than 30 minutes)
     const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();

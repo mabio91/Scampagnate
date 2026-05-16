@@ -268,23 +268,25 @@ const EventCard = memo(({
               )}
             </div>
 
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body">
-                <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span>{event.spots_taken}/{event.spots_total} posti</span>
+            {showPublicCapacity && (
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body">
+                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <span>{event.spots_taken}/{event.spots_total} posti</span>
+                </div>
+                <div className="w-16 sm:w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${isSoldOut ? "bg-destructive" : fillColor} transition-all duration-500 ease-out`}
+                    style={{ width: `${isSoldOut ? 100 : fillPercent}%` }}
+                  />
+                </div>
+                {showUrgency && (
+                  <span className="text-[10px] font-body font-semibold text-destructive">
+                    Ultimi posti!
+                  </span>
+                )}
               </div>
-              <div className="w-16 sm:w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${isSoldOut ? "bg-destructive" : fillColor} transition-all duration-500 ease-out`}
-                  style={{ width: `${isSoldOut ? 100 : fillPercent}%` }}
-                />
-              </div>
-              {showUrgency && (
-                <span className="text-[10px] font-body font-semibold text-destructive">
-                  Ultimi posti!
-                </span>
-              )}
-            </div>
+            )}
           </div>
         )}
       </div>
