@@ -56,11 +56,11 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
         // Count attended events
         const { data: attendedRows } = await supabase
           .from("event_registrations")
-          .select("event_id, status, checked_in, created_at")
+          .select("event_id, status, checked_in, created_at, sport_level")
           .eq("user_id", user.id)
           .or("status.eq.attended,checked_in.eq.true")
           .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
-        attendedCount = countUniqueAttendedEvents(attendedRows || []);
+        attendedCount = countUniqueAttendedEvents((attendedRows || []).filter((r: any) => !r.sport_level?.startsWith("manual:")));
 
         // Get user badges
         const { data: badges } = await supabase

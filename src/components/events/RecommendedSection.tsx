@@ -7,6 +7,8 @@ import { DifficultyBadge } from "./DifficultyBadge";
 import { EventBadgePill } from "./EventBadgePill";
 import { UI_LABELS } from "@/lib/labels";
 import { EventWithDetails } from "@/hooks/useEvents";
+import SoldOutOverlay from "./SoldOutOverlay";
+import { isEventSoldOut, shouldShowPublicCapacity } from "@/lib/priceOptions";
 
 interface Props {
   events: Array<{ event: EventWithDetails; whyText: string; score: number }>;
@@ -30,18 +32,27 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
 
   const formattedTime = event.time?.slice(0, 5) || "";
   const locationLabel = (event as any).location_label || event.location;
+  const isSoldOut = isEventSoldOut(event);
+  const showPublicCapacity = shouldShowPublicCapacity(event);
+  const eventStatus = String(event.status || "");
+  const isClosedStatus = ["closed", "cancelled", "past", "completed", "rescheduled"].includes(eventStatus);
+  const isUpcomingStatus = ["draft", "unpublished", "upcoming"].includes(eventStatus);
   const statusLabel = isUserRegistered
     ? UI_LABELS.statusJoined
-    : event.status === "full"
-      ? UI_LABELS.statusWaitlist
-      : event.status === "closed" || event.status === "cancelled" || event.status === "past"
+    : isSoldOut
+      ? "Sold out"
+      : isUpcomingStatus
+        ? UI_LABELS.statusComingSoon
+      : isClosedStatus
         ? UI_LABELS.statusClosed
         : UI_LABELS.statusOpen;
   const statusClassName = isUserRegistered
     ? "bg-success/20 text-success border-success/30"
-    : event.status === "full"
-      ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
-      : event.status === "closed" || event.status === "cancelled" || event.status === "past"
+    : isSoldOut
+      ? "bg-destructive/15 text-destructive border-destructive/30"
+      : isUpcomingStatus
+        ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+      : isClosedStatus
         ? "bg-muted text-muted-foreground border-border/50"
         : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
 
@@ -55,8 +66,9 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
             width={720}
             height={610}
             eager={isAboveFold}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${isSoldOut ? "grayscale" : ""}`}
           />
+          {isSoldOut && <SoldOutOverlay size="card" />}
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
             {event.featured ? (
               <EventBadgePill className="bg-primary uppercase tracking-[0.08em] text-primary-foreground">
@@ -125,10 +137,12 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/50 pt-3 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              <span>{event.spots_taken}/{event.spots_total} posti</span>
-            </div>
+            {showPublicCapacity ? (
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4" />
+                <span>{event.spots_taken}/{event.spots_total} posti</span>
+              </div>
+            ) : <span />}
               <EventBadgePill className="bg-muted text-foreground">
                 {event.payment_type === "free" || Number(event.price) === 0 ? UI_LABELS.free : `EUR ${Number(event.price)}`}
               </EventBadgePill>
@@ -156,12 +170,12 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
         {UI_LABELS.recommendedSubtitle}
       </p>
 
-      <div className="overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+      <div className="overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory overscroll-x-contain">
         <div className="flex gap-3 px-4">
           {events.slice(0, 6).map((item, i) => (
             <div
               key={item.event.id}
-              className="h-[22.5rem] w-[84%] shrink-0 sm:w-[68%] lg:w-[78%] xl:w-[76%]"
+              className="h-[22.5rem] w-[72%] shrink-0 snap-start sm:w-[58%] lg:w-[52%] xl:w-[24rem]"
             >
               <RecommendedCarouselCard
                 event={item.event}

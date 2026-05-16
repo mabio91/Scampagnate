@@ -59,6 +59,23 @@ const REGISTRATION_STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancel" },
 ];
 
+const EVENT_STATUS_OPTIONS = [
+  { value: "draft", label: "Non pubblicato", icon: FileEdit, iconClassName: "text-muted-foreground" },
+  { value: "upcoming", label: "In arrivo", icon: Archive, iconClassName: "text-warning" },
+  { value: "published", label: "Aperto", icon: Eye, iconClassName: "text-success" },
+  { value: "closed", label: "Iscrizioni chiuse", icon: Lock, iconClassName: "text-muted-foreground" },
+  { value: "full", label: "Sold out", icon: CircleOff, iconClassName: "text-destructive" },
+  { value: "rescheduled", label: "Riprogrammato", icon: Archive, iconClassName: "text-warning" },
+  { value: "cancelled", label: "Annullato", icon: XCircle, iconClassName: "text-destructive" },
+];
+
+const normalizeEditableEventStatus = (status?: string | null) => {
+  if (status === "available" || status === "open") return "published";
+  if (status === "unpublished") return "draft";
+  if (status === "past" || status === "completed") return "closed";
+  return EVENT_STATUS_OPTIONS.some((option) => option.value === status) ? status! : "published";
+};
+
 const EventManage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -358,9 +375,14 @@ const EventManage = () => {
   const sendBalanceReminders = async (registrationIds?: string[]) => {
     if (!event) return;
 
+    const reminderCooldownMs = 12 * 60 * 60 * 1000;
     const candidates = depositReminderCandidates.filter((reg) => {
       if (!registrationIds?.length) return true;
       return registrationIds.includes(reg.id);
+    }).filter((reg) => {
+      const lastReminder = (reg as any).last_balance_reminder_sent_at;
+      if (!lastReminder) return true;
+      return Date.now() - new Date(lastReminder).getTime() > reminderCooldownMs;
     });
 
     if (candidates.length === 0) {
@@ -428,6 +450,7 @@ const EventManage = () => {
       const { error } = await supabase.from("event_registrations").insert({
         event_id: id!,
         user_id: selectedSearchUser.id,
+        added_by: user?.id ?? null,
         meeting_point_id: manualMeetingPoint || null,
         price_option_id: hasPriceOptions ? normalizePriceOptionId(currentManualPriceOptionId) : null,
         status: "registered",
@@ -464,8 +487,8 @@ const EventManage = () => {
     }
   };
 
-  // Add manual participant (creates a temporary profile-less registration)
-  // We'll use the organizer's user_id but mark it as a manual entry with sport_level = "manual:Name|level:value"
+  // Add manual participant (profile-less registration). Keep user_id null so
+  // created-by/admin identity is never treated as the participant.
   const handleAddManualParticipant = async () => {
     if (!manualName.trim()) return;
     if (hasPriceOptions && !currentManualPriceOptionId) {
@@ -477,13 +500,14 @@ const EventManage = () => {
       const levelPayload = manualLevel && manualLevel !== "none" ? `|level:${manualLevel}` : "";
       const { error } = await supabase.from("event_registrations").insert({
         event_id: id!,
-        user_id: user.id, // organizer's id as placeholder
+        user_id: null,
+        added_by: user?.id ?? null,
         meeting_point_id: manualMeetingPoint || null,
         price_option_id: hasPriceOptions ? normalizePriceOptionId(currentManualPriceOptionId) : null,
         status: "registered",
         payment_status: manualPaymentStatus,
         sport_level: `manual:${manualName.trim()}${levelPayload}`,
-      });
+      } as any);
       if (error) throw error;
       invalidateParticipantCounts();
       setShowAddParticipant(false);
@@ -563,36 +587,68 @@ const EventManage = () => {
     const exportRows = registrations || [];
     if (!exportRows.length) return;
     const escapeCsv = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-    const headers = ["First Name", "Last Name", "Phone", "Sport Level", "Price Option", "Status", "Payment", "Amount Paid", "Refund", "Meeting Point", "Checked In", "Registered At"];
+    const formatDate = (value: unknown) => {
+      const date = new Date(String(value || ""));
+      return Number.isNaN(date.getTime()) ? "" : format(date, "dd/MM/yyyy HH:mm");
+    };
+    const manualNameParts = (sportLevel?: string | null) => {
+      if (!sportLevel?.startsWith("manual:")) return null;
+      const [name = "", phone = ""] = sportLevel.replace("manual:", "").split("|");
+      return { name, phone };
+    };
+    const safeFileName = (event?.title || "event")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "") || "event";
+    const headers = [
+      "Nome",
+      "Cognome",
+      "Telefono",
+      "Tipo",
+      "Livello",
+      "Formula",
+      "Stato",
+      "Pagamento",
+      "Pagato",
+      "Rimborso",
+      "Punto di ritrovo",
+      "Check-in",
+      "Iscrizione",
+    ];
     const rows = exportRows.map((r) => {
       const mp = meetingPoints?.find((p) => p.id === r.meeting_point_id);
-      const isManual = r.sport_level?.startsWith("manual:");
-      const manualName = isManual ? r.sport_level!.replace("manual:", "") : "";
+      const manual = manualNameParts(r.sport_level);
       const po = getPriceOptionForRegistration(r);
       return [
-        isManual ? manualName : ((r.profiles as any)?.first_name || ""),
-        isManual ? "(manual)" : ((r.profiles as any)?.last_name || ""),
-        isManual ? "" : ((r.profiles as any)?.phone || ""),
-        (r.sport_level && !r.sport_level.startsWith("manual:")) ? r.sport_level : "-",
+        manual ? manual.name : ((r.profiles as any)?.first_name || ""),
+        manual ? "(manuale)" : ((r.profiles as any)?.last_name || ""),
+        manual ? manual.phone : ((r.profiles as any)?.phone || ""),
+        manual ? "manuale" : "utente",
+        manual ? "-" : (r.sport_level || "-"),
         po?.name || "-",
-        r.status,
+        r.status || "-",
         r.payment_status || "-",
         (r as any).amount_paid ?? 0,
         (r as any).refund_amount ?? 0,
         mp?.name || "-",
-        r.checked_in ? "Yes" : "No",
-        format(new Date(r.created_at), "dd/MM/yyyy HH:mm"),
+        r.checked_in ? "Si" : "No",
+        formatDate(r.created_at),
       ];
     });
 
-    const csv = [headers, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${event?.title || "event"}-participants.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => {
+      const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n")}`;
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeFileName}-partecipanti.csv`;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 0);
   };
 
   const renderPriceOptionSelect = (value: string, onChange: (value: string) => void) => {
@@ -650,7 +706,7 @@ const EventManage = () => {
             </p>
           </div>
           <Select 
-              value={event.status} 
+              value={normalizeEditableEventStatus(event.status)}
               onValueChange={async (v) => {
                 if (v === 'cancelled') {
                   setShowCancelConfirm(true);
@@ -661,16 +717,21 @@ const EventManage = () => {
                 else { queryClient.invalidateQueries({ queryKey: ["event-detail", id] }); toast({ title: `Event status: ${v}` }); }
               }}
             >
-              <SelectTrigger className="w-[100px] h-8 text-xs shrink-0">
+              <SelectTrigger className="w-[168px] h-8 text-xs shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft"><span className="inline-flex items-center gap-1.5"><FileEdit className="h-3.5 w-3.5 text-muted-foreground" /> Draft</span></SelectItem>
-                <SelectItem value="published"><span className="inline-flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-success" /> Published</span></SelectItem>
-                <SelectItem value="full"><span className="inline-flex items-center gap-1.5"><CircleOff className="h-3.5 w-3.5 text-destructive" /> Full</span></SelectItem>
-                <SelectItem value="closed"><span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-muted-foreground" /> Closed</span></SelectItem>
-                <SelectItem value="cancelled"><span className="inline-flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-destructive" /> Cancelled</span></SelectItem>
-                <SelectItem value="past"><span className="inline-flex items-center gap-1.5"><Archive className="h-3.5 w-3.5 text-muted-foreground" /> Past</span></SelectItem>
+                {EVENT_STATUS_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Icon className={`h-3.5 w-3.5 ${option.iconClassName}`} />
+                        {option.label}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
         </div>
@@ -1197,7 +1258,10 @@ const EventManage = () => {
               <p className="text-center text-muted-foreground font-body text-sm py-6">No one on the waitlist</p>
             ) : (
               <div className="space-y-2">
-                {waitlisted.map((reg) => (
+                {waitlisted.map((reg, index) => {
+                  const priceOption = getPriceOptionForRegistration(reg);
+                  const waitlistStatus = (reg as any).waitlist_status || "waiting";
+                  return (
                   <Card key={reg.id} className="p-3 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center text-warning text-xs font-bold">
                       {(reg.profiles as any)?.first_name?.[0] || "?"}
@@ -1207,10 +1271,13 @@ const EventManage = () => {
                         {(reg.profiles as any)?.first_name} {(reg.profiles as any)?.last_name}
                       </p>
                       <p className="text-[11px] text-muted-foreground font-body">
-                        Joined {format(new Date(reg.created_at), "dd MMM yyyy")}
+                        Ingresso {format(new Date(reg.created_at), "dd MMM yyyy HH:mm")}
                         {(reg.profiles as any)?.membership_id && (
                           <span className="text-secondary font-bold"> · ID: {(reg.profiles as any).membership_id}</span>
                         )}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground font-body">
+                        Posizione {index + 1} · Stato {waitlistStatus} · Formula {priceOption?.name || "-"}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -1222,7 +1289,8 @@ const EventManage = () => {
                       </Button>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
 

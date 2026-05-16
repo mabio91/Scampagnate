@@ -8,11 +8,12 @@ import { UI_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { eventBadgePillClassName } from "./EventBadgePill";
 import SoldOutOverlay from "./SoldOutOverlay";
+import { isEventSoldOut } from "@/lib/priceOptions";
 
 type HeroBadge = "sold_out" | "promo" | "top" | null;
 
 function resolveHeroBadge(event: EventWithDetails): HeroBadge {
-  if (event.status === "full" || (event.spots_total > 0 && event.spots_taken >= event.spots_total)) return "sold_out";
+  if (isEventSoldOut(event)) return "sold_out";
 
   const badges = (event as any).event_badges;
   if (Array.isArray(badges)) {
@@ -48,7 +49,7 @@ const FeaturedEvent = memo(({ event }: { event: EventWithDetails }) => {
 
   const countdown = getCountdown(event.date);
   const heroBadge = useMemo(() => resolveHeroBadge(event), [event]);
-  const isSoldOut = event.status === "full" || (event.spots_total > 0 && event.spots_taken >= event.spots_total);
+  const isSoldOut = isEventSoldOut(event);
 
   const dateStr = new Date(event.date).toLocaleDateString("it-IT", { day: "numeric", month: "short" });
   const locationLabel = (event as any).location_label || event.location;

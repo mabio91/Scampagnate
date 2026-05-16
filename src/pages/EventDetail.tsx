@@ -51,12 +51,16 @@ import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 import {
+  canOptionJoinWaitlist,
   findPriceOptionById,
   getEventRemainingSpots,
   getOptionPaymentType,
+  isEventSoldOut,
+  shouldShowPublicCapacity,
   isOnlinePaymentType,
   isOptionBookable,
 } from "@/lib/priceOptions";
+import { renderEventDescriptionHtml } from "@/lib/eventDescription";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
@@ -76,7 +80,7 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
         <div
           ref={textRef}
           className={`text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed prose prose-sm dark:prose-invert max-w-none [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${!expanded ? "line-clamp-6" : ""}`}
-          dangerouslySetInnerHTML={{ __html: description }}
+          dangerouslySetInnerHTML={{ __html: renderEventDescriptionHtml(description) }}
         />
         {isClamped && !expanded && (
           <>
@@ -325,6 +329,18 @@ const EventDetail = () => {
   });
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
   const isEventPast = isEventPastByDate(event.date);
+  const eventStatus = String(event.status || "");
+  const eventComingSoon = ["draft", "unpublished", "upcoming"].includes(eventStatus);
+  const eventRegistrationsClosed = isEventPast || ["closed", "rescheduled", "cancelled", "past", "completed"].includes(eventStatus) || eventComingSoon;
+  const statusBadge = (() => {
+    if (eventStatus === "full") return { label: "Sold Out", className: "bg-destructive/90 text-destructive-foreground" };
+    if (eventStatus === "cancelled") return { label: "Annullato", className: "bg-destructive/90 text-destructive-foreground" };
+    if (eventStatus === "rescheduled") return { label: "Riprogrammato", className: "bg-amber-500/90 text-white" };
+    if (eventStatus === "closed") return { label: "Iscrizioni chiuse", className: "bg-muted/90 text-muted-foreground" };
+    if (eventStatus === "past" || eventStatus === "completed" || isEventPast) return { label: "Concluso", className: "bg-muted/90 text-muted-foreground" };
+    if (eventStatus === "upcoming") return { label: "In arrivo", className: "bg-amber-500/90 text-white" };
+    return null;
+  })();
 
   const canViewParticipants = !!user && (!!isRegistered || user.id === event.organizer_id || isAdmin);
   const canViewMeetingPoints = !!user && (
@@ -419,20 +435,27 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    // "In arrivo" → show informational toast, don't start booking
-    if (event.status === "draft") {
+    // "In arrivo" -> show informational toast, don't start booking
+    if (eventComingSoon) {
       toast({ title: "In arrivo", description: "Le prenotazioni apriranno a breve.\nTorna presto per assicurarti un posto." });
       return;
     }
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "past") return;
-
-    if ((eventRequiresMembership || !isMembershipActive(profile) || needsPayment) && !ensureMembershipDataForMembershipFlow()) {
-      return;
-    }
+    if (eventRegistrationsClosed) return;
 
     // Waitlisted user with spot available → go directly to payment/checkout
     if (waitlistSpotAvailable) {
+      if ((eventRequiresMembership || !isMembershipActive(profile)) && !ensureMembershipDataForMembershipFlow()) {
+        return;
+      }
       handleWaitlistBooking();
+      return;
+    }
+
+    if (isOnWaitlist) return;
+    if (isSoldOut && !waitlistAvailable) return;
+
+    const enteringWaitlist = isSoldOut && waitlistAvailable && !isRegistered;
+    if (!enteringWaitlist && (eventRequiresMembership || !isMembershipActive(profile) || needsPayment) && !ensureMembershipDataForMembershipFlow()) {
       return;
     }
 
@@ -595,7 +618,7 @@ const EventDetail = () => {
       return;
     }
 
-    const isWaitlist = event.status === "full";
+    const isWaitlist = isSoldOut && waitlistAvailable;
     try {
       const result = await registerMutation.mutateAsync({
         eventId: event.id,
@@ -699,6 +722,11 @@ const EventDetail = () => {
 
   // Detect if a spot has become available for a waitlisted user
   const remainingSpots = getEventRemainingSpots(event);
+  const isSoldOut = isEventSoldOut(event);
+  const showPublicCapacity = shouldShowPublicCapacity(event);
+  const waitlistAvailable = (event.price_options || []).length > 0
+    ? (event.price_options || []).some((option: any) => canOptionJoinWaitlist(option, event))
+    : canOptionJoinWaitlist(null, event);
   const waitlistSpotAvailable = isOnWaitlist && (
     registrationPriceOption
       ? isOptionBookable(registrationPriceOption, event)
@@ -721,27 +749,27 @@ const EventDetail = () => {
     : null;
 
 const getCTALabel = () => {
-    if (event.status === "closed") return "Chiuso";
-    if (isEventPast || event.status === "cancelled" || event.status === "past") return "Chiuso";
-    if (event.status === "draft") return "Partecipa"; // shown as disabled/inactive
+    if (eventComingSoon) return "In arrivo";
+    if (eventStatus === "closed") return "Iscrizioni chiuse";
+    if (eventStatus === "rescheduled") return "Riprogrammato";
+    if (isEventPast || eventStatus === "cancelled" || eventStatus === "past" || eventStatus === "completed") return "Chiuso";
     if (!user) return "Partecipa";
     // Waitlisted user with spot available → "Completa prenotazione"
-    if (waitlistSpotAvailable) return "Completa prenotazione";
+    if (waitlistSpotAvailable) return currentRegistrationRequiresOnlinePayment ? "Completa prenotazione" : "Conferma il posto";
     if (hasOnlineBalanceDue) return "Completa il saldo";
     // Already registered → "Iscritto" (disabled, informational)
     if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Iscritto ✓";
     if (isPendingApproval) return "In attesa di approvazione";
     // On waitlist with no spot → no action CTA, show informational
-    if (isOnWaitlist) return "Sei in lista d'attesa";
+    if (isOnWaitlist) return "In lista d'attesa";
     if (isBlockedByAccessRules) return "Requisiti non soddisfatti";
     if (needsPayment) return "Paga ora";
-    if (event.status === "full") return "Lista d'attesa";
+    if (isSoldOut) return waitlistAvailable ? "Entra in lista d'attesa" : "Sold out";
     return "Partecipa";
   };
 
   const getCTAClass = () => {
-    if (isEventPast || event.status === "closed" || event.status === "cancelled" || event.status === "past") return "bg-muted text-muted-foreground cursor-not-allowed";
-    if (event.status === "draft") return "bg-muted text-muted-foreground cursor-not-allowed opacity-60"; // "In arrivo" disabled style
+    if (eventRegistrationsClosed) return "bg-muted text-muted-foreground cursor-not-allowed";
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (waitlistSpotAvailable) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (hasOnlineBalanceDue) return "bg-accent text-accent-foreground hover:bg-accent/90";
@@ -750,7 +778,11 @@ const getCTALabel = () => {
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30 cursor-default";
     if (isBlockedByAccessRules) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
     if (needsPayment) return "bg-accent text-accent-foreground hover:bg-accent/90";
-    if (event.status === "full") return "bg-secondary text-secondary-foreground hover:bg-secondary/90";
+    if (isSoldOut) {
+      return waitlistAvailable
+        ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+        : "bg-muted text-muted-foreground cursor-not-allowed";
+    }
     return "bg-primary text-primary-foreground hover:bg-primary/90";
   };
 
@@ -896,13 +928,9 @@ const getCTALabel = () => {
         {/* Title over hero */}
         <div className="absolute bottom-12 left-4 right-4" style={{ opacity: heroOpacity }}>
           {/* Status badge */}
-          {(event.status === "full" || event.status === "closed" || event.status === "cancelled" || event.status === "past") && (
-            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold mb-2 ${
-              event.status === "full" ? "bg-destructive/90 text-destructive-foreground" :
-              event.status === "cancelled" ? "bg-destructive/90 text-destructive-foreground" :
-              "bg-muted/90 text-muted-foreground"
-            }`}>
-              {event.status === "full" ? "Sold Out" : event.status === "closed" ? "Chiuso" : event.status === "cancelled" ? "Annullato" : "Passato"}
+          {statusBadge && (
+            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-body font-bold mb-2 ${statusBadge.className}`}>
+              {statusBadge.label}
             </span>
           )}
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">{event.title}</h1>
@@ -1031,7 +1059,7 @@ const getCTALabel = () => {
                   const avatarList = participants && participants.length > 0
                     ? participants.slice(0, 3).map((p: any) => ({ id: p.id, avatar_url: p.profiles?.avatar_url, first_name: p.profiles?.first_name }))
                     : publicAvatars && publicAvatars.length > 0
-                    ? (publicAvatars as any[]).slice(0, 3).map((p: any) => ({ id: p.user_id, avatar_url: p.avatar_url, first_name: p.first_name }))
+                    ? (publicAvatars as any[]).slice(0, 3).map((p: any, idx: number) => ({ id: p.user_id || `manual-${idx}`, avatar_url: p.avatar_url, first_name: p.first_name }))
                     : [];
                   const totalCount = activeParticipantCount;
 
@@ -1093,7 +1121,9 @@ const getCTALabel = () => {
             )}
             <div className="text-center">
               <Users className="h-5 w-5 mx-auto text-secondary mb-1" />
-              <p className="text-sm font-body font-bold text-foreground">{activeParticipantCount}/{event.spots_total}</p>
+              <p className="text-sm font-body font-bold text-foreground">
+                {showPublicCapacity ? `${activeParticipantCount}/${event.spots_total}` : "Sold out"}
+              </p>
               <p className="text-[10px] text-muted-foreground font-body">{t("spots")}</p>
             </div>
           </motion.div>
@@ -1456,8 +1486,8 @@ const getCTALabel = () => {
             className={`px-6 py-2.5 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
             disabled={
               paymentLoading ||
-              isEventPast ||
-              event.status === "closed" || event.status === "cancelled" || event.status === "past" ||
+              eventRegistrationsClosed ||
+              (isSoldOut && !waitlistAvailable && !waitlistSpotAvailable) ||
               (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
               (!!user && isOnWaitlist && !waitlistSpotAvailable) ||
               (isBlockedByAccessRules && !waitlistSpotAvailable)
@@ -1631,13 +1661,13 @@ const getCTALabel = () => {
           if (opts.appliedDiscount) setAppliedDiscount(opts.appliedDiscount);
           if (opts.priceOptionId) setSelectedPriceOption(opts.priceOptionId);
 
-          if ((eventRequiresMembership || !isMembershipActive(profile)) && !ensureMembershipDataForMembershipFlow()) {
-            return;
-          }
-
           const dialogPriceOption = findPriceOptionById(event.price_options, opts.priceOptionId);
           const dialogPaymentType = opts.paymentType || getOptionPaymentType(dialogPriceOption, event);
-          const isWaitlist = opts.asWaitlist ?? event.status === "full";
+          const isWaitlist = opts.asWaitlist ?? isSoldOut;
+
+          if (!isWaitlist && (eventRequiresMembership || !isMembershipActive(profile)) && !ensureMembershipDataForMembershipFlow()) {
+            return;
+          }
 
           // Check membership for free/location events that are not entering waitlist
           if (!isWaitlist && !isMembershipActive(profile) && (dialogPaymentType === "free" || dialogPaymentType === "location")) {

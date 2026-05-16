@@ -159,7 +159,7 @@ serve(async (req) => {
           price_data: {
             currency: "eur",
             product_data: {
-              name: "Tessera Associativa ASD Scampagnate",
+              name: "Tessera Associativa ASD Gruppo Scampagnate",
               description: "Quota associativa annuale - valida fino al 31 dicembre",
             },
             unit_amount: membershipFeeCents,

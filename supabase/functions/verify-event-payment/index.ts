@@ -8,6 +8,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const acceptsRegistrationStatus = (status: unknown) =>
+  ["available", "published", "open"].includes(String(status ?? ""));
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -119,7 +122,7 @@ serve(async (req) => {
         selectedOptionName = option?.name ? ` - ${option.name}` : "";
       }
 
-      if (checkoutKind !== "balance" && spotsAvailable <= 0) {
+      if (checkoutKind !== "balance" && (!acceptsRegistrationStatus(event.status) || spotsAvailable <= 0)) {
       // RACE CONDITION: Another user got the spot first
       // Auto-refund this payment
       if (stripePaymentIntentId && bookingAmountCents > 0) {

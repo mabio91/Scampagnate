@@ -48,7 +48,7 @@ const statusStyles: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   iscritto: "Iscritto",
-  in_attesa: "In attesa",
+  in_attesa: "In lista d'attesa",
   posto_disponibile: "Posto disponibile",
   partecipato: "Partecipato",
   pagamento_in_sospeso: "Pagamento in sospeso",
@@ -77,6 +77,15 @@ function resolveMyEventStatus(registration: any, isPast: boolean): string {
   if (!event) return "iscritto";
   const selectedPriceOption = findPriceOptionById(event.price_options, registration.price_option_id);
 
+  if (registration.status === "waitlist" && (
+    selectedPriceOption
+      ? isOptionBookable(selectedPriceOption, event)
+      : isOptionBookable(null, event)
+  )) {
+    return "posto_disponibile";
+  }
+  if (registration.status === "waitlist") return "in_attesa";
+
   const depositLabel = getDepositPaymentLabel(registration, event, selectedPriceOption);
   if (depositLabel) return depositLabel;
   if (isPendingPaymentRegistration(registration, event, selectedPriceOption)) return "pagamento_in_sospeso";
@@ -84,14 +93,6 @@ function resolveMyEventStatus(registration: any, isPast: boolean): string {
   if (registration.status === "registered" || registration.status === "paid" || registration.status === "attended") {
     return "iscritto";
   }
-  if (registration.status === "waitlist" && (
-    selectedPriceOption
-      ? isOptionBookable(selectedPriceOption, event)
-      : event.spots_total > 0 && event.spots_taken < event.spots_total
-  )) {
-    return "posto_disponibile";
-  }
-  if (registration.status === "waitlist") return "in_attesa";
   return "iscritto";
 }
 
@@ -454,7 +455,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-body font-semibold hover:bg-primary/90 active:scale-95 transition-all ml-auto"
               >
                 {paymentLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                Completa prenotazione
+                {needsOnlinePayment ? "Completa prenotazione" : "Conferma il posto"}
               </button>
             )}
 

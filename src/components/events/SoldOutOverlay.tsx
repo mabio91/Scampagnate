@@ -22,7 +22,7 @@ export function SoldOutOverlay({ size = "card", className }: SoldOutOverlayProps
           SIZE_STYLES[size],
         )}
       >
-        Sold Out
+        SOLD OUT
       </div>
     </div>
   );

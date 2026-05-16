@@ -265,7 +265,11 @@ const EventParticipants = () => {
 
   const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
 
-  const participantIds = useMemo(() => (participants || []).map((p: any) => p.user_id), [participants]);
+  const participantIds = useMemo(() => (
+    [...new Set((participants || [])
+      .filter((p: any) => !p.is_manual && p.user_id)
+      .map((p: any) => p.user_id))]
+  ), [participants]);
 
   const { data: publicParticipantProfiles } = useQuery({
     queryKey: ["participant-public-profiles", participantIds],

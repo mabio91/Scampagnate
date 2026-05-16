@@ -202,6 +202,26 @@ serve(async (req) => {
       });
     }
 
+    const notificationRows = uniqueUserIds.map((targetUserId) => ({
+      user_id: targetUserId,
+      type: "admin_broadcast",
+      title,
+      message,
+      event_id: null,
+      read: false,
+    }));
+
+    const { data: savedNotifications, error: notificationError } = await supabaseAdmin
+      .from("notifications")
+      .insert(notificationRows)
+      .select("id, user_id");
+
+    if (notificationError) throw notificationError;
+
+    const notificationIdByUser = new Map(
+      (savedNotifications ?? []).map((notification) => [notification.user_id, notification.id]),
+    );
+
     const senderUrl = `${supabaseUrl}/functions/v1/send-ios-push-notification`;
     const results = await runWithConcurrency(uniqueUserIds, SEND_CONCURRENCY, async (targetUserId) => {
       try {
@@ -216,6 +236,7 @@ serve(async (req) => {
             user_id: targetUserId,
             title,
             message,
+            notification_id: notificationIdByUser.get(targetUserId) ?? null,
             environment,
             type: "admin_broadcast",
           }),

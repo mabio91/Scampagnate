@@ -28,6 +28,8 @@ import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
 import { isEventUpcomingByDate } from "@/lib/eventDates";
 
+const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
+
 const Index = () => {
   const {
     searchOpen,
@@ -60,6 +62,7 @@ const Index = () => {
         .from("event_registrations")
         .select("event_id")
         .eq("user_id", user.id)
+        .or(NON_MANUAL_REGISTRATION_FILTER)
         .in("status", ["registered", "paid", "waitlist"]);
       return new Set((data || []).map((r: any) => r.event_id));
     },
@@ -79,15 +82,18 @@ const Index = () => {
 
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("status, events(difficulty, additional_fields, event_categories(name))")
+        .select("status, checked_in, events(difficulty, additional_fields, event_categories(name))")
         .eq("user_id", user.id)
-        .in("status", ["registered", "paid", "waitlist", "attended"]);
+        .or(NON_MANUAL_REGISTRATION_FILTER)
+        .in("status", ["registered", "paid", "deposit_paid", "attended", "no_show"]);
 
       if (error) throw error;
 
       const joinedCategoryCounts: Record<string, number> = {};
 
-      for (const row of data || []) {
+      const attendedRows = (data || []).filter((row: any) => row.checked_in || row.status === "attended");
+
+      for (const row of attendedRows) {
         const eventRecord = Array.isArray((row as any).events) ? (row as any).events[0] : (row as any).events;
         if (!eventRecord) continue;
 
@@ -112,7 +118,7 @@ const Index = () => {
 
       return {
         joinedCategoryCounts,
-        joinedEventCount: (data || []).length,
+        joinedEventCount: attendedRows.length,
       };
     },
     enabled: !!user,
@@ -143,10 +149,11 @@ const Index = () => {
 
   const hasSearchQuery = normalizeSearchText(searchQuery).length > 0;
 
-  // All upcoming, non-draft/past/cancelled events
+  // All upcoming events that can be shown publicly.
   const allUpcoming = useMemo(() => {
     if (!events) return [];
-    return events.filter(e => isEventUpcomingByDate(e.date) && e.status !== "draft" && e.status !== "past" && e.status !== "cancelled");
+    const hiddenStatuses = new Set(["draft", "unpublished", "past", "completed", "cancelled"]);
+    return events.filter(e => isEventUpcomingByDate(e.date) && !hiddenStatuses.has(String(e.status || "")));
   }, [events]);
 
   // Featured event

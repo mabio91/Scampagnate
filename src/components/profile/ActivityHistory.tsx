@@ -22,6 +22,7 @@ interface RegistrationWithEvent {
   status: string;
   checked_in: boolean;
   created_at: string;
+  sport_level: string | null;
   events: {
     id: string;
     title: string;
@@ -56,11 +57,11 @@ export const ActivityHistory = () => {
       if (!user) return null;
       const { data: regs, error } = await supabase
         .from("event_registrations")
-        .select("id, event_id, status, checked_in, created_at, events(id, title, date, time, event_categories(name, icon))")
+        .select("id, event_id, status, checked_in, created_at, sport_level, events(id, title, date, time, event_categories(name, icon))")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (regs || []) as unknown as RegistrationWithEvent[];
+      return (regs || []).filter((r: any) => !r.sport_level?.startsWith("manual:")) as unknown as RegistrationWithEvent[];
     },
     enabled: !!user,
   });

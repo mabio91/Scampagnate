@@ -8,7 +8,7 @@ export const UI_LABELS = {
   recommended: "Consigliati per te",
   recommendedSubtitle: "In base al tuo profilo",
   recommendedWhyTitle: "Perche lo vedi",
-  recommendedBecauseJoined: "Simile agli eventi a cui ti sei iscritto",
+  recommendedBecauseJoined: "Simile agli eventi a cui hai partecipato",
   recommendedBecauseLevel: "Adatto al tuo livello trekking",
   recommendedBecauseProfile: "In linea con il tuo profilo",
   recommendedBecauseInterest: (interest: string) => `Perche ti piace ${interest.toLowerCase()}`,

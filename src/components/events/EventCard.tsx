@@ -8,7 +8,13 @@ import { EventBadgePill } from "./EventBadgePill";
 import DynamicIcon from "@/components/DynamicIcon";
 import { UI_LABELS } from "@/lib/labels";
 import SoldOutOverlay from "./SoldOutOverlay";
-import { canOptionJoinWaitlist, isOptionBookable, type PriceOptionLike } from "@/lib/priceOptions";
+import {
+  canOptionJoinWaitlist,
+  isEventSoldOut,
+  isOptionBookable,
+  shouldShowPublicCapacity,
+  type PriceOptionLike,
+} from "@/lib/priceOptions";
 import { isEventPastByDate } from "@/lib/eventDates";
 
 export interface EventDiscount {
@@ -37,7 +43,7 @@ const STATUS_CONFIG: Record<CardStatus, { label: string; className: string }> = 
     className: "bg-amber-500/15 text-amber-600 border-amber-500/30",
   },
   waitlist: {
-    label: "Waitlist",
+    label: "Lista d'attesa",
     className: "bg-orange-500/15 text-orange-600 border-orange-500/30",
   },
   open: {
@@ -62,24 +68,26 @@ type EventCardDetails = EventWithDetails & {
 };
 
 function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInfo): CardStatus {
-  const isEventPast = event.status === "past" || event.status === "cancelled" || event.status === "closed";
+  const status = String(event.status || "");
+  const isEventPast = ["past", "completed", "cancelled"].includes(status);
   const isPastDate = isEventPastByDate(event.date);
   const eventDetails = event as EventCardDetails;
   const priceOptions = eventDetails.price_options || eventDetails.event_price_options || [];
   const hasPriceOptions = priceOptions.length > 0;
   const hasBookableOption = hasPriceOptions
     ? priceOptions.some((option) => isOptionBookable(option, event))
-    : event.spots_taken < event.spots_total;
+    : isOptionBookable(null, event);
   const hasWaitlistOption = hasPriceOptions
     ? priceOptions.some((option) => canOptionJoinWaitlist(option, event))
-    : event.status === "full" || event.spots_taken >= event.spots_total;
+    : canOptionJoinWaitlist(null, event);
 
   if ((isEventPast || isPastDate) && userReg?.checked_in) return "attended";
   if (userReg && (userReg.status === "registered" || userReg.status === "paid" || userReg.status === "attended")) return "joined";
   if (userReg?.status === "waitlist" && hasBookableOption) return "spot_available";
-  if (event.status === "draft") return "coming_soon";
+  if (["draft", "unpublished", "upcoming"].includes(status)) return "coming_soon";
   if (userReg?.status === "waitlist") return "waitlist";
   if (isEventPast || isPastDate) return "closed";
+  if (["closed", "rescheduled"].includes(status)) return "closed";
   if (!hasBookableOption) return hasWaitlistOption ? "waitlist" : "closed";
   return "open";
 }
@@ -100,7 +108,8 @@ const EventCard = memo(({
   userRegistration?: UserRegistrationInfo;
 }) => {
   const isAboveFold = index < 4;
-  const isSoldOut = event.status === "full" || (event.spots_total > 0 && event.spots_taken >= event.spots_total);
+  const isSoldOut = isEventSoldOut(event);
+  const showPublicCapacity = shouldShowPublicCapacity(event);
   const fillPercent = event.spots_total > 0
     ? Math.min(100, (event.spots_taken / event.spots_total) * 100)
     : 0;
@@ -194,7 +203,7 @@ const EventCard = memo(({
                 )}
               </div>
 
-              {useCompactCardLayout && (
+              {useCompactCardLayout && showPublicCapacity && (
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground font-body">
                     <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />

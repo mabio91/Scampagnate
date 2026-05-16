@@ -78,10 +78,10 @@ const ProfileBadges = () => {
       if (!user) return 0;
       const { data } = await supabase
         .from("event_registrations")
-        .select("event_id, status, checked_in, created_at")
+        .select("event_id, status, checked_in, created_at, sport_level")
         .eq("user_id", user.id)
         .or("status.eq.attended,checked_in.eq.true");
-      return countUniqueAttendedEvents(data || []);
+      return countUniqueAttendedEvents((data || []).filter((r: any) => !r.sport_level?.startsWith("manual:")));
     },
     enabled: !!user,
   });

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseCancellationPolicy, serializeCancellationPolicy, CANCELLATION_POLICIES, PolicyType } from "@/lib/cancellationPolicy";
 import { MANUAL_BADGE_OPTIONS } from "@/lib/eventBadges";
 import { FIT_SCORE_EVENT_SECONDARY_MAX, INTEREST_CATEGORY_OPTIONS } from "@/lib/fitScoreAffinityTables";
-import { getRandomEventClosingSentence, normalizeEventClosingSentence } from "@/lib/eventClosingSentences";
+import { EVENT_CLOSING_SENTENCES, normalizeEventClosingSentence } from "@/lib/eventClosingSentences";
 
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import ImageCropDialog from "@/components/ImageCropDialog";
@@ -37,6 +37,7 @@ import { useTrekkingDifficultyLevels } from "@/hooks/useTrekkingDifficultyLevels
 
 type PaymentType = Database["public"]["Enums"]["payment_type"];
 type BalancePaymentMode = "online" | "on_site";
+type EventStatus = Database["public"]["Enums"]["event_status"];
 
 interface EquipmentItem {
   name: string;
@@ -50,6 +51,25 @@ interface AdditionalField {
   required: boolean;
   options: string[];
 }
+
+const EVENT_STATUS_OPTIONS: Array<{ value: EventStatus; label: string; description: string }> = [
+  { value: "draft", label: "Non pubblicato", description: "Visibile solo ad admin e organizzatori. Iscrizioni non attive." },
+  { value: "upcoming", label: "In arrivo", description: "Evento annunciabile, ma iscrizioni non ancora aperte." },
+  { value: "published", label: "Aperto", description: "Evento visibile e iscrizioni attive." },
+  { value: "closed", label: "Iscrizioni chiuse", description: "Evento visibile, ma iscrizioni bloccate." },
+  { value: "full", label: "Sold out", description: "Evento sold out. La lista d'attesa dipende dall'opzione dedicata." },
+  { value: "rescheduled", label: "Riprogrammato", description: "Evento da riprogrammare. Iscrizioni non attive." },
+  { value: "cancelled", label: "Annullato", description: "Evento annullato. Usa il flusso di annullamento per notifiche e rimborsi." },
+];
+
+const normalizeEditableEventStatus = (status: string | null | undefined): EventStatus => {
+  if (status === "available" || status === "open") return "published";
+  if (status === "unpublished") return "draft";
+  if (status === "past" || status === "completed") return "closed";
+  return EVENT_STATUS_OPTIONS.some((option) => option.value === status)
+    ? status as EventStatus
+    : "published";
+};
 
 const useEquipmentTemplates = () => {
   return useQuery({
@@ -267,7 +287,7 @@ const EventForm = () => {
   const [fitScoreMainCategory, setFitScoreMainCategory] = useState("");
   const [fitScoreSecondaryCategories, setFitScoreSecondaryCategories] = useState<string[]>([]);
 
-  const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [eventStatus, setEventStatus] = useState<EventStatus>("published");
   const [policyType, setPolicyType] = useState<PolicyType | "">("flexible_24h");
   const [policyCustomText, setPolicyCustomText] = useState("");
 
@@ -302,11 +322,13 @@ const EventForm = () => {
   const [meetingPoints, setMeetingPoints] = useState<MeetingPointInput[]>([]);
   const [additionalFields, setAdditionalFields] = useState<AdditionalField[]>([]);
   const [askCarAvailability, setAskCarAvailability] = useState(false);
+  const [waitingListEnabled, setWaitingListEnabled] = useState(false);
   const [weatherOverrideCondition, setWeatherOverrideCondition] = useState("");
   const [weatherOverrideTempMin, setWeatherOverrideTempMin] = useState("");
   const [weatherOverrideTempMax, setWeatherOverrideTempMax] = useState("");
   const [weatherOverrideTempAvg, setWeatherOverrideTempAvg] = useState("");
-  const [closingSentence, setClosingSentence] = useState(() => getRandomEventClosingSentence());
+  const [closingSentenceMode, setClosingSentenceMode] = useState<"random" | "preset" | "manual">("random");
+  const [closingSentence, setClosingSentence] = useState("");
   const [accessRules, setAccessRules] = useState<AccessRule[]>([]);
   const [exclusivityLabel, setExclusivityLabel] = useState("");
   const [restrictionMessage, setRestrictionMessage] = useState("");
@@ -450,7 +472,7 @@ const EventForm = () => {
               name: event.organizer_name || null,
             }
       );
-      setRegistrationOpen(event.status !== "closed");
+      setEventStatus(isDuplicating ? "published" : normalizeEditableEventStatus(event.status));
       const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
       setPolicyType(pt || "flexible_24h");
       setPolicyCustomText(ct);
@@ -485,20 +507,37 @@ const EventForm = () => {
 
       if (event.additional_fields) {
         const af = event.additional_fields as any;
-        const normalized = normalizeEventClosingSentence(af.closing_sentence);
-        setClosingSentence(
-          isDuplicating
-            ? getRandomEventClosingSentence()
-            : (normalized as ReturnType<typeof getRandomEventClosingSentence>) || getRandomEventClosingSentence()
-        );
-        setFitScoreMainCategory(af.fit_score_main_category || "");
-        setFitScoreSecondaryCategories(
-          Array.isArray(af.fit_score_secondary_categories)
-            ? af.fit_score_secondary_categories.slice(0, FIT_SCORE_EVENT_SECONDARY_MAX)
-            : []
-        );
-        if (af.ask_car_availability !== undefined) {
-          setAskCarAvailability(!!af.ask_car_availability);
+        if (Array.isArray(af)) {
+          setAdditionalFields(
+            af.map((f: any) => ({
+              label: f.label || "",
+              type: f.type || "text",
+              required: f.required || false,
+              options: Array.isArray(f.options) ? f.options : (typeof f.options === 'string' && f.options ? f.options.split(',').map((o: string) => o.trim()) : []),
+            }))
+          );
+        } else {
+          const normalized = normalizeEventClosingSentence(af.closing_sentence);
+          if (isDuplicating || !normalized) {
+            setClosingSentenceMode("random");
+            setClosingSentence("");
+          } else if ((EVENT_CLOSING_SENTENCES as readonly string[]).includes(normalized)) {
+            setClosingSentenceMode("preset");
+            setClosingSentence(normalized);
+          } else {
+            setClosingSentenceMode("manual");
+            setClosingSentence(normalized);
+          }
+          setFitScoreMainCategory(af.fit_score_main_category || "");
+          setFitScoreSecondaryCategories(
+            Array.isArray(af.fit_score_secondary_categories)
+              ? af.fit_score_secondary_categories.slice(0, FIT_SCORE_EVENT_SECONDARY_MAX)
+              : []
+          );
+          if (af.ask_car_availability !== undefined) {
+            setAskCarAvailability(!!af.ask_car_availability);
+          }
+          setWaitingListEnabled(!!af.waiting_list_enabled);
           if (af.weather_override_condition) setWeatherOverrideCondition(af.weather_override_condition);
           if (af.weather_override_temp_min != null && af.weather_override_temp_min !== "") setWeatherOverrideTempMin(String(af.weather_override_temp_min));
           if (af.weather_override_temp_max != null && af.weather_override_temp_max !== "") setWeatherOverrideTempMax(String(af.weather_override_temp_max));
@@ -516,15 +555,6 @@ const EventForm = () => {
               }))
             );
           }
-        } else if (Array.isArray(af)) {
-          setAdditionalFields(
-            af.map((f: any) => ({
-              label: f.label || "",
-              type: f.type || "text",
-              required: f.required || false,
-              options: Array.isArray(f.options) ? f.options : (typeof f.options === 'string' && f.options ? f.options.split(',').map((o: string) => o.trim()) : []),
-            }))
-          );
         }
       }
 
@@ -867,11 +897,12 @@ const EventForm = () => {
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: {
-          closing_sentence: normalizeEventClosingSentence(closingSentence),
+          closing_sentence: closingSentenceMode === "random" ? undefined : normalizeEventClosingSentence(closingSentence),
           fit_score_main_category: fitScoreMainCategory,
           fit_score_secondary_categories: fitScoreSecondaryCategories,
           fields: additionalFields.filter((f) => f.label.trim()),
           ask_car_availability: askCarAvailability,
+          waiting_list_enabled: waitingListEnabled,
           weather_override_condition: weatherOverrideCondition || undefined,
           weather_override_temp_min: weatherOverrideTempMin ? parseFloat(weatherOverrideTempMin) : undefined,
           weather_override_temp_max: weatherOverrideTempMax ? parseFloat(weatherOverrideTempMax) : undefined,
@@ -885,7 +916,7 @@ const EventForm = () => {
         event_badges: [...manualBadges, ...(customBadge.trim() ? [customBadge.trim()] : [])] as any,
         organizer_id: resolvedOrganizerId,
         organizer_name: resolvedOrganizerName,
-        status: (registrationOpen ? "published" : "closed") as Database["public"]["Enums"]["event_status"],
+        status: eventStatus,
       };
 
       let eventId = id;
@@ -1489,13 +1520,13 @@ const EventForm = () => {
               </div>
             )}
 
-            {/* ── Fasce di prezzo (Pricing Tiers) ── */}
+            {/* ── Modalità di partecipazione ── */}
             {form.payment_type !== "free" && (
               <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-sm font-semibold flex items-center gap-1.5">
-                      💰 Fasce di prezzo
+                      💰 Modalità di partecipazione
                     </Label>
                     <p className="text-[11px] text-muted-foreground font-body">Definisci chi vede quale prezzo. Configura prezzi per community, badge o promozioni.</p>
                   </div>
@@ -1508,7 +1539,7 @@ const EventForm = () => {
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <Input
-                          placeholder="Nome fascia (es. Prezzo community, Early bird)"
+                          placeholder="Nome formula"
                           value={opt.name}
                           onChange={(e) => setPriceOptions(prev => prev.map((o, i) => i === index ? { ...o, name: e.target.value } : o))}
                         />
@@ -1537,7 +1568,7 @@ const EventForm = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-[11px] text-muted-foreground">Pagamento opzione</Label>
+                        <Label className="text-[11px] text-muted-foreground">Pagamento formula</Label>
                         <Select
                           value={opt.payment_type}
                           onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => {
@@ -1563,7 +1594,7 @@ const EventForm = () => {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-[11px] text-muted-foreground">Lista d'attesa opzione</Label>
+                        <Label className="text-[11px] text-muted-foreground">Lista d'attesa formula</Label>
                         <div className="h-8 mt-0.5 flex items-center gap-2">
                           <Switch
                             checked={opt.waitlist_enabled}
@@ -1622,7 +1653,7 @@ const EventForm = () => {
                       </div>
                       {opt.has_dedicated_spots && (
                         <div>
-                          <Label className="text-[11px] text-muted-foreground">Posti opzione</Label>
+                          <Label className="text-[11px] text-muted-foreground">Posti formula</Label>
                           <Input
                             type="number"
                             min={0}
@@ -1862,6 +1893,9 @@ const EventForm = () => {
                   <SelectValue placeholder="Seleziona condizione..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Previsioni meteo
+                  </div>
                   <SelectItem value="none">— Nessun override —</SelectItem>
                   <SelectItem value="sereno">☀️ Sereno</SelectItem>
                   <SelectItem value="parzialmente_nuvoloso">🌤 Parzialmente nuvoloso</SelectItem>
@@ -1890,6 +1924,54 @@ const EventForm = () => {
                   <Input type="number" value={weatherOverrideTempAvg} onChange={(e) => setWeatherOverrideTempAvg(e.target.value)} placeholder="es. 15" />
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* Frase conclusiva */}
+          <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              Frase conclusiva
+            </Label>
+            <Select
+              value={closingSentenceMode}
+              onValueChange={(value) => {
+                const mode = value as "random" | "preset" | "manual";
+                setClosingSentenceMode(mode);
+                if (mode === "random") setClosingSentence("");
+                if (mode === "preset" && !closingSentence) setClosingSentence(EVENT_CLOSING_SENTENCES[0]);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="random">Random</SelectItem>
+                <SelectItem value="preset">Scegli frase</SelectItem>
+                <SelectItem value="manual">Frase manuale</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {closingSentenceMode === "preset" && (
+              <Select value={closingSentence || EVENT_CLOSING_SENTENCES[0]} onValueChange={setClosingSentence}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_CLOSING_SENTENCES.map((sentence) => (
+                    <SelectItem key={sentence} value={sentence}>
+                      {sentence}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {closingSentenceMode === "manual" && (
+              <Input
+                value={closingSentence}
+                onChange={(event) => setClosingSentence(event.target.value)}
+                placeholder="Inserisci una frase conclusiva"
+              />
             )}
           </div>
         </Card>
@@ -1929,20 +2011,46 @@ const EventForm = () => {
             </p>
           </div>
 
-          {/* Iscrizioni */}
+          {/* Stato evento */}
           <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
-            <div className="flex items-center justify-between">
+            <div className="space-y-2">
               <div>
                 <Label className="text-sm font-semibold flex items-center gap-1.5">
-                  📝 Iscrizioni
+                  📝 Stato evento
                 </Label>
                 <p className="text-[11px] text-muted-foreground font-body">
-                  {registrationOpen
-                    ? "Le iscrizioni sono aperte. Gli utenti possono registrarsi."
-                    : "Le iscrizioni sono chiuse. L'evento è visibile ma nessuno può registrarsi."}
+                  Lo stato governa visibilita, iscrizioni, CTA e riepiloghi utente.
                 </p>
               </div>
-              <Switch checked={registrationOpen} onCheckedChange={setRegistrationOpen} />
+              <Select value={eventStatus} onValueChange={(value) => setEventStatus(value as EventStatus)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground font-body">
+                {EVENT_STATUS_OPTIONS.find((option) => option.value === eventStatus)?.description}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  Lista d'attesa
+                </Label>
+                <p className="text-[11px] text-muted-foreground font-body">
+                  Se l'evento e sold out, gli utenti possono entrare in lista senza occupare posti o generare pagamenti.
+                </p>
+              </div>
+              <Switch checked={waitingListEnabled} onCheckedChange={setWaitingListEnabled} />
             </div>
           </div>
 

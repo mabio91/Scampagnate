@@ -163,7 +163,7 @@ serve(async (req) => {
       .from('events')
       .select('id, title, date, time, location')
       .in('date', datesToQuery)
-      .eq('status', 'published');
+      .in('status', ['available', 'published', 'open']);
 
     if (eventsError) throw eventsError;
 
@@ -193,18 +193,22 @@ serve(async (req) => {
 
     for (const event of upcomingEvents) {
       // Fetch registrations with meeting points
-      const { data: registrations, error: regError } = await supabase
+      const { data: registrationsRaw, error: regError } = await supabase
         .from('event_registrations')
-        .select('user_id, meeting_point_id')
+        .select('user_id, meeting_point_id, sport_level')
         .eq('event_id', event.id)
-        .in('status', ['registered', 'paid']);
+        .in('status', ['registered', 'deposit_paid', 'paid']);
 
       if (regError) {
         console.error(`Error fetching registrations for event ${event.id}:`, regError);
         continue;
       }
 
-      if (!registrations || registrations.length === 0) continue;
+      const registrations = (registrationsRaw || []).filter((registration) =>
+        registration.user_id && !String(registration.sport_level || '').startsWith('manual:')
+      );
+
+      if (registrations.length === 0) continue;
 
       // Fetch meeting points for this event
       const { data: meetingPoints } = await supabase

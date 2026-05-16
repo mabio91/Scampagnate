@@ -90,6 +90,9 @@ const resolvePaymentConfig = (
 const requiresOnlinePayment = (paymentType: PaymentType) =>
   paymentType === "paid" || paymentType === "deposit";
 
+const acceptsRegistrationStatus = (status: unknown) =>
+  ["available", "published", "open"].includes(String(status ?? ""));
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -111,12 +114,15 @@ serve(async (req) => {
 
     const { data: registration, error: registrationError } = await supabaseAdmin
       .from("event_registrations")
-      .select("id, user_id, status, price_option_id, payment_status, amount_paid, total_price_amount, deposit_amount, balance_due_amount, balance_payment_mode")
+      .select("id, user_id, status, price_option_id, payment_status, amount_paid, total_price_amount, deposit_amount, balance_due_amount, balance_payment_mode, sport_level")
       .eq("id", registrationId)
       .eq("event_id", eventId)
       .single();
 
     if (registrationError || !registration) throw new Error("Registration not found");
+    if (!registration.user_id || String(registration.sport_level || "").startsWith("manual:")) {
+      throw new Error("Manual participant registrations cannot start checkout");
+    }
 
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
@@ -258,7 +264,9 @@ serve(async (req) => {
 
     if (checkoutKind !== "balance") {
       let optionIsBookable = false;
-      if (effectivePriceOptionId) {
+      if (!acceptsRegistrationStatus(event.status)) {
+        optionIsBookable = false;
+      } else if (effectivePriceOptionId) {
         const { data: availabilityRows, error: availabilityError } = await supabaseAdmin
           .rpc("get_event_option_availability", { p_event_id: eventId });
         if (availabilityError) throw availabilityError;
@@ -451,8 +459,8 @@ serve(async (req) => {
         price_data: {
           currency: "eur",
           product_data: {
-            name: "Annual Membership",
-            description: "Scampagnate membership fee",
+            name: "Tessera Associativa ASD Gruppo Scampagnate",
+            description: "Quota associativa annuale ASD Gruppo Scampagnate",
           },
           unit_amount: membershipFeeCents,
         },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { useMembershipFee } from "@/hooks/useMembershipFee";
 import { getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
@@ -69,6 +69,15 @@ const RegistrationCheckoutDialog = ({
   const [selectedPriceOption, setSelectedPriceOption] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [paymentChoice, setPaymentChoice] = useState<"deposit" | "full">("deposit");
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const meetingPointRef = useRef<HTMLDivElement>(null);
+  const priceOptionRef = useRef<HTMLDivElement>(null);
+  const equipmentRef = useRef<HTMLDivElement>(null);
+  const customFieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (!open) setAttemptedSubmit(false);
+  }, [open]);
 
   const hasMeetingPoints = event.meeting_points && event.meeting_points.length > 0;
   const hasPriceOptions = event.price_options && event.price_options.length > 0;
@@ -106,7 +115,7 @@ const RegistrationCheckoutDialog = ({
   const displayPrice = selectedPaymentType === "deposit"
     ? (isDepositPayment ? depositAmount : totalEventPrice)
     : totalEventPrice;
-  const membershipFee = needsMembership ? membershipFeeAmount : 0;
+  const membershipFee = needsMembership && !selectedOptionIsWaitlist ? membershipFeeAmount : 0;
   const serviceFee = isPaymentEvent && !selectedOptionIsWaitlist ? getServiceFeeAmount(selectedPaymentType) : 0;
   const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
   const totalDueToday = discountedEventPrice + serviceFee + membershipFee;
@@ -125,9 +134,24 @@ const RegistrationCheckoutDialog = ({
   const priceOptionRequired = hasPriceOptions && !selectedPriceOption;
   const customFieldsInvalid = customFields.some((f: any) => f.required && !additionalResponses[f.label]?.trim());
   const equipmentRequired = hasMandatoryEquipment && !equipmentConfirmed;
-  const isDisabled = isSubmitting || meetingPointRequired || priceOptionRequired || customFieldsInvalid || equipmentRequired || selectedOptionUnavailable;
+  const isDisabled = isSubmitting || selectedOptionUnavailable;
+  const showValidation = attemptedSubmit && (meetingPointRequired || priceOptionRequired || customFieldsInvalid || equipmentRequired);
+  const firstInvalidRef = () => {
+    if (meetingPointRequired) return meetingPointRef.current;
+    if (priceOptionRequired) return priceOptionRef.current;
+    const firstInvalidField = customFields.find((field: any) => field.required && !additionalResponses[field.label]?.trim());
+    if (firstInvalidField) return customFieldRefs.current[firstInvalidField.label];
+    if (equipmentRequired) return equipmentRef.current;
+    return null;
+  };
 
   const handleSubmit = () => {
+    if (meetingPointRequired || priceOptionRequired || customFieldsInvalid || equipmentRequired) {
+      setAttemptedSubmit(true);
+      firstInvalidRef()?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     onRegister({
       meetingPointId: selectedMeetingPoint || undefined,
       sportLevel: sportLevel || undefined,
@@ -157,7 +181,7 @@ const RegistrationCheckoutDialog = ({
   // Helper text above CTA
   const ctaHelperText = (() => {
     if (isRequestingOverride || requiresApproval) return "La tua richiesta verrà inviata agli organizzatori per l'approvazione.";
-    if (selectedOptionIsWaitlist) return "Entrerai in lista d'attesa per questa opzione: nessun pagamento viene avviato ora.";
+    if (selectedOptionIsWaitlist) return "Entrerai in lista d'attesa per questa formula: nessun pagamento viene avviato ora.";
     if (selectedPaymentType === "deposit" && effectivePaymentChoice === "deposit" && balancePaymentMode === "on_site") {
       return "Pagherai l'acconto online ora. Il saldo rimanente andrà versato sul posto.";
     }
@@ -177,7 +201,7 @@ const RegistrationCheckoutDialog = ({
   const hasSection1 = hasMeetingPoints || isSportCategory || carEnabled || customFields.length > 0 || hasMandatoryEquipment;
 
   // Check if Section 2 has any content (pricing/membership)
-  const hasSection2 = hasPriceOptions || isPaymentEvent || selectedPaymentType === "location" || needsMembership;
+  const hasSection2 = hasPriceOptions || isPaymentEvent || selectedPaymentType === "location" || (needsMembership && !selectedOptionIsWaitlist);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -203,9 +227,9 @@ const RegistrationCheckoutDialog = ({
 
               {/* Meeting Points */}
               {hasMeetingPoints && (
-                <div>
+                <div ref={meetingPointRef}>
                   <Label className="font-body text-sm font-semibold mb-2 block">Punto di Ritrovo *</Label>
-                  <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className="space-y-2">
+                  <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className={`space-y-2 rounded-xl ${attemptedSubmit && meetingPointRequired ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : ""}`}>
                     {event.meeting_points.map((mp: any) => (
                       <label
                         key={mp.id}
@@ -228,12 +252,15 @@ const RegistrationCheckoutDialog = ({
                       </label>
                     ))}
                   </RadioGroup>
+                  {attemptedSubmit && meetingPointRequired && (
+                    <p className="mt-2 text-xs font-body font-semibold text-destructive">Scegli un punto di ritrovo per continuare.</p>
+                  )}
                 </div>
               )}
 
               {/* Custom registration fields */}
               {customFields.length > 0 && customFields.map((field: any, idx: number) => (
-                <div key={idx}>
+                <div key={idx} ref={(node) => { customFieldRefs.current[field.label] = node; }}>
                   <Label className="font-body text-sm font-semibold">
                     {field.label} {field.required && <span className="text-destructive">*</span>}
                   </Label>
@@ -242,7 +269,7 @@ const RegistrationCheckoutDialog = ({
                       value={additionalResponses[field.label] || ""}
                       onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
                       placeholder={field.placeholder || ""}
-                      className="mt-1"
+                      className={`mt-1 ${attemptedSubmit && field.required && !additionalResponses[field.label]?.trim() ? "border-destructive ring-1 ring-destructive" : ""}`}
                     />
                   )}
                   {(field.type === "dropdown" || field.type === "select") && (
@@ -250,7 +277,7 @@ const RegistrationCheckoutDialog = ({
                       value={additionalResponses[field.label] || ""}
                       onValueChange={(val) => setAdditionalResponses(prev => ({ ...prev, [field.label]: val }))}
                     >
-                      <SelectTrigger className="mt-1"><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                      <SelectTrigger className={`mt-1 ${attemptedSubmit && field.required && !additionalResponses[field.label]?.trim() ? "border-destructive ring-1 ring-destructive" : ""}`}><SelectValue placeholder="Seleziona..." /></SelectTrigger>
                       <SelectContent>
                         {(Array.isArray(field.options) ? field.options : (typeof field.options === 'string' ? field.options.split(',').map((s: string) => s.trim()) : [])).map((opt: string, optIdx: number) => (
                           <SelectItem key={optIdx} value={opt}>{opt}</SelectItem>
@@ -264,8 +291,11 @@ const RegistrationCheckoutDialog = ({
                       value={additionalResponses[field.label] || ""}
                       onChange={(e) => setAdditionalResponses(prev => ({ ...prev, [field.label]: e.target.value }))}
                       placeholder={field.placeholder || ""}
-                      className="mt-1"
+                      className={`mt-1 ${attemptedSubmit && field.required && !additionalResponses[field.label]?.trim() ? "border-destructive ring-1 ring-destructive" : ""}`}
                     />
+                  )}
+                  {attemptedSubmit && field.required && !additionalResponses[field.label]?.trim() && (
+                    <p className="mt-1.5 text-xs font-body font-semibold text-destructive">Campo obbligatorio.</p>
                   )}
                 </div>
               ))}
@@ -322,7 +352,7 @@ const RegistrationCheckoutDialog = ({
 
               {/* Equipment confirmation */}
               {hasMandatoryEquipment && (
-                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30">
+                <div ref={equipmentRef} className={`p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border ${attemptedSubmit && equipmentRequired ? "border-destructive ring-2 ring-destructive/40" : "border-amber-200 dark:border-amber-800/30"}`}>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <Checkbox
                       checked={equipmentConfirmed}
@@ -333,6 +363,11 @@ const RegistrationCheckoutDialog = ({
                       Confermo di avere tutta l'attrezzatura obbligatoria richiesta per questa attività
                     </span>
                   </label>
+                  {attemptedSubmit && equipmentRequired && (
+                    <p className="mt-2 text-xs font-body font-semibold text-destructive">
+                      Conferma l'attrezzatura obbligatoria per completare l'iscrizione.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -348,9 +383,9 @@ const RegistrationCheckoutDialog = ({
 
               {/* Price options */}
               {resolvedPriceOptions && resolvedPriceOptions.length > 0 && (
-                <div>
-                  <Label className="font-body text-sm font-semibold mb-2 block">Scegli l'opzione di prezzo *</Label>
-                  <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
+                <div ref={priceOptionRef}>
+                  <Label className="font-body text-sm font-semibold mb-2 block">Scegli la formula *</Label>
+                  <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className={`space-y-2 rounded-xl ${attemptedSubmit && priceOptionRequired ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : ""}`}>
                     {resolvedPriceOptions.map((opt: ResolvedPriceOption) => {
                       const bookable = isOptionBookable(opt, event);
                       const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
@@ -401,14 +436,17 @@ const RegistrationCheckoutDialog = ({
                       );
                     })}
                   </RadioGroup>
+                  {attemptedSubmit && priceOptionRequired && (
+                    <p className="mt-2 text-xs font-body font-semibold text-destructive">Scegli una formula di partecipazione.</p>
+                  )}
                 </div>
               )}
 
               {/* Fallback price options (no eligibility data) */}
               {!resolvedPriceOptions && hasPriceOptions && (
-                <div>
-                  <Label className="font-body text-sm font-semibold mb-2 block">Scegli l'opzione di prezzo *</Label>
-                  <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className="space-y-2">
+                <div ref={priceOptionRef}>
+                  <Label className="font-body text-sm font-semibold mb-2 block">Scegli la formula *</Label>
+                  <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className={`space-y-2 rounded-xl ${attemptedSubmit && priceOptionRequired ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : ""}`}>
                     {event.price_options.map((opt: any) => {
                       const bookable = isOptionBookable(opt, event);
                       const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
@@ -432,6 +470,9 @@ const RegistrationCheckoutDialog = ({
                       );
                     })}
                   </RadioGroup>
+                  {attemptedSubmit && priceOptionRequired && (
+                    <p className="mt-2 text-xs font-body font-semibold text-destructive">Scegli una formula di partecipazione.</p>
+                  )}
                 </div>
               )}
 
@@ -448,14 +489,14 @@ const RegistrationCheckoutDialog = ({
                 </div>
               )}
 
-              {needsMembership && (
+              {needsMembership && !selectedOptionIsWaitlist && (
                 <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2.5">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-body font-bold text-primary">Tessera associativa ASD Scampagnate</p>
+                    <p className="text-sm font-body font-bold text-primary">Tessera associativa ASD Gruppo Scampagnate</p>
                   </div>
                   <p className="text-xs font-body text-muted-foreground leading-relaxed">
-                    Per partecipare a questo evento è richiesta la tessera associativa ASD Scampagnate.
+                    Per partecipare a questo evento è richiesta la tessera associativa ASD Gruppo Scampagnate.
                     La tessera è valida per l'anno in corso e include copertura assicurativa base durante le attività.
                   </p>
                   <div className="flex items-center justify-between">
@@ -522,7 +563,7 @@ const RegistrationCheckoutDialog = ({
             <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider">Riepilogo</p>
 
             {/* Amount due today */}
-            {((!selectedOptionIsWaitlist && (isPaymentEvent || selectedPaymentType === "location")) || needsMembership) && (
+            {((!selectedOptionIsWaitlist && (isPaymentEvent || selectedPaymentType === "location")) || (needsMembership && !selectedOptionIsWaitlist)) && (
               <div className="p-3 rounded-xl bg-muted/50 space-y-2">
                 {/* Da pagare oggi */}
                 <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider mb-1">Da pagare oggi</p>
@@ -558,7 +599,7 @@ const RegistrationCheckoutDialog = ({
                   </div>
                 )}
 
-                {needsMembership && (
+                {needsMembership && !selectedOptionIsWaitlist && (
                   <div className="flex justify-between text-sm font-body">
                     <span className="text-primary font-semibold flex items-center gap-1">
                       <CreditCard className="h-3 w-3" /> Quota associativa
@@ -567,7 +608,7 @@ const RegistrationCheckoutDialog = ({
                   </div>
                 )}
 
-                {((!selectedOptionIsWaitlist && isPaymentEvent) || needsMembership) && (
+                {((!selectedOptionIsWaitlist && isPaymentEvent) || (needsMembership && !selectedOptionIsWaitlist)) && (
                   <div className="flex justify-between text-sm font-body pt-2 mt-1 border-t border-border">
                     <span className="font-bold text-foreground">Totale da pagare oggi</span>
                     <span className="font-bold text-foreground text-base">€{totalDueToday.toFixed(2)}</span>
@@ -643,7 +684,7 @@ const RegistrationCheckoutDialog = ({
 
             {/* Helper text above CTA */}
             <p className="text-xs font-body text-muted-foreground text-center leading-relaxed px-2">
-              {ctaHelperText}
+              {showValidation ? "Completa i campi evidenziati per continuare." : ctaHelperText}
             </p>
 
             {/* CTA */}
@@ -656,7 +697,7 @@ const RegistrationCheckoutDialog = ({
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Attendere...</>
               ) : (
                 <>
-                  {(isPaymentEvent || needsMembership) && <CreditCard className="h-4 w-4 mr-2" />}
+                  {(isPaymentEvent || (needsMembership && !selectedOptionIsWaitlist)) && <CreditCard className="h-4 w-4 mr-2" />}
                   {ctaLabel}
                 </>
               )}

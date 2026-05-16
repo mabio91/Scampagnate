@@ -29,6 +29,8 @@ export interface EventPricingLike {
   spots_total?: number | null;
   spots_taken?: number | null;
   status?: string | null;
+  waiting_list_enabled?: boolean | null;
+  additional_fields?: Record<string, unknown> | null;
 }
 
 const paymentTypes = new Set(["free", "paid", "deposit", "location"]);
@@ -110,6 +112,27 @@ export const optionUsesDedicatedSpots = (option: PriceOptionLike | null | undefi
 export const getEventRemainingSpots = (event: EventPricingLike) =>
   Math.max(0, Number(event.spots_total || 0) - Number(event.spots_taken || 0));
 
+const closedStatuses = new Set(["closed", "cancelled", "past", "completed", "draft", "unpublished", "upcoming", "rescheduled"]);
+
+export const isEventClosedForRegistration = (event: EventPricingLike) =>
+  closedStatuses.has(String(event.status || ""));
+
+export const isEventCapacitySoldOut = (event: EventPricingLike) =>
+  Number(event.spots_total || 0) > 0 && getEventRemainingSpots(event) <= 0;
+
+export const isEventManualSoldOut = (event: EventPricingLike) =>
+  event.status === "full" && !isEventCapacitySoldOut(event);
+
+export const isEventSoldOut = (event: EventPricingLike) =>
+  event.status === "full" || isEventCapacitySoldOut(event);
+
+export const shouldShowPublicCapacity = (event: EventPricingLike) =>
+  !isEventManualSoldOut(event);
+
+export const isWaitlistEnabledForEvent = (event: EventPricingLike) =>
+  event.waiting_list_enabled === true
+  || (event.additional_fields as any)?.waiting_list_enabled === true;
+
 export const getOptionRemainingSpots = (
   option: PriceOptionLike | null | undefined,
   event: EventPricingLike,
@@ -125,7 +148,7 @@ export const isOptionBookable = (
   option: PriceOptionLike | null | undefined,
   event: EventPricingLike,
 ) => {
-  if (event.status === "closed" || event.status === "cancelled" || event.status === "past") return false;
+  if (isEventClosedForRegistration(event) || isEventSoldOut(event)) return false;
   return getOptionRemainingSpots(option, event) > 0;
 };
 
@@ -133,8 +156,10 @@ export const canOptionJoinWaitlist = (
   option: PriceOptionLike | null | undefined,
   event: EventPricingLike,
 ) => {
-  if (event.status === "closed" || event.status === "cancelled" || event.status === "past") return false;
-  return !isOptionBookable(option, event) && option?.waitlist_enabled !== false;
+  if (isEventClosedForRegistration(event)) return false;
+  if (!isEventSoldOut(event) && getOptionRemainingSpots(option, event) > 0) return false;
+  const optionAllowsWaitlist = option?.waitlist_enabled === true;
+  return !isOptionBookable(option, event) && (optionAllowsWaitlist || isWaitlistEnabledForEvent(event));
 };
 
 export const getOptionAvailabilityLabel = (

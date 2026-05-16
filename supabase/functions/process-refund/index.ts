@@ -81,7 +81,7 @@ serve(async (req)=>{
     if (!user) throw new Error("User not authenticated");
     const { eventId } = await req.json();
     if (!eventId) throw new Error("Event ID required");
-    const { data: registration, error: regError } = await supabaseAdmin.from("event_registrations").select("id, payment_status, stripe_payment_intent_id, status, amount_paid, service_fee_amount").eq("event_id", eventId).eq("user_id", user.id).in("status", [
+    const { data: registration, error: regError } = await supabaseAdmin.from("event_registrations").select("id, payment_status, stripe_payment_intent_id, status, amount_paid, service_fee_amount, sport_level").eq("event_id", eventId).eq("user_id", user.id).or("sport_level.is.null,sport_level.not.like.manual:%").in("status", [
       "registered",
       "deposit_paid",
       "paid",

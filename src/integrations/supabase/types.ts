@@ -691,6 +691,7 @@ export type Database = {
       event_registrations: {
         Row: {
           additional_responses: Json | null
+          added_by: string | null
           amount_paid: number | null
           balance_due_amount: number | null
           balance_payment_mode:
@@ -716,10 +717,11 @@ export type Database = {
           status: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id: string | null
           total_price_amount: number | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           additional_responses?: Json | null
+          added_by?: string | null
           amount_paid?: number | null
           balance_due_amount?: number | null
           balance_payment_mode?:
@@ -745,10 +747,11 @@ export type Database = {
           status?: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id?: string | null
           total_price_amount?: number | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           additional_responses?: Json | null
+          added_by?: string | null
           amount_paid?: number | null
           balance_due_amount?: number | null
           balance_payment_mode?:
@@ -774,9 +777,16 @@ export type Database = {
           status?: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id?: string | null
           total_price_amount?: number | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "event_registrations_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "event_registrations_event_id_fkey"
             columns: ["event_id"]
@@ -2602,9 +2612,9 @@ export type Database = {
       get_event_participant_avatars: {
         Args: { p_event_id: string }
         Returns: {
-          avatar_url: string
+          avatar_url: string | null
           first_name: string
-          user_id: string
+          user_id: string | null
         }[]
       }
       get_event_people_public: {
@@ -2618,7 +2628,7 @@ export type Database = {
           role: string
           sort_order: number
           total_points: number
-          user_id: string
+          user_id: string | null
         }[]
       }
       get_public_profile: {
@@ -2701,6 +2711,11 @@ export type Database = {
         | "published"
         | "cancelled"
         | "past"
+        | "unpublished"
+        | "upcoming"
+        | "open"
+        | "rescheduled"
+        | "completed"
       event_visibility: "public" | "private" | "hidden"
       payment_type: "free" | "paid" | "deposit" | "location"
       registration_status:
@@ -2851,6 +2866,11 @@ export const Constants = {
         "published",
         "cancelled",
         "past",
+        "unpublished",
+        "upcoming",
+        "open",
+        "rescheduled",
+        "completed",
       ],
       event_visibility: ["public", "private", "hidden"],
       payment_type: ["free", "paid", "deposit", "location"],

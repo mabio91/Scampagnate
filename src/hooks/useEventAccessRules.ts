@@ -136,12 +136,12 @@ export const useCheckEventAccessRules = (
             const minCount = Number(rule.value) || 1;
             const { data: pastEvents } = await supabase
               .from("event_registrations")
-              .select("event_id, status, checked_in, created_at, events!inner(category_id, event_categories(name))")
+              .select("event_id, status, checked_in, created_at, sport_level, events!inner(category_id, event_categories(name))")
               .eq("user_id", user.id)
               .or("status.eq.attended,checked_in.eq.true")
               .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-            const trekkingCount = dedupeRegistrationsByEvent(pastEvents || []).filter((r: any) => {
+            const trekkingCount = dedupeRegistrationsByEvent((pastEvents || []).filter((r: any) => !r.sport_level?.startsWith("manual:"))).filter((r: any) => {
               const catName = r.events?.event_categories?.name?.toLowerCase() || "";
               return catName.includes("trekking") || catName.includes("escursion");
             }).length;
@@ -159,12 +159,12 @@ export const useCheckEventAccessRules = (
             const minCount = Number(rule.value) || 1;
             const { data: attendedRows } = await supabase
               .from("event_registrations")
-              .select("event_id, status, checked_in, created_at")
+              .select("event_id, status, checked_in, created_at, sport_level")
               .eq("user_id", user.id)
               .or("status.eq.attended,checked_in.eq.true")
               .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-            if (countUniqueAttendedEvents(attendedRows || []) < minCount) {
+            if (countUniqueAttendedEvents((attendedRows || []).filter((r: any) => !r.sport_level?.startsWith("manual:"))) < minCount) {
               target.push({
                 rule,
                 reason: rule.message || `Questo evento richiede almeno ${minCount} presenze totali.`,
@@ -205,12 +205,12 @@ export const useCheckEventAccessRules = (
             const minCount = Number(rule.value) || 1;
             const { data: attendedRows } = await supabase
               .from("event_registrations")
-              .select("event_id, status, checked_in, created_at")
+              .select("event_id, status, checked_in, created_at, sport_level")
               .eq("user_id", user.id)
               .or("status.eq.attended,checked_in.eq.true")
               .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-            if (countUniqueAttendedEvents(attendedRows || []) < minCount) {
+            if (countUniqueAttendedEvents((attendedRows || []).filter((r: any) => !r.sport_level?.startsWith("manual:"))) < minCount) {
               target.push({
                 rule,
                 reason: rule.message || `Questo evento richiede almeno ${minCount} attività completate.`,
@@ -334,12 +334,12 @@ async function checkDifficultyAccess(
 
   const { data: pastEvents } = await supabase
     .from("event_registrations")
-    .select("event_id, status, checked_in, created_at, events(difficulty)")
+    .select("event_id, status, checked_in, created_at, sport_level, events(difficulty)")
     .eq("user_id", userId)
     .or("status.eq.attended,checked_in.eq.true")
     .in("status", [...ACTIVE_PARTICIPANT_STATUSES]);
 
-  const uniquePastEvents = dedupeRegistrationsByEvent(pastEvents || []);
+  const uniquePastEvents = dedupeRegistrationsByEvent((pastEvents || []).filter((r: any) => !r.sport_level?.startsWith("manual:")));
 
   const easyCount = uniquePastEvents.filter(r => {
     const d = parseInt((r.events as any)?.difficulty);

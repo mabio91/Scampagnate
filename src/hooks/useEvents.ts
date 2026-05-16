@@ -65,6 +65,7 @@ export interface EventWithDetails {
 
 const PRICE_OPTION_SELECT =
   "id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end, payment_type, deposit_amount, balance_amount, balance_payment_mode, has_dedicated_spots, dedicated_spots, spots_taken, waitlist_enabled";
+const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
 
 export const useEvents = (categoryName?: string | null) => {
   const { user, isOrganizer, isAdmin } = useAuth();
@@ -147,7 +148,9 @@ export const useEventParticipants = (eventId: string) => {
         .neq("payment_status", "pending");
       if (error) throw error;
 
-      const userIds = (data || []).map((r: any) => r.user_id);
+      const userIds = (data || [])
+        .map((r: any) => r.user_id)
+        .filter(Boolean);
       
       // Fetch public profile data via security definer function (bypasses RLS safely)
       let profilesMap: Record<string, { first_name: string; avatar_url: string | null; last_name_initial: string | null }> = {};
@@ -218,6 +221,7 @@ export const useMyRegistration = (eventId: string) => {
         .select("*")
         .eq("event_id", eventId)
         .eq("user_id", user.id)
+        .or(NON_MANUAL_REGISTRATION_FILTER)
         .neq("status", "cancelled")
         .order("created_at", { ascending: false })
         .maybeSingle();
@@ -228,6 +232,7 @@ export const useMyRegistration = (eventId: string) => {
         .select("*")
         .eq("event_id", eventId)
         .eq("user_id", user.id)
+        .or(NON_MANUAL_REGISTRATION_FILTER)
         .eq("status", "cancelled")
         .order("created_at", { ascending: false })
         .maybeSingle();
@@ -267,7 +272,9 @@ export const useRegisterForEvent = () => {
 
       // Determine payment_status based on payment type
       let paymentStatus = "pending";
-      if ((!paymentType || paymentType === "free") && isMembershipActiveFn(profile)) {
+      if (asWaitlist) {
+        paymentStatus = "not_required";
+      } else if ((!paymentType || paymentType === "free") && isMembershipActiveFn(profile)) {
         paymentStatus = "not_required";
       } else if (paymentType === "location" && isMembershipActiveFn(profile)) {
         paymentStatus = "pay_on_location";
@@ -423,6 +430,7 @@ export const useMyEvents = () => {
         .from("event_registrations")
         .select(`*, events(*, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(${PRICE_OPTION_SELECT})), meeting_point:event_meeting_points(id, name, location, time)`)
         .eq("user_id", user.id)
+        .or(NON_MANUAL_REGISTRATION_FILTER)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map((registration: any) => ({

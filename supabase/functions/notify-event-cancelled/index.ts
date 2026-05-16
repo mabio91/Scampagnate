@@ -82,7 +82,7 @@ serve(async (req)=>{
         }
       });
     }
-    const { data: registrations } = await supabase.from("event_registrations").select("id, user_id, payment_status, stripe_payment_intent_id, amount_paid").eq("event_id", event_id).in("status", [
+    const { data: registrations } = await supabase.from("event_registrations").select("id, user_id, payment_status, stripe_payment_intent_id, amount_paid, sport_level").eq("event_id", event_id).in("status", [
       "registered",
       "deposit_paid",
       "paid",
@@ -144,7 +144,7 @@ serve(async (req)=>{
       }
     }
     const userIds = [
-      ...new Set(registrations.map((r)=>r.user_id))
+      ...new Set(registrations.filter((r)=>r.user_id && !String(r.sport_level || "").startsWith("manual:")).map((r)=>r.user_id))
     ];
     const notifications = userIds.map((uid)=>({
         user_id: uid,

@@ -198,7 +198,7 @@ const DiscountCodesPanel = () => {
       const { data, error } = await supabase
         .from("events")
         .select("id, title, date")
-        .in("status", ["available", "published", "full"])
+        .in("status", ["available", "published", "open", "upcoming", "full"])
         .order("date", { ascending: true });
       if (error) throw error;
       return data;
