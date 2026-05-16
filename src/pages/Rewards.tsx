@@ -38,14 +38,16 @@ interface RewardCardRow {
   missions?: {
     title: string | null;
     icon: string | null;
+    mission_rewards?: Array<{
+      title: string | null;
+      reward_kind: string | null;
+      physical_config?: PhysicalRewardConfig | null;
+    }> | null;
   } | null;
   source_reward?: {
     title: string | null;
     reward_kind: string | null;
-    physical_config?: {
-      reward_name?: string | null;
-      claim_instructions?: string | null;
-    } | null;
+    physical_config?: PhysicalRewardConfig | null;
     badges?: {
       name: string | null;
       icon: string | null;
@@ -54,10 +56,38 @@ interface RewardCardRow {
   } | null;
 }
 
+interface PhysicalRewardConfig {
+  reward_name?: string | null;
+  claim_instructions?: string | null;
+}
+
 const isGenericBadgeTitle = (title: string | null | undefined) => {
   const normalized = (title || "").trim().toLowerCase();
   return normalized === "badge" || normalized === "badge missione";
 };
+
+const isPhysicalReward = (reward: RewardCardRow) => reward.type === "physical" || reward.type === "other";
+
+const getPhysicalConfig = (reward: RewardCardRow) => {
+  const configs = [
+    reward.source_reward?.physical_config,
+    ...((reward.missions?.mission_rewards || [])
+      .filter((missionReward) => missionReward.reward_kind === "physical")
+      .map((missionReward) => missionReward.physical_config)),
+  ].filter(Boolean) as PhysicalRewardConfig[];
+
+  return configs.find((config) => config.claim_instructions?.trim())
+    || configs.find((config) => config.reward_name?.trim())
+    || null;
+};
+
+const getPhysicalRewardTitle = (reward: RewardCardRow) =>
+  getPhysicalConfig(reward)?.reward_name?.trim() || reward.title;
+
+const getPhysicalClaimInstructions = (reward: RewardCardRow) =>
+  getPhysicalConfig(reward)?.claim_instructions?.trim()
+  || (isPhysicalReward(reward) ? reward.value?.trim() : null)
+  || null;
 
 const Rewards = () => {
   const { user } = useAuth();
@@ -71,7 +101,7 @@ const Rewards = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_rewards")
-        .select("*, missions(title, icon), source_reward:mission_rewards!user_rewards_source_mission_reward_id_fkey(title, reward_kind, physical_config, badges(name, icon, description))")
+        .select("*, missions(title, icon, mission_rewards(title, reward_kind, physical_config)), source_reward:mission_rewards!user_rewards_source_mission_reward_id_fkey(title, reward_kind, physical_config, badges(name, icon, description))")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -101,8 +131,8 @@ const Rewards = () => {
     const badgeDescription = sourceBadge?.description || null;
     const displayTitle = r.type === "badge" && isGenericBadgeTitle(r.title) && badgeName
       ? badgeName
-      : r.type === "physical" && sourceReward?.physical_config?.reward_name
-        ? sourceReward.physical_config.reward_name
+      : isPhysicalReward(r)
+        ? getPhysicalRewardTitle(r)
         : r.title;
     const Icon = REWARD_ICON[r.type] || Gift;
     const status = STATUS_LABELS[r.status] || STATUS_LABELS.active;
@@ -110,8 +140,8 @@ const Rewards = () => {
     const actualStatus = isExpired && r.status === "active" ? STATUS_LABELS.expired : status;
     const iconValue = r.type === "badge" ? sourceBadge?.icon : null;
 
-    const isPhysical = r.type === "physical" || r.type === "other";
-    const claimInstructions = sourceReward?.physical_config?.claim_instructions?.trim();
+    const isPhysical = isPhysicalReward(r);
+    const claimInstructions = getPhysicalClaimInstructions(r);
     return (
       <Card
         key={r.id}
@@ -245,20 +275,26 @@ const Rewards = () => {
         <DialogContent className="max-w-sm rounded-2xl">
           {selectedPhysicalReward && (
             <>
+              {(() => {
+                const claimInstructions = getPhysicalClaimInstructions(selectedPhysicalReward);
+                const valueText = selectedPhysicalReward.value?.trim();
+                const shouldShowValue = !!valueText && valueText !== claimInstructions;
+                return (
+                  <>
               <DialogHeader>
                 <DialogTitle>
-                  {selectedPhysicalReward.source_reward?.physical_config?.reward_name || selectedPhysicalReward.title}
+                  {getPhysicalRewardTitle(selectedPhysicalReward)}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
-                {selectedPhysicalReward.value && (
-                  <p className="text-sm text-muted-foreground">{selectedPhysicalReward.value}</p>
+                {shouldShowValue && (
+                  <p className="text-sm text-muted-foreground">{valueText}</p>
                 )}
-                {selectedPhysicalReward.source_reward?.physical_config?.claim_instructions?.trim() ? (
+                {claimInstructions ? (
                   <div className="rounded-xl border bg-muted/30 p-3">
                     <p className="text-xs font-display font-bold uppercase tracking-wider text-muted-foreground mb-1">Istruzioni di riscatto</p>
                     <p className="text-sm font-body text-foreground whitespace-pre-wrap">
-                      {selectedPhysicalReward.source_reward?.physical_config?.claim_instructions}
+                      {claimInstructions}
                     </p>
                   </div>
                 ) : (
@@ -268,6 +304,9 @@ const Rewards = () => {
                   <p className="text-xs text-muted-foreground">Missione: {selectedPhysicalReward.missions.title}</p>
                 )}
               </div>
+                  </>
+                );
+              })()}
             </>
           )}
         </DialogContent>
