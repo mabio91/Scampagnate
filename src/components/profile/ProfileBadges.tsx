@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { countUniqueAttendedEvents } from "@/lib/eventRegistrations";
+import { countUniqueAttendedEvents, type EventRegistrationIdentity } from "@/lib/eventRegistrations";
 
 const PROGRESSION_BADGES = [
   { name: "Nuovo Arrivato", required: 1, description: "Partecipa al tuo primo evento" },
@@ -39,8 +39,13 @@ interface UserBadgeData {
   id: string;
   badge_id: string;
   earned_at: string;
+  completed?: boolean;
   badges: BadgeData;
 }
+
+type AttendanceRegistration = EventRegistrationIdentity & {
+  sport_level?: string | null;
+};
 
 const ProfileBadges = () => {
   const { user, profile } = useAuth();
@@ -81,16 +86,18 @@ const ProfileBadges = () => {
         .select("event_id, status, checked_in, created_at, sport_level")
         .eq("user_id", user.id)
         .or("status.eq.attended,checked_in.eq.true");
-      return countUniqueAttendedEvents((data || []).filter((r: any) => !r.sport_level?.startsWith("manual:")));
+      const registrations = (data || []) as AttendanceRegistration[];
+      return countUniqueAttendedEvents(registrations.filter((registration) => !registration.sport_level?.startsWith("manual:")));
     },
     enabled: !!user,
   });
 
-  const earnedIds = new Set(userBadges.map((ub) => ub.badge_id));
-  const earnedNames = new Set(userBadges.map((ub) => ub.badges?.name));
+  const completedBadges = userBadges.filter((ub) => ub.completed ?? true);
+  const earnedIds = new Set(completedBadges.map((ub) => ub.badge_id));
+  const earnedNames = new Set(completedBadges.map((ub) => ub.badges?.name));
 
-  const hasOfficialBadge = userBadges.some((ub) => ub.badges?.name === "Scampagnatore Ufficiale");
-  const earnedRegular = userBadges.filter((ub) => ub.badges?.name !== "Scampagnatore Ufficiale");
+  const hasOfficialBadge = completedBadges.some((ub) => ub.badges?.name === "Scampagnatore Ufficiale");
+  const earnedRegular = completedBadges.filter((ub) => ub.badges?.name !== "Scampagnatore Ufficiale");
 
   const nextBadges = PROGRESSION_BADGES
     .filter((b) => !earnedNames.has(b.name))
@@ -101,7 +108,12 @@ const ProfileBadges = () => {
       return { ...pb, icon: dbBadge?.icon || "💫", id: dbBadge?.id || pb.name, progress, dbBadge };
     });
 
-  const allBadgesSorted = allBadges.filter((b) => b.name !== "Scampagnatore Ufficiale");
+  const availableBadges = allBadges.filter(
+    (badge) =>
+      badge.name !== "Scampagnatore Ufficiale" &&
+      !earnedIds.has(badge.id) &&
+      !earnedNames.has(badge.name)
+  );
 
   const getBadgeMeta = (badge: BadgeData) => {
     if (badge.requirement_type === "membership_first_150") {
@@ -218,38 +230,27 @@ const ProfileBadges = () => {
 
         {showAll && (
           <div className="grid grid-cols-2 gap-2 animate-fade-in">
-            {allBadgesSorted.map((badge) => {
-              const isEarned = earnedIds.has(badge.id);
+            {availableBadges.map((badge) => {
               const { current, target, unitLabel } = getBadgeMeta(badge);
               return (
                 <button
                   key={badge.id}
                   onClick={() => setSelectedBadge(badge)}
-                  className={`p-3 rounded-xl text-center transition-all duration-200 active:scale-[0.95] ${
-                    isEarned
-                      ? "bg-card border border-primary/20 hover:border-primary/40 hover:shadow-sm"
-                      : "bg-muted/30 border border-border hover:border-muted-foreground/20"
-                  }`}
+                  className="p-3 rounded-xl text-center transition-all duration-200 active:scale-[0.95] bg-muted/30 border border-border hover:border-muted-foreground/20"
                 >
                   <div className="relative inline-block">
                     <BadgeIcon
                       icon={badge.icon}
-                      className={`h-6 w-6 mx-auto ${isEarned ? "text-primary" : "text-muted-foreground/30"}`}
+                      className="h-6 w-6 mx-auto text-muted-foreground/30"
                     />
-                    {!isEarned && (
-                      <Lock className="h-3 w-3 absolute -bottom-0.5 -right-0.5 text-muted-foreground/50" />
-                    )}
+                    <Lock className="h-3 w-3 absolute -bottom-0.5 -right-0.5 text-muted-foreground/50" />
                   </div>
-                  <p className={`text-xs font-body font-semibold mt-1.5 leading-tight ${
-                    isEarned ? "text-foreground" : "text-muted-foreground"
-                  }`}>
+                  <p className="text-xs font-body font-semibold mt-1.5 leading-tight text-muted-foreground">
                     {badge.name}
                   </p>
-                  {!isEarned && (
-                    <p className="text-[10px] font-body text-muted-foreground mt-0.5">
-                      {current}/{target} {unitLabel}
-                    </p>
-                  )}
+                  <p className="text-[10px] font-body text-muted-foreground mt-0.5">
+                    {current}/{target} {unitLabel}
+                  </p>
                 </button>
               );
             })}
