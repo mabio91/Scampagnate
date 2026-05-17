@@ -2,11 +2,18 @@ import { useState, useEffect, useCallback } from 'react';
 import OneSignal from 'react-onesignal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import type { TablesInsert } from '@/integrations/supabase/types';
 
 const ONESIGNAL_APP_ID = '5b9c05fd-e0f1-427e-8301-0a47caba3274';
 
 let onesignalInitialized = false;
 let onesignalInitPromise: Promise<{ ready: boolean; reason?: string }> | null = null;
+
+type PushSubscriptionChange = {
+  current?: {
+    optedIn?: boolean | null;
+  } | null;
+};
 
 function getPushBlockReason() {
   if (typeof window === 'undefined') return 'Push notifications are only available in the browser.';
@@ -87,29 +94,14 @@ export const usePushNotifications = () => {
       return;
     }
 
-    let active = true;
-
-    void initOneSignal().then((result) => {
-      if (!active) return;
-
-      setIsReady(result.ready);
-      setErrorMessage(result.reason ?? null);
-
-      if (!result.ready) {
-        setIsSubscribed(false);
-        return;
-      }
-
+    if (onesignalInitialized) {
+      setIsReady(true);
       try {
         setIsSubscribed(OneSignal.User.PushSubscription.optedIn ?? false);
       } catch {
         setIsSubscribed(false);
       }
-    });
-
-    return () => {
-      active = false;
-    };
+    }
   }, []);
 
   useEffect(() => {
@@ -125,7 +117,7 @@ export const usePushNotifications = () => {
 
     syncSubscription();
 
-    const handler = (change: any) => {
+    const handler = (change: PushSubscriptionChange) => {
       setIsSubscribed(change?.current?.optedIn ?? false);
     };
 
@@ -157,12 +149,16 @@ export const usePushNotifications = () => {
         const playerId = OneSignal.User.PushSubscription.id;
         if (!playerId) return;
 
+        const payload: TablesInsert<'onesignal_players'> = {
+          user_id: user.id,
+          player_id: playerId,
+          device_type: 'web',
+          updated_at: new Date().toISOString(),
+        };
+
         await supabase
-          .from('onesignal_players' as any)
-          .upsert(
-            { user_id: user.id, player_id: playerId, device_type: 'web', updated_at: new Date().toISOString() } as any,
-            { onConflict: 'user_id,player_id' }
-          );
+          .from('onesignal_players')
+          .upsert(payload, { onConflict: 'user_id,player_id' });
       } catch (err) {
         console.error('Failed to store OneSignal player ID:', err);
       }
@@ -247,7 +243,7 @@ export const usePushNotifications = () => {
         const playerId = OneSignal.User.PushSubscription.id;
         if (playerId) {
           await supabase
-            .from('onesignal_players' as any)
+            .from('onesignal_players')
             .delete()
             .eq('user_id', user.id)
             .eq('player_id', playerId);
