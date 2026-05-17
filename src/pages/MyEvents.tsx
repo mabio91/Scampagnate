@@ -42,8 +42,8 @@ const statusStyles: Record<string, string> = {
   posto_disponibile: "bg-success/10 text-success",
   partecipato: "bg-primary/10 text-primary",
   pagamento_in_sospeso: "bg-accent/20 text-accent-foreground",
-  "Acconto pagato - saldo da completare": "bg-warning/10 text-warning",
-  "Acconto pagato - saldo sul posto": "bg-warning/10 text-warning",
+  "Iscritto - Da saldare": "bg-warning/10 text-warning",
+  "Iscritto - Acconto pagato": "bg-warning/10 text-warning",
 };
 
 const statusLabels: Record<string, string> = {
@@ -52,8 +52,8 @@ const statusLabels: Record<string, string> = {
   posto_disponibile: "Posto disponibile",
   partecipato: "Partecipato",
   pagamento_in_sospeso: "Pagamento in sospeso",
-  "Acconto pagato - saldo da completare": "Acconto pagato - saldo da completare",
-  "Acconto pagato - saldo sul posto": "Acconto pagato - saldo sul posto",
+  "Iscritto - Da saldare": "Iscritto - Da saldare",
+  "Iscritto - Acconto pagato": "Iscritto - Acconto pagato",
 };
 
 function getCustomRegistrationFields(event: any): any[] {

@@ -82,12 +82,20 @@ export const getDepositPaymentLabel = (
   registration: {
     status?: string | null;
     payment_status?: string | null;
+    balance_due_amount?: number | string | null;
   },
   event: EventPricingLike,
   priceOption?: PriceOptionLike | null,
 ) => {
   if (!isDepositRegistration(registration)) return null;
-  return getEventBalancePaymentMode(event, priceOption) === "on_site"
-    ? "Acconto pagato - saldo sul posto"
-    : "Acconto pagato - saldo da completare";
+  if (getEventBalancePaymentMode(event, priceOption) === "on_site") {
+    return "Iscritto - Acconto pagato";
+  }
+
+  const storedBalanceDue = Number(registration.balance_due_amount ?? 0);
+  const balanceDue = Math.max(
+    Number.isFinite(storedBalanceDue) ? storedBalanceDue : 0,
+    getRemainingBalanceAmount(event, priceOption),
+  );
+  return balanceDue > 0 ? "Iscritto - Da saldare" : null;
 };
