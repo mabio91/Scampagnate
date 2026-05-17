@@ -35,6 +35,7 @@ const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const EventParticipants = lazy(() => import("./pages/EventParticipants"));
 const ContentPage = lazy(() => import("./pages/ContentPage"));
 const Rewards = lazy(() => import("./pages/Rewards"));
@@ -93,6 +94,7 @@ const AnimatedRoutes = () => {
                   <Route path="/organizer/events/:id/edit" element={<EventForm />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
+                  <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/page/:slug" element={<ContentPage />} />
                   <Route path="/guida-difficolta-trekking" element={<ContentPage />} />
                   <Route path="/rewards" element={<Rewards />} />
