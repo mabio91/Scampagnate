@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { finalizeMembershipCheckoutSession } from "../_shared/stripe-payment-finalizer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,7 +68,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== "paid") {
-      return jsonResponse({ success: false, error: "Payment not completed" }, 400);
+      return jsonResponse({ success: false, error: "Pagamento non ancora confermato" }, 400);
     }
 
     const sessionUserId = session.metadata?.user_id;
@@ -87,20 +88,8 @@ serve(async (req) => {
       }
     }
 
-    // Activate membership using the existing RPC (uses service role to bypass RLS).
-    const { error: rpcError } = await supabaseAdmin.rpc("activate_membership", {
-      user_id_param: sessionUserId,
-    });
-
-    if (rpcError) {
-      console.error("Membership activation error:", rpcError);
-      return jsonResponse({ success: false, error: "Failed to activate membership" }, 500);
-    }
-
-    return jsonResponse({
-      success: true,
-      eventId: session.metadata?.event_id || null,
-    });
+    const result = await finalizeMembershipCheckoutSession({ session, supabaseAdmin });
+    return jsonResponse(result, result.success ? 200 : 400);
   } catch (error) {
     console.error("Verify membership error:", error);
     return jsonResponse(

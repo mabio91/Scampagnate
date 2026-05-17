@@ -148,7 +148,7 @@ serve(async (req) => {
     const successBase = typeof returnUrlBase === "string" && isAllowedReturnUrl(returnUrlBase, allowedHosts) ? returnUrlBase : `${origin}/membership-success`;
     const cancelBase = typeof cancelUrlBase === "string" && isAllowedReturnUrl(cancelUrlBase, allowedHosts) ? cancelUrlBase : eventId ? `${origin}/event/${eventId}` : `${origin}/`;
     const successParams = `session_id={CHECKOUT_SESSION_ID}&event_id=${encodeURIComponent(eventId || "")}`;
-    const cancelParams = `event_id=${encodeURIComponent(eventId || "")}`;
+    const cancelParams = `payment_cancelled=1&event_id=${encodeURIComponent(eventId || "")}`;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

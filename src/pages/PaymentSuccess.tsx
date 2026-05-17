@@ -139,7 +139,7 @@ const PaymentSuccess = () => {
         {status === "spot_taken" && (
           <>
             <AlertTriangle className="h-16 w-16 mx-auto text-warning" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Posto già assegnato</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">Posto non confermato</h1>
             <p className="text-sm font-body text-muted-foreground">{spotTakenMessage}</p>
             <p className="text-xs font-body text-muted-foreground">Resti in lista d'attesa e verrai notificato se si libera un altro posto.</p>
             <div className="space-y-3 pt-4">

@@ -50,7 +50,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
-import { getDepositPaymentLabel, getEventBalancePaymentMode, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
+import { getDepositPaymentLabel, getEventBalancePaymentMode, getRemainingBalanceAmount, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 import {
   canOptionJoinWaitlist,
   findPriceOptionById,
@@ -197,6 +197,27 @@ const EventDetail = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [id]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("payment_cancelled") !== "1") return;
+
+    toast({
+      title: "Pagamento annullato",
+      description: "Non è stato addebitato nulla. Puoi riprendere quando vuoi.",
+    });
+
+    params.delete("payment_cancelled");
+    params.delete("event_id");
+    params.delete("registration_id");
+    navigate(
+      {
+        pathname: location.pathname,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true }
+    );
+  }, [location.pathname, location.search, navigate, toast]);
+
   // Gallery carousel
   const [emblaRef, emblaApi] = useEmblaCarousel({ startIndex: galleryStartIndex });
 
@@ -312,7 +333,9 @@ const EventDetail = () => {
   const hasPendingPayment = hasCurrentRegistration && isPendingPaymentRegistration(myRegistration, event, registrationPriceOption);
   const balancePaymentMode = getEventBalancePaymentMode(event, registrationPriceOption);
   const isDepositPaid = hasCurrentRegistration && isDepositRegistration(myRegistration);
-  const hasOnlineBalanceDue = isDepositPaid && balancePaymentMode === "online";
+  const storedBalanceDue = Number((myRegistration as any)?.balance_due_amount ?? 0);
+  const configuredBalanceDue = getRemainingBalanceAmount(event, registrationPriceOption);
+  const hasOnlineBalanceDue = isDepositPaid && balancePaymentMode === "online" && Math.max(storedBalanceDue, configuredBalanceDue) > 0;
   const depositStatusMessage = hasCurrentRegistration ? getDepositPaymentLabel(myRegistration, event, registrationPriceOption) : null;
   const isRegistered = hasCurrentRegistration
     && myRegistration.status !== "pending_payment"
@@ -764,7 +787,7 @@ const getCTALabel = () => {
     // On waitlist with no spot → no action CTA, show informational
     if (isOnWaitlist) return "In lista d'attesa";
     if (isBlockedByAccessRules) return "Requisiti non soddisfatti";
-    if (needsPayment) return "Paga ora";
+    if (needsPayment) return "Completa il pagamento";
     if (isSoldOut) return waitlistAvailable ? "Entra in lista d'attesa" : "Sold out";
     return "Partecipa";
   };

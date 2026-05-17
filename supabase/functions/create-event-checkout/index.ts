@@ -373,9 +373,6 @@ serve(async (req) => {
 
     if (checkoutKind !== "balance") {
       Object.assign(registrationUpdate, {
-        amount_paid: bookingAmountCents / 100,
-        service_fee_amount: serviceFeeCents / 100,
-        refund_status: registration.payment_status === "paid" ? "completed" : "pending",
         balance_due_amount: paymentType === "deposit"
           ? (checkoutKind === "deposit" ? Math.max(0, totalPriceAmount - Number(finalPrice)) : 0)
           : null,
@@ -428,7 +425,7 @@ serve(async (req) => {
     const successBase = typeof returnUrlBase === "string" && isAllowedReturnUrl(returnUrlBase, allowedHosts) ? returnUrlBase : `${origin}/payment-success`;
     const cancelBase = typeof cancelUrlBase === "string" && isAllowedReturnUrl(cancelUrlBase, allowedHosts) ? cancelUrlBase : `${origin}/event/${eventId}`;
     const successParams = `session_id={CHECKOUT_SESSION_ID}&event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}`;
-    const cancelParams = `event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}`;
+    const cancelParams = `payment_cancelled=1&event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}`;
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 

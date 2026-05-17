@@ -26,7 +26,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
-import { getDepositPaymentLabel, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
+import { getDepositPaymentLabel, getEventBalancePaymentMode, getRemainingBalanceAmount, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 import {
   findPriceOptionById,
   getOptionPaymentSummary,
@@ -276,6 +276,20 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const hasSpotAvailable = resolvedStatus === "posto_disponibile";
   const meetingPoint = registration.meeting_point;
   const displayLocation = event.location_label || event.location;
+  const hasPendingPayment = isPendingPaymentRegistration(registration, event, selectedPriceOption);
+  const storedBalanceDue = Number(registration.balance_due_amount ?? 0);
+  const configuredBalanceDue = getRemainingBalanceAmount(event, selectedPriceOption);
+  const hasOnlineBalanceDue = isDepositRegistration(registration)
+    && getEventBalancePaymentMode(event, selectedPriceOption) === "online"
+    && Math.max(storedBalanceDue, configuredBalanceDue) > 0;
+  const canCompletePayment = Boolean(showActions)
+    && registration.status !== "cancelled"
+    && (hasSpotAvailable || hasPendingPayment || hasOnlineBalanceDue);
+  const paymentActionTitle = hasOnlineBalanceDue
+    ? "Completa il saldo"
+    : hasSpotAvailable
+      ? (needsOnlinePayment ? "Completa prenotazione" : "Conferma il posto")
+      : "Completa il pagamento";
 
   const hasPaidPayment = registration.payment_status === "paid" || isDepositRegistration(registration);
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
@@ -448,21 +462,21 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
               </button>
             )}
 
-            {hasSpotAvailable && (
+            {canCompletePayment && (
               <button
                 onClick={handleCompleteBooking}
                 disabled={paymentLoading}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-body font-semibold hover:bg-primary/90 active:scale-95 transition-all ml-auto"
               >
                 {paymentLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                {needsOnlinePayment ? "Completa prenotazione" : "Conferma il posto"}
+                {paymentActionTitle}
               </button>
             )}
 
             {canCancel && (
               <button
                 onClick={() => setShowCancelDialog(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-body font-medium hover:bg-destructive/20 active:scale-95 transition-all ml-auto"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-body font-medium hover:bg-destructive/20 active:scale-95 transition-all ${canCompletePayment ? "" : "ml-auto"}`}
               >
                 <X className="h-3.5 w-3.5" /> {t("cancel")}
               </button>
