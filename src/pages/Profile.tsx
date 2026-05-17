@@ -19,6 +19,15 @@ import { ActivityHistory } from "@/components/profile/ActivityHistory";
 import ProfileEditSheet from "@/components/profile/ProfileEditSheet";
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 
+const MEMBERSHIP_BENEFITS = [
+  "Copertura assicurativa durante le attività",
+  "Accesso alla community e agli eventi Scampagnate",
+  "Prezzi dedicati su trekking, weekend ed esperienze",
+  "Promo riservate ai soci durante l'anno",
+  "Convenzioni e vantaggi del circuito AiCS",
+  "Partecipazione alla vita dell'associazione",
+];
+
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
   
@@ -198,15 +207,11 @@ const Profile = () => {
                 <div className="mt-3 pt-3 border-t border-primary/10">
                   <p className="text-[10px] font-body text-muted-foreground uppercase font-bold mb-1.5">Benefici inclusi</p>
                   <ul className="space-y-1.5">
-                    <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Copertura assicurativa base durante le attività
-                    </li>
-                    <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Accesso a tutti gli eventi della community
-                    </li>
-                    <li className="text-xs font-body text-foreground flex items-center gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> Prezzi riservati ai soci
-                    </li>
+                    {MEMBERSHIP_BENEFITS.map((benefit) => (
+                      <li key={benefit} className="text-xs font-body text-foreground flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> {benefit}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </>
