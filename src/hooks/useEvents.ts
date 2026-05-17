@@ -485,6 +485,57 @@ export const useToggleSaveEvent = () => {
   });
 };
 
+export const useEventOpeningReminders = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["event-opening-reminders", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("event_opening_reminders")
+        .select("id, event_id, created_at, cancelled_at, notified_at")
+        .eq("user_id", user.id)
+        .is("cancelled_at", null)
+        .is("notified_at", null);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+};
+
+export const useToggleEventOpeningReminder = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ eventId, isReminderActive }: { eventId: string; isReminderActive: boolean }) => {
+      if (!user) throw new Error("Devi effettuare il login");
+
+      if (isReminderActive) {
+        const { error } = await supabase
+          .from("event_opening_reminders")
+          .update({ cancelled_at: new Date().toISOString() })
+          .eq("event_id", eventId)
+          .eq("user_id", user.id)
+          .is("cancelled_at", null)
+          .is("notified_at", null);
+        if (error) throw error;
+        return;
+      }
+
+      const { error } = await supabase
+        .from("event_opening_reminders")
+        .insert({ event_id: eventId, user_id: user.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-opening-reminders"] });
+    },
+  });
+};
+
 export const useCategories = () => {
   return useQuery({
     queryKey: ["categories"],

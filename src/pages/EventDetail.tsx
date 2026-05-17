@@ -7,13 +7,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, ChevronDown, X, ZoomIn
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, ChevronDown, X, ZoomIn, Bell, BellRing
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage, getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
 import { isEventPastByDate } from "@/lib/eventDates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent } from "@/hooks/useEvents";
+import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useEventOpeningReminders, useToggleEventOpeningReminder } from "@/hooks/useEvents";
 import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import { usePricingEligibility, getBestUserPrice, type PriceOption, type ResolvedPriceOption } from "@/hooks/usePricingEligibility";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
@@ -161,9 +161,11 @@ const EventDetail = () => {
   });
   const { data: myRegistration } = useMyRegistration(id!);
   const { data: savedEvents } = useSavedEvents();
+  const { data: eventOpeningReminders } = useEventOpeningReminders();
   const registerMutation = useRegisterForEvent();
   const cancelMutation = useCancelRegistration();
   const toggleSaveMutation = useToggleSaveEvent();
+  const toggleOpeningReminderMutation = useToggleEventOpeningReminder();
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [showFitScoreWarning, setShowFitScoreWarning] = useState(false);
@@ -355,6 +357,7 @@ const EventDetail = () => {
   const isEventPast = isEventPastByDate(event.date);
   const eventStatus = String(event.status || "");
   const eventComingSoon = ["draft", "unpublished", "upcoming"].includes(eventStatus);
+  const isOpeningReminderActive = eventOpeningReminders?.some((reminder) => reminder.event_id === event.id) || false;
   const eventRegistrationsClosed = isEventPast || ["closed", "rescheduled", "cancelled", "past", "completed"].includes(eventStatus) || eventComingSoon;
   const statusBadge = (() => {
     if (eventStatus === "full") return { label: "Sold Out", className: "bg-destructive/90 text-destructive-foreground" };
@@ -459,9 +462,24 @@ const EventDetail = () => {
       navigate("/auth");
       return;
     }
-    // "In arrivo" -> show informational toast, don't start booking
     if (eventComingSoon) {
-      toast({ title: "In arrivo", description: "Le prenotazioni apriranno a breve.\nTorna presto per assicurarti un posto." });
+      toggleOpeningReminderMutation.mutate(
+        { eventId: event.id, isReminderActive: isOpeningReminderActive },
+        {
+          onSuccess: () => {
+            toast({
+              title: isOpeningReminderActive ? "Avviso disattivato" : "Avviso attivo",
+              description: isOpeningReminderActive
+                ? "Non riceverai più la notifica quando apriranno le iscrizioni."
+                : "Ti avviseremo appena apriremo le iscrizioni.",
+            });
+          },
+          onError: (err) => {
+            const description = err instanceof Error ? err.message : "Non è stato possibile aggiornare l'avviso.";
+            toast({ title: "Errore", description, variant: "destructive" });
+          },
+        }
+      );
       return;
     }
     if (eventRegistrationsClosed) return;
@@ -756,11 +774,13 @@ const EventDetail = () => {
       ? isOptionBookable(registrationPriceOption, event)
       : remainingSpots > 0
   );
-  const availabilityText = remainingSpots <= 0
-    ? "Sold out"
-    : remainingSpots === 1
-      ? "1 posto disponibile"
-      : `${remainingSpots} posti disponibili`;
+  const availabilityText = eventComingSoon
+    ? (isOpeningReminderActive ? "Ti avviseremo all'apertura" : "Iscrizioni non ancora aperte")
+    : remainingSpots <= 0
+      ? "Sold out"
+      : remainingSpots === 1
+        ? "1 posto disponibile"
+        : `${remainingSpots} posti disponibili`;
   const showUrgencyBadge = event.spots_total > 0
     && (event.spots_taken / event.spots_total) > 0.7
     && remainingSpots > 0;
@@ -773,7 +793,7 @@ const EventDetail = () => {
     : null;
 
 const getCTALabel = () => {
-    if (eventComingSoon) return "In arrivo";
+    if (eventComingSoon) return isOpeningReminderActive ? "Avviso attivo" : "Avvisami";
     if (eventStatus === "closed") return "Iscrizioni chiuse";
     if (eventStatus === "rescheduled") return "Riprogrammato";
     if (isEventPast || eventStatus === "cancelled" || eventStatus === "past" || eventStatus === "completed") return "Chiuso";
@@ -793,6 +813,11 @@ const getCTALabel = () => {
   };
 
   const getCTAClass = () => {
+    if (eventComingSoon) {
+      return isOpeningReminderActive
+        ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20"
+        : "bg-primary text-primary-foreground hover:bg-primary/90";
+    }
     if (eventRegistrationsClosed) return "bg-muted text-muted-foreground cursor-not-allowed";
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (waitlistSpotAvailable) return "bg-primary text-primary-foreground hover:bg-primary/90";
@@ -1522,18 +1547,26 @@ const getCTALabel = () => {
             )}
           <Button
             onClick={handleCTA}
-            className={`px-6 py-2.5 rounded-xl font-body font-semibold text-sm shrink-0 ${getCTAClass()}`}
+            className={`px-6 py-2.5 rounded-xl font-body font-semibold text-sm shrink-0 gap-2 ${getCTAClass()}`}
             disabled={
               paymentLoading ||
-              eventRegistrationsClosed ||
-              (isSoldOut && !waitlistAvailable && !waitlistSpotAvailable) ||
-              (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
-              (!!user && isOnWaitlist && !waitlistSpotAvailable) ||
-              (isBlockedByAccessRules && !waitlistSpotAvailable)
+              toggleOpeningReminderMutation.isPending ||
+              (!eventComingSoon && (
+                eventRegistrationsClosed ||
+                (isSoldOut && !waitlistAvailable && !waitlistSpotAvailable) ||
+                (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
+                (!!user && isOnWaitlist && !waitlistSpotAvailable) ||
+                (isBlockedByAccessRules && !waitlistSpotAvailable)
+              ))
             }
           >
-            {paymentLoading ? (
+            {paymentLoading || toggleOpeningReminderMutation.isPending ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Attendere...</>
+            ) : eventComingSoon ? (
+              <>
+                {isOpeningReminderActive ? <BellRing className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+                {getCTALabel()}
+              </>
             ) : getCTALabel()}
           </Button>
           </div>

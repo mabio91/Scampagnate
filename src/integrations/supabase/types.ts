@@ -608,6 +608,41 @@ export type Database = {
           },
         ]
       }
+      event_opening_reminders: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          event_id: string
+          id: string
+          notified_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          notified_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          notified_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_opening_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_price_options: {
         Row: {
           balance_amount: number | null
