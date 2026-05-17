@@ -165,19 +165,19 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
   if (events.length === 0) return null;
 
   return (
-    <section className="mb-6">
-      <div className="mb-1 flex items-center gap-2 px-4">
+    <section className="mb-6 px-4">
+      <div className="mb-1 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary" />
         <h2 className="font-display text-lg font-bold text-foreground">
           {UI_LABELS.recommended}
         </h2>
       </div>
-      <p className="mb-3 px-4 pl-11 text-xs font-body text-muted-foreground">
+      <p className="mb-3 pl-7 text-xs font-body text-muted-foreground">
         {UI_LABELS.recommendedSubtitle}
       </p>
 
       <div className="overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory overscroll-x-contain">
-        <div className="flex gap-3 px-4">
+        <div className="flex gap-3">
           {events.slice(0, 6).map((item, i) => (
             <div
               key={item.event.id}
