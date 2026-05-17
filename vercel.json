@@ -2,6 +2,10 @@
     "cleanUrls": true,
     "rewrites": [
         {
+            "source": "/delete-account",
+            "destination": "/delete-account.html"
+        },
+        {
             "source": "/event/:id",
             "destination": "/api/og/:id"
         },
