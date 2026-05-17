@@ -4,8 +4,9 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle } from "lucide-react";
+import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronDown, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -38,6 +39,7 @@ const Profile = () => {
   const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
   const [showProposalForm, setShowProposalForm] = useState(false);
   const [showPointsInfo, setShowPointsInfo] = useState(false);
+  const [benefitsExpanded, setBenefitsExpanded] = useState(false);
   const profileMeta = profile as typeof profile & {
     created_at?: string;
     is_founding_member?: boolean;
@@ -204,16 +206,25 @@ const Profile = () => {
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-primary/10">
-                  <p className="text-[10px] font-body text-muted-foreground uppercase font-bold mb-1.5">Benefici inclusi</p>
-                  <ul className="space-y-1.5">
-                    {MEMBERSHIP_BENEFITS.map((benefit) => (
-                      <li key={benefit} className="text-xs font-body text-foreground flex items-center gap-2">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> {benefit}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <Collapsible
+                  open={benefitsExpanded}
+                  onOpenChange={setBenefitsExpanded}
+                  className="mt-3 pt-3 border-t border-primary/10"
+                >
+                  <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left group">
+                    <span className="text-[10px] font-body text-muted-foreground uppercase font-bold">Benefici inclusi</span>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${benefitsExpanded ? "rotate-180" : ""}`} />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <ul className="space-y-1.5">
+                      {MEMBERSHIP_BENEFITS.map((benefit) => (
+                        <li key={benefit} className="text-xs font-body text-foreground flex items-center gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" /> {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </CollapsibleContent>
+                </Collapsible>
               </>
             ) : isMembershipExpired(profile) ? (
               <div className="mt-3 space-y-3">
