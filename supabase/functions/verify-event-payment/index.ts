@@ -178,17 +178,22 @@ serve(async (req) => {
     const nextBalanceDueAmount = checkoutKind === "deposit"
       ? Math.max(0, Number(reg.total_price_amount || 0) - Number(reg.deposit_amount || 0))
       : 0;
+    const registrationUpdate: Record<string, unknown> = {
+      payment_status: nextStatus,
+      status: nextStatus,
+      stripe_payment_intent_id: stripePaymentIntentId,
+      refund_status: "not_requested",
+      balance_due_amount: nextBalanceDueAmount,
+    };
+
+    if (checkoutKind === "balance") {
+      registrationUpdate.amount_paid = Number(reg.amount_paid || 0) + bookingAmountCents / 100;
+    }
 
     // Spot is available — confirm registration
     const { error: updateError } = await supabaseAdmin
       .from("event_registrations")
-      .update({ 
-        payment_status: nextStatus,
-        status: nextStatus,
-        stripe_payment_intent_id: stripePaymentIntentId,
-        refund_status: "not_requested",
-        balance_due_amount: nextBalanceDueAmount,
-      })
+      .update(registrationUpdate)
       .eq("id", registrationId)
       .eq("user_id", userId);
 

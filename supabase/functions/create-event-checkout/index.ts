@@ -230,6 +230,8 @@ serve(async (req) => {
     const { paymentType, totalPrice, depositAmount, balancePaymentMode, priceOptionName } = paymentConfig;
     const isBalanceCheckout = registration.payment_status === "deposit_paid";
     const normalizedPaymentChoice = paymentChoice === "full" ? "full" : "deposit";
+    const storedBalanceDue = Number(registration.balance_due_amount ?? 0);
+    const configuredBalanceDue = Math.max(0, totalPrice - Number(registration.deposit_amount || depositAmount));
 
     // Determine base amount
     let description: string;
@@ -239,7 +241,7 @@ serve(async (req) => {
     const optionSuffix = priceOptionName ? ` — ${priceOptionName}` : "";
     if (paymentType === "deposit" && isBalanceCheckout) {
       checkoutKind = "balance";
-      originalPrice = Number(registration.balance_due_amount ?? Math.max(0, totalPrice - Number(registration.deposit_amount || depositAmount)));
+      originalPrice = storedBalanceDue > 0 ? storedBalanceDue : configuredBalanceDue;
       description = `Saldo per "${event.title}"${optionSuffix}`;
     } else if (paymentType === "deposit") {
       checkoutKind = normalizedPaymentChoice === "full" ? "full" : "deposit";
@@ -360,25 +362,29 @@ serve(async (req) => {
     const depositAmountValue = paymentType === "deposit"
       ? Number(registration.deposit_amount || depositAmount)
       : null;
+    const registrationUpdate: Record<string, unknown> = {
+      cancellation_policy: event.cancellation_policy || null,
+      refund_percentage: 0,
+      refund_amount: 0,
+      total_price_amount: paymentType === "deposit" ? totalPriceAmount : null,
+      deposit_amount: depositAmountValue,
+      balance_payment_mode: paymentType === "deposit" ? balancePaymentMode : null,
+    };
 
-    await supabaseAdmin
-      .from("event_registrations")
-      .update({
-        amount_paid: checkoutKind === "balance"
-          ? Number(registration.amount_paid || 0) + bookingAmountCents / 100
-          : bookingAmountCents / 100,
-        cancellation_policy: event.cancellation_policy || null,
+    if (checkoutKind !== "balance") {
+      Object.assign(registrationUpdate, {
+        amount_paid: bookingAmountCents / 100,
         service_fee_amount: serviceFeeCents / 100,
-        refund_percentage: 0,
-        refund_amount: 0,
         refund_status: registration.payment_status === "paid" ? "completed" : "pending",
-        total_price_amount: paymentType === "deposit" ? totalPriceAmount : null,
-        deposit_amount: depositAmountValue,
         balance_due_amount: paymentType === "deposit"
           ? (checkoutKind === "deposit" ? Math.max(0, totalPriceAmount - Number(finalPrice)) : 0)
           : null,
-        balance_payment_mode: paymentType === "deposit" ? balancePaymentMode : null,
-      })
+      });
+    }
+
+    await supabaseAdmin
+      .from("event_registrations")
+      .update(registrationUpdate)
       .eq("id", registrationId);
 
     if (totalAmountCents <= 0) {
