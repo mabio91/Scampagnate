@@ -311,6 +311,10 @@ const translations = {
     pleaseFillFields: "Per favore compila tutti i campi",
     inputTooLong: "Testo troppo lungo",
     titleMax200: "Titolo max 200 caratteri, descrizione max 2000 caratteri.",
+    attachments: "Allegati",
+    addPhotosVideos: "Aggiungi foto o video",
+    photosVideosHint: "Fino a 4 file, immagini o video, max 50 MB ciascuno.",
+    uploadingAttachments: "Caricamento allegati...",
 
     // Toasts & messages
     error: "Errore",

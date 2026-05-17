@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -7,9 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, Clock, AlertTriangle, MessageSquare } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, ExternalLink, ImageIcon, Video } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { formatIssueMediaSize, getIssueMediaAttachments, signIssueMediaAttachments, type IssueMediaAttachment } from "@/lib/issueMedia";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Issue = Tables<"issues">;
 
 const priorityConfig: Record<string, { color: string; label: string }> = {
   low: { color: "bg-muted text-muted-foreground", label: "Low" },
@@ -26,7 +30,7 @@ const statusConfig: Record<string, { icon: typeof Clock; color: string }> = {
 const IssuesPanel = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState("");
 
   const { data: issues, isLoading } = useQuery({
@@ -39,6 +43,19 @@ const IssuesPanel = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  const allAttachments = useMemo(
+    () => (issues || []).flatMap((issue) => getIssueMediaAttachments(issue.media_attachments)),
+    [issues],
+  );
+  const mediaPaths = useMemo(() => allAttachments.map((attachment) => attachment.path), [allAttachments]);
+
+  const { data: signedMediaUrls = {} } = useQuery({
+    queryKey: ["admin-issue-media", mediaPaths],
+    enabled: mediaPaths.length > 0,
+    queryFn: () => signIssueMediaAttachments(supabase, allAttachments),
+    staleTime: 45 * 60 * 1000,
   });
 
   const resolveMutation = useMutation({
@@ -60,8 +77,8 @@ const IssuesPanel = () => {
       setSelectedIssue(null);
       setResolutionNotes("");
     },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    onError: (err: unknown) => {
+      toast({ title: "Error", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     },
   });
 
@@ -106,6 +123,11 @@ const IssuesPanel = () => {
                       <p className="font-body font-semibold text-sm text-foreground truncate">{issue.title}</p>
                     </div>
                     <p className="text-xs text-muted-foreground font-body mt-1 line-clamp-2">{issue.description}</p>
+                    <IssueMediaList
+                      attachments={getIssueMediaAttachments(issue.media_attachments)}
+                      signedUrls={signedMediaUrls}
+                      compact
+                    />
                   </div>
                   <Badge className={`text-[10px] shrink-0 ${pConfig.color}`}>{pConfig.label}</Badge>
                 </div>
@@ -150,6 +172,10 @@ const IssuesPanel = () => {
                 <p className="font-body font-semibold text-foreground">{selectedIssue.title}</p>
                 <p className="text-sm text-muted-foreground font-body mt-1">{selectedIssue.description}</p>
               </div>
+              <IssueMediaList
+                attachments={getIssueMediaAttachments(selectedIssue.media_attachments)}
+                signedUrls={signedMediaUrls}
+              />
               <div className="flex gap-3 text-xs text-muted-foreground font-body">
                 <span>Priority: <strong className="text-foreground">{selectedIssue.priority}</strong></span>
                 <span>By: <strong className="text-foreground">{selectedIssue.reporter_name}</strong></span>
@@ -176,6 +202,54 @@ const IssuesPanel = () => {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+const IssueMediaList = ({
+  attachments,
+  signedUrls,
+  compact = false,
+}: {
+  attachments: IssueMediaAttachment[];
+  signedUrls: Record<string, string>;
+  compact?: boolean;
+}) => {
+  if (attachments.length === 0) return null;
+
+  return (
+    <div className={`grid gap-2 ${compact ? "grid-cols-2 mt-2 max-w-sm" : "grid-cols-1 sm:grid-cols-2"}`}>
+      {attachments.map((attachment) => {
+        const signedUrl = signedUrls[attachment.path];
+        const isVideo = attachment.type === "video";
+        const MediaIcon = isVideo ? Video : ImageIcon;
+
+        return (
+          <div key={attachment.path} className="overflow-hidden rounded-lg border border-border bg-muted/30">
+            {signedUrl && !isVideo ? (
+              <a href={signedUrl} target="_blank" rel="noreferrer" className="block">
+                <img src={signedUrl} alt={attachment.name} className={`${compact ? "h-20" : "h-32"} w-full object-cover`} />
+              </a>
+            ) : signedUrl && isVideo ? (
+              <video src={signedUrl} controls className={`${compact ? "h-20" : "h-32"} w-full bg-black object-cover`} />
+            ) : (
+              <div className={`${compact ? "h-20" : "h-32"} flex items-center justify-center bg-muted`}>
+                <MediaIcon className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex items-center gap-2 px-2 py-1.5 text-[11px] text-muted-foreground">
+              <MediaIcon className="h-3.5 w-3.5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate">{attachment.name}</span>
+              <span className="shrink-0">{formatIssueMediaSize(attachment.size)}</span>
+              {signedUrl && (
+                <a href={signedUrl} target="_blank" rel="noreferrer" className="shrink-0 text-primary">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

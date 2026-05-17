@@ -1086,6 +1086,7 @@ export type Database = {
           description: string
           event_id: string | null
           id: string
+          media_attachments: Json
           priority: string
           reporter_id: string | null
           reporter_name: string
@@ -1101,6 +1102,7 @@ export type Database = {
           description?: string
           event_id?: string | null
           id?: string
+          media_attachments?: Json
           priority?: string
           reporter_id?: string | null
           reporter_name?: string
@@ -1116,6 +1118,7 @@ export type Database = {
           description?: string
           event_id?: string | null
           id?: string
+          media_attachments?: Json
           priority?: string
           reporter_id?: string | null
           reporter_name?: string
