@@ -16,6 +16,7 @@ import {
   FIT_SCORE_INTEREST_MAX,
   FIT_SCORE_INTEREST_VALIDATION_MESSAGE,
 } from "@/lib/fitScoreAffinityTables";
+import { isValidInstagramHandle, normalizeInstagramHandle } from "@/lib/instagram";
 
 const calculateExperienceGrade = (trekking: string, activity: string) => {
   const map: Record<string, Record<string, number>> = {
@@ -189,6 +190,7 @@ const ProfileSetup = () => {
   // Step 1 (only in first-time mode)
   const [phone, setPhone] = useState(profile?.phone || "");
   const [dateOfBirth, setDateOfBirth] = useState(profile?.birth_date || "");
+  const [instagramHandle, setInstagramHandle] = useState(profile?.instagram_handle || "");
 
   // Step 2 - prefill from profile in edit mode
   const [trekkingExp, setTrekkingExp] = useState(isEditMode ? (profile?.trekking_experience || "") : "");
@@ -209,6 +211,7 @@ const ProfileSetup = () => {
     if (isEditMode && profile) {
       setPhone(profile.phone || "");
       setDateOfBirth(profile.birth_date || "");
+      setInstagramHandle(profile.instagram_handle || "");
       setTrekkingExp(profile.trekking_experience || "");
       setSelfLevel(profile.self_level || "");
       setActivityFreq(profile.activity_frequency || "");
@@ -339,8 +342,18 @@ const ProfileSetup = () => {
 
       // Only update phone and birth_date in first-time mode
       if (!isEditMode) {
+        const normalizedInstagramHandle = normalizeInstagramHandle(instagramHandle);
+        if (!isValidInstagramHandle(normalizedInstagramHandle)) {
+          toast({
+            title: "Instagram non valido",
+            description: "Inserisci solo username, @username o link instagram.com/username.",
+            variant: "destructive",
+          });
+          return;
+        }
         updateData.phone = phone.trim();
         updateData.birth_date = dateOfBirth || null;
+        updateData.instagram_handle = normalizedInstagramHandle;
       }
 
       const { error } = await supabase
@@ -369,7 +382,7 @@ const ProfileSetup = () => {
     if (/[a-zA-Z]/.test(cleaned)) return false;
     return /^\+?[\d\s\-().]{5,20}$/.test(cleaned);
   };
-  const step1Valid = isValidPhone(phone) && !!dateOfBirth;
+  const step1Valid = isValidPhone(phone) && !!dateOfBirth && isValidInstagramHandle(normalizeInstagramHandle(instagramHandle));
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
   const step3Valid =
     !!hasCar &&
@@ -604,6 +617,25 @@ const ProfileSetup = () => {
                     }}
                     placeholder="+39 333 1234567"
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="instagram_handle" className="font-body text-sm font-semibold">
+                    Profilo Instagram <span className="text-muted-foreground font-normal">(opzionale)</span>
+                  </Label>
+                  <Input
+                    id="instagram_handle"
+                    type="text"
+                    value={instagramHandle}
+                    onChange={(e) => setInstagramHandle(e.target.value)}
+                    placeholder="@nomeutente"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    inputMode="text"
+                  />
+                  <p className="text-xs text-muted-foreground font-body">
+                    Visibile solo allo staff e all'organizzatore degli eventi a cui partecipi.
+                  </p>
                 </div>
 
                 {/* Date of Birth */}

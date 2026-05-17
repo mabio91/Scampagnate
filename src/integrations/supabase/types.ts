@@ -1814,6 +1814,7 @@ export type Database = {
           first_name: string
           has_car: string | null
           id: string
+          instagram_handle: string | null
           interests: string[] | null
           is_founding_member: boolean
           last_name: string
@@ -1851,6 +1852,7 @@ export type Database = {
           first_name?: string
           has_car?: string | null
           id: string
+          instagram_handle?: string | null
           interests?: string[] | null
           is_founding_member?: boolean
           last_name?: string
@@ -1888,6 +1890,7 @@ export type Database = {
           first_name?: string
           has_car?: string | null
           id?: string
+          instagram_handle?: string | null
           interests?: string[] | null
           is_founding_member?: boolean
           last_name?: string

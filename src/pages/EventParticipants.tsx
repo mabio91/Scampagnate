@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, User as UserIcon, LogIn, Check, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Instagram, User as UserIcon, LogIn, Check, AlertTriangle } from "lucide-react";
 import { useEvent, useEventParticipants } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import type { FitScoreResult } from "@/hooks/useEventFitScore";
 import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
 import { useMemo } from "react";
 import { countUniqueAttendedEvents, dedupeRegistrationsByEvent } from "@/lib/eventRegistrations";
+import { instagramProfileUrl } from "@/lib/instagram";
 
 // --- Fit score calc (organizer/admin only) ---
 const LEVEL_MAP: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
@@ -199,6 +200,7 @@ const AdminParticipantRow = ({
   reliabilityLabel,
   completedEvents,
   age,
+  instagramHandle,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -208,6 +210,7 @@ const AdminParticipantRow = ({
   reliabilityLabel: string;
   completedEvents: number;
   age: number | null;
+  instagramHandle?: string | null;
 }) => {
   return (
     <div className="flex items-center gap-3 py-3">
@@ -248,6 +251,18 @@ const AdminParticipantRow = ({
             <span className="text-[11px] font-body text-muted-foreground">
               🎂 {age} anni
             </span>
+          )}
+          {instagramHandle && (
+            <a
+              href={instagramProfileUrl(instagramHandle)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-body text-primary hover:underline"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <Instagram className="h-3 w-3" />
+              @{instagramHandle}
+            </a>
           )}
         </div>
       </div>
@@ -292,7 +307,7 @@ const EventParticipants = () => {
       if (participantIds.length === 0) return {};
       const { data } = await supabase
         .from("profiles")
-        .select("id, self_level, trekking_experience, activity_frequency, interests, total_points, birth_date")
+        .select("id, self_level, trekking_experience, activity_frequency, interests, total_points, birth_date, instagram_handle")
         .in("id", participantIds);
       const map: Record<string, any> = {};
       (data || []).forEach((p: any) => { map[p.id] = p; });
@@ -569,6 +584,7 @@ const EventParticipants = () => {
                       isManual={p.is_manual}
                       manualLevel={p.manual_level}
                       birthDate={pProfile?.birth_date}
+                      instagramHandle={pProfile?.instagram_handle}
                     />
                   );
                 }
@@ -650,6 +666,7 @@ const AdminParticipantRowWithLevel = ({
   isManual,
   manualLevel,
   birthDate,
+  instagramHandle,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -660,6 +677,7 @@ const AdminParticipantRowWithLevel = ({
   isManual?: boolean;
   manualLevel?: string | null;
   birthDate?: string | null;
+  instagramHandle?: string | null;
 }) => {
   const { data: levelData } = useCommunityLevel(points);
 
@@ -685,6 +703,7 @@ const AdminParticipantRowWithLevel = ({
       reliabilityLabel={reliabilityLabel}
       completedEvents={completedEvents}
       age={calculateAge(birthDate)}
+      instagramHandle={isManual ? null : instagramHandle}
     />
   );
 };

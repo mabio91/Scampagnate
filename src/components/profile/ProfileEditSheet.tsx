@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import LevelAvatar from "@/components/LevelAvatar";
 import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
 import ImageCropDialog from "@/components/ImageCropDialog";
+import { isValidInstagramHandle, normalizeInstagramHandle } from "@/lib/instagram";
 
 const HIDE_SOCIAL_AUTH = true;
 const DELETE_CONFIRMATION_PHRASE = "CANCELLA IL MIO ACCOUNT";
@@ -49,6 +50,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [instagramHandle, setInstagramHandle] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [birthPlace, setBirthPlace] = useState("");
   const [provinceOfBirth, setProvinceOfBirth] = useState("");
@@ -93,6 +95,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     setFirstName(profile?.first_name || "");
     setLastName(profile?.last_name || "");
     setPhone(profile?.phone || "");
+    setInstagramHandle(profile?.instagram_handle || "");
     setDateOfBirth(profile?.birth_date || "");
     setBirthPlace(profile?.birth_place || "");
     setProvinceOfBirth(profile?.province_of_birth || "");
@@ -117,6 +120,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     profile?.first_name,
     profile?.last_name,
     profile?.phone,
+    profile?.instagram_handle,
     profile?.birth_date,
     profile?.birth_place,
     profile?.province_of_birth,
@@ -160,10 +164,21 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 
   const saveProfile = async () => {
     setSaving(true);
+    const normalizedInstagramHandle = normalizeInstagramHandle(instagramHandle);
+    if (!isValidInstagramHandle(normalizedInstagramHandle)) {
+      toast({
+        title: "Instagram non valido",
+        description: "Inserisci solo username, @username o link instagram.com/username.",
+        variant: "destructive",
+      });
+      setSaving(false);
+      return;
+    }
     const { error } = await supabase.from("profiles").update({
       first_name: firstName,
       last_name: lastName,
       phone,
+      instagram_handle: normalizedInstagramHandle,
       birth_date: dateOfBirth || null,
       birth_place: birthPlace.trim() || null,
       province_of_birth: provinceOfBirth.trim().toUpperCase() || null,
@@ -397,6 +412,20 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 <div>
                   <Label className="font-body text-xs">Telefono</Label>
                   <Input value={phone} onChange={(e) => { setPhone(e.target.value); markChanged(); }} className="mt-1" />
+                </div>
+                <div>
+                  <Label className="font-body text-xs">Instagram</Label>
+                  <Input
+                    value={instagramHandle}
+                    onChange={(e) => { setInstagramHandle(e.target.value); markChanged(); }}
+                    className="mt-1"
+                    placeholder="@nomeutente"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                  />
+                  <p className="mt-1 text-[11px] font-body text-muted-foreground">
+                    Visibile solo allo staff e all'organizzatore degli eventi a cui partecipi.
+                  </p>
                 </div>
                 <div>
                   <Label className="font-body text-xs">Bio</Label>
