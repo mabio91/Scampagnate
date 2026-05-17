@@ -29,11 +29,12 @@ import {
   ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus,
   Loader2, Zap, BarChart3, Trash2, Send, Search, Copy,
   MessageCircle, Bell, AlertTriangle, History,
-  FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog
+  FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog, Instagram
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import EventAnalytics from "@/components/events/EventAnalytics";
+import { instagramProfileUrl } from "@/lib/instagram";
 
 const NO_PRICE_OPTION = "__none__";
 const NO_MEETING_POINT = "__no_meeting_point__";
@@ -69,6 +70,15 @@ const EVENT_STATUS_OPTIONS = [
   { value: "rescheduled", label: "Riprogrammato", icon: Archive, iconClassName: "text-warning" },
   { value: "cancelled", label: "Annullato", icon: XCircle, iconClassName: "text-destructive" },
 ];
+
+const CONFIRMED_PARTICIPANT_STATUSES = ["registered", "deposit_paid", "paid", "attended", "no_show"];
+
+const isConfirmedEffectiveRegistration = (registration: {
+  status?: string | null;
+  payment_status?: string | null;
+}) =>
+  CONFIRMED_PARTICIPANT_STATUSES.includes(registration.status || "") &&
+  registration.payment_status !== "pending";
 
 const normalizeEditableEventStatus = (status?: string | null) => {
   if (status === "available" || status === "published") return "open";
@@ -585,7 +595,7 @@ const EventManage = () => {
   };
 
   const exportCSV = () => {
-    const exportRows = registrations || [];
+    const exportRows = filteredRegistered.filter(isConfirmedEffectiveRegistration);
     if (!exportRows.length) return;
     const escapeCsv = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const formatDate = (value: unknown) => {
@@ -605,6 +615,7 @@ const EventManage = () => {
       "Nome",
       "Cognome",
       "Telefono",
+      "Instagram",
       "Tipo",
       "Livello",
       "Formula",
@@ -624,6 +635,7 @@ const EventManage = () => {
         manual ? manual.name : ((r.profiles as any)?.first_name || ""),
         manual ? "(manuale)" : ((r.profiles as any)?.last_name || ""),
         manual ? manual.phone : ((r.profiles as any)?.phone || ""),
+        manual ? "" : ((r.profiles as any)?.instagram_handle ? `@${(r.profiles as any).instagram_handle}` : ""),
         manual ? "manuale" : "utente",
         manual ? "-" : (r.sport_level || "-"),
         po?.name || "-",
@@ -979,6 +991,9 @@ const EventManage = () => {
                   const { firstName, lastName, isManual } = getParticipantName(reg);
                   const regPriceOption = getPriceOptionForRegistration(reg);
                   const depositLabel = getDepositPaymentLabel(reg, event, regPriceOption);
+                  const instagramHandle = !isManual && isConfirmedEffectiveRegistration(reg)
+                    ? (reg.profiles as any)?.instagram_handle
+                    : null;
                   return (
                     <Card key={reg.id} className="p-3 space-y-2">
                       <div className="flex items-center gap-3">
@@ -1006,6 +1021,17 @@ const EventManage = () => {
                               </span>
                             )}
                           </p>
+                          {instagramHandle && (
+                            <a
+                              href={instagramProfileUrl(instagramHandle)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-1 inline-flex items-center gap-1 text-[11px] font-body font-semibold text-primary hover:underline"
+                            >
+                              <Instagram className="h-3 w-3" />
+                              @{instagramHandle}
+                            </a>
+                          )}
                           {/* Suitability indicators for organizers */}
                           {!isManual && (reg.profiles as any)?.self_level && (
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
