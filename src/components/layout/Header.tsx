@@ -47,6 +47,7 @@ const Header = () => {
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {mounted && (
             <button
+              type="button"
               className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
               onClick={toggleTheme}
               aria-label={t("toggleTheme")}
@@ -59,6 +60,7 @@ const Header = () => {
             </button>
           )}
           <button
+            type="button"
             className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
             onClick={() => {
               if (location.pathname === "/") {
@@ -77,6 +79,7 @@ const Header = () => {
             <>
               <div className="relative" ref={notifRef}>
                 <button
+                  type="button"
                   className="p-2 rounded-xl hover:bg-muted transition-colors relative flex items-center justify-center"
                   aria-label={t("notifications")}
                   onClick={() => setShowNotifications((v) => !v)}

@@ -24,9 +24,8 @@ const typeIcons: Record<string, React.ReactNode> = {
   info: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 
-const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notification; onRead: () => void; onSelect: (n: Notification) => void }>(
-  ({ notification, onRead, onSelect }, ref) => {
-    const navigate = useNavigate();
+const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notification; onSelect: (n: Notification) => void }>(
+  ({ notification, onSelect }, ref) => {
     const markAsRead = useMarkAsRead();
     const { language } = useLanguage();
     const locale = language === "it" ? it : enUS;
@@ -37,12 +36,11 @@ const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notificat
         markAsRead.mutate(notification.id);
       }
       onSelect(notification);
-      onRead();
-      navigate("/notifications");
     };
 
     return (
       <button
+        type="button"
         ref={ref}
         onClick={handleClick}
         className={`w-full text-left p-3 flex gap-3 items-start transition-colors hover:bg-muted/50 ${
@@ -82,6 +80,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
   const { toast } = useToast();
   const { language, t } = useLanguage();
   const locale = language === "it" ? it : enUS;
+  const navigate = useNavigate();
 
   const handlePushToggle = async () => {
     if (!canManagePush && pushError) {
@@ -107,11 +106,16 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
 
   if (selectedNotification) {
     const localized = localizeNotification(selectedNotification, language as "it" | "en");
+    const handleOpenEvent = () => {
+      if (!selectedNotification.event_id) return;
+      onClose();
+      navigate(`/event/${selectedNotification.event_id}`);
+    };
 
     return (
       <div ref={ref} className="w-[calc(100vw-2rem)] max-w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSelectedNotification(null)}>
+          <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSelectedNotification(null)}>
             {"<-"}
           </Button>
           <h3 className="font-display font-semibold text-sm truncate">{localized.title}</h3>
@@ -125,6 +129,11 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
           <p className="text-[10px] text-muted-foreground/60">
             {formatDistanceToNow(new Date(selectedNotification.created_at), { addSuffix: true, locale })}
           </p>
+          {selectedNotification.event_id && (
+            <Button type="button" size="sm" className="w-full" onClick={handleOpenEvent}>
+              {language === "it" ? "Apri evento" : "Open event"}
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -140,6 +149,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
               variant="ghost"
               size="sm"
               className={`text-xs h-7 gap-1 ${isSubscribed ? "text-primary" : "text-muted-foreground"}`}
+              type="button"
               onClick={handlePushToggle}
               disabled={pushLoading}
             >
@@ -152,6 +162,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
               variant="ghost"
               size="sm"
               className="text-xs h-7 gap-1 text-muted-foreground"
+              type="button"
               onClick={() => markAllAsRead.mutate()}
             >
               <CheckCheck className="h-3.5 w-3.5" />
@@ -171,7 +182,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
         ) : (
           <div className="divide-y divide-border">
             {notifications.map((n) => (
-              <NotificationItem key={n.id} notification={n} onRead={onClose} onSelect={setSelectedNotification} />
+              <NotificationItem key={n.id} notification={n} onSelect={setSelectedNotification} />
             ))}
           </div>
         )}
