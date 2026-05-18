@@ -411,7 +411,6 @@ const EventForm = () => {
     const depositAmount = paymentType === "deposit" ? Number(event.deposit || 0) : null;
 
     return createBlankPriceOption({
-      name: "Formula 1",
       price,
       payment_type: paymentType,
       deposit_amount: depositAmount,
@@ -421,8 +420,14 @@ const EventForm = () => {
   };
 
   const [priceOptions, setPriceOptions] = useState<PriceOptionInput[]>(() => [
-    createBlankPriceOption({ name: "Formula 1" }),
+    createBlankPriceOption(),
   ]);
+
+  const fallbackFormulaName = (index: number) => `Formula ${index + 1}`;
+  const normalizeFormulaInputName = (name: string | null | undefined, index: number) => {
+    const trimmedName = (name || "").trim();
+    return trimmedName === fallbackFormulaName(index) ? "" : trimmedName;
+  };
 
   useEffect(() => {
     if (isEditing) {
@@ -652,7 +657,7 @@ const EventForm = () => {
             : null;
           return {
             id: isDuplicating ? undefined : o.id,
-            name: o.name || `Formula ${index + 1}`,
+            name: normalizeFormulaInputName(o.name, index),
             price: paymentType === "free" ? 0 : Number(o.price),
             eligible_group: group,
             badge_ids: badgeIds,
@@ -861,7 +866,6 @@ const EventForm = () => {
       return [
         ...prev,
         createBlankPriceOption({
-          name: `Formula ${prev.length + 1}`,
           price,
           payment_type: paymentType,
           deposit_amount: depositAmount,
@@ -932,7 +936,7 @@ const EventForm = () => {
       let distanceFormatted = form.distance ? `${form.distance} km` : null;
       // Format elevation with m
       let elevationFormatted = form.elevation ? `${form.elevation} m` : null;
-      const validPriceOptions = priceOptions.filter(o => o.name.trim());
+      const validPriceOptions = priceOptions;
       const primaryPriceOption = validPriceOptions[0] || null;
       const primaryPaymentType = (primaryPriceOption?.payment_type || form.payment_type) as PaymentType;
       const primaryPrice = primaryPaymentType === "free"
@@ -1112,7 +1116,7 @@ const EventForm = () => {
           : null;
         const optionPayload = {
           event_id: eventId!,
-          name: option.name.trim(),
+          name: option.name.trim() || fallbackFormulaName(index),
           price: optionPaymentType === "free" ? 0 : Number(option.price || 0),
           sort_order: index,
           eligible_group: option.eligible_group || "all",
