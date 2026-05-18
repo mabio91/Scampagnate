@@ -12,6 +12,9 @@ const fallbackMap: Record<string, string> = {
 };
 
 const defaultFallback = heroTrekking;
+const supabaseObjectPublicPath = "/storage/v1/object/public/";
+const supabaseRenderPublicPath = "/storage/v1/render/image/public/";
+const transformQueryNames = new Set(["width", "height", "resize", "quality", "format"]);
 
 /**
  * Resolves an event image_url to a displayable src.
@@ -23,6 +26,35 @@ export const resolveEventImageSrc = (imageUrl: string | null | undefined): strin
   if (!imageUrl) return defaultFallback;
   if (imageUrl.startsWith("http")) return imageUrl;
   return fallbackMap[imageUrl] || defaultFallback;
+};
+
+export const resolveSupabaseImageTransformSrc = (
+  imageUrl: string,
+  width?: number,
+  height?: number,
+  quality = 75,
+): string => {
+  if (!width || !imageUrl.includes("supabase.co/storage/v1/")) return imageUrl;
+
+  try {
+    const url = new URL(imageUrl);
+    if (!url.hostname.includes("supabase.co")) return imageUrl;
+
+    if (url.pathname.includes(supabaseObjectPublicPath)) {
+      url.pathname = url.pathname.replace(supabaseObjectPublicPath, supabaseRenderPublicPath);
+    } else if (!url.pathname.includes(supabaseRenderPublicPath)) {
+      return imageUrl;
+    }
+
+    transformQueryNames.forEach((name) => url.searchParams.delete(name));
+    url.searchParams.set("width", String(width));
+    url.searchParams.set("height", String(height || width));
+    url.searchParams.set("resize", "cover");
+    url.searchParams.set("quality", String(quality));
+    return url.toString();
+  } catch {
+    return imageUrl;
+  }
 };
 
 interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> {
@@ -46,12 +78,7 @@ const OptimizedImage = memo(({ src, fallbackKey, className = "", alt = "", width
 
   const resolvedSrc = error ? defaultFallback : resolveEventImageSrc(src);
 
-  // For Supabase storage URLs, append transform params for thumbnails
-  const optimizedSrc = (() => {
-    if (!resolvedSrc.includes("supabase.co/storage") || !width) return resolvedSrc;
-    const separator = resolvedSrc.includes("?") ? "&" : "?";
-    return `${resolvedSrc}${separator}width=${width}&height=${height || width}&resize=cover&quality=75`;
-  })();
+  const optimizedSrc = resolveSupabaseImageTransformSrc(resolvedSrc, width, height);
 
   const handleError = useCallback(() => {
     if (!error) setError(true);

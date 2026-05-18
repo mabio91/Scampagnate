@@ -280,7 +280,9 @@ const ProfileSetup = () => {
       if (!file || !user) return;
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}-${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
+        cacheControl: "31536000",
+      });
       if (uploadError) throw uploadError;
       const {
         data: { publicUrl },

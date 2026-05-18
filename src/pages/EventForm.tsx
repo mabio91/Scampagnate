@@ -712,7 +712,9 @@ const EventForm = () => {
     setUploadingImage(true);
     const ext = imageFile.name.split(".").pop();
     const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("event-images").upload(path, imageFile);
+    const { error } = await supabase.storage.from("event-images").upload(path, imageFile, {
+      cacheControl: "31536000",
+    });
     setUploadingImage(false);
     if (error) throw error;
     const { data: urlData } = supabase.storage.from("event-images").getPublicUrl(path);
@@ -773,7 +775,9 @@ const EventForm = () => {
     const uploadPromises = filesToUpload.map(async (file) => {
       const fileExt = file.name.split(".").pop() || "jpg";
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const { error } = await supabase.storage.from("event-images").upload(fileName, file);
+      const { error } = await supabase.storage.from("event-images").upload(fileName, file, {
+        cacheControl: "31536000",
+      });
 
       completed += 1;
       setGalleryUploadProgress(completed);

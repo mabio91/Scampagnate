@@ -3,7 +3,7 @@ importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
@@ -50,13 +50,13 @@ registerRoute(
   })
 );
 
-// Cache Supabase Storage images (event images, avatars)
+// Cache immutable/versioned Supabase Storage images in the browser cache first.
 registerRoute(
-  /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/public\/.*/i,
-  new StaleWhileRevalidate({
+  /^https:\/\/.*\.supabase\.co\/storage\/v1\/(object|render\/image)\/public\/.*/i,
+  new CacheFirst({
     cacheName: 'supabase-images-cache',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 7 * 24 * 60 * 60 }),
+      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })

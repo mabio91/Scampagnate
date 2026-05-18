@@ -190,7 +190,10 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     try {
       const ext = file.name.split(".").pop();
       const filePath = `${user.id}/avatar.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
+        cacheControl: "31536000",
+        upsert: true,
+      });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
       const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
