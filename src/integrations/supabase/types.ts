@@ -2711,6 +2711,14 @@ export type Database = {
         Args: { p_prepaid_id: string; p_user_id: string }
         Returns: Json
       }
+      admin_apply_prepaid_membership_to_user: {
+        Args: {
+          p_manually_assigned_by?: string | null
+          p_prepaid_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       admin_import_prepaid_memberships: {
         Args: { p_batch_label?: string | null; p_rows: Json }
         Returns: Json
