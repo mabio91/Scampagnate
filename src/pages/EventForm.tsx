@@ -692,8 +692,8 @@ const EventForm = () => {
       toast({ title: "Seleziona un file immagine", variant: "destructive" });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "L'immagine deve essere inferiore a 5MB", variant: "destructive" });
+    if (file.size > 25 * 1024 * 1024) {
+      toast({ title: "L'immagine originale deve essere inferiore a 25MB", variant: "destructive" });
       return;
     }
     setCoverCropFile(file);
@@ -714,6 +714,7 @@ const EventForm = () => {
     const path = `${user.id}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("event-images").upload(path, imageFile, {
       cacheControl: "31536000",
+      contentType: imageFile.type,
     });
     setUploadingImage(false);
     if (error) throw error;
@@ -733,11 +734,11 @@ const EventForm = () => {
     }
 
     const validFiles = imageFiles.filter((file) => {
-      if (file.size <= 5 * 1024 * 1024) return true;
+      if (file.size <= 25 * 1024 * 1024) return true;
 
       toast({
         title: "Immagine troppo grande",
-        description: `${file.name} supera il limite di 5MB.`,
+        description: `${file.name} supera il limite di 25MB.`,
         variant: "destructive",
       });
       return false;
@@ -777,6 +778,7 @@ const EventForm = () => {
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       const { error } = await supabase.storage.from("event-images").upload(fileName, file, {
         cacheControl: "31536000",
+        contentType: file.type,
       });
 
       completed += 1;
@@ -1432,7 +1434,7 @@ const EventForm = () => {
                 >
                   <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Clicca per caricare un'immagine</span>
-                  <span className="text-xs text-muted-foreground">Max 5MB</span>
+                  <span className="text-xs text-muted-foreground">Riduzione automatica, max 25MB</span>
                 </button>
               )}
             </div>
@@ -1532,7 +1534,7 @@ const EventForm = () => {
                       >
                         <Plus className="h-6 w-6 text-muted-foreground mb-2" />
                         <p className="text-xs font-body font-semibold text-foreground">Aggiungi immagini</p>
-                        <p className="text-[10px] text-muted-foreground font-body">PNG, JPG fino a 5MB</p>
+                        <p className="text-[10px] text-muted-foreground font-body">PNG, JPG fino a 25MB; ottimizzate automaticamente</p>
                         <p className="text-[10px] text-muted-foreground font-body mt-1 text-center">
                           Puoi anche incollare un'immagine copiata dal browser con Ctrl+V
                         </p>

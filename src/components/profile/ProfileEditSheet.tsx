@@ -192,6 +192,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
       const filePath = `${user.id}/avatar.${ext}`;
       const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
         cacheControl: "31536000",
+        contentType: file.type,
         upsert: true,
       });
       if (uploadError) throw uploadError;
@@ -406,8 +407,8 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
         file={avatarCropFile}
         title="Ritaglia foto profilo"
         aspect={{ width: 1, height: 1 }}
-        outputWidth={900}
-        outputHeight={900}
+        outputWidth={512}
+        outputHeight={512}
         onCancel={() => setAvatarCropFile(null)}
         onCropped={(croppedFile) => {
           setAvatarCropFile(null);

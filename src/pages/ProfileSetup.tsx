@@ -26,6 +26,7 @@ import {
   type HealthSafetyValue,
   validateHealthSafety,
 } from "@/lib/healthSafety";
+import { compressImageForUpload, imageFileExtension } from "@/lib/imageCompression";
 
 const calculateExperienceGrade = (trekking: string, activity: string) => {
   const map: Record<string, Record<string, number>> = {
@@ -278,10 +279,12 @@ const ProfileSetup = () => {
       setUploading(true);
       const file = event.target.files?.[0];
       if (!file || !user) return;
-      const fileExt = file.name.split(".").pop();
+      const compressedFile = await compressImageForUpload(file, { maxDimension: 512, quality: 0.8 });
+      const fileExt = imageFileExtension(compressedFile);
       const filePath = `${user.id}-${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, compressedFile, {
         cacheControl: "31536000",
+        contentType: compressedFile.type,
       });
       if (uploadError) throw uploadError;
       const {

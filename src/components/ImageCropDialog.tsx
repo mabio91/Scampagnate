@@ -138,7 +138,7 @@ const ImageCropDialog = ({
       canvas.toBlob((result) => {
         if (result) resolve(result);
         else reject(new Error("Impossibile creare il ritaglio"));
-      }, "image/jpeg", 0.9);
+      }, "image/jpeg", 0.8);
     });
 
     const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
