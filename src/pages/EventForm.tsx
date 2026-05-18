@@ -385,7 +385,7 @@ const EventForm = () => {
     waitlist_enabled: boolean;
   }
 
-  const createBlankPriceOption = (): PriceOptionInput => ({
+  const createBlankPriceOption = (overrides: Partial<PriceOptionInput> = {}): PriceOptionInput => ({
     name: "",
     price: 0,
     eligible_group: "all",
@@ -402,9 +402,27 @@ const EventForm = () => {
     dedicated_spots: null,
     spots_taken: 0,
     waitlist_enabled: false,
+    ...overrides,
   });
 
-  const [priceOptions, setPriceOptions] = useState<PriceOptionInput[]>([]);
+  const createLegacyPriceOption = (event: { payment_type?: string | null; price?: number | null; deposit?: number | null; balance_payment_mode?: string | null }) => {
+    const paymentType = (event.payment_type || "free") as PaymentType;
+    const price = paymentType === "free" ? 0 : Number(event.price || 0);
+    const depositAmount = paymentType === "deposit" ? Number(event.deposit || 0) : null;
+
+    return createBlankPriceOption({
+      name: "Formula 1",
+      price,
+      payment_type: paymentType,
+      deposit_amount: depositAmount,
+      balance_amount: paymentType === "deposit" ? Math.max(0, price - Number(depositAmount || 0)) : null,
+      balance_payment_mode: (event.balance_payment_mode || "online") as BalancePaymentMode,
+    });
+  };
+
+  const [priceOptions, setPriceOptions] = useState<PriceOptionInput[]>(() => [
+    createBlankPriceOption({ name: "Formula 1" }),
+  ]);
 
   useEffect(() => {
     if (isEditing) {
@@ -624,7 +642,7 @@ const EventForm = () => {
         .eq("event_id", eventId)
         .order("sort_order");
       if (options && options.length > 0) {
-        setPriceOptions(options.map((o: any) => {
+        setPriceOptions(options.map((o: any, index: number) => {
           const group = o.eligible_group || 'all';
           const badgeIds = group.startsWith("badge:") ? group.replace("badge:", "").split(",") : [];
           const paymentType = (o.payment_type || event.payment_type || "free") as PaymentType;
@@ -634,8 +652,8 @@ const EventForm = () => {
             : null;
           return {
             id: isDuplicating ? undefined : o.id,
-            name: o.name,
-            price: Number(o.price),
+            name: o.name || `Formula ${index + 1}`,
+            price: paymentType === "free" ? 0 : Number(o.price),
             eligible_group: group,
             badge_ids: badgeIds,
             original_price: o.original_price ? Number(o.original_price) : null,
@@ -652,6 +670,8 @@ const EventForm = () => {
             waitlist_enabled: false,
           };
         }));
+      } else {
+        setPriceOptions([createLegacyPriceOption(event as any)]);
       }
     }
     setLoadingEvent(false);
@@ -829,6 +849,31 @@ const EventForm = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const addPriceOption = () => {
+    setPriceOptions((prev) => {
+      const previous = prev[prev.length - 1];
+      const paymentType = previous?.payment_type || "free";
+      const price = paymentType === "free" ? 0 : Number(previous?.price || 0);
+      const depositAmount = paymentType === "deposit"
+        ? Number(previous?.deposit_amount ?? form.deposit ?? 0)
+        : null;
+
+      return [
+        ...prev,
+        createBlankPriceOption({
+          name: `Formula ${prev.length + 1}`,
+          price,
+          payment_type: paymentType,
+          deposit_amount: depositAmount,
+          balance_amount: paymentType === "deposit" ? Math.max(0, price - Number(depositAmount || 0)) : null,
+          balance_payment_mode: previous?.balance_payment_mode || form.balance_payment_mode,
+        }),
+      ];
+    });
+  };
+
+  const hasPaidPriceOptions = priceOptions.some((option) => option.payment_type !== "free");
+
   const toggleFitScoreSecondaryCategory = (category: string) => {
     setFitScoreSecondaryCategories((prev) => {
       if (prev.includes(category)) {
@@ -890,7 +935,9 @@ const EventForm = () => {
       const validPriceOptions = priceOptions.filter(o => o.name.trim());
       const primaryPriceOption = validPriceOptions[0] || null;
       const primaryPaymentType = (primaryPriceOption?.payment_type || form.payment_type) as PaymentType;
-      const primaryPrice = primaryPriceOption ? Number(primaryPriceOption.price || 0) : form.price;
+      const primaryPrice = primaryPaymentType === "free"
+        ? 0
+        : (primaryPriceOption ? Number(primaryPriceOption.price || 0) : form.price);
       const primaryDeposit = primaryPaymentType === "deposit"
         ? Number(primaryPriceOption?.deposit_amount ?? form.deposit ?? 0)
         : null;
@@ -1066,7 +1113,7 @@ const EventForm = () => {
         const optionPayload = {
           event_id: eventId!,
           name: option.name.trim(),
-          price: Number(option.price || 0),
+          price: optionPaymentType === "free" ? 0 : Number(option.price || 0),
           sort_order: index,
           eligible_group: option.eligible_group || "all",
           original_price: option.original_price || null,
@@ -1491,10 +1538,10 @@ const EventForm = () => {
         </Card>
 
         {/* ═══════════════════════════════════════════════════ */}
-        {/* 3. CAPACITÀ E PREZZI (with pricing tiers at end) */}
+        {/* 3. CAPIENZA */}
         {/* ═══════════════════════════════════════════════════ */}
         <Card className="p-4 space-y-4">
-          <h2 className="font-display text-base font-bold text-foreground">Capacità e prezzi</h2>
+          <h2 className="font-display text-base font-bold text-foreground">Capienza</h2>
           <div className="space-y-3">
             <div>
               <Label htmlFor="spots">Posti totali</Label>
@@ -1505,68 +1552,19 @@ const EventForm = () => {
               <Input id="reserved" type="number" min={0} max={form.spots_total} value={form.reserved_spots || ""} onChange={(e) => updateForm("reserved_spots", e.target.value === "" ? 0 : parseInt(e.target.value) || 0)} />
               <p className="text-[11px] text-muted-foreground font-body mt-1">Posti riservati per registrazioni manuali/offline. Contano verso la capacità totale.</p>
             </div>
-            <div>
-              <Label>Tipo pagamento</Label>
-              <Select value={form.payment_type} onValueChange={(v) => updateForm("payment_type", v as PaymentType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">Evento gratuito</SelectItem>
-                  <SelectItem value="paid">Pagamento completo online (Stripe)</SelectItem>
-                  <SelectItem value="location">Pagamento sul posto</SelectItem>
-                  <SelectItem value="deposit">Pagamento frazionato (Acconto + Saldo)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {(form.payment_type !== "free") && (
-              <div>
-                <Label htmlFor="price">Prezzo totale (€)</Label>
-                <Input id="price" type="number" min={0} step={0.01} value={form.price || ""} onChange={(e) => updateForm("price", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} disabled={priceOptions.filter(o => o.name.trim()).length > 0} className={priceOptions.filter(o => o.name.trim()).length > 0 ? "opacity-50" : ""} />
-                {priceOptions.filter(o => o.name.trim()).length > 0 && (
-                  <p className="text-[11px] text-muted-foreground font-body mt-1">Il prezzo è gestito dalle fasce di prezzo sottostanti.</p>
-                )}
-              </div>
-            )}
-            {form.payment_type === "deposit" && (
-              <>
-                <div>
-                  <Label htmlFor="deposit">Acconto (€)</Label>
-                  <Input id="deposit" type="number" min={0} step={0.01} max={form.price} value={form.deposit || ""} onChange={(e) => updateForm("deposit", e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)} />
-                </div>
-                <div>
-                  <Label>Modalità pagamento saldo</Label>
-                  <Select value={form.balance_payment_mode} onValueChange={(v) => updateForm("balance_payment_mode", v as BalancePaymentMode)}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="online">Online (Stripe)</SelectItem>
-                      <SelectItem value="on_site">Sul posto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {form.price > 0 && form.deposit > 0 && (
-                  <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
-                    <div className="flex justify-between text-sm font-body">
-                      <span className="text-muted-foreground">Prezzo totale</span>
-                      <span className="font-semibold text-foreground">€{form.price.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-body mt-1">
-                      <span className="text-muted-foreground">Acconto (online)</span>
-                      <span className="font-semibold text-foreground">€{form.deposit.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-body mt-1 pt-1 border-t border-gold/20">
-                      <span className="text-muted-foreground">Saldo rimanente</span>
-                      <span className="font-semibold text-foreground">€{(form.price - form.deposit).toFixed(2)}</span>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+          </div>
+        </Card>
 
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* 4. PAGAMENTO */}
+        {/* ═══════════════════════════════════════════════════ */}
+        <Card className="p-4 space-y-4">
+          <h2 className="font-display text-base font-bold text-foreground">Pagamento</h2>
+          <div className="space-y-3">
             {/* Cancellation Policy */}
-            {form.payment_type !== "free" ? (
+            {hasPaidPriceOptions ? (
               <div>
-                <Label>Politica di cancellazione</Label>
+                <Label>Termini di cancellazione</Label>
                 <Select value={policyType} onValueChange={(v) => setPolicyType(v as PolicyType)}>
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Seleziona una politica" />
@@ -1601,21 +1599,23 @@ const EventForm = () => {
             )}
 
             {/* ── Modalità di partecipazione ── */}
-            {form.payment_type !== "free" && (
-              <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-semibold flex items-center gap-1.5">
-                      💰 Modalità di partecipazione
-                    </Label>
-                    <p className="text-[11px] text-muted-foreground font-body">Definisci chi vede quale prezzo. Configura prezzi per community, badge o promozioni.</p>
-                  </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setPriceOptions(prev => [...prev, createBlankPriceOption()])} className="gap-1 shrink-0">
-                    <Plus className="h-3.5 w-3.5" /> Aggiungi
-                  </Button>
-                </div>
+            <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+              <div>
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  Formule di pagamento
+                </Label>
+                <p className="text-[11px] text-muted-foreground font-body">Ogni prezzo, acconto o pagamento sul posto viene gestito dentro una formula.</p>
+              </div>
                 {priceOptions.map((opt, index) => (
                   <div key={index} className="p-3 bg-background rounded-lg space-y-2 border border-border/50">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-foreground">Formula {index + 1}</p>
+                      {priceOptions.length > 1 && (
+                        <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1" aria-label={`Rimuovi formula ${index + 1}`}>
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <Input
@@ -1630,7 +1630,9 @@ const EventForm = () => {
                           min={0}
                           step={0.01}
                           placeholder="€ Prezzo"
-                          value={opt.price || ""}
+                          value={opt.payment_type === "free" ? 0 : (opt.price || "")}
+                          disabled={opt.payment_type === "free"}
+                          className={opt.payment_type === "free" ? "opacity-60" : ""}
                           onChange={(e) => setPriceOptions(prev => prev.map((o, i) => {
                             if (i !== index) return o;
                             const price = parseFloat(e.target.value) || 0;
@@ -1642,9 +1644,6 @@ const EventForm = () => {
                           }))}
                         />
                       </div>
-                      <button type="button" onClick={() => setPriceOptions(prev => prev.filter((_, i) => i !== index))} className="text-destructive p-1">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div>
@@ -1654,12 +1653,14 @@ const EventForm = () => {
                           onValueChange={(v) => setPriceOptions(prev => prev.map((o, i) => {
                             if (i !== index) return o;
                             const paymentType = v as PaymentType;
+                            const price = paymentType === "free" ? 0 : Number(o.price || 0);
                             const depositAmount = paymentType === "deposit" ? (o.deposit_amount ?? form.deposit ?? 0) : null;
                             return {
                               ...o,
+                              price,
                               payment_type: paymentType,
                               deposit_amount: depositAmount,
-                              balance_amount: paymentType === "deposit" ? Math.max(0, Number(o.price || 0) - Number(depositAmount || 0)) : null,
+                              balance_amount: paymentType === "deposit" ? Math.max(0, price - Number(depositAmount || 0)) : null,
                               balance_payment_mode: paymentType === "deposit" ? o.balance_payment_mode : form.balance_payment_mode,
                             };
                           }))}
@@ -1847,11 +1848,13 @@ const EventForm = () => {
                     )}
                   </div>
                 ))}
+                <Button type="button" variant="outline" size="sm" onClick={addPriceOption} className="w-full gap-1">
+                  <Plus className="h-3.5 w-3.5" /> Aggiungi formula
+                </Button>
                 {priceOptions.length === 0 && (
-                  <p className="text-xs text-muted-foreground font-body text-center py-1">Nessuna fascia di prezzo. Il prezzo base (€{form.price}) si applica a tutti.</p>
+                  <p className="text-xs text-muted-foreground font-body text-center py-1">Aggiungi almeno una formula per definire pagamento e prezzo.</p>
                 )}
               </div>
-            )}
           </div>
         </Card>
 

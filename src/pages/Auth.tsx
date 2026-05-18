@@ -339,16 +339,16 @@ const Auth = () => {
               <ConsentCheckbox
                 checked={acceptMarketing}
                 onChange={setAcceptMarketing}
-                label="Tienimi aggiornato sulle prossime scampagnate 🌿"
-                description="Riceverai info su nuovi eventi, posti che si liberano e novità della community (email / WhatsApp)"
+                label="Comunicazioni e novità"
+                description="Ti terremo aggiornato su nuove iniziative, promozioni, eventi speciali e contenuti della community"
               />
 
               {/* Checkbox 4: Media (optional) */}
               <ConsentCheckbox
                 checked={acceptMedia}
                 onChange={setAcceptMedia}
-                label="Ok a comparire nei momenti Scampagnate 📸"
-                description="Possiamo condividere foto e video delle esperienze sui nostri canali (Instagram, sito, ecc.)"
+                label="Fai parte dei nostri racconti"
+                description="Possiamo condividere foto e momenti delle esperienze sui canali Scampagnate."
               />
 
               <AnimatePresence>

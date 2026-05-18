@@ -4,12 +4,22 @@ import { Switch } from "@/components/ui/switch";
 import { Bell, ChevronDown, ChevronRight, FileText, Loader2, Shield } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useUserConsents, useToggleConsent } from "@/hooks/useUserConsents";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useToast } from "@/hooks/use-toast";
 
 const ConsentPrivacySection = () => {
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const { getConsent, isLoading } = useUserConsents();
   const toggleConsent = useToggleConsent();
+  const {
+    isSupported: pushSupported,
+    canManagePush,
+    isSubscribed,
+    subscribe,
+    unsubscribe,
+    isLoading: pushLoading,
+    errorMessage: pushError,
+  } = usePushNotifications();
   const { toast } = useToast();
 
   const handleToggle = (type: "marketing" | "media", current: boolean) => {
@@ -29,6 +39,25 @@ const ConsentPrivacySection = () => {
         },
       }
     );
+  };
+
+  const handlePushToggle = async () => {
+    if (!canManagePush && pushError) {
+      toast({ title: pushError, variant: "destructive" });
+      return;
+    }
+
+    if (isSubscribed) {
+      await unsubscribe();
+      toast({ title: "Notifiche app disattivate" });
+      return;
+    }
+
+    const success = await subscribe();
+    toast({
+      title: success ? "Notifiche app attivate" : "Non è stato possibile attivare le notifiche app",
+      variant: success ? undefined : "destructive",
+    });
   };
 
   if (isLoading) {
@@ -64,13 +93,31 @@ const ConsentPrivacySection = () => {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="ml-[34px] space-y-3 border-l border-border/70 pl-4 pt-1">
+            {pushSupported && (
+              <div className="flex items-start gap-3 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-body font-semibold text-foreground">
+                    Notifiche app
+                  </p>
+                  <p className="text-xs font-body text-muted-foreground mt-0.5">
+                    Ricevi avvisi su iscrizioni, posti che si liberano e aggiornamenti importanti.
+                  </p>
+                </div>
+                <Switch
+                  checked={isSubscribed}
+                  onCheckedChange={handlePushToggle}
+                  disabled={pushLoading}
+                />
+              </div>
+            )}
+
             <div className="flex items-start gap-3 py-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-body font-semibold text-foreground">
-                  Non perderti le prossime scampagnate 🌿
+                  Comunicazioni e novità
                 </p>
                 <p className="text-xs font-body text-muted-foreground mt-0.5">
-                  Ti avvisiamo su nuovi eventi, posti che si liberano e chicche della community
+                  Ti terremo aggiornato su nuove iniziative, promozioni, eventi speciali e contenuti della community
                 </p>
               </div>
               <Switch
@@ -83,10 +130,10 @@ const ConsentPrivacySection = () => {
             <div className="flex items-start gap-3 py-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-body font-semibold text-foreground">
-                  Fai parte delle nostre storie 📸
+                  Fai parte dei nostri racconti
                 </p>
                 <p className="text-xs font-body text-muted-foreground mt-0.5">
-                  Possiamo condividere foto e momenti delle esperienze sui nostri canali
+                  Possiamo condividere foto e momenti delle esperienze sui canali Scampagnate.
                 </p>
               </div>
               <Switch
