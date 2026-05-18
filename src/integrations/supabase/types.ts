@@ -1833,6 +1833,105 @@ export type Database = {
         }
         Relationships: []
       }
+      prepaid_memberships: {
+        Row: {
+          activated_at: string | null
+          birth_date: string | null
+          birth_place: string | null
+          city_of_residence: string | null
+          created_at: string
+          email: string
+          error_message: string | null
+          first_name: string
+          id: string
+          import_batch_id: string
+          import_batch_label: string | null
+          imported_by: string | null
+          last_name: string
+          manually_assigned_at: string | null
+          matched_user_id: string | null
+          membership_year: number
+          payment_date: string | null
+          phone: string | null
+          province_of_birth: string | null
+          province_of_residence: string | null
+          residential_address: string | null
+          review_note: string | null
+          source_row: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          city_of_residence?: string | null
+          created_at?: string
+          email: string
+          error_message?: string | null
+          first_name?: string
+          id?: string
+          import_batch_id?: string
+          import_batch_label?: string | null
+          imported_by?: string | null
+          last_name?: string
+          manually_assigned_at?: string | null
+          matched_user_id?: string | null
+          membership_year?: number
+          payment_date?: string | null
+          phone?: string | null
+          province_of_birth?: string | null
+          province_of_residence?: string | null
+          residential_address?: string | null
+          review_note?: string | null
+          source_row?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          city_of_residence?: string | null
+          created_at?: string
+          email?: string
+          error_message?: string | null
+          first_name?: string
+          id?: string
+          import_batch_id?: string
+          import_batch_label?: string | null
+          imported_by?: string | null
+          last_name?: string
+          manually_assigned_at?: string | null
+          matched_user_id?: string | null
+          membership_year?: number
+          payment_date?: string | null
+          phone?: string | null
+          province_of_birth?: string | null
+          province_of_residence?: string | null
+          residential_address?: string | null
+          review_note?: string | null
+          source_row?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prepaid_memberships_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prepaid_memberships_matched_user_id_fkey"
+            columns: ["matched_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_status: Database["public"]["Enums"]["account_status"] | null
@@ -2608,6 +2707,14 @@ export type Database = {
         Args: { p_badge_id: string; p_user_id: string }
         Returns: undefined
       }
+      admin_activate_prepaid_membership: {
+        Args: { p_prepaid_id: string; p_user_id: string }
+        Returns: Json
+      }
+      admin_import_prepaid_memberships: {
+        Args: { p_batch_label?: string | null; p_rows: Json }
+        Returns: Json
+      }
       award_event_attendance_badges: {
         Args: { p_event_id: string; p_user_id: string }
         Returns: undefined
@@ -2725,6 +2832,10 @@ export type Database = {
       recalculate_user_total_points: {
         Args: { p_user_id: string }
         Returns: number
+      }
+      reconcile_prepaid_membership_for_user: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       refresh_event_spots: { Args: { p_event_id: string }; Returns: undefined }
       scamp_changed_columns: {
