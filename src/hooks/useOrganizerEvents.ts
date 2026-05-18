@@ -29,7 +29,7 @@ export const useEventRegistrations = (eventId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("*, profiles!event_registrations_user_id_profiles_fkey(first_name, last_name, phone, instagram_handle, avatar_url, membership_id, membership_status, self_level, trekking_experience, activity_frequency, experience_grade)")
+	        .select("*, profiles!event_registrations_user_id_profiles_fkey(first_name, last_name, phone, instagram_handle, avatar_url, membership_id, membership_status, self_level, trekking_experience, activity_frequency, experience_grade, health_safety_status, health_safety_notes, emergency_medication_has, emergency_medication_notes, health_safety_help_notes)")
         .eq("event_id", eventId)
         .order("created_at", { ascending: true });
       if (error) throw error;

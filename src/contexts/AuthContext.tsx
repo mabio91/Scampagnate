@@ -25,6 +25,12 @@ interface Profile {
   interests?: string[];
   onboarding_completed?: boolean;
   event_motivation?: string;
+  health_safety_status?: string | null;
+  health_safety_notes?: string | null;
+  emergency_medication_has?: boolean | null;
+  emergency_medication_notes?: string | null;
+  health_safety_help_notes?: string | null;
+  health_safety_updated_at?: string | null;
   phone_verified?: boolean;
   phone_verified_at?: string;
   phone_verification_method?: string;

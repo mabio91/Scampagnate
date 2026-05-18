@@ -1947,10 +1947,16 @@ export type Database = {
           created_at: string
           email: string | null
           event_motivation: string | null
-          experience_grade: number | null
-          first_name: string
-          has_car: string | null
-          id: string
+	          experience_grade: number | null
+	          first_name: string
+	          has_car: string | null
+	          health_safety_help_notes: string | null
+	          health_safety_notes: string | null
+	          health_safety_status: string | null
+	          health_safety_updated_at: string | null
+	          emergency_medication_has: boolean | null
+	          emergency_medication_notes: string | null
+	          id: string
           instagram_handle: string | null
           interests: string[] | null
           is_founding_member: boolean
@@ -1985,10 +1991,16 @@ export type Database = {
           created_at?: string
           email?: string | null
           event_motivation?: string | null
-          experience_grade?: number | null
-          first_name?: string
-          has_car?: string | null
-          id: string
+	          experience_grade?: number | null
+	          first_name?: string
+	          has_car?: string | null
+	          health_safety_help_notes?: string | null
+	          health_safety_notes?: string | null
+	          health_safety_status?: string | null
+	          health_safety_updated_at?: string | null
+	          emergency_medication_has?: boolean | null
+	          emergency_medication_notes?: string | null
+	          id: string
           instagram_handle?: string | null
           interests?: string[] | null
           is_founding_member?: boolean
@@ -2023,10 +2035,16 @@ export type Database = {
           created_at?: string
           email?: string | null
           event_motivation?: string | null
-          experience_grade?: number | null
-          first_name?: string
-          has_car?: string | null
-          id?: string
+	          experience_grade?: number | null
+	          first_name?: string
+	          has_car?: string | null
+	          health_safety_help_notes?: string | null
+	          health_safety_notes?: string | null
+	          health_safety_status?: string | null
+	          health_safety_updated_at?: string | null
+	          emergency_medication_has?: boolean | null
+	          emergency_medication_notes?: string | null
+	          id?: string
           instagram_handle?: string | null
           interests?: string[] | null
           is_founding_member?: boolean

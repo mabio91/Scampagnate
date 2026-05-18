@@ -17,6 +17,15 @@ import {
   FIT_SCORE_INTEREST_VALIDATION_MESSAGE,
 } from "@/lib/fitScoreAffinityTables";
 import { isValidInstagramHandle, normalizeInstagramHandle } from "@/lib/instagram";
+import HealthSafetyForm from "@/components/profile/HealthSafetyForm";
+import {
+  buildHealthSafetyPayload,
+  emptyHealthSafetyValue,
+  getHealthSafetyValueFromProfile,
+  type HealthSafetyErrors,
+  type HealthSafetyValue,
+  validateHealthSafety,
+} from "@/lib/healthSafety";
 
 const calculateExperienceGrade = (trekking: string, activity: string) => {
   const map: Record<string, Record<string, number>> = {
@@ -159,10 +168,10 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const carSectionRef = useRef<HTMLDivElement>(null);
   const interestsSectionRef = useRef<HTMLDivElement>(null);
   const motivationSectionRef = useRef<HTMLDivElement>(null);
-  const [step3Errors, setStep3Errors] = useState<{ car?: boolean; interests?: boolean; motivation?: boolean }>({});
+  const [healthErrors, setHealthErrors] = useState<HealthSafetyErrors>({});
+  const [preferenceErrors, setPreferenceErrors] = useState<{ interests?: boolean; motivation?: boolean }>({});
   const [searchParams] = useSearchParams();
 
   // Edit mode: when user already completed onboarding and is editing preferences
@@ -170,7 +179,7 @@ const ProfileSetup = () => {
 
   // In edit mode, start at step 2 (skip profile basics) and skip step 1
   const startStep = isEditMode ? 2 : 1;
-  const totalSteps = isEditMode ? 2 : 3; // steps 2-3 in edit mode
+  const totalSteps = isEditMode ? 3 : 4; // steps 2-4 in edit mode
 
   const [step, setStep] = useState(startStep);
   const [direction, setDirection] = useState(1);
@@ -197,8 +206,12 @@ const ProfileSetup = () => {
   const [selfLevel, setSelfLevel] = useState(isEditMode ? (profile?.self_level || "") : "");
   const [activityFreq, setActivityFreq] = useState(isEditMode ? (profile?.activity_frequency || "") : "");
 
-  // Step 3 - prefill from profile in edit mode
-  const [hasCar, setHasCar] = useState(isEditMode ? (profile?.has_car || "") : "");
+  // Step 3 - health and safety
+  const [healthSafety, setHealthSafety] = useState<HealthSafetyValue>(
+    isEditMode ? getHealthSafetyValueFromProfile(profile) : emptyHealthSafetyValue
+  );
+
+  // Step 4 - prefill from profile in edit mode
   const [interests, setInterests] = useState<string[]>(
     isEditMode && profile?.interests ? (profile.interests as string[]) : []
   );
@@ -215,7 +228,7 @@ const ProfileSetup = () => {
       setTrekkingExp(profile.trekking_experience || "");
       setSelfLevel(profile.self_level || "");
       setActivityFreq(profile.activity_frequency || "");
-      setHasCar(profile.has_car || "");
+      setHealthSafety(getHealthSafetyValueFromProfile(profile));
       setInterests(profile.interests ? (profile.interests as string[]) : []);
       setEventMotivation(profile.event_motivation || "");
     }
@@ -284,17 +297,18 @@ const ProfileSetup = () => {
   };
 
   const validateStep3 = useCallback(() => {
-    const errors: { car?: boolean; interests?: boolean; motivation?: boolean } = {};
-    if (!hasCar) errors.car = true;
+    const result = validateHealthSafety(healthSafety);
+    setHealthErrors(result.errors);
+    return result.isValid;
+  }, [healthSafety]);
+
+  const validateStep4 = useCallback(() => {
+    const errors: { interests?: boolean; motivation?: boolean } = {};
     if (interests.length < FIT_SCORE_INTEREST_MIN || interests.length > FIT_SCORE_INTEREST_MAX) {
       errors.interests = true;
     }
     if (!eventMotivation) errors.motivation = true;
-    setStep3Errors(errors);
-    if (errors.car) {
-      carSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return false;
-    }
+    setPreferenceErrors(errors);
     if (errors.interests) {
       interestsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return false;
@@ -304,28 +318,35 @@ const ProfileSetup = () => {
       return false;
     }
     return true;
-  }, [hasCar, interests, eventMotivation]);
+  }, [interests, eventMotivation]);
 
   // Clear errors when user selects values
   useEffect(() => {
-    if (hasCar && step3Errors.car) setStep3Errors(prev => ({ ...prev, car: false }));
-  }, [hasCar]);
+    if (healthSafety.status && healthErrors.status) setHealthErrors(prev => ({ ...prev, status: false }));
+    if (healthSafety.notes.trim() && healthErrors.notes) setHealthErrors(prev => ({ ...prev, notes: false }));
+    if (healthSafety.emergencyMedicationHas && healthErrors.emergencyMedicationHas) {
+      setHealthErrors(prev => ({ ...prev, emergencyMedicationHas: false }));
+    }
+    if (healthSafety.emergencyMedicationNotes.trim() && healthErrors.emergencyMedicationNotes) {
+      setHealthErrors(prev => ({ ...prev, emergencyMedicationNotes: false }));
+    }
+  }, [healthSafety, healthErrors]);
   useEffect(() => {
     if (
       interests.length >= FIT_SCORE_INTEREST_MIN &&
       interests.length <= FIT_SCORE_INTEREST_MAX &&
-      step3Errors.interests
+      preferenceErrors.interests
     ) {
-      setStep3Errors(prev => ({ ...prev, interests: false }));
+      setPreferenceErrors(prev => ({ ...prev, interests: false }));
     }
-  }, [interests]);
+  }, [interests, preferenceErrors.interests]);
   useEffect(() => {
-    if (eventMotivation && step3Errors.motivation) setStep3Errors(prev => ({ ...prev, motivation: false }));
-  }, [eventMotivation]);
+    if (eventMotivation && preferenceErrors.motivation) setPreferenceErrors(prev => ({ ...prev, motivation: false }));
+  }, [eventMotivation, preferenceErrors.motivation]);
 
   const handleSubmit = async () => {
     if (!user) return;
-    if (!validateStep3()) return;
+    if (!validateStep3() || !validateStep4()) return;
     setSaving(true);
     try {
       const grade = calculateExperienceGrade(trekkingExp, activityFreq);
@@ -334,10 +355,10 @@ const ProfileSetup = () => {
         activity_frequency: activityFreq,
         experience_grade: grade,
         self_level: selfLevel,
-        has_car: hasCar,
         interests,
         event_motivation: eventMotivation || null,
         onboarding_completed: true,
+        ...buildHealthSafetyPayload(healthSafety),
       };
 
       // Only update phone and birth_date in first-time mode
@@ -384,8 +405,8 @@ const ProfileSetup = () => {
   };
   const step1Valid = isValidPhone(phone) && !!dateOfBirth && isValidInstagramHandle(normalizeInstagramHandle(instagramHandle));
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
-  const step3Valid =
-    !!hasCar &&
+  const step3Valid = validateHealthSafety(healthSafety).isValid;
+  const step4Valid =
     interests.length >= FIT_SCORE_INTEREST_MIN &&
     interests.length <= FIT_SCORE_INTEREST_MAX &&
     !!eventMotivation;
@@ -536,7 +557,13 @@ const ProfileSetup = () => {
     );
   }
 
-  const currentStepLabel = step === 1 ? "Profilo base" : step === 2 ? "Esperienza" : "Preferenze";
+  const currentStepLabel = step === 1
+    ? "Profilo base"
+    : step === 2
+      ? "Esperienza"
+      : step === 3
+        ? "Salute e sicurezza"
+        : "Preferenze";
   const progressValue = isEditMode
     ? ((step - 1) / totalSteps) * 100
     : (step / totalSteps) * 100;
@@ -778,36 +805,62 @@ const ProfileSetup = () => {
                 className="space-y-6"
               >
                 <div className="space-y-2">
-                  <h1 className="font-display text-xl font-bold text-foreground">Le tue preferenze</h1>
+                  <h1 className="font-display text-xl font-bold text-foreground">Salute e sicurezza</h1>
+                  <p className="text-sm text-muted-foreground font-body">
+                    Solo ciò che può essere utile allo staff in caso di necessità durante un'attività.
+                  </p>
                 </div>
 
-                {/* Car availability */}
-                <div ref={carSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.car ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
-                  <Label className={`font-body text-sm font-semibold ${step3Errors.car ? "text-destructive" : ""}`}>Sei automunito? <span className="text-destructive">*</span> {step3Errors.car && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}</Label>
-                  <div className="space-y-2">
-                    {[
-                      { val: "yes", emoji: "🚗", label: "Sì" },
-                      { val: "prefer_not_to_drive", emoji: "🤷", label: "Preferisco non guidare" },
-                      { val: "no", emoji: "🚫", label: "No" },
-                    ].map((opt) => (
-                      <SelectionCard
-                        key={opt.val}
-                        selected={hasCar === opt.val}
-                        onClick={() => setHasCar(opt.val)}
-                        emoji={opt.emoji}
-                        label={opt.label}
-                      />
-                    ))}
-                  </div>
+                <HealthSafetyForm
+                  value={healthSafety}
+                  onChange={setHealthSafety}
+                  errors={healthErrors}
+                />
+
+                <div className="flex gap-3 pb-4">
+                  <Button variant="outline" className="flex-1 h-12 font-body font-semibold" onClick={goBack}>
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Indietro
+                  </Button>
+                  <Button
+                    className="flex-1 h-12 font-body font-semibold"
+                    disabled={!step3Valid}
+                    onClick={() => {
+                      if (validateStep3()) goNext();
+                    }}
+                  >
+                    Continua
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: "tween", duration: 0.3 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <h1 className="font-display text-xl font-bold text-foreground">Le tue preferenze</h1>
+                  <p className="text-sm text-muted-foreground font-body">
+                    Useremo queste risposte per suggerirti eventi più affini, senza cambiare la logica del fit score.
+                  </p>
                 </div>
 
                 {/* Interests */}
-                <div ref={interestsSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.interests ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
-                  <Label className={`font-body text-sm font-semibold ${step3Errors.interests ? "text-destructive" : ""}`}>
-                    Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {step3Errors.interests && <span className="text-destructive text-xs font-normal">— Seleziona da 2 a 4 opzioni</span>}
+                <div ref={interestsSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${preferenceErrors.interests ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
+                  <Label className={`font-body text-sm font-semibold ${preferenceErrors.interests ? "text-destructive" : ""}`}>
+                    Quali esperienze ti attirano di più? <span className="text-destructive">*</span> {preferenceErrors.interests && <span className="text-destructive text-xs font-normal">— Seleziona da 2 a 4 opzioni</span>}
                   </Label>
                   <p className="text-xs text-muted-foreground font-body">Seleziona da 2 a 4 attività.</p>
-                  {step3Errors.interests && (
+                  {preferenceErrors.interests && (
                     <p className="text-xs font-body text-destructive">{FIT_SCORE_INTEREST_VALIDATION_MESSAGE}</p>
                   )}
                   <div className="grid grid-cols-2 gap-2">
@@ -836,9 +889,9 @@ const ProfileSetup = () => {
                 </div>
 
                 {/* Motivation (mandatory) */}
-                <div ref={motivationSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${step3Errors.motivation ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
-                  <Label className={`font-body text-sm font-semibold ${step3Errors.motivation ? "text-destructive" : ""}`}>
-                    Cosa cerchi di più in un evento? <span className="text-destructive">*</span> {step3Errors.motivation && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}
+                <div ref={motivationSectionRef} className={`space-y-2 rounded-xl p-3 -mx-3 transition-all ${preferenceErrors.motivation ? "bg-destructive/5 ring-2 ring-destructive/30" : ""}`}>
+                  <Label className={`font-body text-sm font-semibold ${preferenceErrors.motivation ? "text-destructive" : ""}`}>
+                    Cosa cerchi di più in un evento? <span className="text-destructive">*</span> {preferenceErrors.motivation && <span className="text-destructive text-xs font-normal">— Seleziona un'opzione</span>}
                   </Label>
                   <div className="space-y-2">
                     {[
@@ -866,7 +919,7 @@ const ProfileSetup = () => {
                   </Button>
                   <Button
                     className="flex-1 h-12 font-body font-semibold"
-                    disabled={!step3Valid || saving}
+                    disabled={!step4Valid || saving}
                     onClick={handleSubmit}
                   >
                     {saving ? (

@@ -27,6 +27,15 @@ import LevelAvatar from "@/components/LevelAvatar";
 import { AppleIcon, GoogleIcon } from "@/components/auth/OAuthProviderIcons";
 import ImageCropDialog from "@/components/ImageCropDialog";
 import { isValidInstagramHandle, normalizeInstagramHandle } from "@/lib/instagram";
+import HealthSafetyForm from "@/components/profile/HealthSafetyForm";
+import {
+  buildHealthSafetyPayload,
+  emptyHealthSafetyValue,
+  getHealthSafetyValueFromProfile,
+  type HealthSafetyErrors,
+  type HealthSafetyValue,
+  validateHealthSafety,
+} from "@/lib/healthSafety";
 
 const HIDE_SOCIAL_AUTH = true;
 const DELETE_CONFIRMATION_PHRASE = "CANCELLA IL MIO ACCOUNT";
@@ -45,6 +54,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const membershipSectionRef = useRef<HTMLDivElement>(null);
+  const healthSectionRef = useRef<HTMLDivElement>(null);
 
   // Profile fields
   const [firstName, setFirstName] = useState("");
@@ -62,6 +72,9 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null);
+  const [healthSafety, setHealthSafety] = useState<HealthSafetyValue>(emptyHealthSafetyValue);
+  const [healthErrors, setHealthErrors] = useState<HealthSafetyErrors>({});
+  const [healthSafetyTouched, setHealthSafetyTouched] = useState(false);
 
   // Email dialog
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -89,6 +102,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const isEmailProvider = user?.app_metadata?.providers?.includes("email") ||
     user?.identities?.some((i) => i.provider === "email");
   const shouldFocusMembershipSection = searchParams.get("section") === "membership";
+  const shouldFocusHealthSection = searchParams.get("section") === "health";
   const returnTo = searchParams.get("returnTo");
 
   const initFields = () => {
@@ -103,6 +117,9 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     setCityOfResidence(profile?.city_of_residence || "");
     setProvinceOfResidence(profile?.province_of_residence || "");
     setBio(profile?.bio || "");
+    setHealthSafety(getHealthSafetyValueFromProfile(profile));
+    setHealthErrors({});
+    setHealthSafetyTouched(false);
     setHasChanges(false);
   };
 
@@ -115,31 +132,57 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     if (open && profile && !hasChanges) {
       initFields();
     }
-  }, [
-    open,
-    profile?.first_name,
-    profile?.last_name,
-    profile?.phone,
-    profile?.instagram_handle,
-    profile?.birth_date,
-    profile?.birth_place,
-    profile?.province_of_birth,
-    profile?.residential_address,
-    profile?.city_of_residence,
-    profile?.province_of_residence,
-    profile?.bio,
-    hasChanges,
-  ]);
+	  }, [
+	    open,
+	    profile?.first_name,
+	    profile?.last_name,
+	    profile?.phone,
+	    profile?.instagram_handle,
+	    profile?.birth_date,
+	    profile?.birth_place,
+	    profile?.province_of_birth,
+	    profile?.residential_address,
+	    profile?.city_of_residence,
+	    profile?.province_of_residence,
+	    profile?.bio,
+	    profile?.health_safety_status,
+	    profile?.health_safety_notes,
+	    profile?.emergency_medication_has,
+	    profile?.emergency_medication_notes,
+	    profile?.health_safety_help_notes,
+	    hasChanges,
+	  ]);
 
-  useEffect(() => {
-    if (!open || !shouldFocusMembershipSection) return;
-    const timer = window.setTimeout(() => {
-      membershipSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [open, shouldFocusMembershipSection]);
+	  useEffect(() => {
+	    if (!open || (!shouldFocusMembershipSection && !shouldFocusHealthSection)) return;
+	    const timer = window.setTimeout(() => {
+	      if (shouldFocusHealthSection) {
+	        healthSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+	      } else {
+	        membershipSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+	      }
+	    }, 250);
+	    return () => window.clearTimeout(timer);
+	  }, [open, shouldFocusMembershipSection, shouldFocusHealthSection]);
 
-  const markChanged = () => setHasChanges(true);
+	  const markChanged = () => setHasChanges(true);
+
+	  const handleHealthSafetyChange = (value: HealthSafetyValue) => {
+	    setHealthSafety(value);
+	    setHealthSafetyTouched(true);
+	    markChanged();
+	  };
+
+	  useEffect(() => {
+	    if (healthSafety.status && healthErrors.status) setHealthErrors(prev => ({ ...prev, status: false }));
+	    if (healthSafety.notes.trim() && healthErrors.notes) setHealthErrors(prev => ({ ...prev, notes: false }));
+	    if (healthSafety.emergencyMedicationHas && healthErrors.emergencyMedicationHas) {
+	      setHealthErrors(prev => ({ ...prev, emergencyMedicationHas: false }));
+	    }
+	    if (healthSafety.emergencyMedicationNotes.trim() && healthErrors.emergencyMedicationNotes) {
+	      setHealthErrors(prev => ({ ...prev, emergencyMedicationNotes: false }));
+	    }
+	  }, [healthSafety, healthErrors]);
 
   const uploadAvatar = async (file: File) => {
     if (!user) return;
@@ -162,45 +205,64 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     }
   };
 
-  const saveProfile = async () => {
-    setSaving(true);
-    const normalizedInstagramHandle = normalizeInstagramHandle(instagramHandle);
-    if (!isValidInstagramHandle(normalizedInstagramHandle)) {
+	  const saveProfile = async () => {
+	    setSaving(true);
+	    const normalizedInstagramHandle = normalizeInstagramHandle(instagramHandle);
+	    if (!isValidInstagramHandle(normalizedInstagramHandle)) {
       toast({
         title: "Instagram non valido",
         description: "Inserisci solo username, @username o link instagram.com/username.",
         variant: "destructive",
       });
-      setSaving(false);
-      return;
-    }
-    const { error } = await supabase.from("profiles").update({
-      first_name: firstName,
-      last_name: lastName,
-      phone,
-      instagram_handle: normalizedInstagramHandle,
+	      setSaving(false);
+	      return;
+	    }
+
+	    const updateData: Record<string, unknown> = {
+	      first_name: firstName,
+	      last_name: lastName,
+	      phone,
+	      instagram_handle: normalizedInstagramHandle,
       birth_date: dateOfBirth || null,
       birth_place: birthPlace.trim() || null,
       province_of_birth: provinceOfBirth.trim().toUpperCase() || null,
       residential_address: residentialAddress.trim() || null,
       city_of_residence: cityOfResidence.trim() || null,
-      province_of_residence: provinceOfResidence.trim().toUpperCase() || null,
-      bio,
-      updated_at: new Date().toISOString(),
-    }).eq("id", user!.id);
-    if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
-    } else {
+	      province_of_residence: provinceOfResidence.trim().toUpperCase() || null,
+	      bio,
+	      updated_at: new Date().toISOString(),
+	    };
+
+	    if (healthSafetyTouched) {
+	      const validation = validateHealthSafety(healthSafety);
+	      setHealthErrors(validation.errors);
+	      if (!validation.isValid) {
+	        healthSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+	        toast({
+	          title: "Completa salute e sicurezza",
+	          description: "Controlla i campi obbligatori prima di salvare.",
+	          variant: "destructive",
+	        });
+	        setSaving(false);
+	        return;
+	      }
+	      Object.assign(updateData, buildHealthSafetyPayload(healthSafety));
+	    }
+
+	    const { error } = await supabase.from("profiles").update(updateData as any).eq("id", user!.id);
+	    if (error) {
+	      toast({ title: "Errore", description: error.message, variant: "destructive" });
+	    } else {
       await refreshProfile();
       toast({ title: "Profilo aggiornato" });
       setHasChanges(false);
       if (returnTo) {
         onOpenChange(false);
         navigate(returnTo, { replace: true });
-      } else if (shouldFocusMembershipSection) {
-        const params = new URLSearchParams(location.search);
-        params.delete("section");
-        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+	      } else if (shouldFocusMembershipSection || shouldFocusHealthSection) {
+	        const params = new URLSearchParams(location.search);
+	        params.delete("section");
+	        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
       }
     }
     setSaving(false);
@@ -486,11 +548,29 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                   </div>
                 </div>
               </div>
-            </div>
+	            </div>
 
-            {hasChanges && (
-              <Button onClick={saveProfile} disabled={saving} className="w-full bg-primary text-primary-foreground font-body font-semibold">
-                {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+	            {/* HEALTH SAFETY SECTION */}
+	            <div
+	              ref={healthSectionRef}
+	              className={`rounded-xl border p-4 transition-colors ${
+	                shouldFocusHealthSection ? "border-primary bg-primary/5" : "border-border bg-muted/20"
+	              }`}
+	            >
+	              <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Salute e sicurezza</p>
+	              <p className="text-xs font-body text-muted-foreground mb-4">
+	                Questi dati sono opzionali per il profilo pubblico, ma utili allo staff durante le attività.
+	              </p>
+	              <HealthSafetyForm
+	                value={healthSafety}
+	                onChange={handleHealthSafetyChange}
+	                errors={healthErrors}
+	              />
+	            </div>
+
+	            {hasChanges && (
+	              <Button onClick={saveProfile} disabled={saving} className="w-full bg-primary text-primary-foreground font-body font-semibold">
+	                {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Salva modifiche
               </Button>
             )}
@@ -507,9 +587,9 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
               >
                 <Settings className="h-[18px] w-[18px] text-secondary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-body font-semibold text-foreground">Modifica preferenze</p>
-                  <p className="text-xs font-body text-muted-foreground">Livello, interessi, auto, frequenza</p>
-                </div>
+	                  <p className="text-sm font-body font-semibold text-foreground">Modifica preferenze</p>
+	                  <p className="text-xs font-body text-muted-foreground">Livello, interessi, frequenza</p>
+	                </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </button>
             </div>

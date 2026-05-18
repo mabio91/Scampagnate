@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Instagram, User as UserIcon, LogIn, Check, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Instagram, User as UserIcon, LogIn, Check, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useEvent, useEventParticipants } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules"
 import { useMemo } from "react";
 import { countUniqueAttendedEvents, dedupeRegistrationsByEvent } from "@/lib/eventRegistrations";
 import { instagramProfileUrl } from "@/lib/instagram";
+import { formatHealthSafetyStatus } from "@/lib/healthSafety";
 
 // --- Fit score calc (organizer/admin only) ---
 const LEVEL_MAP: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
@@ -201,6 +202,11 @@ const AdminParticipantRow = ({
   completedEvents,
   age,
   instagramHandle,
+  healthStatus,
+  healthNotes,
+  emergencyMedicationHas,
+  emergencyMedicationNotes,
+  healthHelpNotes,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -211,6 +217,11 @@ const AdminParticipantRow = ({
   completedEvents: number;
   age: number | null;
   instagramHandle?: string | null;
+  healthStatus?: string | null;
+  healthNotes?: string | null;
+  emergencyMedicationHas?: boolean | null;
+  emergencyMedicationNotes?: string | null;
+  healthHelpNotes?: string | null;
 }) => {
   return (
     <div className="flex items-center gap-3 py-3">
@@ -252,8 +263,8 @@ const AdminParticipantRow = ({
               🎂 {age} anni
             </span>
           )}
-          {instagramHandle && (
-            <a
+	          {instagramHandle && (
+	            <a
               href={instagramProfileUrl(instagramHandle)}
               target="_blank"
               rel="noreferrer"
@@ -262,12 +273,43 @@ const AdminParticipantRow = ({
             >
               <Instagram className="h-3 w-3" />
               @{instagramHandle}
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+	            </a>
+	          )}
+	        </div>
+	        {healthStatus && (
+	          <div className={`mt-2 rounded-xl border p-2.5 ${
+	            healthStatus === "has_info" ? "border-warning/30 bg-warning/10" : "border-success/20 bg-success/10"
+	          }`}>
+	            <div className="flex items-start gap-2">
+	              {healthStatus === "has_info" ? (
+	                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+	              ) : (
+	                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+	              )}
+	              <div className="min-w-0 space-y-1">
+	                <p className="text-[11px] font-body font-bold text-foreground">
+	                  Salute e sicurezza: {formatHealthSafetyStatus(healthStatus)}
+	                </p>
+	                {healthStatus === "has_info" && healthNotes && (
+	                  <p className="text-[11px] font-body leading-relaxed text-muted-foreground">{healthNotes}</p>
+	                )}
+	                {healthStatus === "has_info" && emergencyMedicationHas && emergencyMedicationNotes && (
+	                  <p className="text-[11px] font-body leading-relaxed text-muted-foreground">
+	                    Farmaci/dispositivi: {emergencyMedicationNotes}
+	                  </p>
+	                )}
+	                {healthStatus === "has_info" && healthHelpNotes && (
+	                  <p className="text-[11px] font-body leading-relaxed text-muted-foreground">
+	                    Indicazioni: {healthHelpNotes}
+	                  </p>
+	                )}
+	              </div>
+	            </div>
+	          </div>
+	        )}
+	      </div>
+	    </div>
+	  );
 };
 
 // --- Main page ---
@@ -307,13 +349,13 @@ const EventParticipants = () => {
       if (participantIds.length === 0) return {};
       const { data } = await supabase
         .from("profiles")
-        .select("id, self_level, trekking_experience, activity_frequency, interests, total_points, birth_date, instagram_handle")
-        .in("id", participantIds);
+	        .select("id, self_level, trekking_experience, activity_frequency, interests, total_points, birth_date, instagram_handle, health_safety_status, health_safety_notes, emergency_medication_has, emergency_medication_notes, health_safety_help_notes")
+	        .in("id", participantIds);
       const map: Record<string, any> = {};
       (data || []).forEach((p: any) => { map[p.id] = p; });
       return map;
     },
-    enabled: participantIds.length > 0,
+	    enabled: isOrgOrAdmin && participantIds.length > 0,
   });
 
   // Fetch all registrations for reliability + completed events (org/admin only)
@@ -582,10 +624,15 @@ const EventParticipants = () => {
                       reliabilityLabel={getReliabilityLabel(p.user_id)}
                       completedEvents={getCompletedEvents(p.user_id)}
                       isManual={p.is_manual}
-                      manualLevel={p.manual_level}
-                      birthDate={pProfile?.birth_date}
-                      instagramHandle={pProfile?.instagram_handle}
-                    />
+	                      manualLevel={p.manual_level}
+	                      birthDate={pProfile?.birth_date}
+	                      instagramHandle={pProfile?.instagram_handle}
+	                      healthStatus={pProfile?.health_safety_status}
+	                      healthNotes={pProfile?.health_safety_notes}
+	                      emergencyMedicationHas={pProfile?.emergency_medication_has}
+	                      emergencyMedicationNotes={pProfile?.emergency_medication_notes}
+	                      healthHelpNotes={pProfile?.health_safety_help_notes}
+	                    />
                   );
                 }
 
@@ -664,10 +711,15 @@ const AdminParticipantRowWithLevel = ({
   reliabilityLabel,
   completedEvents,
   isManual,
-  manualLevel,
-  birthDate,
-  instagramHandle,
-}: {
+	  manualLevel,
+	  birthDate,
+	  instagramHandle,
+	  healthStatus,
+	  healthNotes,
+	  emergencyMedicationHas,
+	  emergencyMedicationNotes,
+	  healthHelpNotes,
+	}: {
   avatarUrl?: string | null;
   firstName?: string;
   points: number;
@@ -675,10 +727,15 @@ const AdminParticipantRowWithLevel = ({
   reliabilityLabel: string;
   completedEvents: number;
   isManual?: boolean;
-  manualLevel?: string | null;
-  birthDate?: string | null;
-  instagramHandle?: string | null;
-}) => {
+	  manualLevel?: string | null;
+	  birthDate?: string | null;
+	  instagramHandle?: string | null;
+	  healthStatus?: string | null;
+	  healthNotes?: string | null;
+	  emergencyMedicationHas?: boolean | null;
+	  emergencyMedicationNotes?: string | null;
+	  healthHelpNotes?: string | null;
+	}) => {
   const { data: levelData } = useCommunityLevel(points);
 
   let finalLevel = levelData;
@@ -701,10 +758,15 @@ const AdminParticipantRowWithLevel = ({
       level={finalLevel}
       fitScore={fitScore}
       reliabilityLabel={reliabilityLabel}
-      completedEvents={completedEvents}
-      age={calculateAge(birthDate)}
-      instagramHandle={isManual ? null : instagramHandle}
-    />
+	      completedEvents={completedEvents}
+	      age={calculateAge(birthDate)}
+	      instagramHandle={isManual ? null : instagramHandle}
+	      healthStatus={isManual ? null : healthStatus}
+	      healthNotes={isManual ? null : healthNotes}
+	      emergencyMedicationHas={isManual ? null : emergencyMedicationHas}
+	      emergencyMedicationNotes={isManual ? null : emergencyMedicationNotes}
+	      healthHelpNotes={isManual ? null : healthHelpNotes}
+	    />
   );
 };
 

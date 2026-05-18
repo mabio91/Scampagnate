@@ -30,7 +30,6 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
     { label: "Esperienza trekking", completed: !!profile.trekking_experience, group: "preferences" },
     { label: "Frequenza attività", completed: !!profile.activity_frequency, group: "preferences" },
     { label: "Interessi", completed: !!(profile.interests && profile.interests.length > 0), group: "preferences" },
-    { label: "Automunito", completed: !!profile.has_car, group: "preferences" },
   ] : [];
 
   const completedCount = fields.filter(f => f.completed).length;

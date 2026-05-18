@@ -6,7 +6,7 @@ import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronDown, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle } from "lucide-react";
+import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronDown, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle, ShieldCheck } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -19,6 +19,7 @@ import ActivityProposalForm from "@/components/ActivityProposalForm";
 import { ActivityHistory } from "@/components/profile/ActivityHistory";
 import ProfileEditSheet from "@/components/profile/ProfileEditSheet";
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
+import { hasCompletedHealthSafety } from "@/lib/healthSafety";
 
 const MEMBERSHIP_BENEFITS = [
   "Copertura assicurativa durante le attività",
@@ -47,7 +48,7 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    if (searchParams.get("section") === "membership") {
+    if (searchParams.get("section") === "membership" || searchParams.get("section") === "health") {
       setShowEditSheet(true);
     }
   }, [searchParams]);
@@ -69,6 +70,13 @@ const Profile = () => {
     await signOut();
     navigate("/");
   };
+
+  const openHealthSafetySection = () => {
+    navigate({ pathname: "/profile", search: "?section=health" }, { replace: true });
+    setShowEditSheet(true);
+  };
+
+  const healthSafetyMissing = profile && !hasCompletedHealthSafety(profile);
 
   return (
     <>
@@ -127,6 +135,30 @@ const Profile = () => {
         <ProfileCompleteness
           onCompleteProfile={() => setShowEditSheet(true)}
         />
+
+        {healthSafetyMissing && (
+          <div className="mb-6 rounded-2xl border border-secondary/20 bg-secondary/5 p-4 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-sm font-bold text-foreground">Completa salute e sicurezza</h3>
+                <p className="mt-1 text-xs font-body leading-relaxed text-muted-foreground">
+                  Una nuova sezione aiuta staff e organizzatori a sapere cosa serve in caso di necessità. Non cambia fit score, suggerimenti o accesso agli eventi.
+                </p>
+                <Button
+                  onClick={openHealthSafetySection}
+                  size="sm"
+                  className="mt-3 bg-secondary text-secondary-foreground font-body font-semibold"
+                >
+                  Completa ora
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Membership Status Card */}
         <div className="mb-6">
