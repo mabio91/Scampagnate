@@ -100,7 +100,7 @@ const ConsentPrivacySection = () => {
                     Notifiche app
                   </p>
                   <p className="text-xs font-body text-muted-foreground mt-0.5">
-                    Ricevi avvisi su iscrizioni, posti che si liberano e aggiornamenti importanti.
+                    Ricevi avvisi su iscrizioni, posti che si liberano e aggiornamenti importanti
                   </p>
                 </div>
                 <Switch
@@ -133,7 +133,7 @@ const ConsentPrivacySection = () => {
                   Fai parte dei nostri racconti
                 </p>
                 <p className="text-xs font-body text-muted-foreground mt-0.5">
-                  Possiamo condividere foto e momenti delle esperienze sui canali Scampagnate.
+                  Possiamo condividere foto e momenti delle esperienze sui canali Scampagnate
                 </p>
               </div>
               <Switch

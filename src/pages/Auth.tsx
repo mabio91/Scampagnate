@@ -348,7 +348,7 @@ const Auth = () => {
                 checked={acceptMedia}
                 onChange={setAcceptMedia}
                 label="Fai parte dei nostri racconti"
-                description="Possiamo condividere foto e momenti delle esperienze sui canali Scampagnate."
+                description="Possiamo condividere foto e momenti delle esperienze sui canali Scampagnate"
               />
 
               <AnimatePresence>
