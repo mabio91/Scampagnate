@@ -21,6 +21,14 @@ const LEVEL_ICONS: Record<number, LucideIcon> = {
   5: Flame,
 };
 
+const LEVEL_EMOJI: Record<string, string> = {
+  "1": "🌱",
+  "2": "🥾",
+  "3": "⛰️",
+  "4": "💪",
+  "5": "🔥",
+};
+
 // Keep exported for any consumers that only need static icon mapping
 export const DIFFICULTY_LEVELS = FALLBACK_LEVELS;
 
@@ -56,6 +64,11 @@ const getDifficultyLevelValue = (
   return fallback?.level || null;
 };
 
+const getCompactDifficultyText = (levelValue: string | null) => {
+  if (!levelValue) return null;
+  return `${LEVEL_EMOJI[levelValue] || ""} ${levelValue}/5`.trim();
+};
+
 export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>(
   ({
     difficulty,
@@ -76,7 +89,9 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
 
     if (dbLevel) {
       const levelValue = getDifficultyLevelValue(difficulty, dbLevel.level_number);
-      const labelText = display === "fraction" && levelValue ? `${levelValue}/5` : dbLevel.label;
+      const labelText = display === "fraction" && levelValue
+        ? getCompactDifficultyText(levelValue)
+        : dbLevel.label;
       const dbStyle: CSSProperties = {
         backgroundColor: dbLevel.color_background || undefined,
         borderColor: dbLevel.color_border || undefined,
@@ -112,12 +127,14 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
           className={cn("inline-flex h-7 items-center rounded-full bg-accent/20 px-2.5 text-[10px] font-body font-semibold leading-none text-accent-foreground", className)}
           aria-label={`Difficolta ${levelValue} su 5`}
         >
-          {showLabel && <span className={labelClassName}>{levelValue}/5</span>}
+          {showLabel && <span className={labelClassName}>{getCompactDifficultyText(levelValue)}</span>}
         </span>
       );
     }
     const Icon = details.icon;
-    const labelText = display === "fraction" && levelValue ? `${levelValue}/5` : details.name;
+    const labelText = display === "fraction" && levelValue
+      ? getCompactDifficultyText(levelValue)
+      : details.name;
 
     return (
       <span
