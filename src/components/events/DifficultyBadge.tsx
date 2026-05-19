@@ -34,10 +34,11 @@ interface DifficultyBadgeProps {
   difficulty: string | null | undefined;
   className?: string;
   showLabel?: boolean;
+  labelClassName?: string;
 }
 
 export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>(
-  ({ difficulty, className = "", showLabel = true }, ref) => {
+  ({ difficulty, className = "", showLabel = true, labelClassName }, ref) => {
     const { data: dbLevels } = useTrekkingDifficultyLevels();
 
     if (!difficulty) return null;
@@ -61,7 +62,7 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
           <span style={{ color: dbLevel.color_icon || dbLevel.color_primary }} className="flex items-center justify-center">
             <DynamicIcon value={dbLevel.icon} size={14} className="shrink-0" />
           </span>
-          {showLabel && dbLevel.label}
+          {showLabel && <span className={labelClassName}>{dbLevel.label}</span>}
         </span>
       );
     }
@@ -74,7 +75,7 @@ export const DifficultyBadge = forwardRef<HTMLSpanElement, DifficultyBadgeProps>
     return (
       <span ref={ref} className={cn("inline-flex h-7 items-center gap-1.5 rounded-full bg-accent/20 px-2.5 text-[10px] font-body font-semibold leading-none text-accent-foreground", className)}>
         <Icon className={`h-3.5 w-3.5 ${details.color}`} />
-        {showLabel && details.name}
+        {showLabel && <span className={labelClassName}>{details.name}</span>}
       </span>
     );
   }

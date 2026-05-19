@@ -117,19 +117,25 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
             </div>
           </div>
 
-          <div className="mt-2 max-h-[2.4rem] min-h-[2.4rem] overflow-hidden">
-            <div className="flex flex-wrap items-center gap-2">
-            {event.category && (
-              <EventBadgePill className="min-w-0 max-w-full border border-border/60 bg-muted/30 text-foreground">
-                {event.category.icon && (
-                  <span className="flex shrink-0 items-center justify-center">
-                    <DynamicIcon value={event.category.icon} size={12} />
-                  </span>
-                )}
-                <span className="truncate">{event.category.name}</span>
-              </EventBadgePill>
-            )}
-            {event.difficulty && <DifficultyBadge difficulty={event.difficulty} className="shrink-0" showLabel={true} />}
+          <div className="mt-2 min-h-[2.25rem] overflow-hidden">
+            <div className="flex min-w-0 flex-nowrap items-center gap-1.5">
+              {event.category && (
+                <EventBadgePill className="min-w-0 max-w-full overflow-hidden border border-border/60 bg-muted/30 px-2 text-foreground">
+                  {event.category.icon && (
+                    <span className="flex shrink-0 items-center justify-center">
+                      <DynamicIcon value={event.category.icon} size={12} />
+                    </span>
+                  )}
+                  <span className="min-w-0 truncate">{event.category.name}</span>
+                </EventBadgePill>
+              )}
+              {event.difficulty && (
+                <DifficultyBadge
+                  difficulty={event.difficulty}
+                  className="shrink-0 px-2"
+                  labelClassName="hidden sm:inline"
+                />
+              )}
             </div>
           </div>
 
