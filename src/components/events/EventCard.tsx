@@ -199,7 +199,12 @@ const EventCard = memo(({
                   </EventBadgePill>
                 )}
                 {hasDifficulty && (
-                  <DifficultyBadge difficulty={event.difficulty} className="shrink-0" showLabel={true} />
+                  <DifficultyBadge
+                    difficulty={event.difficulty}
+                    className="shrink-0 px-2"
+                    display="fraction"
+                    showIcon={false}
+                  />
                 )}
               </div>
 

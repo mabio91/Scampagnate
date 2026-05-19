@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, type NavigateFunction } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, MapPin, CalendarDays, MessageCircle, Phone,
@@ -6,7 +6,7 @@ import {
   Info, Clock
 } from "lucide-react";
 
-import { useOrganizerProfile } from "@/hooks/useEvents";
+import { type EventWithDetails, useOrganizerProfile } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,13 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
 import { isEventPastByDate, isEventUpcomingByDate } from "@/lib/eventDates";
+
+type OrganizerProfileEvent = Pick<
+  EventWithDetails,
+  "id" | "title" | "date" | "time" | "location" | "image_url" | "difficulty" | "price" | "spots_taken" | "spots_total"
+> & {
+  category?: { name: string } | null;
+};
 
 const OrganizerProfile = () => {
   const { id } = useParams();
@@ -61,9 +68,10 @@ const OrganizerProfile = () => {
   }
 
   const { profile, eventCount, events } = organizer;
+  const organizerEvents = (events || []) as OrganizerProfileEvent[];
   const fullName = profile?.first_name || "Organizer";
-  const upcomingEvents = events?.filter(e => isEventUpcomingByDate(e.date)) || [];
-  const pastEvents = events?.filter(e => isEventPastByDate(e.date)) || [];
+  const upcomingEvents = organizerEvents.filter(e => isEventUpcomingByDate(e.date));
+  const pastEvents = organizerEvents.filter(e => isEventPastByDate(e.date));
 
   return (
     <>
@@ -232,7 +240,17 @@ const OrganizerProfile = () => {
   );
 };
 
-const EventRow = ({ event, index, navigate, past = false }: { event: any; index: number; navigate: any; past?: boolean }) => (
+const EventRow = ({
+  event,
+  index,
+  navigate,
+  past = false,
+}: {
+  event: OrganizerProfileEvent;
+  index: number;
+  navigate: NavigateFunction;
+  past?: boolean;
+}) => (
   <motion.div
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
@@ -254,7 +272,11 @@ const EventRow = ({ event, index, navigate, past = false }: { event: any; index:
       />
       {event.difficulty && (
         <div className="absolute top-1 left-1 scale-[0.7] origin-top-left">
-          <DifficultyBadge difficulty={event.difficulty} showLabel={false} />
+          <DifficultyBadge
+            difficulty={event.difficulty}
+            display="fraction"
+            showIcon={false}
+          />
         </div>
       )}
     </div>
