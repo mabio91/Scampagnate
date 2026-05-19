@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
 const ONESIGNAL_APP_ID = '5b9c05fd-e0f1-427e-8301-0a47caba3274';
+const ONESIGNAL_SERVICE_WORKER_SCOPE = '/push/onesignal/';
+const ONESIGNAL_SERVICE_WORKER_PATH = 'OneSignalSDKWorker.js';
 
 let onesignalInitialized = false;
 let onesignalInitPromise: Promise<{ ready: boolean; reason?: string }> | null = null;
@@ -14,6 +16,28 @@ type PushSubscriptionChange = {
     optedIn?: boolean | null;
   } | null;
 };
+
+type PushActionResult = {
+  success: boolean;
+  errorMessage?: string;
+};
+
+const NOTIFICATIONS_BLOCKED_MESSAGE =
+  'Le notifiche sono bloccate per questo sito. Apri le impostazioni di Chrome, consenti le notifiche per scampagnate.com e riprova.';
+
+const NOTIFICATIONS_UNSUPPORTED_MESSAGE = 'Questo browser non supporta le notifiche push.';
+const ONESIGNAL_INIT_ERROR_MESSAGE = 'Non riesco a inizializzare le notifiche push su questo dispositivo.';
+const ONESIGNAL_SUBSCRIPTION_ERROR_MESSAGE = 'Non riesco a completare la registrazione push su questo dispositivo.';
+
+function resultError(message: string): PushActionResult {
+  return { success: false, errorMessage: message };
+}
+
+function messageFromError(err: unknown, fallback: string) {
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === 'string' && err.trim()) return err;
+  return fallback;
+}
 
 function getPushBlockReason() {
   if (typeof window === 'undefined') return 'Push notifications are only available in the browser.';
@@ -49,15 +73,16 @@ async function initOneSignal() {
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
-        serviceWorkerPath: 'sw.js',
-        serviceWorkerParam: { scope: '/' },
+        path: ONESIGNAL_SERVICE_WORKER_SCOPE,
+        serviceWorkerPath: ONESIGNAL_SERVICE_WORKER_PATH,
+        serviceWorkerParam: { scope: ONESIGNAL_SERVICE_WORKER_SCOPE },
       });
 
       onesignalInitialized = true;
       return { ready: true };
     } catch (err) {
       console.error('OneSignal init error:', err);
-      return { ready: false, reason: 'OneSignal failed to initialize.' };
+      return { ready: false, reason: messageFromError(err, ONESIGNAL_INIT_ERROR_MESSAGE) };
     } finally {
       onesignalInitPromise = null;
     }
@@ -169,8 +194,8 @@ export const usePushNotifications = () => {
 
   const subscribe = useCallback(async () => {
     if (!isSupported) {
-      setErrorMessage('This browser does not support push notifications.');
-      return false;
+      setErrorMessage(NOTIFICATIONS_UNSUPPORTED_MESSAGE);
+      return resultError(NOTIFICATIONS_UNSUPPORTED_MESSAGE);
     }
 
     setIsLoading(true);
@@ -182,7 +207,7 @@ export const usePushNotifications = () => {
       setErrorMessage(initResult.reason ?? null);
 
       if (!initResult.ready) {
-        return false;
+        return resultError(initResult.reason ?? ONESIGNAL_INIT_ERROR_MESSAGE);
       }
 
       if (user) {
@@ -199,8 +224,11 @@ export const usePushNotifications = () => {
       setPermission(nextPermission);
 
       if (nextPermission !== 'granted') {
-        setErrorMessage('Notification permission was not granted.');
-        return false;
+        const message = nextPermission === 'denied'
+          ? NOTIFICATIONS_BLOCKED_MESSAGE
+          : 'Permesso notifiche non concesso.';
+        setErrorMessage(message);
+        return resultError(message);
       }
 
       await OneSignal.User.PushSubscription.optIn();
@@ -209,14 +237,16 @@ export const usePushNotifications = () => {
       setIsSubscribed(optedIn);
 
       if (!optedIn) {
-        setErrorMessage('Push subscription is not active on this device.');
+        setErrorMessage(ONESIGNAL_SUBSCRIPTION_ERROR_MESSAGE);
+        return resultError(ONESIGNAL_SUBSCRIPTION_ERROR_MESSAGE);
       }
 
-      return optedIn;
+      return { success: true };
     } catch (err) {
       console.error('OneSignal subscription failed:', err);
-      setErrorMessage('OneSignal subscription failed.');
-      return false;
+      const message = messageFromError(err, ONESIGNAL_SUBSCRIPTION_ERROR_MESSAGE);
+      setErrorMessage(message);
+      return resultError(message);
     } finally {
       setIsLoading(false);
     }

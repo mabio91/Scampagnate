@@ -53,10 +53,10 @@ const ConsentPrivacySection = () => {
       return;
     }
 
-    const success = await subscribe();
+    const result = await subscribe();
     toast({
-      title: success ? "Notifiche app attivate" : "Non è stato possibile attivare le notifiche app",
-      variant: success ? undefined : "destructive",
+      title: result.success ? "Notifiche app attivate" : result.errorMessage || "Non è stato possibile attivare le notifiche app",
+      variant: result.success ? undefined : "destructive",
     });
   };
 

@@ -92,12 +92,12 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
       await unsubscribe();
       toast({ title: language === "it" ? "Notifiche push disattivate" : "Push notifications disabled" });
     } else {
-      const success = await subscribe();
-      if (success) {
+      const result = await subscribe();
+      if (result.success) {
         toast({ title: language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!" });
       } else {
         toast({
-          title: pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"),
+          title: result.errorMessage || pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"),
           variant: "destructive",
         });
       }

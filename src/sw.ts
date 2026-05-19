@@ -1,4 +1,6 @@
 /// <reference lib="webworker" />
+// Keep OneSignal in the root PWA worker for legacy subscriptions that were
+// created before the dedicated /push/onesignal/ worker split.
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
@@ -62,5 +64,5 @@ registerRoute(
   })
 );
 
-// Push notifications are handled by OneSignal's service worker (OneSignalSDKWorker.js)
-// This SW only handles caching — OneSignal registers its own SW at /OneSignalSDKWorker.js
+// New push subscriptions use the dedicated OneSignal worker under
+// /push/onesignal/. This root worker keeps handling PWA caching.

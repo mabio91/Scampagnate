@@ -6,7 +6,7 @@ import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
 import { it as itLocale } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { localizeNotification } from "@/lib/notificationLocalization";
@@ -116,12 +116,12 @@ const Notifications = () => {
   const { language, t } = useLanguage();
   const locale = language === "it" ? itLocale : enUS;
 
-  const getDateGroup = (dateStr: string) => {
+  const getDateGroup = useCallback((dateStr: string) => {
     const date = new Date(dateStr);
     if (isToday(date)) return language === "it" ? "Oggi" : "Today";
     if (isYesterday(date)) return language === "it" ? "Ieri" : "Yesterday";
     return format(date, "d MMMM", { locale });
-  };
+  }, [language, locale]);
 
   const grouped = useMemo(() => {
     if (!notifications) return [];
@@ -137,7 +137,7 @@ const Notifications = () => {
       }
     }
     return groups;
-  }, [notifications, language]);
+  }, [notifications, getDateGroup]);
 
   const handlePushToggle = async () => {
     if (!canManagePush && pushError) {
@@ -149,12 +149,12 @@ const Notifications = () => {
       await unsubscribe();
       toast({ title: language === "it" ? "Notifiche push disattivate" : "Push notifications disabled" });
     } else {
-      const success = await subscribe();
-      if (success) {
+      const result = await subscribe();
+      if (result.success) {
         toast({ title: language === "it" ? "Notifiche push attivate!" : "Push notifications enabled!" });
       } else {
         toast({
-          title: pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"),
+          title: result.errorMessage || pushError || (language === "it" ? "Non è stato possibile attivare le notifiche push" : "Could not enable push notifications"),
           variant: "destructive",
         });
       }

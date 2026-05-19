@@ -91,6 +91,13 @@ describe("usePushNotifications", () => {
     fireEvent.click(screen.getByRole("button", { name: "subscribe" }));
 
     await waitFor(() => expect(oneSignalMocks.init).toHaveBeenCalledTimes(1));
+    expect(oneSignalMocks.init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/push/onesignal/",
+        serviceWorkerPath: "OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/push/onesignal/" },
+      })
+    );
     expect(oneSignalMocks.requestPermission).toHaveBeenCalledTimes(1);
     expect(oneSignalMocks.pushSubscription.optIn).toHaveBeenCalledTimes(1);
     expect(await screen.findByText("subscribed")).toBeInTheDocument();
