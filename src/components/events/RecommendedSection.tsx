@@ -105,7 +105,7 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
 
         <div className="grid min-h-0 flex-1 grid-rows-[auto_auto_auto_1fr_auto] px-4 pb-4 pt-3">
           <div className="min-h-[2.6rem]">
-            <h3 className="line-clamp-2 font-display text-[1.05rem] leading-[1.1] tracking-[-0.03em] text-foreground sm:text-[1.15rem]">
+            <h3 className="line-clamp-2 break-words font-display text-[1.05rem] leading-[1.16] tracking-normal text-foreground sm:text-[1.15rem]">
               {event.title}
             </h3>
           </div>
@@ -181,7 +181,7 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
           {events.slice(0, 6).map((item, i) => (
             <div
               key={item.event.id}
-              className="h-[22.5rem] w-[72%] shrink-0 snap-start sm:w-[58%] lg:w-[52%] xl:w-[24rem]"
+              className="h-[22.5rem] w-[min(19rem,82vw)] shrink-0 snap-start sm:w-[20rem] lg:w-[22rem] xl:w-[24rem]"
             >
               <RecommendedCarouselCard
                 event={item.event}
