@@ -133,7 +133,8 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
                 <DifficultyBadge
                   difficulty={event.difficulty}
                   className="shrink-0 px-2"
-                  labelClassName="hidden sm:inline"
+                  display="fraction"
+                  showIcon={false}
                 />
               )}
             </div>
@@ -187,7 +188,7 @@ const RecommendedSection = memo(({ events, registeredEventIds }: Props) => {
           {events.slice(0, 6).map((item, i) => (
             <div
               key={item.event.id}
-              className="h-[22.5rem] w-[min(19rem,82vw)] shrink-0 snap-start sm:w-[20rem] lg:w-[22rem] xl:w-[24rem]"
+              className="h-[22.5rem] w-[72%] shrink-0 snap-start sm:w-[58%] lg:w-[52%] xl:w-[24rem]"
             >
               <RecommendedCarouselCard
                 event={item.event}
