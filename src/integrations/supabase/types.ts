@@ -2812,9 +2812,11 @@ export type Database = {
         Args: { profile_id: string }
         Returns: {
           avatar_url: string
+          bio: string | null
           first_name: string
           id: string
           last_name_initial: string
+          phone: string | null
           total_points: number
         }[]
       }
@@ -2822,9 +2824,11 @@ export type Database = {
         Args: { profile_ids: string[] }
         Returns: {
           avatar_url: string
+          bio: string | null
           first_name: string
           id: string
           last_name_initial: string
+          phone: string | null
           total_points: number
         }[]
       }

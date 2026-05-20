@@ -281,13 +281,15 @@ const EventDetail = () => {
       if (!event?.organizer_id) return null;
       const { data: publicData } = await supabase.rpc("get_public_profile", { profile_id: event.organizer_id });
       const pub = publicData?.[0] || null;
-      let phone: string | null = null;
-      const { data: fullData } = await supabase
-        .from("profiles")
-        .select("phone")
-        .eq("id", event.organizer_id)
-        .single();
-      if (fullData) phone = fullData.phone;
+      let phone: string | null = pub?.phone || null;
+      if (!phone) {
+        const { data: fullData } = await supabase
+          .from("profiles")
+          .select("phone")
+          .eq("id", event.organizer_id)
+          .single();
+        if (fullData) phone = fullData.phone;
+      }
       return {
         first_name: pub?.first_name || "",
         avatar_url: pub?.avatar_url || null,
