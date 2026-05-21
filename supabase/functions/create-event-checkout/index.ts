@@ -93,6 +93,38 @@ const requiresOnlinePayment = (paymentType: PaymentType) =>
 const acceptsRegistrationStatus = (status: unknown) =>
   ["available", "published", "open"].includes(String(status ?? ""));
 
+const recordDiscountUsage = async (
+  supabaseAdmin: ReturnType<typeof createClient>,
+  params: {
+    discountCodeId: string;
+    userId: string;
+    eventId: string;
+    originalPrice: number;
+    discountedPrice: number;
+  },
+) => {
+  const { data: existingUsage, error: existingUsageError } = await supabaseAdmin
+    .from("discount_code_usage")
+    .select("id")
+    .eq("discount_code_id", params.discountCodeId)
+    .eq("user_id", params.userId)
+    .eq("event_id", params.eventId)
+    .maybeSingle();
+
+  if (existingUsageError) throw existingUsageError;
+  if (existingUsage) return;
+
+  const { error: usageError } = await supabaseAdmin.from("discount_code_usage").insert({
+    discount_code_id: params.discountCodeId,
+    user_id: params.userId,
+    event_id: params.eventId,
+    original_price: params.originalPrice,
+    discounted_price: params.discountedPrice,
+  });
+
+  if (usageError) throw usageError;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -288,6 +320,9 @@ serve(async (req) => {
 
     let finalPrice = originalPrice;
     let waivesServiceFee = false;
+    let appliedDiscountCodeId: string | null = null;
+    let discountOriginalPrice = 0;
+    let discountFinalPrice = 0;
 
     // Apply discount if provided
     if (discountCodeId) {
@@ -338,14 +373,9 @@ serve(async (req) => {
 
       finalPrice = Math.round(finalPrice * 100) / 100;
 
-      // Record usage
-      await supabaseAdmin.from("discount_code_usage").insert({
-        discount_code_id: discountCodeId,
-        user_id: userId,
-        event_id: eventId,
-        original_price: originalPrice,
-        discounted_price: finalPrice,
-      });
+      appliedDiscountCodeId = discountCodeId;
+      discountOriginalPrice = originalPrice;
+      discountFinalPrice = finalPrice;
 
       description += ` (Discount: ${discount.code})`;
     }
@@ -385,6 +415,16 @@ serve(async (req) => {
       .eq("id", registrationId);
 
     if (totalAmountCents <= 0) {
+      if (appliedDiscountCodeId) {
+        await recordDiscountUsage(supabaseAdmin, {
+          discountCodeId: appliedDiscountCodeId,
+          userId,
+          eventId,
+          originalPrice: discountOriginalPrice,
+          discountedPrice: discountFinalPrice,
+        });
+      }
+
       const freeStatus = paymentType === "deposit" && checkoutKind === "deposit" ? "deposit_paid" : "paid";
       await supabaseAdmin
         .from("event_registrations")
@@ -487,7 +527,9 @@ serve(async (req) => {
         price_option_id: effectivePriceOptionId || "",
         checkout_kind: checkoutKind,
         balance_payment_mode: balancePaymentMode || "",
-        discount_code_id: discountCodeId || "",
+        discount_code_id: appliedDiscountCodeId || "",
+        discount_original_cents: appliedDiscountCodeId ? String(Math.round(discountOriginalPrice * 100)) : "",
+        discount_final_cents: appliedDiscountCodeId ? String(Math.round(discountFinalPrice * 100)) : "",
         membership_included: String(membershipFeeCents > 0),
         booking_amount_cents: String(bookingAmountCents),
         service_fee_cents: String(serviceFeeCents),

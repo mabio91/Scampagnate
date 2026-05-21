@@ -77,9 +77,66 @@ export type PaymentFinalizerResult = {
 const acceptsRegistrationStatus = (status: unknown) =>
   ["available", "published", "open"].includes(String(status ?? ""));
 
+const isCancelledRegistrationStatus = (status: unknown) =>
+  ["cancelled", "failed", "expired"].includes(String(status ?? ""));
+
 const paymentIntentIdFromSession = (session: StripeSessionLike) => {
   const paymentIntent = session.payment_intent;
   return typeof paymentIntent === "string" ? paymentIntent : paymentIntent?.id || null;
+};
+
+const refundBookingAmount = async (
+  stripe: StripeRefundsClient,
+  stripePaymentIntentId: string | null,
+  bookingAmountCents: number,
+) => {
+  if (!stripePaymentIntentId || bookingAmountCents <= 0) return;
+  await stripe.refunds.create({ payment_intent: stripePaymentIntentId, amount: bookingAmountCents });
+};
+
+const eurosFromMetadataCents = (value: string | undefined) => {
+  const cents = Number(value || "0");
+  return Number.isFinite(cents) && cents > 0 ? Math.round(cents) / 100 : 0;
+};
+
+const recordDiscountUsageFromSession = async (
+  db: SupabaseAdminClient,
+  session: StripeSessionLike,
+  eventId: string | null,
+  userId: string | null,
+) => {
+  const discountCodeId = session.metadata?.discount_code_id || null;
+  if (!discountCodeId || !eventId || !userId) return;
+
+  const originalPrice = eurosFromMetadataCents(session.metadata?.discount_original_cents);
+  const discountedPrice = eurosFromMetadataCents(session.metadata?.discount_final_cents);
+  if (originalPrice <= 0) {
+    console.warn("Skipping discount usage recording: missing discount price metadata", {
+      discountCodeId,
+      eventId,
+      userId,
+    });
+    return;
+  }
+
+  const { data: existingUsage, error: existingUsageError } = await db
+    .from("discount_code_usage")
+    .select("id")
+    .eq("discount_code_id", discountCodeId)
+    .eq("user_id", userId)
+    .eq("event_id", eventId)
+    .maybeSingle();
+  if (existingUsageError) throw existingUsageError;
+  if (existingUsage) return;
+
+  const { error: usageError } = await db.from("discount_code_usage").insert({
+    discount_code_id: discountCodeId,
+    user_id: userId,
+    event_id: eventId,
+    original_price: originalPrice,
+    discounted_price: discountedPrice,
+  });
+  if (usageError) throw usageError;
 };
 
 export const finalizeMembershipCheckoutSession = async ({
@@ -142,7 +199,7 @@ export const finalizeEventCheckoutSession = async ({
   if (regError || !reg) {
     if (stripePaymentIntentId && bookingAmountCents > 0) {
       try {
-        await stripe.refunds.create({ payment_intent: stripePaymentIntentId, amount: bookingAmountCents });
+        await refundBookingAmount(stripe, stripePaymentIntentId, bookingAmountCents);
       } catch (error) {
         console.error("Refund error for missing registration:", error);
       }
@@ -159,7 +216,37 @@ export const finalizeEventCheckoutSession = async ({
     reg.payment_status === "paid" ||
     (checkoutKind === "deposit" && reg.payment_status === "deposit_paid")
   ) {
-    return { success: true, eventId: eventId || null };
+    await recordDiscountUsageFromSession(db, session, eventId || reg.event_id, userId);
+    return { success: true, eventId: eventId || reg.event_id };
+  }
+
+  if (isCancelledRegistrationStatus(reg.status)) {
+    if (stripePaymentIntentId && bookingAmountCents > 0) {
+      try {
+        await refundBookingAmount(stripe, stripePaymentIntentId, bookingAmountCents);
+      } catch (refundError) {
+        console.error("Auto-refund error for cancelled registration:", refundError);
+      }
+    }
+
+    await db
+      .from("event_registrations")
+      .update({
+        payment_status: "refunded",
+        stripe_payment_intent_id: stripePaymentIntentId,
+        refund_percentage: 100,
+        refund_amount: bookingAmountCents / 100,
+        refund_status: "completed",
+      })
+      .eq("id", registrationId)
+      .eq("user_id", userId);
+
+    return {
+      success: false,
+      auto_refunded: true,
+      eventId: eventId || reg.event_id,
+      error: "La registrazione era stata annullata. Ti abbiamo rimborsato automaticamente.",
+    };
   }
 
   const { data: event, error: eventError } = await db
@@ -190,7 +277,7 @@ export const finalizeEventCheckoutSession = async ({
   if (checkoutKind !== "balance" && (!acceptsRegistrationStatus(event.status) || spotsAvailable <= 0)) {
     if (stripePaymentIntentId && bookingAmountCents > 0) {
       try {
-        await stripe.refunds.create({ payment_intent: stripePaymentIntentId, amount: bookingAmountCents });
+        await refundBookingAmount(stripe, stripePaymentIntentId, bookingAmountCents);
         console.log(`Auto-refunded payment ${stripePaymentIntentId} - spot taken by another user`);
       } catch (refundError) {
         console.error("Auto-refund error:", refundError);
@@ -249,6 +336,8 @@ export const finalizeEventCheckoutSession = async ({
     registrationUpdate.amount_paid = bookingAmountCents / 100;
     registrationUpdate.service_fee_amount = Number(session.metadata?.service_fee_cents || "0") / 100;
   }
+
+  await recordDiscountUsageFromSession(db, session, eventId || reg.event_id, userId);
 
   const { error: updateError } = await db
     .from("event_registrations")
