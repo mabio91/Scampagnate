@@ -72,6 +72,9 @@ const EVENT_STATUS_OPTIONS: Array<{ value: EventStatus; label: string; descripti
   { value: "cancelled", label: "Annullato", description: "Evento annullato. Usa il flusso di annullamento per notifiche e rimborsi." },
 ];
 
+const STAFF_ROLE_PRESETS = ["STAFF", "FOTOGRAFO", "GUIDA"] as const;
+const CUSTOM_STAFF_ROLE_VALUE = "__custom__";
+
 const normalizeEditableEventStatus = (status: string | null | undefined): EventStatus => {
   if (status === "available" || status === "published") return "open";
   if (status === "unpublished") return "draft";
@@ -1613,11 +1616,30 @@ const EventForm = () => {
                     </div>
                     <div className="min-w-0">
                       <Label className="text-xs">Ruolo</Label>
-                      <Input
-                        value={member.role_label}
-                        onChange={(event) => updateStaffMember(index, "role_label", event.target.value)}
-                        placeholder="Staff, Fotografo..."
-                      />
+                      <Select
+                        value={STAFF_ROLE_PRESETS.includes(member.role_label as any) ? member.role_label : CUSTOM_STAFF_ROLE_VALUE}
+                        onValueChange={(value) => {
+                          updateStaffMember(index, "role_label", value === CUSTOM_STAFF_ROLE_VALUE ? "" : value);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona ruolo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STAFF_ROLE_PRESETS.map((role) => (
+                            <SelectItem key={role} value={role}>{role}</SelectItem>
+                          ))}
+                          <SelectItem value={CUSTOM_STAFF_ROLE_VALUE}>Campo libero</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {!STAFF_ROLE_PRESETS.includes(member.role_label as any) && (
+                        <Input
+                          className="mt-2"
+                          value={member.role_label}
+                          onChange={(event) => updateStaffMember(index, "role_label", event.target.value)}
+                          placeholder="Inserisci ruolo"
+                        />
+                      )}
                     </div>
                   </div>
 
