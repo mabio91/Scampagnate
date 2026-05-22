@@ -29,6 +29,7 @@ const OrganizerDashboard = lazy(() => import("./pages/OrganizerDashboard"));
 const EventForm = lazy(() => import("./pages/EventForm"));
 const EventManage = lazy(() => import("./pages/EventManage"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const EventCalendar = lazy(() => import("./pages/EventCalendar"));
 const ProfileSetup = lazy(() => import("./pages/ProfileSetup"));
 const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
 const MembershipSuccess = lazy(() => import("./pages/MembershipSuccess"));
@@ -88,6 +89,7 @@ const AnimatedRoutes = () => {
                   <Route path="/merch" element={<Merch />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/calendar" element={<EventCalendar />} />
                   <Route path="/organizer" element={<OrganizerDashboard />} />
                   <Route path="/organizer/:id" element={<OrganizerProfile />} />
                   <Route path="/organizer/events/new" element={<EventForm />} />

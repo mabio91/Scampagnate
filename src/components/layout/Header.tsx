@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import logo from "@/assets/logo.png";
-import { Bell, Search, User, LogIn, Sun, Moon } from "lucide-react";
+import { Bell, CalendarDays, Search, User, LogIn, Sun, Moon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/contexts/SearchContext";
@@ -59,6 +59,15 @@ const Header = () => {
               )}
             </button>
           )}
+          <button
+            type="button"
+            className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
+            onClick={() => navigate("/calendar")}
+            aria-label="Apri calendario eventi"
+            aria-current={location.pathname === "/calendar" ? "page" : undefined}
+          >
+            <CalendarDays className="h-[18px] sm:h-5 w-[18px] sm:w-5 text-muted-foreground" />
+          </button>
           <button
             type="button"
             className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center justify-center"
