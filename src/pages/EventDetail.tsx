@@ -13,7 +13,7 @@ import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCance
 import { parseEventDateTime } from "@/lib/timezone";
 import { isEventPastByDate } from "@/lib/eventDates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useEventOpeningReminders, useToggleEventOpeningReminder } from "@/hooks/useEvents";
+import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useEventOpeningReminders, useToggleEventOpeningReminder, useEventStaff } from "@/hooks/useEvents";
 import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
 import { usePricingEligibility, getBestUserPrice, type PriceOption, type ResolvedPriceOption } from "@/hooks/usePricingEligibility";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
@@ -149,6 +149,7 @@ const EventDetail = () => {
   const { toast } = useToast();
   const { data: event, isLoading } = useEvent(id!);
   const { data: participants } = useEventParticipants(id!);
+  const { data: eventStaff } = useEventStaff(id!);
   
   // Fallback avatars for anonymous users (RLS blocks event_registrations for anon)
   const { data: publicAvatars } = useQuery({
@@ -916,6 +917,19 @@ const getCTALabel = () => {
 
   // remainingSpots already computed above
   const activeParticipantCount = participants ? participants.length : (event.spots_taken || 0);
+  const staffPreview = [
+    {
+      id: event.organizer_id || "organizer",
+      avatar_url: organizerProfile?.avatar_url || null,
+      first_name: organizerProfile?.first_name || event.organizer_name || "Organizzatore",
+    },
+    ...((eventStaff || []).map((member) => ({
+      id: member.id,
+      avatar_url: member.profile?.avatar_url || member.avatar_url || null,
+      first_name: member.profile?.first_name || member.display_name,
+    }))),
+  ].filter((member) => member.first_name);
+  const staffCount = staffPreview.length;
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background pb-36">
@@ -1093,24 +1107,34 @@ const getCTALabel = () => {
           />
         </motion.div>
 
-        {/* 10. ORGANIZER + 9. PARTICIPANTS (WeMeet style) */}
+        {/* 10. STAFF + 9. PARTICIPANTS (WeMeet style) */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="py-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">
-            {/* Organizer (left) */}
+            {/* Staff (left) */}
             <div className="flex-shrink-0">
-              <p className="text-xs font-body font-semibold text-foreground mb-2">{t("organizer")}</p>
-              <button onClick={() => setShowOrganizerContact(true)} className="flex items-center gap-2 group text-left">
-                {organizerProfile?.avatar_url ? (
-                  <img src={organizerProfile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-body font-bold text-sm">
-                    {event.organizer_name?.[0] || "O"}
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-body font-semibold text-foreground group-hover:text-primary transition-colors">{organizerProfile?.first_name || event.organizer_name}</p>
-                  <p className="text-xs font-body text-muted-foreground">Contatta</p>
+              <p className="text-xs font-body font-semibold text-foreground mb-2">Staff ({staffCount})</p>
+              <button
+                onClick={() => navigate(`/event/${event.id}/staff`)}
+                className="flex items-center"
+              >
+                <div className="flex -space-x-2.5">
+                  {staffPreview.slice(0, 3).map((member, idx) => (
+                    <div key={member.id} className="relative" style={{ zIndex: 3 - idx }}>
+                      {member.avatar_url ? (
+                        <img src={member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-background" />
+                      ) : (
+                        <span className="w-9 h-9 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-semibold text-primary">
+                          {member.first_name?.[0] || "?"}
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
+                {staffCount > 3 && (
+                  <span className="w-9 h-9 -ml-2.5 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-body font-bold text-muted-foreground z-0">
+                    +{staffCount - 3}
+                  </span>
+                )}
               </button>
             </div>
 

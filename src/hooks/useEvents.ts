@@ -63,6 +63,22 @@ export interface EventWithDetails {
   }[];
 }
 
+export interface EventStaffMember {
+  id: string;
+  event_id: string;
+  profile_id: string | null;
+  display_name: string;
+  role_label: string;
+  avatar_url: string | null;
+  sort_order: number;
+  is_public: boolean;
+  profile?: {
+    first_name: string;
+    avatar_url: string | null;
+    last_name_initial?: string | null;
+  } | null;
+}
+
 const PRICE_OPTION_SELECT =
   "id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end, payment_type, deposit_amount, balance_amount, balance_payment_mode, has_dedicated_spots, dedicated_spots, spots_taken, waitlist_enabled";
 const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
@@ -132,6 +148,45 @@ export const useEvent = (id: string) => {
       } as unknown as EventWithDetails;
     },
     enabled: !!id,
+  });
+};
+
+export const useEventStaff = (eventId: string) => {
+  return useQuery({
+    queryKey: ["event-staff", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_staff" as any)
+        .select("id, event_id, profile_id, display_name, role_label, avatar_url, sort_order, is_public")
+        .eq("event_id", eventId)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+
+      const staffRows = ((data || []) as any[]) as EventStaffMember[];
+      const profileIds = [...new Set(staffRows.map((row) => row.profile_id).filter(Boolean))] as string[];
+      let profilesMap: Record<string, EventStaffMember["profile"]> = {};
+
+      if (profileIds.length > 0) {
+        const { data: publicProfiles } = await supabase.rpc("get_public_profiles", { profile_ids: profileIds });
+        profilesMap = Object.fromEntries(
+          ((publicProfiles || []) as any[]).map((profile) => [
+            profile.id,
+            {
+              first_name: profile.first_name,
+              avatar_url: profile.avatar_url,
+              last_name_initial: profile.last_name_initial || null,
+            },
+          ])
+        );
+      }
+
+      return staffRows.map((row) => ({
+        ...row,
+        profile: row.profile_id ? profilesMap[row.profile_id] || null : null,
+      }));
+    },
+    enabled: !!eventId,
   });
 };
 

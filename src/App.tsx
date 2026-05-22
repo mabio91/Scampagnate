@@ -37,6 +37,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const EventParticipants = lazy(() => import("./pages/EventParticipants"));
+const EventStaff = lazy(() => import("./pages/EventStaff"));
 const ContentPage = lazy(() => import("./pages/ContentPage"));
 const Rewards = lazy(() => import("./pages/Rewards"));
 
@@ -111,6 +112,7 @@ const AnimatedRoutes = () => {
           <PageTransition key={location.pathname}>
             <Routes location={location}>
               <Route path="/event/:id" element={<EventDetail />} />
+              <Route path="/event/:id/staff" element={<EventStaff />} />
               <Route path="/event/:id/participants" element={<EventParticipants />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />

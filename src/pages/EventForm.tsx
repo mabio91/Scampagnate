@@ -52,6 +52,16 @@ interface AdditionalField {
   options: string[];
 }
 
+interface EventStaffInput {
+  id?: string;
+  profile_id: string | null;
+  display_name: string;
+  role_label: string;
+  avatar_url: string | null;
+  is_public: boolean;
+  profileSearch: string;
+}
+
 const EVENT_STATUS_OPTIONS: Array<{ value: EventStatus; label: string; description: string }> = [
   { value: "draft", label: "Non pubblicato", description: "Visibile solo ad admin e organizzatori. Iscrizioni non attive." },
   { value: "upcoming", label: "In arrivo", description: "Evento annunciabile, ma iscrizioni non ancora aperte." },
@@ -336,6 +346,8 @@ const EventForm = () => {
   const [customBadge, setCustomBadge] = useState("");
   const [eventSpecialBadgeIds, setEventSpecialBadgeIds] = useState<string[]>([]);
   const [existingOrganizer, setExistingOrganizer] = useState<{ id: string | null; name: string | null }>({ id: null, name: null });
+  const [eventStaff, setEventStaff] = useState<EventStaffInput[]>([]);
+  const [activeStaffSearchIndex, setActiveStaffSearchIndex] = useState<number | null>(null);
   const { data: remoteClosingSentences = [] } = useQuery({
     queryKey: ["event-closing-sentences"],
     queryFn: async () => {
@@ -356,6 +368,22 @@ const EventForm = () => {
   });
   const closingSentenceOptions =
     remoteClosingSentences.length > 0 ? remoteClosingSentences : [...EVENT_CLOSING_SENTENCES];
+  const activeStaffSearchTerm =
+    activeStaffSearchIndex !== null ? eventStaff[activeStaffSearchIndex]?.profileSearch.trim() || "" : "";
+  const { data: staffProfileResults = [] } = useQuery({
+    queryKey: ["event-staff-profile-search", activeStaffSearchTerm],
+    queryFn: async () => {
+      if (activeStaffSearchTerm.length < 2) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email, avatar_url")
+        .or(`first_name.ilike.%${activeStaffSearchTerm}%,last_name.ilike.%${activeStaffSearchTerm}%,email.ilike.%${activeStaffSearchTerm}%`)
+        .limit(8);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: activeStaffSearchTerm.length >= 2,
+  });
 
   useEffect(() => {
     const normalized = normalizeEventClosingSentence(closingSentence);
@@ -555,6 +583,23 @@ const EventForm = () => {
           notes: p.notes || "",
         })));
       }
+
+      const { data: staffRows } = await supabase
+        .from("event_staff" as any)
+        .select("id, profile_id, display_name, role_label, avatar_url, is_public, sort_order")
+        .eq("event_id", eventId)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      setEventStaff((staffRows || []).map((member: any) => ({
+        id: isDuplicating ? undefined : member.id,
+        profile_id: member.profile_id || null,
+        display_name: member.display_name || "",
+        role_label: member.role_label || "Staff",
+        avatar_url: member.avatar_url || null,
+        is_public: member.is_public !== false,
+        profileSearch: member.display_name || "",
+      })));
 
       if (event.additional_fields) {
         const af = event.additional_fields as any;
@@ -908,6 +953,51 @@ const EventForm = () => {
     setMeetingPoints((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const addStaffMember = () => {
+    setEventStaff((prev) => [
+      ...prev,
+      {
+        profile_id: null,
+        display_name: "",
+        role_label: "Staff",
+        avatar_url: null,
+        is_public: true,
+        profileSearch: "",
+      },
+    ]);
+  };
+
+  const updateStaffMember = (index: number, field: keyof EventStaffInput, value: string | boolean | null) => {
+    setEventStaff((prev) => prev.map((member, i) => i === index ? { ...member, [field]: value } : member));
+  };
+
+  const selectStaffProfile = (index: number, profile: any) => {
+    const displayName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.email || "Staff";
+    setEventStaff((prev) => prev.map((member, i) => i === index
+      ? {
+          ...member,
+          profile_id: profile.id,
+          display_name: displayName,
+          avatar_url: profile.avatar_url || null,
+          profileSearch: displayName,
+        }
+      : member
+    ));
+    setActiveStaffSearchIndex(null);
+  };
+
+  const clearStaffProfile = (index: number) => {
+    setEventStaff((prev) => prev.map((member, i) => i === index
+      ? { ...member, profile_id: null, avatar_url: null, profileSearch: "" }
+      : member
+    ));
+  };
+
+  const removeStaffMember = (index: number) => {
+    setEventStaff((prev) => prev.filter((_, i) => i !== index));
+    setActiveStaffSearchIndex((activeIndex) => activeIndex === index ? null : activeIndex);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, boolean> = {};
@@ -1060,6 +1150,31 @@ const EventForm = () => {
         }));
         const { error } = await supabase.from("event_meeting_points").insert(pointsData);
         if (error) throw error;
+      }
+
+      const { error: deleteStaffError } = await supabase
+        .from("event_staff" as any)
+        .delete()
+        .eq("event_id", eventId!);
+      if (deleteStaffError) throw deleteStaffError;
+
+      const staffData = eventStaff
+        .map((member, index) => ({
+          event_id: eventId!,
+          profile_id: member.profile_id || null,
+          display_name: member.display_name.trim(),
+          role_label: member.role_label.trim() || "Staff",
+          avatar_url: member.avatar_url || null,
+          sort_order: index,
+          is_public: member.is_public,
+        }))
+        .filter((member) => member.display_name);
+
+      if (staffData.length > 0) {
+        const { error: insertStaffError } = await supabase
+          .from("event_staff" as any)
+          .insert(staffData);
+        if (insertStaffError) throw insertStaffError;
       }
 
       if (isEditing) {
@@ -1397,6 +1512,126 @@ const EventForm = () => {
               />
             </div>
           </div>
+        </Card>
+
+        <Card className="p-4 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-display text-base font-bold text-foreground">Staff evento</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                L'organizzatore viene mostrato automaticamente per primo. Qui puoi aggiungere staff, fotografi o collaboratori.
+              </p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={addStaffMember} className="shrink-0">
+              <Plus className="h-4 w-4" />
+              Staff
+            </Button>
+          </div>
+
+          {eventStaff.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-4 text-center">
+              <p className="text-sm font-body text-muted-foreground">Nessuno staff aggiuntivo inserito.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {eventStaff.map((member, index) => (
+                <div key={member.id || index} className="rounded-xl border border-border/60 p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {member.avatar_url ? (
+                        <img src={member.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                      ) : (
+                        <span className="h-9 w-9 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
+                          {member.display_name.trim()[0] || "S"}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">{member.display_name || "Nuovo membro staff"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{member.profile_id ? "Profilo collegato" : "Inserimento manuale"}</p>
+                      </div>
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeStaffMember(index)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Cerca profilo utente</Label>
+                    <div className="relative">
+                      <Input
+                        value={member.profileSearch}
+                        onFocus={() => setActiveStaffSearchIndex(index)}
+                        onChange={(event) => {
+                          updateStaffMember(index, "profileSearch", event.target.value);
+                          setActiveStaffSearchIndex(index);
+                        }}
+                        placeholder="Cerca per nome, cognome o email"
+                      />
+                      {activeStaffSearchIndex === index && staffProfileResults.length > 0 && (
+                        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 rounded-lg border border-border bg-popover p-1 shadow-lg">
+                          {staffProfileResults.map((profile: any) => {
+                            const profileName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.email || "Utente";
+                            return (
+                              <button
+                                key={profile.id}
+                                type="button"
+                                onClick={() => selectStaffProfile(index, profile)}
+                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-muted"
+                              >
+                                {profile.avatar_url ? (
+                                  <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover" />
+                                ) : (
+                                  <span className="h-7 w-7 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11px] font-bold">
+                                    {profileName[0] || "U"}
+                                  </span>
+                                )}
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-medium">{profileName}</span>
+                                  {profile.email && <span className="block truncate text-[11px] text-muted-foreground">{profile.email}</span>}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {member.profile_id && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => clearStaffProfile(index)} className="h-7 px-2 text-xs">
+                        Usa nominativo manuale
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+                    <div className="min-w-0">
+                      <Label className="text-xs">Nome visualizzato</Label>
+                      <Input
+                        value={member.display_name}
+                        onChange={(event) => updateStaffMember(index, "display_name", event.target.value)}
+                        placeholder="Nome e cognome"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <Label className="text-xs">Ruolo</Label>
+                      <Input
+                        value={member.role_label}
+                        onChange={(event) => updateStaffMember(index, "role_label", event.target.value)}
+                        placeholder="Staff, Fotografo..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
+                    <Label className="text-xs text-muted-foreground">Visibile nel dettaglio evento</Label>
+                    <Switch
+                      checked={member.is_public}
+                      onCheckedChange={(checked) => updateStaffMember(index, "is_public", checked)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* ═══════════════════════════════════════════════════ */}
