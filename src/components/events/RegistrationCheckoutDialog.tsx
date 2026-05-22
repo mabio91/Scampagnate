@@ -25,6 +25,7 @@ import {
   getOptionTotalPrice,
   isOnlinePaymentType,
   isOptionBookable,
+  type PriceOptionLike,
 } from "@/lib/priceOptions";
 import {
   MapPin, Clock, Car, CreditCard, Loader2, Tag, Lock, Sparkles, ShieldCheck,
@@ -81,6 +82,9 @@ const RegistrationCheckoutDialog = ({
 
   const hasMeetingPoints = event.meeting_points && event.meeting_points.length > 0;
   const hasPriceOptions = event.price_options && event.price_options.length > 0;
+  const visiblePriceOptions = resolvedPriceOptions ?? event.price_options ?? [];
+  const singlePriceOption = visiblePriceOptions.length === 1 ? visiblePriceOptions[0] : null;
+  const hasSinglePriceOption = Boolean(singlePriceOption);
   const hasEquipment = event.equipment_list && Array.isArray(event.equipment_list);
   const hasMandatoryEquipment = hasEquipment && (event.equipment_list as any[]).some((item: any) => item.is_mandatory);
   const carEnabled = event.additional_fields && ((event.additional_fields as any).car_availability_enabled || (event.additional_fields as any).ask_car_availability);
@@ -88,6 +92,8 @@ const RegistrationCheckoutDialog = ({
   const membershipActive = isMembershipActive(profile);
   const membershipExpired = isMembershipExpired(profile);
   const selectedOpt = findPriceOptionById(event.price_options, selectedPriceOption);
+  const selectedResolvedOpt = resolvedPriceOptions?.find((option) => option.id === selectedPriceOption);
+  const selectedOptionIneligible = selectedResolvedOpt ? !selectedResolvedOpt.isEligible : false;
   const selectedPaymentType = getOptionPaymentType(selectedOpt, event);
   const isPaymentEvent = isOnlinePaymentType(selectedPaymentType);
   const balancePaymentMode = getOptionBalancePaymentMode(selectedOpt, event);
@@ -101,7 +107,7 @@ const RegistrationCheckoutDialog = ({
     : canOptionJoinWaitlist(null, event);
   const selectedOptionIsWaitlist = selectedOptionCanWaitlist;
   const selectedOptionUnavailable = Boolean(
-    (hasPriceOptions ? selectedPriceOption : true) && !selectedOptionBookable && !selectedOptionCanWaitlist
+    ((hasPriceOptions ? selectedPriceOption : true) && !selectedOptionBookable && !selectedOptionCanWaitlist) || selectedOptionIneligible
   );
 
   // Custom fields
@@ -202,6 +208,19 @@ const RegistrationCheckoutDialog = ({
 
   // Check if Section 2 has any content (pricing/membership)
   const hasSection2 = hasPriceOptions || isPaymentEvent || selectedPaymentType === "location" || (needsMembership && !selectedOptionIsWaitlist);
+
+  useEffect(() => {
+    if (!open || !singlePriceOption?.id || selectedPriceOption === singlePriceOption.id) return;
+    setSelectedPriceOption(singlePriceOption.id);
+  }, [open, selectedPriceOption, singlePriceOption?.id]);
+
+  const getCheckoutPaymentDetail = (option: PriceOptionLike | null | undefined) => {
+    const paymentType = getOptionPaymentType(option, event);
+    if (paymentType === "free") return "Gratis";
+    if (paymentType === "location") return "Pagamento sul posto";
+    if (paymentType === "paid") return "Pagamento online";
+    return getOptionPaymentSummary(option, event);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -382,7 +401,31 @@ const RegistrationCheckoutDialog = ({
               <p className="text-xs font-body font-bold text-muted-foreground uppercase tracking-wider">Prezzo e Tessera</p>
 
               {/* Price options */}
-              {resolvedPriceOptions && resolvedPriceOptions.length > 0 && (
+              {singlePriceOption && (
+                <div ref={priceOptionRef} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-muted/40 border border-transparent">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-body font-semibold text-foreground">Partecipazione evento</p>
+                    <p className="text-[10px] text-muted-foreground font-body">
+                      {getCheckoutPaymentDetail(singlePriceOption)} · {getOptionAvailabilityLabel(singlePriceOption, event)}
+                    </p>
+                    {"isEligible" in singlePriceOption && !(singlePriceOption as ResolvedPriceOption).isEligible && (singlePriceOption as ResolvedPriceOption).eligibilityReason && (
+                      <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1">
+                        <Lock className="h-2.5 w-2.5" /> {(singlePriceOption as ResolvedPriceOption).eligibilityReason}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    {singlePriceOption.original_price && Number(singlePriceOption.original_price) > Number(singlePriceOption.price) && (
+                      <span className="text-xs font-body text-muted-foreground line-through block">€{Number(singlePriceOption.original_price).toFixed(2)}</span>
+                    )}
+                    <span className={`text-sm font-display font-bold ${singlePriceOption.original_price && Number(singlePriceOption.original_price) > Number(singlePriceOption.price) ? "text-green-600" : "text-foreground"}`}>
+                      €{Number(singlePriceOption.price).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {resolvedPriceOptions && resolvedPriceOptions.length > 1 && (
                 <div ref={priceOptionRef}>
                   <Label className="font-body text-sm font-semibold mb-2 block">Scegli la formula *</Label>
                   <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className={`space-y-2 rounded-xl ${attemptedSubmit && priceOptionRequired ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : ""}`}>
@@ -415,7 +458,7 @@ const RegistrationCheckoutDialog = ({
                                 )}
                               </div>
                               <p className="text-[10px] text-muted-foreground font-body mt-0.5">
-                                {getOptionPaymentSummary(opt, event)} · {getOptionAvailabilityLabel(opt, event)}
+                                {getCheckoutPaymentDetail(opt)} · {getOptionAvailabilityLabel(opt, event)}
                               </p>
                               {!opt.isEligible && opt.eligibilityReason && (
                                 <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1 mt-0.5">
@@ -443,7 +486,7 @@ const RegistrationCheckoutDialog = ({
               )}
 
               {/* Fallback price options (no eligibility data) */}
-              {!resolvedPriceOptions && hasPriceOptions && (
+              {!resolvedPriceOptions && hasPriceOptions && !hasSinglePriceOption && (
                 <div ref={priceOptionRef}>
                   <Label className="font-body text-sm font-semibold mb-2 block">Scegli la formula *</Label>
                   <RadioGroup value={selectedPriceOption} onValueChange={setSelectedPriceOption} className={`space-y-2 rounded-xl ${attemptedSubmit && priceOptionRequired ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : ""}`}>
@@ -461,7 +504,7 @@ const RegistrationCheckoutDialog = ({
                             <div className="min-w-0">
                               <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
                               <p className="text-[10px] text-muted-foreground font-body mt-0.5">
-                                {getOptionPaymentSummary(opt, event)} · {getOptionAvailabilityLabel(opt, event)}
+                                {getCheckoutPaymentDetail(opt)} · {getOptionAvailabilityLabel(opt, event)}
                               </p>
                             </div>
                           </div>
@@ -571,7 +614,7 @@ const RegistrationCheckoutDialog = ({
                 {!selectedOptionIsWaitlist && (isPaymentEvent || selectedPaymentType === "location") && displayPrice > 0 && (
                   <div className="flex justify-between text-sm font-body">
                     <span className="text-muted-foreground">
-                      {selectedPaymentType === "deposit" && isDepositPayment ? "Acconto evento" : (selectedOpt?.name || "Evento")}
+                      {selectedPaymentType === "deposit" && isDepositPayment ? "Acconto evento" : "Evento"}
                     </span>
                     <span className={`font-semibold ${appliedDiscount ? "line-through text-muted-foreground" : "text-foreground"}`}>
                       €{displayPrice.toFixed(2)}
