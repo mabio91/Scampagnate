@@ -222,6 +222,9 @@ const RegistrationCheckoutDialog = ({
     return getOptionPaymentSummary(option, event);
   };
 
+  const getSinglePriceOptionTitle = (option: PriceOptionLike) =>
+    option.name?.trim() || "Partecipazione evento";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-0 rounded-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
@@ -404,7 +407,7 @@ const RegistrationCheckoutDialog = ({
               {singlePriceOption && (
                 <div ref={priceOptionRef} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-muted/40 border border-transparent">
                   <div className="min-w-0 space-y-1">
-                    <p className="text-sm font-body font-semibold text-foreground">Partecipazione evento</p>
+                    <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
                     <p className="text-[10px] text-muted-foreground font-body">
                       {getCheckoutPaymentDetail(singlePriceOption)} · {getOptionAvailabilityLabel(singlePriceOption, event)}
                     </p>
