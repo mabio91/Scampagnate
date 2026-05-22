@@ -11,6 +11,21 @@ interface Suggestion {
   fullText: string;
 }
 
+interface PlaceAutocompleteSuggestion {
+  placePrediction?: {
+    placeId: string;
+    structuredFormat?: {
+      mainText?: { text?: string };
+      secondaryText?: { text?: string };
+    };
+    text?: { text?: string };
+  };
+}
+
+interface PlacesAutocompleteResponse {
+  suggestions?: PlaceAutocompleteSuggestion[];
+}
+
 interface LocationAutocompleteProps {
   value: string;
   onChange: (value: string, lat?: number, lng?: number) => void;
@@ -36,6 +51,7 @@ const LocationAutocomplete = ({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const requestSeqRef = useRef(0);
 
   useEffect(() => {
     setInputValue(value);
@@ -52,6 +68,8 @@ const LocationAutocomplete = ({
   }, []);
 
   const searchLocations = useCallback(async (query: string) => {
+    const requestSeq = ++requestSeqRef.current;
+
     if (query.length < 3) {
       setSuggestions([]);
       setIsOpen(false);
@@ -77,6 +95,8 @@ const LocationAutocomplete = ({
         }
       );
 
+      if (requestSeq !== requestSeqRef.current) return;
+
       if (!res.ok) {
         console.error("Places Autocomplete error:", res.status);
         setSuggestions([]);
@@ -84,10 +104,12 @@ const LocationAutocomplete = ({
         return;
       }
 
-      const data = await res.json();
+      const data = (await res.json()) as PlacesAutocompleteResponse;
+      if (requestSeq !== requestSeqRef.current) return;
+
       const results: Suggestion[] = (data.suggestions || [])
-        .filter((s: any) => s.placePrediction)
-        .map((s: any) => ({
+        .filter((s): s is Required<Pick<PlaceAutocompleteSuggestion, "placePrediction">> => Boolean(s.placePrediction))
+        .map((s) => ({
           placeId: s.placePrediction.placeId,
           mainText: s.placePrediction.structuredFormat?.mainText?.text || "",
           secondaryText: s.placePrediction.structuredFormat?.secondaryText?.text || "",
@@ -97,10 +119,13 @@ const LocationAutocomplete = ({
       setSuggestions(results);
       setIsOpen(results.length > 0);
     } catch (err) {
+      if (requestSeq !== requestSeqRef.current) return;
       console.error("Places search error:", err);
       setSuggestions([]);
     } finally {
-      setLoading(false);
+      if (requestSeq === requestSeqRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -113,6 +138,9 @@ const LocationAutocomplete = ({
   };
 
   const handleSelect = async (suggestion: Suggestion) => {
+    requestSeqRef.current += 1;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setLoading(false);
     setIsOpen(false);
     setSuggestions([]);
     setInputValue(suggestion.fullText);
@@ -171,6 +199,7 @@ const LocationAutocomplete = ({
             <button
               key={s.placeId}
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(s)}
               className="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors"
             >
