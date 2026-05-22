@@ -607,6 +607,17 @@ const EventManage = () => {
       const [name = "", phone = ""] = sportLevel.replace("manual:", "").split("|");
       return { name, phone };
     };
+    const formatHealthSafetyStatus = (value?: string | null) => {
+      if (value === "none") return "Nessuna da segnalare";
+      if (value === "has_info") return "Informazioni da leggere";
+      return "Non compilato";
+    };
+    const formatEmergencyMedication = (value?: boolean | null) => {
+      if (value === true) return "Si";
+      if (value === false) return "No";
+      return "-";
+    };
+    const formatInterests = (value: unknown) => Array.isArray(value) ? value.filter(Boolean).join("; ") : "";
     const safeFileName = (event?.title || "event")
       .toLowerCase()
       .replace(/[^a-z0-9]+/gi, "-")
@@ -617,25 +628,39 @@ const EventManage = () => {
       "Telefono",
       "Instagram",
       "Tipo",
-      "Livello",
+      "Livello registrazione",
       "Formula",
       "Stato",
       "Pagamento",
-      "Pagato",
+      "Importo pagato",
       "Rimborso",
-      "Punto di ritrovo",
+      "Ritrovo",
       "Check-in",
-      "Iscrizione",
+      "Registrato",
+      "ID tessera",
+      "Stato tessera",
+      "Data di nascita",
+      "Livello esperienza",
+      "Esperienza trekking",
+      "Frequenza attivita",
+      "Grade esperienza",
+      "Interessi",
+      "Salute e sicurezza",
+      "Note salute",
+      "Farmaci salvavita",
+      "Note farmaci",
+      "Supporto richiesto",
     ];
     const rows = exportRows.map((r) => {
       const mp = meetingPoints?.find((p) => p.id === r.meeting_point_id);
       const manual = manualNameParts(r.sport_level);
       const po = getPriceOptionForRegistration(r);
+      const profile = (r.profiles as any) || {};
       return [
-        manual ? manual.name : ((r.profiles as any)?.first_name || ""),
-        manual ? "(manuale)" : ((r.profiles as any)?.last_name || ""),
-        manual ? manual.phone : ((r.profiles as any)?.phone || ""),
-        manual ? "" : ((r.profiles as any)?.instagram_handle ? `@${(r.profiles as any).instagram_handle}` : ""),
+        manual ? manual.name : (profile.first_name || ""),
+        manual ? "(manuale)" : (profile.last_name || ""),
+        manual ? manual.phone : (profile.phone || ""),
+        manual ? "" : (profile.instagram_handle ? `@${profile.instagram_handle}` : ""),
         manual ? "manuale" : "utente",
         manual ? "-" : (r.sport_level || "-"),
         po?.name || "-",
@@ -646,6 +671,19 @@ const EventManage = () => {
         mp?.name || "-",
         r.checked_in ? "Si" : "No",
         formatDate(r.created_at),
+        manual ? "-" : (profile.membership_id ?? "-"),
+        manual ? "-" : (profile.membership_status || "-"),
+        manual ? "-" : (profile.birth_date || "-"),
+        manual ? "-" : (profile.self_level || "-"),
+        manual ? "-" : (profile.trekking_experience || "-"),
+        manual ? "-" : (profile.activity_frequency || "-"),
+        manual ? "-" : (profile.experience_grade ?? "-"),
+        manual ? "-" : (formatInterests(profile.interests) || "-"),
+        manual ? "-" : formatHealthSafetyStatus(profile.health_safety_status),
+        manual ? "-" : (profile.health_safety_notes || "-"),
+        manual ? "-" : formatEmergencyMedication(profile.emergency_medication_has),
+        manual ? "-" : (profile.emergency_medication_notes || "-"),
+        manual ? "-" : (profile.health_safety_help_notes || "-"),
       ];
     });
 
