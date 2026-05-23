@@ -969,15 +969,14 @@ const getCTALabel = () => {
           />
         </div>
         <div
-          className={`absolute left-0 right-0 pointer-events-none bg-gradient-to-b ${
-            isSoldOut
-              ? "from-foreground/10 via-transparent to-foreground/55"
-              : "from-foreground/5 via-transparent to-foreground/45"
-          }`}
+          className="absolute left-0 right-0 pointer-events-none"
           style={{
             opacity: heroOpacity,
             top: "env(safe-area-inset-top, 0px)",
             height: heroImageHeight,
+            background: isSoldOut
+              ? "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.38) 68%, rgba(0,0,0,0.78) 100%)"
+              : "linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.32) 68%, rgba(0,0,0,0.72) 100%)",
           }}
         />
         {isSoldOut && <SoldOutOverlay size="hero" />}
