@@ -11,6 +11,7 @@ import { EVENT_CLOSING_SENTENCES, normalizeEventClosingSentence } from "@/lib/ev
 
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import ImageCropDialog from "@/components/ImageCropDialog";
+import { getRemovedMeetingPointIds, getRetainedMeetingPointIds } from "@/lib/meetingPoints";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -200,6 +201,7 @@ const EventSpecialBadgeSelector = ({
 };
 
 interface MeetingPointInput {
+  id?: string;
   name: string;
   location: string;
   time: string;
@@ -549,6 +551,7 @@ const EventForm = () => {
 
       if (points) {
         setMeetingPoints(points.map((p) => ({
+          id: isDuplicating ? undefined : p.id,
           name: p.name,
           location: p.location,
           time: p.time,
@@ -1027,29 +1030,59 @@ const EventForm = () => {
         }
       }
 
-      // Handle meeting points
+      // Handle meeting points without breaking existing registration choices.
       if (isEditing) {
-        const { data: existingPoints } = await supabase
+        const { data: existingPoints, error: existingPointsError } = await supabase
           .from("event_meeting_points")
           .select("id")
           .eq("event_id", eventId!);
-        
-        if (existingPoints && existingPoints.length > 0) {
-          const existingIds = existingPoints.map(p => p.id);
-          await supabase
+        if (existingPointsError) throw existingPointsError;
+
+        const removedPointIds = getRemovedMeetingPointIds(
+          (existingPoints || []).map((point) => point.id),
+          meetingPoints,
+        );
+
+        if (removedPointIds.length > 0) {
+          const { error: unlinkError } = await supabase
             .from("event_registrations")
             .update({ meeting_point_id: null })
-            .in("meeting_point_id", existingIds);
-          
+            .in("meeting_point_id", removedPointIds);
+          if (unlinkError) throw unlinkError;
+
           const { error: deleteError } = await supabase
             .from("event_meeting_points")
             .delete()
+            .in("id", removedPointIds)
             .eq("event_id", eventId!);
           if (deleteError) throw deleteError;
         }
-      }
 
-      if (meetingPoints.length > 0) {
+        const retainedPointIds = new Set(getRetainedMeetingPointIds(meetingPoints));
+        for (const [index, point] of meetingPoints.entries()) {
+          const pointPayload = {
+            name: point.name,
+            location: point.location,
+            time: point.time,
+            notes: point.notes || null,
+            sort_order: index,
+          };
+
+          if (point.id && retainedPointIds.has(point.id)) {
+            const { error: updatePointError } = await supabase
+              .from("event_meeting_points")
+              .update(pointPayload)
+              .eq("id", point.id)
+              .eq("event_id", eventId!);
+            if (updatePointError) throw updatePointError;
+          } else {
+            const { error: insertPointError } = await supabase
+              .from("event_meeting_points")
+              .insert({ event_id: eventId!, ...pointPayload });
+            if (insertPointError) throw insertPointError;
+          }
+        }
+      } else if (meetingPoints.length > 0) {
         const pointsData = meetingPoints.map((p, i) => ({
           event_id: eventId!,
           name: p.name,
@@ -2329,7 +2362,7 @@ const EventForm = () => {
             </Button>
           </div>
           {meetingPoints.map((point, index) => (
-            <div key={index} className="p-3 bg-muted rounded-lg space-y-2">
+            <div key={point.id || index} className="p-3 bg-muted rounded-lg space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-body font-semibold text-muted-foreground">Punto {index + 1}</span>
                 <button type="button" onClick={() => removeMeetingPoint(index)} className="text-destructive">
