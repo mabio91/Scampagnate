@@ -245,8 +245,8 @@ const EventDetail = () => {
   
   const heroHeight = 320;
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 0.7));
-  const heroScale = 1 + scrollY * 0.0005;
-  const heroTranslateY = scrollY * 0.4;
+  const heroScale = 1 + Math.min(scrollY, heroHeight) * 0.00012;
+  const heroTranslateY = scrollY * 0.18;
   const showStickyHeader = scrollY > heroHeight - 60;
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
@@ -970,19 +970,27 @@ const getCTALabel = () => {
           }}
         >
           <OptimizedImage
-            src={event.image_url}
-            alt={event.title}
-            className={`w-full h-full object-cover bg-muted transition-all duration-300 ${isSoldOut ? "grayscale" : ""}`}
+            src={imageSrc}
+            alt=""
+            className={`absolute inset-0 h-full w-full scale-105 object-cover bg-muted blur-xl transition-all duration-300 ${
+              isSoldOut ? "grayscale opacity-35" : "opacity-45"
+            }`}
             width={600}
             height={320}
+            loading="eager"
+          />
+          <OptimizedImage
+            src={imageSrc}
+            alt={event.title}
+            className={`relative h-full w-full object-contain bg-transparent transition-all duration-300 ${isSoldOut ? "grayscale" : ""}`}
             loading="eager"
           />
         </div>
         <div
           className={`absolute inset-0 bg-gradient-to-t ${
             isSoldOut
-              ? "from-foreground/75 via-foreground/15 to-transparent"
-              : "from-foreground/80 via-foreground/20 to-transparent"
+              ? "from-foreground/55 via-foreground/10 to-transparent"
+              : "from-foreground/45 via-foreground/5 to-transparent"
           }`}
           style={{ opacity: heroOpacity }}
         />

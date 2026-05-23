@@ -11,6 +11,7 @@ import { EVENT_CLOSING_SENTENCES, normalizeEventClosingSentence } from "@/lib/ev
 
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import ImageCropDialog from "@/components/ImageCropDialog";
+import { HOME_CARD_IMAGE_FIELD, getEventHomeCardImageUrl } from "@/lib/eventImages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -260,7 +261,11 @@ const EventForm = () => {
   const [loadingEvent, setLoadingEvent] = useState(isEditing || isDuplicating);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [homeCardImageFile, setHomeCardImageFile] = useState<File | null>(null);
+  const [homeCardImageUrl, setHomeCardImageUrl] = useState("");
+  const [homeCardImagePreview, setHomeCardImagePreview] = useState<string | null>(null);
   const [coverCropFile, setCoverCropFile] = useState<File | null>(null);
+  const [coverHomeCropFile, setCoverHomeCropFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
@@ -561,6 +566,9 @@ const EventForm = () => {
       if (event.image_url) {
         setImagePreview(event.image_url);
       }
+      const savedHomeCardImageUrl = getEventHomeCardImageUrl(event as any) || "";
+      setHomeCardImageUrl(savedHomeCardImageUrl);
+      setHomeCardImagePreview(savedHomeCardImageUrl || null);
 
       if (event.equipment_list && Array.isArray(event.equipment_list)) {
         setEquipmentItems(
@@ -751,23 +759,39 @@ const EventForm = () => {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
+    setHomeCardImageFile(null);
+    setHomeCardImageUrl("");
+    setHomeCardImagePreview(null);
     updateForm("image_url", "");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const uploadImage = async (): Promise<string | null> => {
-    if (!imageFile || !user) return form.image_url || null;
-    setUploadingImage(true);
-    const ext = imageFile.name.split(".").pop();
-    const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("event-images").upload(path, imageFile, {
+  const uploadEventImageFile = async (file: File): Promise<string> => {
+    if (!user) throw new Error("Utente non autenticato");
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("event-images").upload(path, file, {
       cacheControl: "31536000",
-      contentType: imageFile.type,
+      contentType: file.type,
     });
-    setUploadingImage(false);
     if (error) throw error;
     const { data: urlData } = supabase.storage.from("event-images").getPublicUrl(path);
     return urlData.publicUrl;
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return form.image_url || null;
+    setUploadingImage(true);
+    try {
+      return await uploadEventImageFile(imageFile);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const uploadHomeCardImage = async (): Promise<string | null> => {
+    if (!homeCardImageFile) return homeCardImageUrl || null;
+    return uploadEventImageFile(homeCardImageFile);
   };
 
   const normalizeGalleryFiles = (files: File[]) => {
@@ -1028,6 +1052,7 @@ const EventForm = () => {
     setSaving(true);
     try {
       const imageUrl = await uploadImage();
+      const resolvedHomeCardImageUrl = await uploadHomeCardImage();
 
       // Format duration with unit
       let durationFormatted = form.duration ? `${form.duration}${form.duration_unit === "giorni" ? " giorni" : "h"}` : null;
@@ -1078,6 +1103,7 @@ const EventForm = () => {
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: {
+          [HOME_CARD_IMAGE_FIELD]: resolvedHomeCardImageUrl,
           closing_sentence: closingSentenceMode === "random" ? undefined : normalizeEventClosingSentence(closingSentence),
           fit_score_main_category: fitScoreMainCategory,
           fit_score_secondary_categories: fitScoreSecondaryCategories,
@@ -1297,14 +1323,36 @@ const EventForm = () => {
         open={!!coverCropFile}
         file={coverCropFile}
         title="Ritaglia copertina"
+        description="Scegli il ritaglio 16:9 usato nel dettaglio evento."
         aspect={{ width: 16, height: 9 }}
         outputWidth={1600}
         outputHeight={900}
         onCancel={() => setCoverCropFile(null)}
         onCropped={(croppedFile) => {
+          const originalFile = coverCropFile;
           setCoverCropFile(null);
           setImageFile(croppedFile);
           setImagePreview(URL.createObjectURL(croppedFile));
+          setHomeCardImageFile(null);
+          setHomeCardImageUrl("");
+          setHomeCardImagePreview(null);
+          if (originalFile) setCoverHomeCropFile(originalFile);
+        }}
+      />
+      <ImageCropDialog
+        open={!!coverHomeCropFile}
+        file={coverHomeCropFile}
+        title="Ritaglia anteprima home"
+        description="Scegli la porzione quadrata mostrata nelle card della home."
+        aspect={{ width: 1, height: 1 }}
+        outputWidth={1200}
+        outputHeight={1200}
+        onCancel={() => setCoverHomeCropFile(null)}
+        onCropped={(croppedFile) => {
+          setCoverHomeCropFile(null);
+          setHomeCardImageFile(croppedFile);
+          setHomeCardImagePreview(URL.createObjectURL(croppedFile));
+          setHomeCardImageUrl("");
         }}
       />
       <ImageCropDialog
@@ -1673,15 +1721,31 @@ const EventForm = () => {
                 className="hidden"
               />
               {imagePreview ? (
-                <div className="relative mt-2 rounded-lg overflow-hidden">
-                  <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute top-2 right-2 p-1 bg-background/80 rounded-full hover:bg-background"
-                  >
-                    <X className="h-4 w-4 text-foreground" />
-                  </button>
+                <div className="mt-2 space-y-3">
+                  <div className="relative rounded-lg overflow-hidden bg-muted">
+                    <img src={imagePreview} alt="Preview" className="w-full aspect-video object-contain rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 p-1 bg-background/80 rounded-full hover:bg-background"
+                    >
+                      <X className="h-4 w-4 text-foreground" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/35 p-3">
+                    <img
+                      src={homeCardImagePreview || homeCardImageUrl || imagePreview}
+                      alt="Anteprima home"
+                      className="h-20 w-20 shrink-0 rounded-lg object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-body font-semibold text-foreground">Anteprima home</p>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">Riquadro 1:1 usato nelle card evento.</p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                      Cambia
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <button

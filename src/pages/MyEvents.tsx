@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { parseEventDateTime } from "@/lib/timezone";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, getRemainingBalanceAmount, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
+import { getEventHomeCardImageSrc } from "@/lib/eventImages";
 import {
   findPriceOptionById,
   getOptionPaymentSummary,
@@ -388,7 +389,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     <>
       <div className="rounded-xl bg-card overflow-hidden">
         <Link to={`/event/${event.id}`} className="flex gap-3 p-3">
-          <OptimizedImage src={event.image_url} alt={event.title} width={80} height={80} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 bg-muted" />
+          <OptimizedImage src={getEventHomeCardImageSrc(event)} alt={event.title} width={80} height={80} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 bg-muted" />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>
@@ -563,7 +564,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
   return (
     <Link to={`/event/${event.id}`} className="block">
       <div className="flex gap-3 p-3 rounded-xl bg-card hover:bg-muted/50 transition-colors">
-        <OptimizedImage src={event.image_url} alt={event.title} width={80} height={80} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 bg-muted" />
+        <OptimizedImage src={getEventHomeCardImageSrc(event)} alt={event.title} width={80} height={80} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 bg-muted" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-display text-sm font-bold text-foreground truncate">{event.title}</h3>

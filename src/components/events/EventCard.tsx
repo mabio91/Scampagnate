@@ -8,6 +8,7 @@ import { EventBadgePill } from "./EventBadgePill";
 import DynamicIcon from "@/components/DynamicIcon";
 import { UI_LABELS } from "@/lib/labels";
 import SoldOutOverlay from "./SoldOutOverlay";
+import { getEventHomeCardImageSrc } from "@/lib/eventImages";
 import {
   canOptionJoinWaitlist,
   isEventSoldOut,
@@ -232,7 +233,7 @@ const EventCard = memo(({
 
           <div className="relative h-20 w-20 flex-shrink-0 self-start overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-28">
             <OptimizedImage
-              src={event.image_url}
+              src={getEventHomeCardImageSrc(event)}
               alt={event.title}
               width={112}
               height={112}
