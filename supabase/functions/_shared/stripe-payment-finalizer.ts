@@ -1,6 +1,9 @@
+import { applyRegistrationChangeRequest } from "./registration-change.ts";
+
 type CheckoutKind = "full" | "deposit" | "balance";
 
 type StripeSessionLike = {
+  id?: string | null;
   payment_status?: string | null;
   payment_intent?: string | { id?: string | null } | null;
   metadata?: Record<string, string | undefined> | null;
@@ -349,6 +352,21 @@ export const finalizeEventCheckoutSession = async ({
     throw new Error("Failed to update registration");
   }
 
+  await db.from("registration_payment_transactions").insert({
+    registration_id: registrationId,
+    event_id: eventId || reg.event_id,
+    user_id: userId,
+    kind: "payment",
+    source: checkoutKind === "balance" ? "event_balance_checkout" : "event_checkout",
+    amount: bookingAmountCents / 100,
+    stripe_checkout_session_id: session.id || null,
+    stripe_payment_intent_id: stripePaymentIntentId,
+    metadata: {
+      checkout_kind: checkoutKind,
+      service_fee_cents: session.metadata?.service_fee_cents || "0",
+    },
+  });
+
   if (membershipIncluded) {
     const { error: membershipError } = await db.rpc("activate_membership", {
       user_id_param: userId,
@@ -367,4 +385,41 @@ export const finalizeEventCheckoutSession = async ({
     .neq("id", registrationId);
 
   return { success: true, eventId: eventId || null };
+};
+
+export const finalizeRegistrationChangeCheckoutSession = async ({
+  session,
+  supabaseAdmin,
+}: Omit<FinalizePaymentParams, "stripe">): Promise<PaymentFinalizerResult> => {
+  const db = supabaseAdmin as SupabaseAdminClient;
+
+  if (session.payment_status !== "paid") {
+    return { success: false, eventId: session.metadata?.event_id || null, error: "Pagamento non ancora confermato" };
+  }
+
+  const changeRequestId = session.metadata?.change_request_id || null;
+  const userId = session.metadata?.user_id || null;
+  const eventId = session.metadata?.event_id || null;
+  if (!changeRequestId) throw new Error("Change request ID not found in session");
+  if (!userId) throw new Error("User not found in session");
+
+  const { data: changeRequest, error: changeError } = await db
+    .from("registration_change_requests")
+    .select("*")
+    .eq("id", changeRequestId)
+    .eq("user_id", userId)
+    .single();
+  if (changeError || !changeRequest) throw new Error("Change request not found");
+
+  if ((changeRequest as Record<string, unknown>).status === "completed") {
+    return { success: true, eventId: eventId || String((changeRequest as Record<string, unknown>).event_id || "") };
+  }
+
+  const stripePaymentIntentId = paymentIntentIdFromSession(session);
+  await applyRegistrationChangeRequest(db, changeRequest as Record<string, unknown>, {
+    stripePaymentIntentId,
+    stripeCheckoutSessionId: session.id || null,
+  });
+
+  return { success: true, eventId: eventId || String((changeRequest as Record<string, unknown>).event_id || "") };
 };

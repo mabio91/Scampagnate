@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   finalizeEventCheckoutSession,
   finalizeMembershipCheckoutSession,
+  finalizeRegistrationChangeCheckoutSession,
 } from "../_shared/stripe-payment-finalizer.ts";
 
 const corsHeaders = {
@@ -75,6 +76,11 @@ serve(async (req) => {
   try {
     if (session.metadata?.type === "membership") {
       const result = await finalizeMembershipCheckoutSession({ session, supabaseAdmin });
+      return jsonResponse({ received: true, result });
+    }
+
+    if (session.metadata?.type === "registration_change") {
+      const result = await finalizeRegistrationChangeCheckoutSession({ session, supabaseAdmin });
       return jsonResponse({ received: true, result });
     }
 

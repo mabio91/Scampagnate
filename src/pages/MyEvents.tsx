@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ShareSheet from "@/components/events/ShareSheet";
-import EditRegistrationDialog from "@/components/events/EditRegistrationDialog";
+import EditRegistrationDialog, { type RegistrationChangeQuote } from "@/components/events/EditRegistrationDialog";
 import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useUpdateRegistrationDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
 import { Button } from "@/components/ui/button";
@@ -30,12 +30,77 @@ import { getDepositPaymentLabel, getEventBalancePaymentMode, getRemainingBalance
 import { getEventHomeCardImageSrc } from "@/lib/eventImages";
 import {
   findPriceOptionById,
+  type EventPricingLike,
   getOptionPaymentSummary,
   getOptionPaymentType,
   isOnlinePaymentType,
   isOptionBookable,
+  type PriceOptionLike,
 } from "@/lib/priceOptions";
 import { isEventPastByDate, isEventUpcomingByDate } from "@/lib/eventDates";
+
+interface AdditionalRegistrationField {
+  label: string;
+  type?: string | null;
+  required?: boolean | null;
+  placeholder?: string | null;
+  options?: string[] | string | null;
+}
+
+interface EventAdditionalFields extends Record<string, unknown> {
+  fields?: AdditionalRegistrationField[];
+  car_availability_enabled?: boolean | null;
+  ask_car_availability?: boolean | null;
+}
+
+interface MeetingPoint {
+  id?: string | null;
+  name?: string | null;
+  location?: string | null;
+  time?: string | null;
+}
+
+interface MyEventRecord extends EventPricingLike {
+  id: string;
+  title: string;
+  date: string;
+  time?: string | null;
+  location?: string | null;
+  location_label?: string | null;
+  cancellation_policy?: string | null;
+  price_options?: PriceOptionLike[] | null;
+  meeting_points?: MeetingPoint[] | null;
+  additional_fields?: EventAdditionalFields | null;
+}
+
+interface MyRegistrationRecord {
+  id: string;
+  status?: string | null;
+  payment_status?: string | null;
+  checked_in?: boolean | null;
+  price_option_id?: string | null;
+  amount_paid?: number | string | null;
+  balance_due_amount?: number | string | null;
+  meeting_point_id?: string | null;
+  car_availability?: string | null;
+  additional_responses?: Record<string, string> | null;
+  events?: MyEventRecord | null;
+  meeting_point?: MeetingPoint | null;
+}
+
+interface SavedEventRecord {
+  id: string;
+  events?: MyEventRecord | null;
+}
+
+interface PriceChangeFunctionResponse {
+  quote?: RegistrationChangeQuote;
+  url?: string;
+  refunded?: boolean;
+}
+
+const errorMessage = (error: unknown, fallback = "Operazione non riuscita") =>
+  error instanceof Error ? error.message : fallback;
 
 const statusStyles: Record<string, string> = {
   iscritto: "bg-success/10 text-success",
@@ -57,23 +122,23 @@ const statusLabels: Record<string, string> = {
   "Iscritto - Acconto pagato": "Iscritto - Acconto pagato",
 };
 
-function getCustomRegistrationFields(event: any): any[] {
-  const af = event?.additional_fields as any;
+function getCustomRegistrationFields(event: MyEventRecord | null | undefined): AdditionalRegistrationField[] {
+  const af = event?.additional_fields;
   return af && Array.isArray(af.fields) ? af.fields : [];
 }
 
-function hasEditableRegistrationFields(event: any): boolean {
+function hasEditableRegistrationFields(event: MyEventRecord | null | undefined): boolean {
   const hasMeetingPoints = Boolean(event?.meeting_points?.length);
-  const carEnabled = Boolean((event?.additional_fields as any)?.car_availability_enabled || (event?.additional_fields as any)?.ask_car_availability);
+  const carEnabled = Boolean(event?.additional_fields?.car_availability_enabled || event?.additional_fields?.ask_car_availability);
   return hasMeetingPoints || carEnabled || getCustomRegistrationFields(event).length > 0;
 }
 
-function canEditRegistration(event: any): boolean {
+function canEditRegistration(event: MyEventRecord | null | undefined): boolean {
   if (!event?.date || !event?.time) return false;
   return parseEventDateTime(event.date, event.time).getTime() > Date.now();
 }
 
-function resolveMyEventStatus(registration: any, isPast: boolean): string {
+function resolveMyEventStatus(registration: MyRegistrationRecord, isPast: boolean): string {
   const event = registration.events;
   if (!event) return "iscritto";
   const selectedPriceOption = findPriceOptionById(event.price_options, registration.price_option_id);
@@ -97,12 +162,12 @@ function resolveMyEventStatus(registration: any, isPast: boolean): string {
   return "iscritto";
 }
 
-const generateCalendarUrl = (event: any, type: "google" | "apple" | "outlook") => {
-  const startDate = parseEventDateTime(event.date, event.time);
+const generateCalendarUrl = (event: MyEventRecord, type: "google" | "apple" | "outlook") => {
+  const startDate = parseEventDateTime(event.date, event.time || "00:00");
   const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
 
   const title = encodeURIComponent(event.title);
-  const location = encodeURIComponent(event.location);
+  const location = encodeURIComponent(event.location || "");
   const eventUrl = `${window.location.origin}/event/${event.id}`;
   const details = encodeURIComponent(`${event.title}\n\nLocation: ${event.location}\n\nEvent page: ${eventUrl}`);
 
@@ -171,9 +236,9 @@ const MyEvents = () => {
     );
   }
 
-  const active = registrations?.filter((r: any) => r.status !== "cancelled") || [];
-  const upcoming = active.filter((r: any) => isEventUpcomingByDate(r.events?.date));
-  const past = active.filter((r: any) => isEventPastByDate(r.events?.date));
+  const active = (registrations as MyRegistrationRecord[] | undefined)?.filter((r) => r.status !== "cancelled") || [];
+  const upcoming = active.filter((r) => isEventUpcomingByDate(r.events?.date));
+  const past = active.filter((r) => isEventPastByDate(r.events?.date));
 
   return (
     <>
@@ -198,7 +263,7 @@ const MyEvents = () => {
               </div>
             ) : (
               <div className="space-y-3 mt-4">
-                {upcoming.map((r: any) => (
+                {upcoming.map((r) => (
                   <EventRegistrationCard key={r.id} registration={r} showActions />
                 ))}
               </div>
@@ -210,7 +275,7 @@ const MyEvents = () => {
               <p className="text-center text-muted-foreground font-body py-8 text-sm">{t("noPastEvents")}</p>
             ) : (
               <div className="space-y-3 mt-4">
-                {past.map((r: any) => (
+                {past.map((r) => (
                   <EventRegistrationCard key={r.id} registration={r} isPast />
                 ))}
               </div>
@@ -228,7 +293,7 @@ const MyEvents = () => {
               </div>
             ) : (
               <div className="space-y-3 mt-4">
-                {savedEvents.map((se: any) => (
+                {(savedEvents as SavedEventRecord[]).map((se) => (
                   <SavedEventCard key={se.id} savedEvent={se} />
                 ))}
               </div>
@@ -240,7 +305,7 @@ const MyEvents = () => {
   );
 };
 
-const EventRegistrationCard = ({ registration, showActions, isPast }: { registration: any; showActions?: boolean; isPast?: boolean }) => {
+const EventRegistrationCard = ({ registration, showActions, isPast }: { registration: MyRegistrationRecord; showActions?: boolean; isPast?: boolean }) => {
   const event = registration.events;
   const { toast } = useToast();
   const { t, language } = useLanguage();
@@ -251,6 +316,9 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [priceChangeQuote, setPriceChangeQuote] = useState<RegistrationChangeQuote | null>(null);
+  const [priceChangeLoading, setPriceChangeLoading] = useState(false);
+  const [priceChangeSubmitting, setPriceChangeSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const selectedPriceOption = event ? findPriceOptionById(event.price_options, registration.price_option_id) : null;
@@ -294,7 +362,10 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
   const hasPaidPayment = registration.payment_status === "paid" || isDepositRegistration(registration);
   const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
-  const editableFieldsAvailable = hasEditableRegistrationFields(event);
+  const canChangeFormula = Boolean(
+    event.price_options?.length && event.price_options.length > 1 && ["registered", "paid", "deposit_paid"].includes(registration.status || ""),
+  );
+  const editableFieldsAvailable = hasEditableRegistrationFields(event) || canChangeFormula;
   const registrationStillEditable = canEditRegistration(event);
   const showEditButton = Boolean(showActions && registration.status !== "cancelled" && editableFieldsAvailable && registrationStillEditable);
 
@@ -315,8 +386,8 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       } else {
         toast({ title: t("registrationCancelled"), description: t("registrationCancelledDesc") });
       }
-    } catch (err: any) {
-      toast({ title: t("error"), description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: t("error"), description: errorMessage(err), variant: "destructive" });
     }
   };
 
@@ -326,7 +397,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     if (needsOnlinePayment) {
       setPaymentLoading(true);
       try {
-        const body: any = { eventId: event.id, registrationId: registration.id };
+        const body: Record<string, unknown> = { eventId: event.id, registrationId: registration.id };
         const regPriceOptionId = registration.price_option_id;
         if (regPriceOptionId) body.priceOptionId = regPriceOptionId;
 
@@ -343,8 +414,8 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         } else {
           throw new Error("No checkout URL returned");
         }
-      } catch (err: any) {
-        toast({ title: "Errore", description: err.message, variant: "destructive" });
+      } catch (err: unknown) {
+        toast({ title: "Errore", description: errorMessage(err), variant: "destructive" });
         setPaymentLoading(false);
       }
     } else {
@@ -380,8 +451,65 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       });
       setShowEditDialog(false);
       toast({ title: "Iscrizione aggiornata con successo" });
-    } catch (err: any) {
-      toast({ title: t("error"), description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: t("error"), description: errorMessage(err), variant: "destructive" });
+    }
+  };
+
+  const handleEditDialogOpenChange = (open: boolean) => {
+    setShowEditDialog(open);
+    if (!open) {
+      setPriceChangeQuote(null);
+      setPriceChangeLoading(false);
+      setPriceChangeSubmitting(false);
+    }
+  };
+
+  const handleQuotePriceChange = async (priceOptionId: string) => {
+    setPriceChangeQuote(null);
+    setPriceChangeLoading(true);
+    try {
+      const { data, error } = await invokeAuthenticatedFunction("change-registration-price-option", {
+        mode: "quote",
+        eventId: event.id,
+        registrationId: registration.id,
+        priceOptionId,
+      });
+      if (error) throw error;
+      setPriceChangeQuote((data as PriceChangeFunctionResponse | null)?.quote || null);
+    } catch (err: unknown) {
+      setPriceChangeQuote(null);
+      toast({ title: "Cambio formula non disponibile", description: errorMessage(err), variant: "destructive" });
+    } finally {
+      setPriceChangeLoading(false);
+    }
+  };
+
+  const handleConfirmPriceChange = async (priceOptionId: string) => {
+    setPriceChangeSubmitting(true);
+    try {
+      const { data, error } = await invokeAuthenticatedFunction("change-registration-price-option", {
+        mode: "commit",
+        eventId: event.id,
+        registrationId: registration.id,
+        priceOptionId,
+      });
+      if (error) throw error;
+      const response = data as PriceChangeFunctionResponse | null;
+      if (response?.url) {
+        window.location.href = response.url;
+        return;
+      }
+      if (response?.refunded) {
+        toast({ title: "Formula aggiornata", description: "Abbiamo aggiornato l'iscrizione e avviato il rimborso automatico." });
+      } else {
+        toast({ title: "Formula aggiornata", description: "La tua iscrizione è stata aggiornata." });
+      }
+      setShowEditDialog(false);
+      window.location.reload();
+    } catch (err: unknown) {
+      toast({ title: "Cambio formula non riuscito", description: errorMessage(err), variant: "destructive" });
+      setPriceChangeSubmitting(false);
     }
   };
 
@@ -530,17 +658,22 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
 
       <EditRegistrationDialog
         open={showEditDialog}
-        onOpenChange={setShowEditDialog}
+        onOpenChange={handleEditDialogOpenChange}
         event={event}
         registration={registration}
         isSubmitting={updateRegistrationMutation.isPending}
         onSave={handleSaveRegistrationDetails}
+        priceChangeQuote={priceChangeQuote}
+        priceChangeLoading={priceChangeLoading}
+        priceChangeSubmitting={priceChangeSubmitting}
+        onQuotePriceChange={handleQuotePriceChange}
+        onConfirmPriceChange={handleConfirmPriceChange}
       />
     </>
   );
 };
 
-const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
+const SavedEventCard = ({ savedEvent }: { savedEvent: SavedEventRecord }) => {
   const event = savedEvent.events;
   const toggleSave = useToggleSaveEvent();
   const { toast } = useToast();
@@ -556,8 +689,8 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: any }) => {
     try {
       await toggleSave.mutateAsync({ eventId: event.id, isSaved: true });
       toast({ title: t("removedFromSaved") });
-    } catch (err: any) {
-      toast({ title: t("error"), description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: t("error"), description: errorMessage(err), variant: "destructive" });
     }
   };
 
