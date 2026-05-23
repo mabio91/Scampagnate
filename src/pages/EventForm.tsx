@@ -1356,10 +1356,10 @@ const EventForm = () => {
         open={!!coverCropFile}
         file={coverCropFile}
         title="Ritaglia copertina"
-        description="Scegli il ritaglio 16:9 usato nel dettaglio evento."
-        aspect={{ width: 16, height: 9 }}
-        outputWidth={1600}
-        outputHeight={900}
+        description="Scegli il ritaglio 1:1 usato nel dettaglio evento."
+        aspect={{ width: 1, height: 1 }}
+        outputWidth={1200}
+        outputHeight={1200}
         onCancel={() => setCoverCropFile(null)}
         onCropped={(croppedFile) => {
           const originalFile = coverCropFile;
@@ -1756,7 +1756,7 @@ const EventForm = () => {
               {imagePreview ? (
                 <div className="mt-2 space-y-3">
                   <div className="relative rounded-lg overflow-hidden bg-muted">
-                    <img src={imagePreview} alt="Preview" className="w-full aspect-video object-contain rounded-lg" />
+                    <img src={imagePreview} alt="Preview" className="w-full aspect-square object-cover rounded-lg" />
                     <button
                       type="button"
                       onClick={removeImage}
