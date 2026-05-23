@@ -48,7 +48,7 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
           .from("points_history")
           .select("id", { head: true, count: "exact" })
           .eq("user_id", user.id)
-          .eq("type", "profile_complete")
+          .eq("type", "profile_completed")
           .limit(1);
 
         if (cancelled || existingError || (existingCount ?? 0) > 0) return;
@@ -56,7 +56,8 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
         const { error: awardError } = await supabase.rpc("add_user_points", {
           p_user_id: user.id,
           p_value: 10,
-          p_type: "profile_complete",
+          p_type: "profile_completed",
+          p_reference_id: user.id,
           p_description: "Profilo completato al 100%",
         });
 
@@ -69,7 +70,7 @@ const ProfileCompleteness = ({ onCompleteProfile }: ProfileCompletenessProps) =>
     };
     awardPoints();
     return () => { cancelled = true; };
-  }, [percentage, user]);
+  }, [percentage, user, toast]);
 
   if (!profile) return null;
   // Don't show if fully complete
