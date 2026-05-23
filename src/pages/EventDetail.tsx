@@ -245,7 +245,7 @@ const EventDetail = () => {
   
   const heroHeight = 320;
   const heroImageHeight = "min(56.25vw, 320px)";
-  const heroContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight} + 24px)`;
+  const heroContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight})`;
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 0.7));
   const heroTranslateY = scrollY * 0.08;
   const showStickyHeader = scrollY > heroHeight - 60;
@@ -971,8 +971,8 @@ const getCTALabel = () => {
         <div
           className={`absolute left-0 right-0 pointer-events-none bg-gradient-to-b ${
             isSoldOut
-              ? "from-foreground/15 via-transparent to-foreground/20"
-              : "from-foreground/10 via-transparent to-foreground/10"
+              ? "from-foreground/10 via-transparent to-foreground/55"
+              : "from-foreground/5 via-transparent to-foreground/45"
           }`}
           style={{
             opacity: heroOpacity,
@@ -998,14 +998,19 @@ const getCTALabel = () => {
             </div>
           </div>
         </div>
+
+        <div className="absolute bottom-12 left-4 right-4" style={{ opacity: heroOpacity }}>
+          <div className="mx-auto max-w-lg">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">
+              {event.title}
+            </h1>
+          </div>
+        </div>
       </div>
 
       {/* 16. Rounded top container overlapping the hero */}
       <div className="relative -mt-6 bg-background rounded-t-3xl z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
-          <h1 className="mb-3 font-display text-2xl sm:text-3xl font-bold leading-tight text-foreground">
-            {event.title}
-          </h1>
           {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
             {event.difficulty && (
