@@ -249,6 +249,33 @@ const EventDetail = () => {
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 0.7));
   const heroTranslateY = scrollY * 0.08;
   const showStickyHeader = scrollY > heroHeight - 60;
+  const imageSrc = event ? resolveEventImageSrc(event.image_url) : undefined;
+  const [heroObjectFit, setHeroObjectFit] = useState<"contain" | "cover">("contain");
+
+  useEffect(() => {
+    setHeroObjectFit("contain");
+    if (!imageSrc) return;
+
+    let isActive = true;
+    const image = new window.Image();
+
+    image.onload = () => {
+      if (!isActive || !image.naturalWidth || !image.naturalHeight) return;
+      const aspectRatio = image.naturalWidth / image.naturalHeight;
+      const isSixteenNine = Math.abs(aspectRatio - 16 / 9) <= 0.04;
+      setHeroObjectFit(isSixteenNine ? "contain" : "cover");
+    };
+
+    image.onerror = () => {
+      if (isActive) setHeroObjectFit("contain");
+    };
+
+    image.src = imageSrc;
+
+    return () => {
+      isActive = false;
+    };
+  }, [imageSrc]);
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
   const eventRequiresMembership = !!eventAccessRules?.rules?.some((rule) => rule.type === "require_membership");
@@ -323,7 +350,6 @@ const EventDetail = () => {
     );
   }
 
-  const imageSrc = resolveEventImageSrc(event.image_url);
   const galleryImages = normalizeGalleryImages(event.gallery_images);
   const registrationPriceOption = findPriceOptionById(event.price_options, (myRegistration as any)?.price_option_id);
   const registrationPaymentType = getOptionPaymentType(registrationPriceOption, event);
@@ -964,7 +990,7 @@ const getCTALabel = () => {
           <OptimizedImage
             src={imageSrc}
             alt={event.title}
-            className={`h-full w-full object-contain bg-muted/30 transition-all duration-300 ${isSoldOut ? "grayscale" : ""}`}
+            className={`h-full w-full ${heroObjectFit === "cover" ? "object-cover" : "object-contain"} bg-muted/30 transition-all duration-300 ${isSoldOut ? "grayscale" : ""}`}
             loading="eager"
           />
         </div>
