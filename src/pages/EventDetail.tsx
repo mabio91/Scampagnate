@@ -1000,11 +1000,7 @@ const getCTALabel = () => {
         </div>
 
         <div className="absolute bottom-12 left-4 right-4" style={{ opacity: heroOpacity }}>
-          <div className="mx-auto max-w-lg">
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">
-              {event.title}
-            </h1>
-          </div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">{event.title}</h1>
         </div>
       </div>
 
