@@ -222,8 +222,21 @@ const RegistrationCheckoutDialog = ({
     return getOptionPaymentSummary(option, event);
   };
 
-  const getSinglePriceOptionTitle = (option: PriceOptionLike) =>
-    option.name?.trim() || "Partecipazione evento";
+  const isGeneratedFormulaName = (name: string) => /^formula\s+\d+$/i.test(name.trim());
+
+  const getSinglePriceOptionTitle = (option: PriceOptionLike) => {
+    const cleanName = option.name?.trim();
+    return cleanName && !isGeneratedFormulaName(cleanName) ? cleanName : "Partecipazione evento";
+  };
+
+  const getCheckoutAmountLabel = (option: PriceOptionLike | null | undefined) =>
+    getOptionPaymentType(option, event) === "free" ? "Gratis" : `€${getOptionTotalPrice(option, event).toFixed(2)}`;
+
+  const getCheckoutDetailLine = (option: PriceOptionLike | null | undefined) => {
+    const availability = getOptionAvailabilityLabel(option, event);
+    const paymentDetail = getCheckoutPaymentDetail(option);
+    return paymentDetail === "Gratis" ? availability : `${paymentDetail} · ${availability}`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -409,7 +422,7 @@ const RegistrationCheckoutDialog = ({
                   <div className="min-w-0 space-y-1">
                     <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
                     <p className="text-[10px] text-muted-foreground font-body">
-                      {getCheckoutPaymentDetail(singlePriceOption)} · {getOptionAvailabilityLabel(singlePriceOption, event)}
+                      {getCheckoutDetailLine(singlePriceOption)}
                     </p>
                     {"isEligible" in singlePriceOption && !(singlePriceOption as ResolvedPriceOption).isEligible && (singlePriceOption as ResolvedPriceOption).eligibilityReason && (
                       <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1">
@@ -422,7 +435,7 @@ const RegistrationCheckoutDialog = ({
                       <span className="text-xs font-body text-muted-foreground line-through block">€{Number(singlePriceOption.original_price).toFixed(2)}</span>
                     )}
                     <span className={`text-sm font-display font-bold ${singlePriceOption.original_price && Number(singlePriceOption.original_price) > Number(singlePriceOption.price) ? "text-green-600" : "text-foreground"}`}>
-                      €{Number(singlePriceOption.price).toFixed(2)}
+                      {getCheckoutAmountLabel(singlePriceOption)}
                     </span>
                   </div>
                 </div>
@@ -461,7 +474,7 @@ const RegistrationCheckoutDialog = ({
                                 )}
                               </div>
                               <p className="text-[10px] text-muted-foreground font-body mt-0.5">
-                                {getCheckoutPaymentDetail(opt)} · {getOptionAvailabilityLabel(opt, event)}
+                                {getCheckoutDetailLine(opt)}
                               </p>
                               {!opt.isEligible && opt.eligibilityReason && (
                                 <p className="text-[10px] text-muted-foreground font-body flex items-center gap-1 mt-0.5">
@@ -475,7 +488,7 @@ const RegistrationCheckoutDialog = ({
                               <span className="text-xs font-body text-muted-foreground line-through block">€{opt.original_price.toFixed(2)}</span>
                             )}
                             <span className={`text-sm font-display font-bold ${opt.isEligible && opt.original_price && opt.original_price > opt.price ? "text-green-600" : "text-foreground"}`}>
-                              €{Number(opt.price).toFixed(2)}
+                              {getCheckoutAmountLabel(opt)}
                             </span>
                           </div>
                         </label>
@@ -507,11 +520,11 @@ const RegistrationCheckoutDialog = ({
                             <div className="min-w-0">
                               <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
                               <p className="text-[10px] text-muted-foreground font-body mt-0.5">
-                                {getCheckoutPaymentDetail(opt)} · {getOptionAvailabilityLabel(opt, event)}
+                                {getCheckoutDetailLine(opt)}
                               </p>
                             </div>
                           </div>
-                          <span className="text-sm font-display font-bold text-foreground shrink-0">€{Number(opt.price).toFixed(2)}</span>
+                          <span className="text-sm font-display font-bold text-foreground shrink-0">{getCheckoutAmountLabel(opt)}</span>
                         </label>
                       );
                     })}
