@@ -26,10 +26,21 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowLeft, Edit, Users, CheckCircle2, Download, UserPlus, UserMinus,
   Loader2, Zap, BarChart3, Trash2, Send, Search, Copy,
   MessageCircle, Bell, AlertTriangle, History,
-  FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog, Instagram
+  FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog, Instagram,
+  MoreVertical
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -41,24 +52,17 @@ const NO_MEETING_POINT = "__no_meeting_point__";
 const ALL_PRICE_OPTIONS = "__all_price_options__";
 
 const PAYMENT_STATUS_OPTIONS = [
-  { value: "deposit_paid", label: "Deposit Paid" },
-  { value: "paid", label: "Paid" },
-  { value: "pending", label: "Pending" },
-  { value: "pay_on_location", label: "Pay on location" },
-  { value: "not_required", label: "Not Required" },
-  { value: "failed", label: "Failed" },
+  { value: "pending", label: "In attesa pagamento" },
+  { value: "deposit_paid", label: "Acconto effettuato" },
+  { value: "paid", label: "Pagamento effettuato" },
+  { value: "pay_on_location", label: "Pagamento in loco" },
+  { value: "not_required", label: "Pagamento non richiesto" },
 ];
 
 const REGISTRATION_STATUS_OPTIONS = [
-  { value: "registered", label: "Registered" },
-  { value: "deposit_paid", label: "Deposit Paid" },
-  { value: "paid", label: "Paid" },
-  { value: "attended", label: "Attended" },
-  { value: "no_show", label: "No-show" },
-  { value: "pending_payment", label: "Pending Payment" },
-  { value: "pending_approval", label: "Pending Approval" },
-  { value: "waitlist", label: "Waitlist" },
-  { value: "cancelled", label: "Cancel" },
+  { value: "registered", label: "Iscritto" },
+  { value: "waitlist", label: "In lista d'attesa" },
+  { value: "pending_approval", label: "In attesa di approvazione" },
 ];
 
 const EVENT_STATUS_OPTIONS = [
@@ -79,6 +83,13 @@ const isConfirmedEffectiveRegistration = (registration: {
 }) =>
   CONFIRMED_PARTICIPANT_STATUSES.includes(registration.status || "") &&
   registration.payment_status !== "pending";
+
+const ProfileField = ({ label, value }: { label: string; value?: string | null }) => (
+  <div className="rounded-lg border border-border p-2">
+    <p className="text-[10px] font-body text-muted-foreground">{label}</p>
+    <p className="text-xs font-body font-semibold text-foreground">{value || "-"}</p>
+  </div>
+);
 
 const normalizeEditableEventStatus = (status?: string | null) => {
   if (status === "available" || status === "published") return "open";
@@ -123,6 +134,7 @@ const EventManage = () => {
   const [editMeetingPoint, setEditMeetingPoint] = useState("");
   const [editPaymentStatus, setEditPaymentStatus] = useState("");
   const [editPriceOptionId, setEditPriceOptionId] = useState(NO_PRICE_OPTION);
+  const [selectedProfileRegistration, setSelectedProfileRegistration] = useState<any | null>(null);
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [ownerSearch, setOwnerSearch] = useState("");
   const [savingOwnerId, setSavingOwnerId] = useState<string | null>(null);
@@ -496,6 +508,133 @@ const EventManage = () => {
       setEditingParticipant(null);
       toast({ title: "Participant updated" });
     }
+  };
+
+  const registrationMenuValue = (reg: any) => {
+    if (reg.status === "waitlist" || reg.status === "pending_approval") return reg.status;
+    if (["registered", "deposit_paid", "paid", "attended", "pending_payment"].includes(reg.status)) return "registered";
+    return undefined;
+  };
+
+  const paymentMenuValue = (reg: any) => {
+    if (reg.payment_status) return reg.payment_status;
+    if (reg.status === "deposit_paid") return "deposit_paid";
+    if (reg.status === "paid") return "paid";
+    return "pending";
+  };
+
+  const meetingPointOptionLabel = (point: any, index: number) =>
+    `Punto ${index + 1} - ${point.name || "Ritrovo"}`;
+
+  const renderParticipantOptionsMenu = (reg: any) => {
+    const isManual = reg.sport_level?.startsWith("manual:");
+    const currentRegistrationStatus = registrationMenuValue(reg);
+    const currentMeetingPoint = reg.meeting_point_id || NO_MEETING_POINT;
+    const currentPriceOption = (reg as any).price_option_id || NO_PRICE_OPTION;
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Opzioni partecipante">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel>Azioni</DropdownMenuLabel>
+          <DropdownMenuItem
+            disabled={isManual || !reg.user_id}
+            onSelect={() => setSelectedProfileRegistration(reg)}
+          >
+            Apri profilo
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              if (reg.status !== "no_show") void handleStatusChange(reg.id, "no_show");
+            }}
+          >
+            <span className="flex items-center gap-2">
+              {reg.status === "no_show" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+              <span>Segna come no-show</span>
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => setPendingCancelRegistrationId(reg.id)}>
+            Rimuovi dall'evento
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Iscrizione</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={currentRegistrationStatus}
+            onValueChange={(value) => {
+              if (value && value !== currentRegistrationStatus) void handleStatusChange(reg.id, value);
+            }}
+          >
+            {REGISTRATION_STATUS_OPTIONS.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value}>
+                {option.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Pagamento</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={paymentMenuValue(reg)}
+            onValueChange={(value) => {
+              if (value && value !== paymentMenuValue(reg)) {
+                void handleUpdateRegistration(reg.id, { payment_status: value });
+              }
+            }}
+          >
+            {PAYMENT_STATUS_OPTIONS.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value}>
+                {option.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Punto di ritrovo</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={currentMeetingPoint}
+            onValueChange={(value) => {
+              if (value !== currentMeetingPoint) {
+                void handleUpdateRegistration(reg.id, {
+                  meeting_point_id: value === NO_MEETING_POINT ? null : value,
+                });
+              }
+            }}
+          >
+            <DropdownMenuRadioItem value={NO_MEETING_POINT}>Nessun ritrovo</DropdownMenuRadioItem>
+            {(meetingPoints || []).map((mp, index) => (
+              <DropdownMenuRadioItem key={mp.id} value={mp.id}>
+                {meetingPointOptionLabel(mp, index)}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Formula prezzo</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={currentPriceOption}
+            onValueChange={(value) => {
+              if (value !== currentPriceOption) {
+                void handleUpdateRegistration(reg.id, {
+                  price_option_id: value === NO_PRICE_OPTION ? null : value,
+                });
+              }
+            }}
+          >
+            <DropdownMenuRadioItem value={NO_PRICE_OPTION}>Nessuna formula</DropdownMenuRadioItem>
+            {sortedPriceOptions.map((option) => (
+              <DropdownMenuRadioItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
+                {option.name || "Formula"}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   // Add manual participant (profile-less registration). Keep user_id null so
@@ -1119,22 +1258,7 @@ const EventManage = () => {
                           >
                             <Edit className="h-3.5 w-3.5" />
                           </Button>
-                          <Select onValueChange={(v) => {
-                            if (v === "cancelled") {
-                              setPendingCancelRegistrationId(reg.id);
-                              return;
-                            }
-                            void handleStatusChange(reg.id, v);
-                          }}>
-                            <SelectTrigger className="w-8 h-8 justify-center px-0 border-0 [&>span:first-child]:hidden">
-                              <span className="sr-only">Actions</span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {REGISTRATION_STATUS_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          {renderParticipantOptionsMenu(reg)}
                         </div>
                       </div>
                       {editingParticipant === reg.id && (
@@ -1352,6 +1476,7 @@ const EventManage = () => {
                       <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setPendingCancelRegistrationId(reg.id)}>
                         <UserMinus className="h-3 w-3" />
                       </Button>
+                      {renderParticipantOptionsMenu(reg)}
                     </div>
                   </Card>
                   );
@@ -1403,6 +1528,7 @@ const EventManage = () => {
                       <Button size="sm" variant="outline" className="flex-1 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setPendingCancelRegistrationId(reg.id)}>
                         Reject
                       </Button>
+                      {renderParticipantOptionsMenu(reg)}
                     </div>
                   </Card>
                 ))}
@@ -1420,6 +1546,62 @@ const EventManage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!selectedProfileRegistration} onOpenChange={(open) => { if (!open) setSelectedProfileRegistration(null); }}>
+        <DialogContent className="max-w-sm">
+          {selectedProfileRegistration && (() => {
+            const reg = selectedProfileRegistration;
+            const { firstName, lastName } = getParticipantName(reg);
+            const mp = meetingPoints?.find((point) => point.id === reg.meeting_point_id);
+            const priceOption = getPriceOptionForRegistration(reg);
+            const profile = (reg.profiles || {}) as any;
+            const payment = PAYMENT_STATUS_OPTIONS.find((option) => option.value === paymentMenuValue(reg))?.label || paymentMenuValue(reg);
+            const status = reg.status === "no_show"
+              ? "No-show"
+              : REGISTRATION_STATUS_OPTIONS.find((option) => option.value === registrationMenuValue(reg))?.label || reg.status;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display">Profilo partecipante</DialogTitle>
+                  <DialogDescription className="font-body text-sm">
+                    {firstName} {lastName}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 text-sm font-body">
+                  <div className="grid grid-cols-2 gap-2">
+                    <ProfileField label="Iscrizione" value={status} />
+                    <ProfileField label="Pagamento" value={payment} />
+                    <ProfileField label="Ritrovo" value={mp?.name || "Nessun ritrovo"} />
+                    <ProfileField label="Formula" value={priceOption?.name || "Nessuna formula"} />
+                  </div>
+                  <div className="rounded-lg border border-border p-3 space-y-1">
+                    {profile.phone && <p><span className="text-muted-foreground">Telefono:</span> {profile.phone}</p>}
+                    {profile.instagram_handle && (
+                      <p>
+                        <span className="text-muted-foreground">Instagram:</span>{" "}
+                        <a className="text-primary hover:underline" href={instagramProfileUrl(profile.instagram_handle)} target="_blank" rel="noreferrer">
+                          @{profile.instagram_handle}
+                        </a>
+                      </p>
+                    )}
+                    {profile.membership_id && <p><span className="text-muted-foreground">Tessera:</span> {profile.membership_id}</p>}
+                    {profile.self_level && <p><span className="text-muted-foreground">Livello:</span> {profile.self_level}</p>}
+                    {profile.experience_grade != null && <p><span className="text-muted-foreground">Grade:</span> {profile.experience_grade}</p>}
+                    {profile.health_safety_status === "has_info" && (
+                      <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 p-2 text-xs">
+                        <p className="font-semibold text-foreground">Salute e sicurezza</p>
+                        {profile.health_safety_notes && <p className="mt-1 text-muted-foreground">{profile.health_safety_notes}</p>}
+                        {profile.emergency_medication_notes && <p className="mt-1 text-muted-foreground">Farmaci/dispositivi: {profile.emergency_medication_notes}</p>}
+                        {profile.health_safety_help_notes && <p className="mt-1 text-muted-foreground">Indicazioni: {profile.health_safety_help_notes}</p>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showOwnerDialog} onOpenChange={setShowOwnerDialog}>
         <DialogContent className="max-w-sm">
