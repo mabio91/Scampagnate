@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { recordUserPaymentTransaction } from "../_shared/user-payment-transactions.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
-function buildCancellationEmailHtml(eventTitle, eventDate, eventTime, eventLocation) {
+function buildCancellationEmailHtml(eventTitle: string, eventDate: string, eventTime: string, eventLocation: string) {
   return `
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -54,7 +55,7 @@ serve(async (req)=>{
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl ?? "", supabaseServiceKey ?? "");
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil"
     });
@@ -112,10 +113,26 @@ serve(async (req)=>{
       ].includes(registration.payment_status || "") && registration.stripe_payment_intent_id && amountPaid > 0;
       if (shouldRefund) {
         try {
-          await stripe.refunds.create({
+          const refund = await stripe.refunds.create({
             payment_intent: registration.stripe_payment_intent_id,
             amount: Math.round(amountPaid * 100)
           });
+          if (registration.user_id) {
+            await recordUserPaymentTransaction(supabase, {
+              user_id: registration.user_id,
+              registration_id: registration.id,
+              event_id: event_id,
+              kind: "refund",
+              source: "event_cancelled_refund",
+              amount: amountPaid,
+              event_amount: amountPaid,
+              stripe_payment_intent_id: registration.stripe_payment_intent_id,
+              stripe_refund_id: refund.id,
+              metadata: {
+                reason: "event_cancelled",
+              },
+            });
+          }
           await supabase.from("event_registrations").update({
             payment_status: "refunded",
             refund_percentage: 100,
@@ -198,7 +215,7 @@ serve(async (req)=>{
   } catch (err) {
     console.error("Cancellation notification error:", err);
     return new Response(JSON.stringify({
-      error: err.message
+      error: err instanceof Error ? err.message : "Unable to cancel event"
     }), {
       status: 500,
       headers: {

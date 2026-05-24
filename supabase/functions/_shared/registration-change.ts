@@ -1,3 +1,5 @@
+import { recordUserPaymentTransaction } from "./user-payment-transactions.ts";
+
 export type PaymentType = "free" | "paid" | "deposit" | "location";
 export type BalancePaymentMode = "online" | "on_site" | null;
 
@@ -197,7 +199,7 @@ export const buildRegistrationChangeQuote = async (
       .eq("event_id", params.eventId)
       .maybeSingle();
     if (error) throw error;
-    oldOption = data;
+    oldOption = data || null;
   }
 
   const { data: newOption, error: optionError } = await db
@@ -257,7 +259,7 @@ export const buildRegistrationChangeQuote = async (
     eventId: params.eventId,
     userId: params.userId,
     eventTitle: String(event.title || "Evento"),
-    oldPriceOptionId: registration.price_option_id || null,
+    oldPriceOptionId: registration.price_option_id ? String(registration.price_option_id) : null,
     newPriceOptionId: params.newPriceOptionId,
     oldPriceOptionName: oldConfig.name,
     newPriceOptionName: String(newOption.name || "Partecipazione evento"),
@@ -359,6 +361,21 @@ export const applyRegistrationChangeRequest = async (
       stripe_checkout_session_id: params.stripeCheckoutSessionId || changeRequest.stripe_checkout_session_id || null,
       stripe_payment_intent_id: params.stripePaymentIntentId || null,
     });
+
+    await recordUserPaymentTransaction(db, {
+      registration_id: String(changeRequest.registration_id),
+      event_id: String(changeRequest.event_id),
+      user_id: String(changeRequest.user_id),
+      kind: "payment",
+      source: "registration_change",
+      amount: additionalPaymentAmount,
+      event_amount: additionalPaymentAmount,
+      stripe_checkout_session_id: params.stripeCheckoutSessionId || String(changeRequest.stripe_checkout_session_id || "") || null,
+      stripe_payment_intent_id: params.stripePaymentIntentId || null,
+      metadata: {
+        change_request_id: requestId,
+      },
+    });
   }
 
   if (refundAmount > 0) {
@@ -371,6 +388,20 @@ export const applyRegistrationChangeRequest = async (
       source: "registration_change",
       amount: refundAmount,
       stripe_refund_id: params.stripeRefundId || null,
+    });
+
+    await recordUserPaymentTransaction(db, {
+      registration_id: String(changeRequest.registration_id),
+      event_id: String(changeRequest.event_id),
+      user_id: String(changeRequest.user_id),
+      kind: "refund",
+      source: "registration_change",
+      amount: refundAmount,
+      event_amount: refundAmount,
+      stripe_refund_id: params.stripeRefundId || null,
+      metadata: {
+        change_request_id: requestId,
+      },
     });
   }
 

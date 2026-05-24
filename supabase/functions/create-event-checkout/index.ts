@@ -54,6 +54,20 @@ type PaymentConfig = {
   priceOptionName: string;
 };
 
+type SupabaseFilterQuery = {
+  eq: (column: string, value: unknown) => SupabaseFilterQuery;
+  maybeSingle: () => PromiseLike<{ data?: unknown; error?: Error | null }>;
+};
+
+type SupabaseQuery = {
+  select: (columns?: string) => SupabaseFilterQuery;
+  insert: (values: Record<string, unknown>) => PromiseLike<{ error?: Error | null }>;
+};
+
+type SupabaseDiscountClient = {
+  from: (table: string) => SupabaseQuery;
+};
+
 const normalizePaymentType = (value: unknown, fallback: PaymentType): PaymentType => {
   if (value === "free" || value === "paid" || value === "deposit" || value === "location") return value;
   return fallback;
@@ -94,7 +108,7 @@ const acceptsRegistrationStatus = (status: unknown) =>
   ["available", "published", "open"].includes(String(status ?? ""));
 
 const recordDiscountUsage = async (
-  supabaseAdmin: ReturnType<typeof createClient>,
+  supabaseAdmin: unknown,
   params: {
     discountCodeId: string;
     userId: string;
@@ -103,7 +117,8 @@ const recordDiscountUsage = async (
     discountedPrice: number;
   },
 ) => {
-  const { data: existingUsage, error: existingUsageError } = await supabaseAdmin
+  const db = supabaseAdmin as SupabaseDiscountClient;
+  const { data: existingUsage, error: existingUsageError } = await db
     .from("discount_code_usage")
     .select("id")
     .eq("discount_code_id", params.discountCodeId)
@@ -114,7 +129,7 @@ const recordDiscountUsage = async (
   if (existingUsageError) throw existingUsageError;
   if (existingUsage) return;
 
-  const { error: usageError } = await supabaseAdmin.from("discount_code_usage").insert({
+  const { error: usageError } = await db.from("discount_code_usage").insert({
     discount_code_id: params.discountCodeId,
     user_id: params.userId,
     event_id: params.eventId,
@@ -531,8 +546,11 @@ serve(async (req) => {
         discount_original_cents: appliedDiscountCodeId ? String(Math.round(discountOriginalPrice * 100)) : "",
         discount_final_cents: appliedDiscountCodeId ? String(Math.round(discountFinalPrice * 100)) : "",
         membership_included: String(membershipFeeCents > 0),
+        membership_fee_cents: String(membershipFeeCents),
+        event_amount_cents: String(eventAmountCents),
         booking_amount_cents: String(bookingAmountCents),
         service_fee_cents: String(serviceFeeCents),
+        total_amount_cents: String(totalAmountCents),
       },
     });
 
@@ -542,7 +560,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Event checkout error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unable to create checkout session" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

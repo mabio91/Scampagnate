@@ -174,6 +174,7 @@ serve(async (req) => {
         user_id: user.id,
         event_id: eventId || "",
         type: "membership",
+        membership_fee_cents: String(membershipFeeCents),
       },
     });
 
@@ -183,7 +184,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Membership checkout error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unable to create membership checkout session" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

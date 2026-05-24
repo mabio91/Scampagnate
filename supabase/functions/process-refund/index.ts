@@ -1,12 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { recordUserPaymentTransaction } from "../_shared/user-payment-transactions.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version"
 };
 const SERVICE_FEE_EUR = 1;
-function resolvePolicy(cancellationPolicy) {
+function resolvePolicy(cancellationPolicy: string | null | undefined) {
   const rawPolicy = (cancellationPolicy || "").toLowerCase().split(":")[0];
   switch(rawPolicy){
     case "flexible":
@@ -37,7 +38,12 @@ function resolvePolicy(cancellationPolicy) {
       };
   }
 }
-function calculateRefund(cancellationPolicy, eventDate, eventTime, amountPaid) {
+function calculateRefund(
+  cancellationPolicy: string | null | undefined,
+  eventDate: string,
+  eventTime: string,
+  amountPaid: number,
+) {
   const eventStart = new Date(`${eventDate}T${eventTime}`);
   const now = new Date();
   const hoursUntilEvent = (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -185,9 +191,24 @@ serve(async (req)=>{
           status: 200
         });
       }
-      await stripe.refunds.create({
+      const refund = await stripe.refunds.create({
         payment_intent: registration.stripe_payment_intent_id,
         amount: Math.round(refundCalc.refundAmount * 100)
+      });
+      await recordUserPaymentTransaction(supabaseAdmin, {
+        user_id: user.id,
+        registration_id: registration.id,
+        event_id: eventId,
+        kind: "refund",
+        source: "event_cancellation_refund",
+        amount: refundCalc.refundAmount,
+        event_amount: refundCalc.refundAmount,
+        stripe_payment_intent_id: registration.stripe_payment_intent_id,
+        stripe_refund_id: refund.id,
+        metadata: {
+          policy: refundCalc.policy,
+          refund_percentage: refundCalc.refundPercentage,
+        },
       });
       await supabaseAdmin.from("event_registrations").update({
         payment_status: "refunded",
@@ -237,7 +258,7 @@ serve(async (req)=>{
         reason: "stripe_error",
         policy: refundCalc.policy,
         refund_amount: refundCalc.refundAmount,
-        error: stripeError.message
+        error: stripeError instanceof Error ? stripeError.message : "Stripe refund failed"
       }), {
         headers: {
           ...corsHeaders,
@@ -249,7 +270,7 @@ serve(async (req)=>{
   } catch (error) {
     console.error("Process refund error:", error);
     return new Response(JSON.stringify({
-      error: error.message
+      error: error instanceof Error ? error.message : "Unable to process refund"
     }), {
       headers: {
         ...corsHeaders,

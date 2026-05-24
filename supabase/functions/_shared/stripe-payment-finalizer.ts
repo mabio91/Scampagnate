@@ -1,9 +1,11 @@
 import { applyRegistrationChangeRequest } from "./registration-change.ts";
+import { centsToEuros, recordUserPaymentTransaction } from "./user-payment-transactions.ts";
 
 type CheckoutKind = "full" | "deposit" | "balance";
 
 type StripeSessionLike = {
   id?: string | null;
+  amount_total?: number | null;
   payment_status?: string | null;
   payment_intent?: string | { id?: string | null } | null;
   metadata?: Record<string, string | undefined> | null;
@@ -15,7 +17,7 @@ type StripeRefundsClient = {
   };
 };
 
-type SupabaseResult<T> = { data: T | null; error: unknown };
+type SupabaseResult<T> = { data: T | null; error: Error | null };
 
 type SupabaseQueryBuilder<T = unknown> = PromiseLike<SupabaseResult<T>> & {
   select: (columns?: string) => SupabaseQueryBuilder<T>;
@@ -94,12 +96,36 @@ const refundBookingAmount = async (
   bookingAmountCents: number,
 ) => {
   if (!stripePaymentIntentId || bookingAmountCents <= 0) return;
-  await stripe.refunds.create({ payment_intent: stripePaymentIntentId, amount: bookingAmountCents });
+  return await stripe.refunds.create({ payment_intent: stripePaymentIntentId, amount: bookingAmountCents });
 };
 
 const eurosFromMetadataCents = (value: string | undefined) => {
   const cents = Number(value || "0");
   return Number.isFinite(cents) && cents > 0 ? Math.round(cents) / 100 : 0;
+};
+
+const ledgerAmountsFromEventSession = (session: StripeSessionLike) => {
+  const bookingAmountCents = Number(session.metadata?.booking_amount_cents || "0");
+  const serviceFeeCents = Number(session.metadata?.service_fee_cents || "0");
+  const explicitMembershipFeeCents = Number(session.metadata?.membership_fee_cents || "0");
+  const amountTotalCents = Number(session.amount_total || "0");
+  const membershipFeeCents = explicitMembershipFeeCents > 0
+    ? explicitMembershipFeeCents
+    : session.metadata?.membership_included === "true"
+      ? Math.max(0, amountTotalCents - bookingAmountCents)
+      : 0;
+  const eventAmountCents = Number(session.metadata?.event_amount_cents || "") || Math.max(0, bookingAmountCents - serviceFeeCents);
+
+  return {
+    amount: centsToEuros(bookingAmountCents + membershipFeeCents),
+    eventAmount: centsToEuros(eventAmountCents),
+    serviceFeeAmount: centsToEuros(serviceFeeCents),
+    membershipFeeAmount: centsToEuros(membershipFeeCents),
+    bookingAmountCents,
+    serviceFeeCents,
+    membershipFeeCents,
+    eventAmountCents,
+  };
 };
 
 const recordDiscountUsageFromSession = async (
@@ -166,6 +192,23 @@ export const finalizeMembershipCheckoutSession = async ({
     throw new Error("Failed to activate membership");
   }
 
+  const membershipFeeAmount = centsToEuros(
+    Number(session.metadata?.membership_fee_cents || "0") || Number(session.amount_total || "0")
+  );
+  await recordUserPaymentTransaction(db, {
+    user_id: userId,
+    event_id: session.metadata?.event_id || null,
+    kind: "payment",
+    source: "membership_checkout",
+    amount: membershipFeeAmount,
+    membership_fee_amount: membershipFeeAmount,
+    stripe_checkout_session_id: session.id || null,
+    stripe_payment_intent_id: paymentIntentIdFromSession(session),
+    metadata: {
+      type: "membership",
+    },
+  });
+
   return { success: true, eventId: session.metadata?.event_id || null };
 };
 
@@ -186,6 +229,7 @@ export const finalizeEventCheckoutSession = async ({
   const membershipIncluded = session.metadata?.membership_included === "true";
   const bookingAmountCents = Number(session.metadata?.booking_amount_cents || "0");
   const checkoutKind = (session.metadata?.checkout_kind || "full") as CheckoutKind;
+  const ledgerAmounts = ledgerAmountsFromEventSession(session);
 
   if (!registrationId) throw new Error("Registration ID not found in session");
   if (!userId) throw new Error("User not found in session");
@@ -203,6 +247,19 @@ export const finalizeEventCheckoutSession = async ({
     if (stripePaymentIntentId && bookingAmountCents > 0) {
       try {
         await refundBookingAmount(stripe, stripePaymentIntentId, bookingAmountCents);
+        await recordUserPaymentTransaction(db, {
+          user_id: userId,
+          event_id: eventId || null,
+          kind: "refund",
+          source: "event_checkout_auto_refund",
+          amount: bookingAmountCents / 100,
+          event_amount: bookingAmountCents / 100,
+          stripe_checkout_session_id: session.id || null,
+          stripe_payment_intent_id: stripePaymentIntentId,
+          metadata: {
+            reason: "missing_registration",
+          },
+        });
       } catch (error) {
         console.error("Refund error for missing registration:", error);
       }
@@ -220,6 +277,26 @@ export const finalizeEventCheckoutSession = async ({
     (checkoutKind === "deposit" && reg.payment_status === "deposit_paid")
   ) {
     await recordDiscountUsageFromSession(db, session, eventId || reg.event_id, userId);
+    await recordUserPaymentTransaction(db, {
+      user_id: userId,
+      registration_id: registrationId,
+      event_id: eventId || reg.event_id,
+      kind: "payment",
+      source: checkoutKind === "balance" ? "event_balance_checkout" : "event_checkout",
+      amount: ledgerAmounts.amount,
+      event_amount: ledgerAmounts.eventAmount,
+      service_fee_amount: ledgerAmounts.serviceFeeAmount,
+      membership_fee_amount: ledgerAmounts.membershipFeeAmount,
+      stripe_checkout_session_id: session.id || null,
+      stripe_payment_intent_id: stripePaymentIntentId,
+      metadata: {
+        checkout_kind: checkoutKind,
+        booking_amount_cents: String(ledgerAmounts.bookingAmountCents),
+        event_amount_cents: String(ledgerAmounts.eventAmountCents),
+        service_fee_cents: String(ledgerAmounts.serviceFeeCents),
+        membership_fee_cents: String(ledgerAmounts.membershipFeeCents),
+      },
+    });
     return { success: true, eventId: eventId || reg.event_id };
   }
 
@@ -227,6 +304,20 @@ export const finalizeEventCheckoutSession = async ({
     if (stripePaymentIntentId && bookingAmountCents > 0) {
       try {
         await refundBookingAmount(stripe, stripePaymentIntentId, bookingAmountCents);
+        await recordUserPaymentTransaction(db, {
+          user_id: userId,
+          registration_id: registrationId,
+          event_id: eventId || reg.event_id,
+          kind: "refund",
+          source: "event_checkout_auto_refund",
+          amount: bookingAmountCents / 100,
+          event_amount: bookingAmountCents / 100,
+          stripe_checkout_session_id: session.id || null,
+          stripe_payment_intent_id: stripePaymentIntentId,
+          metadata: {
+            reason: "cancelled_registration",
+          },
+        });
       } catch (refundError) {
         console.error("Auto-refund error for cancelled registration:", refundError);
       }
@@ -281,6 +372,20 @@ export const finalizeEventCheckoutSession = async ({
     if (stripePaymentIntentId && bookingAmountCents > 0) {
       try {
         await refundBookingAmount(stripe, stripePaymentIntentId, bookingAmountCents);
+        await recordUserPaymentTransaction(db, {
+          user_id: userId,
+          registration_id: registrationId,
+          event_id: eventId || reg.event_id,
+          kind: "refund",
+          source: "event_checkout_auto_refund",
+          amount: bookingAmountCents / 100,
+          event_amount: bookingAmountCents / 100,
+          stripe_checkout_session_id: session.id || null,
+          stripe_payment_intent_id: stripePaymentIntentId,
+          metadata: {
+            reason: "spot_taken",
+          },
+        });
         console.log(`Auto-refunded payment ${stripePaymentIntentId} - spot taken by another user`);
       } catch (refundError) {
         console.error("Auto-refund error:", refundError);
@@ -367,6 +472,27 @@ export const finalizeEventCheckoutSession = async ({
     },
   });
 
+  await recordUserPaymentTransaction(db, {
+    user_id: userId,
+    registration_id: registrationId,
+    event_id: eventId || reg.event_id,
+    kind: "payment",
+    source: checkoutKind === "balance" ? "event_balance_checkout" : "event_checkout",
+    amount: ledgerAmounts.amount,
+    event_amount: ledgerAmounts.eventAmount,
+    service_fee_amount: ledgerAmounts.serviceFeeAmount,
+    membership_fee_amount: ledgerAmounts.membershipFeeAmount,
+    stripe_checkout_session_id: session.id || null,
+    stripe_payment_intent_id: stripePaymentIntentId,
+    metadata: {
+      checkout_kind: checkoutKind,
+      booking_amount_cents: String(ledgerAmounts.bookingAmountCents),
+      event_amount_cents: String(ledgerAmounts.eventAmountCents),
+      service_fee_cents: String(ledgerAmounts.serviceFeeCents),
+      membership_fee_cents: String(ledgerAmounts.membershipFeeCents),
+    },
+  });
+
   if (membershipIncluded) {
     const { error: membershipError } = await db.rpc("activate_membership", {
       user_id_param: userId,
@@ -416,7 +542,7 @@ export const finalizeRegistrationChangeCheckoutSession = async ({
   }
 
   const stripePaymentIntentId = paymentIntentIdFromSession(session);
-  await applyRegistrationChangeRequest(db, changeRequest as Record<string, unknown>, {
+  await applyRegistrationChangeRequest(db as unknown as Parameters<typeof applyRegistrationChangeRequest>[0], changeRequest as Record<string, unknown>, {
     stripePaymentIntentId,
     stripeCheckoutSessionId: session.id || null,
   });
