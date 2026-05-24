@@ -58,7 +58,7 @@ const LocationProbe = () => {
 
 const renderPanel = (onClose = vi.fn()) => {
   render(
-    <MemoryRouter initialEntries={["/"]}>
+    <MemoryRouter initialEntries={["/"]} future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
       <NotificationPanel onClose={onClose} />
       <LocationProbe />
     </MemoryRouter>,

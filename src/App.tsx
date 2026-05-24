@@ -140,7 +140,7 @@ const App = () => (
           <Toaster />
           <Analytics />
           <RestrictionBanner />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
             <Suspense fallback={<PageFallback />}>
               <AnimatedRoutes />
             </Suspense>
