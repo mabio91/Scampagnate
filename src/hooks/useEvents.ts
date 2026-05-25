@@ -76,6 +76,8 @@ export interface EventStaffMember {
     first_name: string;
     avatar_url: string | null;
     last_name_initial?: string | null;
+    phone?: string | null;
+    bio?: string | null;
   } | null;
 }
 
@@ -176,6 +178,8 @@ export const useEventStaff = (eventId: string) => {
               first_name: profile.first_name,
               avatar_url: profile.avatar_url,
               last_name_initial: profile.last_name_initial || null,
+              phone: profile.phone || null,
+              bio: profile.bio || null,
             },
           ])
         );
