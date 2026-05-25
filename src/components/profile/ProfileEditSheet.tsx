@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
@@ -511,40 +512,40 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 shouldFocusMembershipSection ? "border-primary bg-primary/5" : "border-border bg-muted/20"
               }`}
             >
-              <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati per tesseramento</p>
+              <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati per tessera e assicurazione</p>
               <p className="text-xs font-body text-muted-foreground mb-4">
-                Questi dati sono richiesti solo per la gestione della tessera associativa della ASD Gruppo Scampagnate.
+                Ci servono solo per completare la tessera associativa e la copertura assicurativa. Sono visibili allo staff quando necessario.
               </p>
               <div className="space-y-3">
-                <div className="min-w-0">
-                  <MembershipLabel>Data di nascita</MembershipLabel>
-                  <Input
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }}
-                    className="mt-1 max-w-full [min-inline-size:0]"
-                  />
-                </div>
-                <div>
-                  <MembershipLabel tooltip="Richiesto come valore M/F per tessera associativa e copertura assicurativa.">
-                    Sesso anagrafico
-                  </MembershipLabel>
-                  <div className="mt-1 grid grid-cols-2 gap-2">
-                    {(["M", "F"] as const).map((value) => (
-                      <Button
-                        key={value}
-                        type="button"
-                        variant={sex === value ? "default" : "outline"}
-                        className="h-10 font-body font-semibold"
-                        aria-pressed={sex === value}
-                        onClick={() => {
-                          setSex(value);
-                          markChanged();
-                        }}
-                      >
-                        {value}
-                      </Button>
-                    ))}
+                <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-start gap-3">
+                  <div className="min-w-0">
+                    <MembershipLabel>Data di nascita</MembershipLabel>
+                    <Input
+                      type="date"
+                      value={dateOfBirth}
+                      onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }}
+                      className="mt-1 max-w-full [min-inline-size:0]"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <MembershipLabel tooltip="Richiesto come valore M/F per tessera associativa e copertura assicurativa.">
+                      Sesso
+                    </MembershipLabel>
+                    <Select
+                      value={sex}
+                      onValueChange={(value) => {
+                        setSex(value as "M" | "F");
+                        markChanged();
+                      }}
+                    >
+                      <SelectTrigger className="mt-1 max-w-full">
+                        <SelectValue placeholder="Seleziona" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="M">M</SelectItem>
+                        <SelectItem value="F">F</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div>

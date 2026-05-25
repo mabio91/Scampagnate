@@ -150,9 +150,9 @@ const Profile = () => {
                 <CreditCard className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-sm font-bold text-foreground">Completa dati tessera e assicurazione</h3>
+                <h3 className="font-display text-sm font-bold text-foreground">Completa dati per tessera e assicurazione</h3>
                 <p className="mt-1 text-xs font-body leading-relaxed text-muted-foreground">
-                  Per attivare tessera e copertura assicurativa servono anche sesso anagrafico, nascita e residenza.
+                  Ci servono data di nascita, sesso anagrafico e residenza per completare tessera associativa e copertura assicurativa.
                 </p>
                 <Button
                   onClick={openMembershipSection}

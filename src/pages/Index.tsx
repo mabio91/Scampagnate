@@ -27,7 +27,7 @@ import { UI_LABELS } from "@/lib/labels";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
 import { isEventUpcomingByDate } from "@/lib/eventDates";
-import { matchesHomeQuickFilter } from "@/lib/homeQuickFilters";
+import { matchesAllHomeQuickFilters } from "@/lib/homeQuickFilters";
 
 const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
 
@@ -205,7 +205,7 @@ const Index = () => {
     if (priceFilter === "paid") filtered = filtered.filter(e => Number(e.price) > 0);
 
     if (quickFilters.length > 0) {
-      filtered = filtered.filter(e => quickFilters.every(filter => matchesHomeQuickFilter(e, filter)));
+      filtered = filtered.filter(e => matchesAllHomeQuickFilters(e, quickFilters));
     }
 
     return filtered;

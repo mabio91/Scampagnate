@@ -1832,9 +1832,9 @@ const getCTALabel = () => {
       <Dialog open={showMembershipDataDialog} onOpenChange={setShowMembershipDataDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display">Completa i dati per il tesseramento</DialogTitle>
+            <DialogTitle className="font-display">Completa i dati per tessera e assicurazione</DialogTitle>
             <DialogDescription className="font-body text-sm leading-relaxed">
-              Per partecipare a questo evento è necessario completare i dati richiesti per il tesseramento all'associazione.
+              Per partecipare a questo evento servono i dati anagrafici richiesti per tessera associativa e copertura assicurativa.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-col gap-2">

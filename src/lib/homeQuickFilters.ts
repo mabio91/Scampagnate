@@ -68,3 +68,6 @@ export const matchesHomeQuickFilter = (event: EventWithDetails, filter: QuickFil
       return difficultyLevel === 4 || difficultyLevel === 5;
   }
 };
+
+export const matchesAllHomeQuickFilters = (event: EventWithDetails, filters: QuickFilterType[]) =>
+  filters.every((filter) => matchesHomeQuickFilter(event, filter));

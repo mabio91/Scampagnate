@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, Loader2, Info, Check, ChevronLeft, ArrowRight, PartyPopper } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -682,47 +683,39 @@ const ProfileSetup = () => {
                   </p>
                 </div>
 
-                {/* Date of Birth */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="birth_date" className="font-body text-sm font-semibold">
-                    Data di nascita <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="birth_date"
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                  />
-                  <div className="flex items-start gap-1.5 mt-2 text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
-                    <Info className="h-4 w-4 shrink-0 mt-0.5 text-secondary" />
-                    <p>
-                      La tua data di nascita sarà visibile solo agli organizzatori per scopi di sicurezza e assicurativi.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="font-body text-sm font-semibold">
-                    Sesso anagrafico <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["M", "F"] as const).map((value) => (
-                      <Button
-                        key={value}
-                        type="button"
-                        variant={sex === value ? "default" : "outline"}
-                        className="h-11 font-body font-semibold"
-                        aria-pressed={sex === value}
-                        onClick={() => setSex(value)}
-                      >
-                        {value}
-                      </Button>
-                    ))}
+                  <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-start gap-3">
+                    <div className="min-w-0">
+                      <Label htmlFor="birth_date" className="font-body text-sm font-semibold">
+                        Data di nascita <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="birth_date"
+                        type="date"
+                        value={dateOfBirth}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                        className="mt-1.5"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <Label htmlFor="sex" className="font-body text-sm font-semibold">
+                        Sesso <span className="text-destructive">*</span>
+                      </Label>
+                      <Select value={sex} onValueChange={(value) => setSex(value as "M" | "F")}>
+                        <SelectTrigger id="sex" className="mt-1.5">
+                          <SelectValue placeholder="Seleziona" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="M">M</SelectItem>
+                          <SelectItem value="F">F</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="flex items-start gap-1.5 mt-2 text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
                     <Info className="h-4 w-4 shrink-0 mt-0.5 text-secondary" />
                     <p>
-                      Serve nel formato M/F per tessera associativa e copertura assicurativa.
+                      Data di nascita e sesso anagrafico servono solo per tessera associativa e copertura assicurativa.
                     </p>
                   </div>
                 </div>
