@@ -1539,11 +1539,6 @@ const getCTALabel = () => {
                 {depositStatusMessage}
               </p>
             )}
-            {false && (
-              <span className="text-[11px] font-body font-bold text-white bg-black dark:bg-white dark:text-black px-2 py-0.5 rounded-full">
-                🔥 ULTIMI POSTI RIMASTI!
-              </span>
-            )}
             {/* Registration deadline (if applicable) */}
             {event.additional_fields && (event.additional_fields as any).registration_deadline && (
               <p className="text-[10px] font-body text-muted-foreground">

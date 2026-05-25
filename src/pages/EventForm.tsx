@@ -1058,11 +1058,11 @@ const EventForm = () => {
       const resolvedHomeCardImageUrl = await uploadHomeCardImage();
 
       // Format duration with unit
-      let durationFormatted = form.duration ? `${form.duration}${form.duration_unit === "giorni" ? " giorni" : "h"}` : null;
+      const durationFormatted = form.duration ? `${form.duration}${form.duration_unit === "giorni" ? " giorni" : "h"}` : null;
       // Format distance with km
-      let distanceFormatted = form.distance ? `${form.distance} km` : null;
+      const distanceFormatted = form.distance ? `${form.distance} km` : null;
       // Format elevation with m
-      let elevationFormatted = form.elevation ? `${form.elevation} m` : null;
+      const elevationFormatted = form.elevation ? `${form.elevation} m` : null;
       const validPriceOptions = priceOptions;
       const primaryPriceOption = validPriceOptions[0] || null;
       const primaryPaymentType = (primaryPriceOption?.payment_type || form.payment_type) as PaymentType;

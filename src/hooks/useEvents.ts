@@ -208,7 +208,7 @@ export const useEventParticipants = (eventId: string) => {
         .filter(Boolean);
       
       // Fetch public profile data via security definer function (bypasses RLS safely)
-      let profilesMap: Record<string, { first_name: string; avatar_url: string | null; last_name_initial: string | null }> = {};
+      const profilesMap: Record<string, { first_name: string; avatar_url: string | null; last_name_initial: string | null }> = {};
       if (userIds.length > 0) {
         const { data: publicProfiles } = await supabase.rpc("get_public_profiles", { profile_ids: userIds });
         if (publicProfiles) {
@@ -219,7 +219,7 @@ export const useEventParticipants = (eventId: string) => {
       }
 
       // Fetch badges for all participant user_ids
-      let badgesMap: Record<string, any[]> = {};
+      const badgesMap: Record<string, any[]> = {};
       if (userIds.length > 0) {
         const { data: userBadges } = await supabase
           .from("user_badges")
