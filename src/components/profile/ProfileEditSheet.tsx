@@ -55,6 +55,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const membershipSectionRef = useRef<HTMLDivElement>(null);
+  const membershipSexRef = useRef<HTMLDivElement>(null);
   const healthSectionRef = useRef<HTMLDivElement>(null);
 
   // Profile fields
@@ -103,9 +104,12 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     user?.identities?.some((i) => i.provider === "apple");
   const isEmailProvider = user?.app_metadata?.providers?.includes("email") ||
     user?.identities?.some((i) => i.provider === "email");
-  const shouldFocusMembershipSection = searchParams.get("section") === "membership";
+  const focusSection = searchParams.get("section");
+  const shouldFocusMembershipSex = focusSection === "membership-sex";
+  const shouldFocusMembershipSection = focusSection === "membership" || shouldFocusMembershipSex;
   const shouldFocusHealthSection = searchParams.get("section") === "health";
   const returnTo = searchParams.get("returnTo");
+  const [highlightMembershipSex, setHighlightMembershipSex] = useState(false);
 
   const initFields = () => {
     setFirstName(profile?.first_name || "");
@@ -159,15 +163,27 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 
 	  useEffect(() => {
 	    if (!open || (!shouldFocusMembershipSection && !shouldFocusHealthSection)) return;
+	    let highlightTimer: number | undefined;
 	    const timer = window.setTimeout(() => {
 	      if (shouldFocusHealthSection) {
 	        healthSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+	      } else if (shouldFocusMembershipSex) {
+	        membershipSexRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+	        setHighlightMembershipSex(true);
+	        highlightTimer = window.setTimeout(() => setHighlightMembershipSex(false), 2200);
 	      } else {
 	        membershipSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 	      }
 	    }, 250);
-	    return () => window.clearTimeout(timer);
-	  }, [open, shouldFocusMembershipSection, shouldFocusHealthSection]);
+	    return () => {
+	      window.clearTimeout(timer);
+	      if (highlightTimer) window.clearTimeout(highlightTimer);
+	    };
+	  }, [open, shouldFocusMembershipSection, shouldFocusMembershipSex, shouldFocusHealthSection]);
+
+	  useEffect(() => {
+	    if (!open) setHighlightMembershipSex(false);
+	  }, [open]);
 
 	  const markChanged = () => setHasChanges(true);
 
@@ -518,18 +534,23 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
               </p>
               <div className="space-y-3">
                 <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-start gap-3">
-                  <div className="min-w-0">
-                    <MembershipLabel>Data di nascita</MembershipLabel>
-                    <Input
-                      type="date"
-                      value={dateOfBirth}
+	                  <div className="min-w-0">
+	                    <MembershipLabel tooltip="Inserisci la tua data di nascita">Data di nascita</MembershipLabel>
+	                    <Input
+	                      type="date"
+	                      value={dateOfBirth}
                       onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }}
                       className="mt-1 max-w-full [min-inline-size:0]"
                     />
                   </div>
-                  <div className="min-w-0">
-                    <MembershipLabel tooltip="Richiesto come valore M/F per tessera associativa e copertura assicurativa.">
-                      Sesso
+	                  <div
+	                    ref={membershipSexRef}
+	                    className={`-m-1 min-w-0 rounded-xl p-1 transition-colors ${
+	                      highlightMembershipSex ? "bg-primary/10 ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+	                    }`}
+	                  >
+	                    <MembershipLabel tooltip="Richiesto come valore M/F per tessera associativa e copertura assicurativa.">
+	                      Sesso
                     </MembershipLabel>
                     <Select
                       value={sex}

@@ -441,9 +441,10 @@ const EventDetail = () => {
 
   const redirectToMembershipProfile = () => {
     const returnTo = `${location.pathname}${location.search}`;
+    const targetSection = profile?.sex !== "M" && profile?.sex !== "F" ? "membership-sex" : "membership";
     setShowMembershipDataDialog(false);
     setShowRegisterDialog(false);
-    navigate(`/profile?section=membership&returnTo=${encodeURIComponent(returnTo)}`);
+    navigate(`/profile?section=${targetSection}&returnTo=${encodeURIComponent(returnTo)}`);
   };
 
   const ensureMembershipDataForMembershipFlow = () => {
@@ -1832,9 +1833,13 @@ const getCTALabel = () => {
       <Dialog open={showMembershipDataDialog} onOpenChange={setShowMembershipDataDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display">Completa i dati per tessera e assicurazione</DialogTitle>
+            <DialogTitle className="font-display">
+              {profile?.sex !== "M" && profile?.sex !== "F" ? "Completa il sesso anagrafico" : "Completa i dati per tessera e assicurazione"}
+            </DialogTitle>
             <DialogDescription className="font-body text-sm leading-relaxed">
-              Per partecipare a questo evento servono i dati anagrafici richiesti per tessera associativa e copertura assicurativa.
+              {profile?.sex !== "M" && profile?.sex !== "F"
+                ? "Per partecipare a questo evento ci serve il sesso anagrafico richiesto per tessera associativa e copertura assicurativa."
+                : "Per partecipare a questo evento servono i dati anagrafici richiesti per tessera associativa e copertura assicurativa."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-col gap-2">

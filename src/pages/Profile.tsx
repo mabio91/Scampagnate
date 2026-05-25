@@ -49,7 +49,8 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    if (searchParams.get("section") === "membership" || searchParams.get("section") === "health") {
+    const section = searchParams.get("section");
+    if (section === "membership" || section === "membership-sex" || section === "health") {
       setShowEditSheet(true);
     }
   }, [searchParams]);
@@ -77,8 +78,10 @@ const Profile = () => {
     setShowEditSheet(true);
   };
 
+  const membershipSexMissing = profile?.sex !== "M" && profile?.sex !== "F";
+
   const openMembershipSection = () => {
-    navigate({ pathname: "/profile", search: "?section=membership" }, { replace: true });
+    navigate({ pathname: "/profile", search: `?section=${membershipSexMissing ? "membership-sex" : "membership"}` }, { replace: true });
     setShowEditSheet(true);
   };
 
