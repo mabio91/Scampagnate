@@ -589,7 +589,9 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 </div>
                 <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
                   <div className="min-w-0">
-                    <MembershipLabel>Città di residenza</MembershipLabel>
+                    <MembershipLabel tooltip={'Inserisci la città di residenza. Se vivi all\'estero, inserisci il nome della nazione (es. "Francia", "Romania").'}>
+                      Città di residenza
+                    </MembershipLabel>
                     <Input value={cityOfResidence} onChange={(e) => { setCityOfResidence(e.target.value); markChanged(); }} className="mt-1" />
                   </div>
                   <div className="min-w-0">
