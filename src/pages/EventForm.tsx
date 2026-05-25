@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams, Navigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useEvents";
 import type { AccessRule, AccessRulesConfig } from "@/hooks/useEventAccessRules";
@@ -12,8 +12,10 @@ import { EVENT_CLOSING_SENTENCES, normalizeEventClosingSentence } from "@/lib/ev
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import ImageCropDialog from "@/components/ImageCropDialog";
 import { HOME_CARD_IMAGE_FIELD, getEventHomeCardImageUrl } from "@/lib/eventImages";
+import { renderEventDescriptionHtml } from "@/lib/eventDescription";
 import { getRemovedMeetingPointIds, getRetainedMeetingPointIds } from "@/lib/meetingPoints";
 import { formatPromoDateInput, promoDateInputToIso } from "@/lib/promoPricing";
+import { getEligibilityLabel, getOptionPaymentSummary } from "@/lib/priceOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,13 +23,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain, Route,
-  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield, Car, Award
+  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle,
+  Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload,
+  Shield, Car, Award, Eye, ExternalLink,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
@@ -285,6 +291,7 @@ const EventForm = () => {
   const [activeGalleryCropFile, setActiveGalleryCropFile] = useState<File | null>(null);
   const [galleryCropQueue, setGalleryCropQueue] = useState<File[]>([]);
   const [croppedGalleryFiles, setCroppedGalleryFiles] = useState<File[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -1356,6 +1363,35 @@ const EventForm = () => {
     );
   }
 
+  const previewEventPath = isEditing && id ? `/event/${id}` : null;
+  const previewImageSrc = imagePreview || form.image_url || "";
+  const selectedCategory = categories?.find((category) => category.id === form.category_id);
+  const selectedDifficulty = difficultyLevels?.find((level) => String(level.level_number) === String(form.difficulty));
+  const previewBadges = [
+    ...manualBadges.map((badge) => MANUAL_BADGE_OPTIONS.find((option) => option.value === badge)?.label || badge),
+    ...(customBadge.trim() ? [customBadge.trim()] : []),
+  ];
+  const previewEventPricing = {
+    price: form.price,
+    deposit: form.deposit,
+    payment_type: form.payment_type,
+    balance_payment_mode: form.balance_payment_mode,
+    spots_total: form.spots_total,
+    spots_taken: 0,
+    status: eventStatus,
+    waiting_list_enabled: waitingListEnabled,
+  };
+  const formattedPreviewDate = (() => {
+    if (!form.date) return "Data da definire";
+    const [year, month, day] = form.date.split("-").map(Number);
+    if (!year || !month || !day) return form.date;
+    return new Intl.DateTimeFormat("it-IT", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(year, month - 1, day));
+  })();
+
   return (
     <>
       <ImageCropDialog
@@ -1412,13 +1448,18 @@ const EventForm = () => {
         }}
       />
       <form onSubmit={handleSubmit} className="px-4 pt-4 pb-8 space-y-6">
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate(-1)} className="p-1">
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <h1 className="font-display text-xl font-bold text-foreground">
-            {isEditing ? "Modifica evento" : isDuplicating ? "Duplica evento" : "Crea evento"}
-          </h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <button type="button" onClick={() => navigate(-1)} className="p-1">
+              <ArrowLeft className="h-5 w-5 text-foreground" />
+            </button>
+            <h1 className="min-w-0 truncate font-display text-xl font-bold text-foreground">
+              {isEditing ? "Modifica evento" : isDuplicating ? "Duplica evento" : "Crea evento"}
+            </h1>
+          </div>
+          <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => setPreviewOpen(true)}>
+            <Eye className="h-3.5 w-3.5" /> Anteprima
+          </Button>
         </div>
 
         {/* ═══════════════════════════════════════════════════ */}
@@ -2875,11 +2916,188 @@ const EventForm = () => {
           )}
         </Card>
 
-        <Button type="submit" className="w-full" disabled={saving}>
-          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          {isEditing ? "Aggiorna evento" : "Crea evento"}
-        </Button>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <Button type="button" variant="outline" className="gap-2" onClick={() => setPreviewOpen(true)}>
+            <Eye className="h-4 w-4" /> Anteprima
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {isEditing ? "Aggiorna evento" : "Crea evento"}
+          </Button>
+        </div>
       </form>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto p-0">
+          <DialogHeader className="border-b px-4 py-3 sm:px-6">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Eye className="h-4 w-4 text-primary" />
+              Anteprima evento
+            </DialogTitle>
+          </DialogHeader>
+          <div className="bg-background">
+            <div className="relative min-h-[280px] overflow-hidden bg-muted">
+              {previewImageSrc ? (
+                <img src={previewImageSrc} alt={form.title || "Anteprima evento"} className="h-[280px] w-full object-cover" />
+              ) : (
+                <div className="flex h-[280px] w-full items-center justify-center">
+                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 space-y-3 p-5 text-white sm:p-7">
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-white/20 text-white backdrop-blur">{EVENT_STATUS_OPTIONS.find((option) => option.value === eventStatus)?.label || eventStatus}</Badge>
+                  <Badge className="bg-white/20 text-white backdrop-blur">{form.visibility === "public" ? "Pubblico" : "Solo link diretto"}</Badge>
+                  {selectedCategory && (
+                    <Badge className="bg-white/20 text-white backdrop-blur">{selectedCategory.icon} {selectedCategory.name}</Badge>
+                  )}
+                </div>
+                {previewEventPath ? (
+                  <Link
+                    to={previewEventPath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex max-w-full items-center gap-2 font-display text-2xl font-bold leading-tight underline-offset-4 hover:underline sm:text-3xl"
+                  >
+                    <span className="truncate">{form.title || "Titolo evento"}</span>
+                    <ExternalLink className="h-5 w-5 shrink-0" />
+                  </Link>
+                ) : (
+                  <h2 className="font-display text-2xl font-bold leading-tight sm:text-3xl">{form.title || "Titolo evento"}</h2>
+                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/90">
+                  <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4" /> {formattedPreviewDate}</span>
+                  <span className="inline-flex items-center gap-1.5"><Clock className="h-4 w-4" /> {form.time || "Ora da definire"}</span>
+                  <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {form.location_label || form.location || "Luogo da definire"}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div className="space-y-4">
+                <section className="space-y-3">
+                  <h3 className="font-display text-lg font-bold text-foreground">Descrizione</h3>
+                  {form.description ? (
+                    <div
+                      className="prose prose-sm max-w-none text-muted-foreground prose-headings:text-foreground prose-strong:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground"
+                      dangerouslySetInnerHTML={{ __html: renderEventDescriptionHtml(form.description) }}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nessuna descrizione inserita.</p>
+                  )}
+                </section>
+
+                <section className="grid gap-3 sm:grid-cols-3">
+                  {selectedDifficulty && (
+                    <div className="rounded-lg border bg-muted/40 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground">Difficoltà</p>
+                      <p className="mt-1 text-sm font-bold text-foreground">{selectedDifficulty.icon} Livello {selectedDifficulty.level_number} · {selectedDifficulty.label}</p>
+                    </div>
+                  )}
+                  {form.duration && (
+                    <div className="rounded-lg border bg-muted/40 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground">Durata</p>
+                      <p className="mt-1 text-sm font-bold text-foreground">{form.duration}{form.duration_unit === "giorni" ? " giorni" : "h"}</p>
+                    </div>
+                  )}
+                  {form.distance && (
+                    <div className="rounded-lg border bg-muted/40 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground">Distanza</p>
+                      <p className="mt-1 text-sm font-bold text-foreground">{form.distance} km</p>
+                    </div>
+                  )}
+                  {form.elevation && (
+                    <div className="rounded-lg border bg-muted/40 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground">Dislivello</p>
+                      <p className="mt-1 text-sm font-bold text-foreground">{form.elevation} m</p>
+                    </div>
+                  )}
+                </section>
+
+                {meetingPoints.some((point) => point.name || point.location) && (
+                  <section className="space-y-3">
+                    <h3 className="font-display text-lg font-bold text-foreground">Punti di ritrovo</h3>
+                    <div className="space-y-2">
+                      {meetingPoints.filter((point) => point.name || point.location).map((point, index) => (
+                        <div key={point.id || index} className="rounded-lg border p-3">
+                          <p className="text-sm font-bold text-foreground">{point.name || `Punto ${index + 1}`}</p>
+                          <p className="text-sm text-muted-foreground">{point.time || form.time} · {point.location || form.location}</p>
+                          {point.notes && <p className="mt-1 text-xs text-muted-foreground">{point.notes}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {equipmentItems.some((item) => item.name.trim()) && (
+                  <section className="space-y-3">
+                    <h3 className="font-display text-lg font-bold text-foreground">Attrezzatura</h3>
+                    <div className="space-y-2">
+                      {equipmentItems.filter((item) => item.name.trim()).map((item, index) => (
+                        <div key={`${item.name}-${index}`} className="flex items-start gap-2 rounded-lg border p-3">
+                          <PackageCheck className="mt-0.5 h-4 w-4 text-primary" />
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {item.name} {item.is_mandatory && <span className="text-destructive">*</span>}
+                            </p>
+                            {item.notes && <p className="text-xs text-muted-foreground">{item.notes}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
+
+              <aside className="space-y-3">
+                <div className="rounded-xl border bg-muted/35 p-4">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Partecipazione</p>
+                  <p className="mt-1 text-2xl font-bold text-foreground">{form.spots_total}</p>
+                  <p className="text-sm text-muted-foreground">posti totali</p>
+                </div>
+
+                <div className="rounded-xl border bg-muted/35 p-4">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Formule</p>
+                  <div className="mt-3 space-y-2">
+                    {priceOptions.map((option, index) => (
+                      <div key={option.id || index} className="rounded-lg bg-background p-3">
+                        <p className="text-sm font-bold text-foreground">{option.name.trim() || fallbackFormulaName(index)}</p>
+                        <p className="text-sm text-muted-foreground">{getOptionPaymentSummary(option, previewEventPricing)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{getEligibilityLabel(option.eligible_group)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {previewBadges.length > 0 && (
+                  <div className="rounded-xl border bg-muted/35 p-4">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Badge</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {previewBadges.map((badge) => (
+                        <Badge key={badge} variant="secondary">{badge}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {additionalFields.some((field) => field.label.trim()) && (
+                  <div className="rounded-xl border bg-muted/35 p-4">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Domande iscrizione</p>
+                    <div className="mt-3 space-y-2">
+                      {additionalFields.filter((field) => field.label.trim()).map((field, index) => (
+                        <p key={`${field.label}-${index}`} className="text-sm text-muted-foreground">
+                          {field.required ? "* " : ""}{field.label}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </aside>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={validationPopupOpen} onOpenChange={setValidationPopupOpen}>
         <AlertDialogContent>

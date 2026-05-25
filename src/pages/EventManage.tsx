@@ -40,7 +40,7 @@ import {
   Loader2, Zap, BarChart3, Trash2, Send, Search, Copy,
   MessageCircle, Bell, AlertTriangle, History,
   FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog, Instagram,
-  MoreVertical
+  MoreVertical, ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -890,7 +890,15 @@ const EventManage = () => {
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-lg font-bold text-foreground truncate">{event.title}</h1>
+            <Link
+              to={`/event/${event.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex max-w-full items-center gap-1.5 text-foreground underline-offset-4 hover:text-primary hover:underline"
+            >
+              <span className="truncate font-display text-lg font-bold">{event.title}</span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+            </Link>
             <p className="text-xs text-muted-foreground font-body">
               {format(new Date(event.date), "dd MMM yyyy")} · {event.time?.slice(0, 5)}
             </p>
