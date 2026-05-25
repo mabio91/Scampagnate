@@ -13,6 +13,7 @@ import LocationAutocomplete from "@/components/LocationAutocomplete";
 import ImageCropDialog from "@/components/ImageCropDialog";
 import { HOME_CARD_IMAGE_FIELD, getEventHomeCardImageUrl } from "@/lib/eventImages";
 import { getRemovedMeetingPointIds, getRetainedMeetingPointIds } from "@/lib/meetingPoints";
+import { formatPromoDateInput, promoDateInputToIso } from "@/lib/promoPricing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -722,8 +723,8 @@ const EventForm = () => {
             badge_ids: badgeIds,
             original_price: o.original_price ? Number(o.original_price) : null,
             is_promotional: o.is_promotional || false,
-            promo_start: o.promo_start ? o.promo_start.split('T')[0] : '',
-            promo_end: o.promo_end ? o.promo_end.split('T')[0] : '',
+            promo_start: formatPromoDateInput(o.promo_start),
+            promo_end: formatPromoDateInput(o.promo_end),
             payment_type: paymentType,
             deposit_amount: depositAmount,
             balance_amount: balanceAmount,
@@ -1305,8 +1306,8 @@ const EventForm = () => {
           eligible_group: option.eligible_group || "all",
           original_price: option.original_price || null,
           is_promotional: option.is_promotional || false,
-          promo_start: option.promo_start || null,
-          promo_end: option.promo_end || null,
+          promo_start: promoDateInputToIso(option.promo_start, "start"),
+          promo_end: promoDateInputToIso(option.promo_end, "end"),
           payment_type: optionPaymentType,
           deposit_amount: optionDepositAmount,
           balance_amount: optionBalanceAmount,

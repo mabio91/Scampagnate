@@ -27,6 +27,7 @@ import {
   isOptionBookable,
   type PriceOptionLike,
 } from "@/lib/priceOptions";
+import { getPromoBadgeLabel, getPromoWindowStatus, isPromoExpired } from "@/lib/promoPricing";
 import {
   MapPin, Clock, Car, CreditCard, Loader2, Tag, Lock, Sparkles, ShieldCheck,
   AlertTriangle, ChevronRight
@@ -71,6 +72,7 @@ const RegistrationCheckoutDialog = ({
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [paymentChoice, setPaymentChoice] = useState<"deposit" | "full">("deposit");
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [promoNow, setPromoNow] = useState(() => new Date());
   const meetingPointRef = useRef<HTMLDivElement>(null);
   const priceOptionRef = useRef<HTMLDivElement>(null);
   const equipmentRef = useRef<HTMLDivElement>(null);
@@ -78,6 +80,14 @@ const RegistrationCheckoutDialog = ({
 
   useEffect(() => {
     if (!open) setAttemptedSubmit(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    setPromoNow(new Date());
+    const timer = window.setInterval(() => setPromoNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
   }, [open]);
 
   const hasMeetingPoints = event.meeting_points && event.meeting_points.length > 0;
@@ -237,6 +247,17 @@ const RegistrationCheckoutDialog = ({
     const paymentDetail = getCheckoutPaymentDetail(option);
     return paymentDetail === "Gratis" ? availability : `${paymentDetail} · ${availability}`;
   };
+
+  const shouldShowPromoBadge = (option: PriceOptionLike | null | undefined) => {
+    if (!option?.is_promotional) return false;
+    const promoStatus = getPromoWindowStatus(option.promo_start, option.promo_end, promoNow);
+    return promoStatus === "active" || promoStatus === "expired";
+  };
+
+  const getPromoBadgeClassName = (option: PriceOptionLike | null | undefined) =>
+    isPromoExpired(option?.promo_end, promoNow)
+      ? "bg-muted text-muted-foreground"
+      : "bg-destructive/10 text-destructive";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -420,7 +441,14 @@ const RegistrationCheckoutDialog = ({
               {singlePriceOption && (
                 <div ref={priceOptionRef} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-muted/40 border border-transparent">
                   <div className="min-w-0 space-y-1">
-                    <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
+                      {shouldShowPromoBadge(singlePriceOption) && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold ${getPromoBadgeClassName(singlePriceOption)}`}>
+                          {getPromoBadgeLabel(singlePriceOption.promo_end, promoNow)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground font-body">
                       {getCheckoutDetailLine(singlePriceOption)}
                     </p>
@@ -469,8 +497,10 @@ const RegistrationCheckoutDialog = ({
                                     {getEligibilityLabel(opt.eligible_group)}
                                   </span>
                                 )}
-                                {opt.is_promotional && opt.isPromoActive && (
-                                  <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-body font-semibold">Promo</span>
+                                {shouldShowPromoBadge(opt) && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold ${getPromoBadgeClassName(opt)}`}>
+                                    {getPromoBadgeLabel(opt.promo_end, promoNow)}
+                                  </span>
                                 )}
                               </div>
                               <p className="text-[10px] text-muted-foreground font-body mt-0.5">

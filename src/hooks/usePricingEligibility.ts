@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
 import { countUniqueAttendedEvents } from "@/lib/eventRegistrations";
+import { getPromoWindowStatus } from "@/lib/promoPricing";
 
 export interface PriceOption {
   id: string;
@@ -39,7 +40,11 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
   const { user, profile } = useAuth();
 
   return useQuery({
-    queryKey: ["pricing-eligibility", priceOptions?.map(o => o.id), user?.id],
+    queryKey: [
+      "pricing-eligibility",
+      priceOptions?.map((o) => [o.id, o.is_promotional, o.promo_start, o.promo_end]),
+      user?.id,
+    ],
     queryFn: async (): Promise<ResolvedPriceOption[]> => {
       if (!priceOptions || priceOptions.length === 0) return [];
 
@@ -71,18 +76,18 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
       }
 
       return priceOptions.map((opt): ResolvedPriceOption => {
-        // Check promo window
-        const isPromoActive = opt.is_promotional
-          ? isWithinPromoWindow(opt.promo_start, opt.promo_end, now)
-          : true; // non-promo options are always "active"
+        const promoStatus = opt.is_promotional
+          ? getPromoWindowStatus(opt.promo_start, opt.promo_end, now)
+          : "active";
+        const isPromoActive = promoStatus === "active";
 
-        // If promo expired, not eligible
+        // If promo is outside its time window, it is not selectable.
         if (opt.is_promotional && !isPromoActive) {
           return {
             ...opt,
             isEligible: false,
             isPromoActive: false,
-            eligibilityReason: "Promozione scaduta",
+            eligibilityReason: promoStatus === "upcoming" ? "Promozione non ancora attiva" : "Promozione scaduta",
           };
         }
 
@@ -101,19 +106,10 @@ export const usePricingEligibility = (priceOptions: PriceOption[] | null | undef
       });
     },
     enabled: !!(priceOptions && priceOptions.length > 0),
+    refetchInterval: priceOptions?.some((option) => option.is_promotional) ? 60_000 : false,
     staleTime: 60_000,
   });
 };
-
-function isWithinPromoWindow(
-  start: string | null,
-  end: string | null,
-  now: Date
-): boolean {
-  if (start && new Date(start) > now) return false;
-  if (end && new Date(end) < now) return false;
-  return true;
-}
 
 interface UserContext {
   isLoggedIn: boolean;
