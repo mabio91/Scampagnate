@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run check:dist",
     "build:dev": "vite build --mode development",
+    "check:dist": "node scripts/check-dist-chunks.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
