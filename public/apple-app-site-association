@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "74744E6N6J.com.fmcp.scampagnate.app",
+        "paths": ["/event/*"]
+      }
+    ]
+  }
+}
