@@ -533,7 +533,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                 Ci servono solo per completare la tessera associativa e la copertura assicurativa. Sono visibili allo staff quando necessario.
               </p>
               <div className="space-y-3">
-                <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-start gap-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-3">
 	                  <div className="min-w-0">
 	                    <MembershipLabel tooltip="Inserisci la tua data di nascita">Data di nascita</MembershipLabel>
 	                    <Input
