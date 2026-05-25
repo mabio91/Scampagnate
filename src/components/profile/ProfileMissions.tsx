@@ -38,11 +38,19 @@ const REWARD_ICONS: Record<string, typeof Gift> = {
   physical: Beer,
 };
 
+const VISIBLE_ACTIVE_MISSIONS = 3;
+
 const getFilterForMission = (mission: any): { category?: string; quickFilter?: string } => {
   if (mission.category) return { category: mission.category };
   if (mission.target_action === "limited_spots") return { quickFilter: "lastSpots" };
   if (mission.type === "weekly") return { quickFilter: "thisWeek" };
   return {};
+};
+
+const getMissionProgressValue = (mission: any) => {
+  const target = Number(mission.target || 0);
+  if (target <= 0) return 0;
+  return Math.min(Number(mission.progress || 0), target) / target;
 };
 
 const normalizeRewards = (mission: any) => {
@@ -116,6 +124,7 @@ const ProfileMissions = () => {
   const { setSelectedCategory, toggleQuickFilter, clearAllFilters } = useSearch();
   const { data: userMissions = [], isFetched: userMissionsFetched } = useUserMissions(user?.id);
   const { data: activeMissions = [], isFetched: activeMissionsFetched } = useActiveMissions();
+  const [extraActiveOpen, setExtraActiveOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<any | null>(null);
   const initializedCompletions = useRef(false);
@@ -169,8 +178,27 @@ const ProfileMissions = () => {
     }));
   }, [activeMissions, userMissions]);
 
-  const activeMissionCards = missionsToShow.filter((mission) => !mission.completed);
-  const completedMissionCards = missionsToShow.filter((mission) => mission.completed);
+  const activeMissionCards = useMemo(() => (
+    missionsToShow
+      .map((mission, index) => ({ mission, index }))
+      .filter(({ mission }) => !mission.completed)
+      .sort((a, b) => {
+        const progressDelta = getMissionProgressValue(b.mission) - getMissionProgressValue(a.mission);
+        return progressDelta !== 0 ? progressDelta : a.index - b.index;
+      })
+      .map(({ mission }) => mission)
+  ), [missionsToShow]);
+
+  const completedMissionCards = useMemo(
+    () => missionsToShow.filter((mission) => mission.completed),
+    [missionsToShow],
+  );
+
+  const visibleActiveMissionCards = activeMissionCards.slice(0, VISIBLE_ACTIVE_MISSIONS);
+  const extraActiveMissionCards = activeMissionCards.slice(VISIBLE_ACTIVE_MISSIONS);
+  const extraActiveMissionTriggerLabel = extraActiveMissionCards.length === 1
+    ? "Mostra 1 altra missione"
+    : `Mostra altre ${extraActiveMissionCards.length} missioni`;
 
   useEffect(() => {
     if (!user?.id || !userMissionsFetched || !activeMissionsFetched) return;
@@ -323,7 +351,21 @@ const ProfileMissions = () => {
         {missionsToShow.length > 0 ? (
           <div className="space-y-3">
             {activeMissionCards.length > 0 ? (
-              <div className="space-y-2">{activeMissionCards.map(renderMissionCard)}</div>
+              <div className="space-y-2">
+                {visibleActiveMissionCards.map(renderMissionCard)}
+
+                {extraActiveMissionCards.length > 0 && (
+                  <Collapsible open={extraActiveOpen} onOpenChange={setExtraActiveOpen}>
+                    <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-left text-xs font-display font-bold text-muted-foreground uppercase tracking-wider transition-colors hover:text-primary">
+                      <span>{extraActiveOpen ? "Nascondi missioni" : extraActiveMissionTriggerLabel}</span>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${extraActiveOpen ? "rotate-180" : ""}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-2 pt-1">
+                      {extraActiveMissionCards.map(renderMissionCard)}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </div>
             ) : (
               <EmptyState
                 icon={Target}
