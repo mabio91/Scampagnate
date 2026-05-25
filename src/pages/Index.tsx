@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Search, X, SlidersHorizontal, Lightbulb, SearchX } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isThisWeek, startOfWeek, endOfWeek, addWeeks, getDay, startOfDay } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +27,7 @@ import { UI_LABELS } from "@/lib/labels";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
 import { isEventUpcomingByDate } from "@/lib/eventDates";
+import { matchesHomeQuickFilter } from "@/lib/homeQuickFilters";
 
 const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
 
@@ -203,23 +204,8 @@ const Index = () => {
     if (priceFilter === "free") filtered = filtered.filter(e => Number(e.price) === 0);
     if (priceFilter === "paid") filtered = filtered.filter(e => Number(e.price) > 0);
 
-    // Quick filters (combinable)
-    if (quickFilters.includes("featured")) filtered = filtered.filter(e => e.featured);
-    if (quickFilters.includes("lastSpots")) filtered = filtered.filter(e => (e.spots_taken / e.spots_total) > 0.8 && e.status !== "full");
-    if (quickFilters.includes("thisWeek")) filtered = filtered.filter(e => isThisWeek(new Date(e.date), { weekStartsOn: 1 }));
-    if (quickFilters.includes("nextWeek")) {
-      const nextWeekStart = startOfWeek(addWeeks(new Date(), 1), { weekStartsOn: 1 });
-      const nextWeekEnd = endOfWeek(addWeeks(new Date(), 1), { weekStartsOn: 1 });
-      filtered = filtered.filter(e => {
-        const d = new Date(e.date);
-        return d >= nextWeekStart && d <= nextWeekEnd;
-      });
-    }
-    if (quickFilters.includes("weekend")) {
-      filtered = filtered.filter(e => {
-        const day = getDay(new Date(e.date));
-        return day === 5 || day === 6 || day === 0; // Fri, Sat, Sun
-      });
+    if (quickFilters.length > 0) {
+      filtered = filtered.filter(e => quickFilters.every(filter => matchesHomeQuickFilter(e, filter)));
     }
 
     return filtered;

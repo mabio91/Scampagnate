@@ -1,15 +1,14 @@
 import { memo } from "react";
-import { Star, Flame, CalendarClock, CalendarPlus, Palmtree } from "lucide-react";
 import { UI_LABELS } from "@/lib/labels";
 
-export type QuickFilterType = "featured" | "lastSpots" | "thisWeek" | "nextWeek" | "weekend";
+export type QuickFilterType = "lastSpots" | "weekendAway" | "easy" | "intermediate" | "challenging";
 
-const FILTERS: { key: QuickFilterType; label: string; icon: typeof Star }[] = [
-  { key: "featured", label: UI_LABELS.filterFeatured, icon: Star },
-  { key: "lastSpots", label: UI_LABELS.filterLastSpots, icon: Flame },
-  { key: "thisWeek", label: UI_LABELS.filterThisWeek, icon: CalendarClock },
-  { key: "nextWeek", label: UI_LABELS.filterNextWeek, icon: CalendarPlus },
-  { key: "weekend", label: UI_LABELS.filterWeekend, icon: Palmtree },
+const FILTERS: { key: QuickFilterType; label: string; emoji: string }[] = [
+  { key: "lastSpots", label: UI_LABELS.filterLastSpots, emoji: "🔥" },
+  { key: "weekendAway", label: UI_LABELS.filterWeekendAway, emoji: "🎒" },
+  { key: "easy", label: UI_LABELS.filterEasy, emoji: "🌱" },
+  { key: "intermediate", label: UI_LABELS.filterIntermediate, emoji: "⛰️" },
+  { key: "challenging", label: UI_LABELS.filterChallenging, emoji: "🧗" },
 ];
 
 interface Props {
@@ -21,7 +20,7 @@ const QuickFilters = memo(({ active, onToggle }: Props) => (
   <div className="px-4">
     <div className="overflow-x-auto py-1 no-scrollbar scroll-px-0">
       <div className="flex w-max min-w-full gap-2">
-        {FILTERS.map(({ key, label, icon: Icon }) => {
+        {FILTERS.map(({ key, label, emoji }) => {
           const isActive = active.includes(key);
           return (
             <button
@@ -33,7 +32,7 @@ const QuickFilters = memo(({ active, onToggle }: Props) => (
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <span aria-hidden="true" className="text-sm leading-none">{emoji}</span>
               {label}
             </button>
           );

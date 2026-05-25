@@ -18,11 +18,11 @@ export const UI_LABELS = {
   later: "Più avanti",
 
   // Quick Filters
-  filterFeatured: "In evidenza",
   filterLastSpots: "Ultimi posti",
-  filterThisWeek: "Questa settimana",
-  filterNextWeek: "Prossima settimana",
-  filterWeekend: "Weekend",
+  filterWeekendAway: "Weekend fuori",
+  filterEasy: "Facile",
+  filterIntermediate: "Intermedio",
+  filterChallenging: "Impegnativo",
 
   // Event States
   open: "Aperto",

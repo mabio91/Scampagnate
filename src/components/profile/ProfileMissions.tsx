@@ -43,7 +43,6 @@ const VISIBLE_ACTIVE_MISSIONS = 3;
 const getFilterForMission = (mission: any): { category?: string; quickFilter?: string } => {
   if (mission.category) return { category: mission.category };
   if (mission.target_action === "limited_spots") return { quickFilter: "lastSpots" };
-  if (mission.type === "weekly") return { quickFilter: "thisWeek" };
   return {};
 };
 
