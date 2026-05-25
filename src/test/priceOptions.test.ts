@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canOptionJoinWaitlist,
+  hasEventLastSpots,
   isEventSoldOut,
   isOptionBookable,
   shouldShowPublicCapacity,
@@ -13,6 +14,14 @@ describe("event availability helpers", () => {
     expect(isOptionBookable(null, event)).toBe(true);
     expect(isEventSoldOut(event)).toBe(false);
     expect(shouldShowPublicCapacity(event)).toBe(true);
+    expect(hasEventLastSpots(event)).toBe(true);
+  });
+
+  it("marks last spots at the shared 70 percent threshold only while not sold out", () => {
+    expect(hasEventLastSpots({ status: "published", spots_total: 20, spots_taken: 13 })).toBe(false);
+    expect(hasEventLastSpots({ status: "published", spots_total: 20, spots_taken: 14 })).toBe(true);
+    expect(hasEventLastSpots({ status: "published", spots_total: 20, spots_taken: 20 })).toBe(false);
+    expect(hasEventLastSpots({ status: "full", spots_total: 20, spots_taken: 14 })).toBe(false);
   });
 
   it("treats capacity sold out as sold out and allows waitlist only when enabled", () => {

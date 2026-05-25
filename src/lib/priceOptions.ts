@@ -34,6 +34,7 @@ export interface EventPricingLike {
 }
 
 const paymentTypes = new Set(["free", "paid", "deposit", "location"]);
+export const LAST_SPOTS_FILL_RATIO = 0.7;
 
 export const toMoney = (value: number | string | null | undefined) => {
   const parsed = Number(value ?? 0);
@@ -112,6 +113,13 @@ export const optionUsesDedicatedSpots = (option: PriceOptionLike | null | undefi
 export const getEventRemainingSpots = (event: EventPricingLike) =>
   Math.max(0, Number(event.spots_total || 0) - Number(event.spots_taken || 0));
 
+export const getEventFillRatio = (event: EventPricingLike) => {
+  const total = Number(event.spots_total || 0);
+  const taken = Number(event.spots_taken || 0);
+  if (!Number.isFinite(total) || !Number.isFinite(taken) || total <= 0) return 0;
+  return Math.min(1, Math.max(0, taken / total));
+};
+
 const closedStatuses = new Set(["closed", "cancelled", "past", "completed", "draft", "unpublished", "upcoming", "rescheduled"]);
 
 export const isEventClosedForRegistration = (event: EventPricingLike) =>
@@ -128,6 +136,12 @@ export const isEventSoldOut = (event: EventPricingLike) =>
 
 export const shouldShowPublicCapacity = (event: EventPricingLike) =>
   !isEventManualSoldOut(event);
+
+export const hasEventLastSpots = (event: EventPricingLike) =>
+  Number(event.spots_total || 0) > 0
+  && getEventFillRatio(event) >= LAST_SPOTS_FILL_RATIO
+  && getEventRemainingSpots(event) > 0
+  && !isEventSoldOut(event);
 
 export const isWaitlistEnabledForEvent = (event: EventPricingLike) =>
   event.waiting_list_enabled === true

@@ -1,3 +1,5 @@
+import { hasEventLastSpots } from "@/lib/priceOptions";
+
 /**
  * Event Badge System
  * 
@@ -88,13 +90,10 @@ function isFoundingEvent(accessRules: any): boolean {
  */
 export function resolveEventBadges(event: EventForBadges): EventBadge[] {
   const autoBadges: string[] = [];
-  const fillPercent = event.spots_total > 0
-    ? (event.spots_taken / event.spots_total) * 100
-    : 0;
 
-  // Auto: ULTIMI POSTI (fill ≥ 80%, not already full/closed/cancelled/past)
+  // Auto: ULTIMI POSTI (fill >= 70%, not already full/closed/cancelled/past)
   if (
-    fillPercent >= 80 &&
+    hasEventLastSpots(event) &&
     event.status !== "full" &&
     event.status !== "closed" &&
     event.status !== "cancelled" &&

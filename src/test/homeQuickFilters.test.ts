@@ -61,6 +61,8 @@ describe("home quick filters", () => {
   });
 
   it("matches last spots only before the event is full", () => {
+    expect(matchesHomeQuickFilter(event({ spots_total: 20, spots_taken: 13 }), "lastSpots")).toBe(false);
+    expect(matchesHomeQuickFilter(event({ spots_total: 20, spots_taken: 14 }), "lastSpots")).toBe(true);
     expect(matchesHomeQuickFilter(event({ spots_total: 20, spots_taken: 17 }), "lastSpots")).toBe(true);
     expect(matchesHomeQuickFilter(event({ spots_total: 20, spots_taken: 20 }), "lastSpots")).toBe(false);
     expect(matchesHomeQuickFilter(event({ spots_total: 20, spots_taken: 17, status: "full" }), "lastSpots")).toBe(false);

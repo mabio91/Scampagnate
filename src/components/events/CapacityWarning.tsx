@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import { Flame, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LAST_SPOTS_FILL_RATIO } from "@/lib/priceOptions";
 
 interface CapacityWarningProps {
   spotsTaken: number;
@@ -31,7 +32,7 @@ export const CapacityWarning = forwardRef<HTMLDivElement, CapacityWarningProps>(
     }
 
     const fillPercent = spotsTaken / spotsTotal;
-    if (fillPercent >= 0.8) {
+    if (fillPercent >= LAST_SPOTS_FILL_RATIO) {
       return (
         <div ref={ref} className={cn(
           "flex items-center gap-1.5 text-warning font-body font-bold",

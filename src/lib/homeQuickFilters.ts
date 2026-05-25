@@ -1,5 +1,6 @@
 import type { QuickFilterType } from "@/components/events/QuickFilters";
 import type { EventWithDetails } from "@/hooks/useEvents";
+import { hasEventLastSpots } from "@/lib/priceOptions";
 
 const parseLocalizedNumber = (value: string | undefined) => {
   if (!value) return null;
@@ -48,11 +49,7 @@ export const getDifficultyLevel = (difficulty: string | null | undefined) => {
 };
 
 const hasLastSpots = (event: EventWithDetails) => {
-  const total = Number(event.spots_total || 0);
-  const taken = Math.max(Number(event.spots_taken || 0), 0);
-  const isFull = event.status === "full" || (total > 0 && taken >= total);
-
-  return total > 0 && taken / total > 0.8 && !isFull;
+  return hasEventLastSpots(event);
 };
 
 export const matchesHomeQuickFilter = (event: EventWithDetails, filter: QuickFilterType) => {

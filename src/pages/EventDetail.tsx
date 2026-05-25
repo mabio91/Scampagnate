@@ -56,6 +56,7 @@ import {
   findPriceOptionById,
   getEventRemainingSpots,
   getOptionPaymentType,
+  hasEventLastSpots,
   isEventSoldOut,
   shouldShowPublicCapacity,
   isOnlinePaymentType,
@@ -775,9 +776,7 @@ const EventDetail = () => {
       : remainingSpots === 1
         ? "1 posto disponibile"
         : `${remainingSpots} posti disponibili`;
-  const showUrgencyBadge = event.spots_total > 0
-    && (event.spots_taken / event.spots_total) > 0.7
-    && remainingSpots > 0;
+  const showUrgencyBadge = hasEventLastSpots(event);
 
   // CTA PRIORITY ORDER (from highest to lowest)
   // Check if user is blocked by hard access rules

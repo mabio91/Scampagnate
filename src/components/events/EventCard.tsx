@@ -11,6 +11,8 @@ import SoldOutOverlay from "./SoldOutOverlay";
 import { getEventHomeCardImageSrc } from "@/lib/eventImages";
 import {
   canOptionJoinWaitlist,
+  getEventFillRatio,
+  hasEventLastSpots,
   isEventSoldOut,
   isOptionBookable,
   shouldShowPublicCapacity,
@@ -111,9 +113,7 @@ const EventCard = memo(({
   const isAboveFold = index < 4;
   const isSoldOut = isEventSoldOut(event);
   const showPublicCapacity = shouldShowPublicCapacity(event);
-  const fillPercent = event.spots_total > 0
-    ? Math.min(100, (event.spots_taken / event.spots_total) * 100)
-    : 0;
+  const fillPercent = getEventFillRatio(event) * 100;
 
   // Fill bar color: 0-49% green, 50-69% amber, 70%+ red
   const fillColor = fillPercent >= 70 ? "bg-destructive" : fillPercent >= 50 ? "bg-warning" : "bg-success";
@@ -145,7 +145,7 @@ const EventCard = memo(({
   const hasMetrics = Boolean(event.distance || event.elevation || event.duration);
   const useCompactCardLayout = !hasDifficulty && !hasMetrics;
 
-  const showUrgency = fillPercent >= 70 && !isSoldOut;
+  const showUrgency = hasEventLastSpots(event);
 
   return (
     <Link to={`/event/${event.id}`} className="block group">
