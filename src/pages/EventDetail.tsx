@@ -905,8 +905,11 @@ const getCTALabel = () => {
     return items;
   };
 
+  const visibleParticipants = ((participants || []) as any[]).filter((participant) => participant.user_id !== event.organizer_id);
+  const visiblePublicAvatars = ((publicAvatars || []) as any[]).filter((participant) => participant.user_id !== event.organizer_id);
+
   // remainingSpots already computed above
-  const activeParticipantCount = participants ? participants.length : (event.spots_taken || 0);
+  const activeParticipantCount = participants ? visibleParticipants.length : (event.spots_taken || 0);
   const staffPreview = [
     {
       id: event.organizer_id || "organizer",
@@ -1131,10 +1134,10 @@ const getCTALabel = () => {
                 className="flex items-center"
               >
                 {(() => {
-                  const avatarList = participants && participants.length > 0
-                    ? participants.slice(0, 3).map((p: any) => ({ id: p.id, avatar_url: p.profiles?.avatar_url, first_name: p.profiles?.first_name }))
-                    : publicAvatars && publicAvatars.length > 0
-                    ? (publicAvatars as any[]).slice(0, 3).map((p: any, idx: number) => ({ id: p.user_id || `manual-${idx}`, avatar_url: p.avatar_url, first_name: p.first_name }))
+                  const avatarList = visibleParticipants.length > 0
+                    ? visibleParticipants.slice(0, 3).map((p: any) => ({ id: p.id, avatar_url: p.profiles?.avatar_url, first_name: p.profiles?.first_name }))
+                    : visiblePublicAvatars.length > 0
+                    ? visiblePublicAvatars.slice(0, 3).map((p: any, idx: number) => ({ id: p.user_id || `manual-${idx}`, avatar_url: p.avatar_url, first_name: p.first_name }))
                     : [];
                   const totalCount = activeParticipantCount;
 

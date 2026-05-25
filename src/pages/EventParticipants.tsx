@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Instagram, User as UserIcon, LogIn, Check, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useEvent, useEventParticipants } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
@@ -322,11 +322,16 @@ const EventParticipants = () => {
 
   const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
 
+  const visibleParticipants = useMemo(() => {
+    const organizerId = event?.organizer_id;
+    return (participants || []).filter((p: any) => !organizerId || p.user_id !== organizerId);
+  }, [event?.organizer_id, participants]);
+
   const participantIds = useMemo(() => (
-    [...new Set((participants || [])
+    [...new Set(visibleParticipants
       .filter((p: any) => !p.is_manual && p.user_id)
       .map((p: any) => p.user_id))]
-  ), [participants]);
+  ), [visibleParticipants]);
 
   const { data: publicParticipantProfiles } = useQuery({
     queryKey: ["participant-public-profiles", participantIds],
@@ -377,34 +382,6 @@ const EventParticipants = () => {
     enabled: isOrgOrAdmin && participantIds.length > 0,
   });
 
-  const { data: organizerProfile } = useQuery({
-    queryKey: ["organizer-profile-public", event?.organizer_id],
-    queryFn: async () => {
-      if (!event?.organizer_id) return null;
-      const { data } = await supabase.rpc("get_public_profile", { profile_id: event.organizer_id });
-      return data?.[0] || null;
-    },
-    enabled: !!event?.organizer_id,
-  });
-
-  // Fetch organizer's points for level badge
-  const { data: organizerFullProfile } = useQuery({
-    queryKey: ["organizer-full-profile", event?.organizer_id],
-    queryFn: async () => {
-      if (!event?.organizer_id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("total_points")
-        .eq("id", event.organizer_id)
-        .single();
-      return data;
-    },
-    enabled: !!event?.organizer_id,
-  });
-
-  const organizerPoints = organizerFullProfile?.total_points ?? (organizerProfile as any)?.total_points ?? 0;
-  const { data: organizerLevel } = useCommunityLevel(organizerPoints);
-
   const accessRules = (event?.access_rules as AccessRulesConfig | null)?.rules || [];
 
   // Fetch public avatars for blurred guest view
@@ -417,10 +394,15 @@ const EventParticipants = () => {
     enabled: !user && !!id,
   });
 
+  const visiblePublicAvatars = useMemo(() => {
+    const organizerId = event?.organizer_id;
+    return ((publicAvatars || []) as any[]).filter((p: any) => !organizerId || p.user_id !== organizerId);
+  }, [event?.organizer_id, publicAvatars]);
+
   const totalParticipants = user && participants
-    ? participants.length
-    : publicAvatars && publicAvatars.length > 0
-      ? publicAvatars.length
+    ? visibleParticipants.length
+    : visiblePublicAvatars.length > 0
+      ? visiblePublicAvatars.length
       : event?.spots_taken || 0;
 
   // --- Loading ---
@@ -457,8 +439,8 @@ const EventParticipants = () => {
 
   // --- Guest / not logged in ---
   if (!user) {
-    const renderList = publicAvatars && publicAvatars.length > 0
-      ? publicAvatars
+    const renderList = visiblePublicAvatars.length > 0
+      ? visiblePublicAvatars
       : Array.from({ length: totalParticipants });
 
     return (
@@ -475,33 +457,9 @@ const EventParticipants = () => {
         </div>
 
         <div className="max-w-lg mx-auto px-4 py-4 pb-64">
-          {/* Organizer */}
-          {event?.organizer_id && (
-            <div className="mb-6">
-              <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Organizzatore</p>
-              <div className="flex items-center gap-3">
-                <LevelAvatar
-                  avatarUrl={organizerProfile?.avatar_url}
-                  firstName={organizerProfile?.first_name || event.organizer_name}
-                  points={organizerPoints}
-                  level={organizerLevel}
-                  size="md"
-                  showBadge
-                />
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-body font-semibold text-foreground">
-                    {organizerProfile?.first_name || event.organizer_name}
-                  </p>
-                  <LevelBadgePill level={organizerLevel} />
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Blurred participants */}
           {totalParticipants > 0 && (
-            <div className="mt-5">
-              <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Chi ci sarà</p>
+            <div>
               <div className="select-none">
                 {renderList.map((p: any, index) => (
                   <div key={p?.user_id || index} className="flex items-center gap-3 py-3">
@@ -576,36 +534,11 @@ const EventParticipants = () => {
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-4">
-        {/* Organizer */}
-        <div className="mb-6">
-          <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Organizzatore</p>
-          <Link
-            to={`/organizer/${event.organizer_id}`}
-            className="flex items-center gap-3 rounded-lg py-2 -mx-2 px-2 transition-colors active:bg-muted/50"
-          >
-            <LevelAvatar
-              avatarUrl={organizerProfile?.avatar_url}
-              firstName={organizerProfile?.first_name || event.organizer_name}
-              points={organizerPoints}
-              level={organizerLevel}
-              size="md"
-              showBadge
-            />
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-body font-semibold text-foreground">
-                {organizerProfile?.first_name || event.organizer_name}
-              </p>
-              <LevelBadgePill level={organizerLevel} />
-            </div>
-          </Link>
-        </div>
-
         {/* Participants */}
-        {participants && participants.length > 0 ? (
-          <div className="mt-2">
-            <p className="text-xs font-body font-semibold text-primary uppercase tracking-wide mb-3">Chi ci sarà</p>
+        {visibleParticipants.length > 0 ? (
+          <div>
             <div>
-              {participants.map((p: any) => {
+              {visibleParticipants.map((p: any) => {
                 const pProfile = fullProfiles?.[p.user_id];
                 const points = pProfile?.total_points ?? publicParticipantProfiles?.[p.user_id]?.total_points ?? 0;
 
