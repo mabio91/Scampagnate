@@ -77,6 +77,7 @@ const EVENT_STATUS_OPTIONS: Array<{ value: EventStatus; label: string; descripti
 
 const STAFF_ROLE_PRESETS = ["STAFF", "FOTOGRAFO", "GUIDA"] as const;
 const CUSTOM_STAFF_ROLE_VALUE = "__custom__";
+type EditableVisibility = "public" | "private";
 
 const normalizeEditableEventStatus = (status: string | null | undefined): EventStatus => {
   if (status === "available" || status === "published") return "open";
@@ -85,6 +86,10 @@ const normalizeEditableEventStatus = (status: string | null | undefined): EventS
   return EVENT_STATUS_OPTIONS.some((option) => option.value === status)
     ? status as EventStatus
     : "open";
+};
+
+const normalizeEditableVisibility = (visibility: string | null | undefined): EditableVisibility => {
+  return visibility === "private" ? "private" : "public";
 };
 
 const useEquipmentTemplates = () => {
@@ -302,7 +307,7 @@ const EventForm = () => {
     featured: false,
     cancellation_policy: "",
     image_url: "",
-    visibility: "public" as "public" | "private" | "hidden",
+    visibility: "public" as EditableVisibility,
     gallery_images: [] as { url: string; order: number }[],
   });
   const [fitScoreMainCategory, setFitScoreMainCategory] = useState("");
@@ -551,7 +556,7 @@ const EventForm = () => {
         featured: isDuplicating ? false : event.featured,
         cancellation_policy: event.cancellation_policy || "",
         image_url: event.image_url || "",
-        visibility: isDuplicating ? "private" : (event.visibility || "public"),
+        visibility: isDuplicating ? "private" : normalizeEditableVisibility(event.visibility),
         gallery_images: (event.gallery_images as any[]) || [],
       });
       setExistingOrganizer(
@@ -1103,7 +1108,7 @@ const EventForm = () => {
           ? serializeCancellationPolicy(policyType as PolicyType, policyCustomText)
           : null,
         image_url: imageUrl,
-        visibility: form.visibility,
+        visibility: normalizeEditableVisibility(form.visibility),
         gallery_images: form.gallery_images as any,
         equipment_list: equipmentItems.filter((item) => item.name.trim()) as any,
         additional_fields: {
@@ -2391,13 +2396,11 @@ const EventForm = () => {
               <SelectContent>
                 <SelectItem value="public">🌍 Pubblico — Visibile a tutti</SelectItem>
                 <SelectItem value="private">🔗 Privato — Solo link diretto</SelectItem>
-                <SelectItem value="hidden">👁️ Nascosto — Solo organizzatori e admin</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-[10px] text-muted-foreground font-body">
               {form.visibility === "public" && "Tutti possono trovare e visualizzare questo evento."}
               {form.visibility === "private" && "Non visibile nella scoperta. Accessibile solo tramite link diretto o invito."}
-              {form.visibility === "hidden" && "Invisibile agli utenti normali. Solo organizzatori e amministratori possono vederlo."}
             </p>
           </div>
 
@@ -2666,7 +2669,7 @@ const EventForm = () => {
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
             <p className="text-[11px] text-muted-foreground font-body">
               <strong className="text-foreground">Riepilogo:</strong>{" "}
-              {form.visibility === "public" ? "Visibile a tutti" : form.visibility === "private" ? "Solo link diretto" : "Nascosto"} •{" "}
+              {form.visibility === "public" ? "Visibile a tutti" : "Solo link diretto"} •{" "}
               {accessRules.length === 0 ? "Registrazione aperta" : `${accessRules.length} regola/e di accesso`} •{" "}
               {priceOptions.length === 0 ? "Prezzo unico" : `${priceOptions.length} fascia/e di prezzo`}
             </p>
