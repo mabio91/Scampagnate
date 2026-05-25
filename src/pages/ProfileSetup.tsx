@@ -37,6 +37,9 @@ const calculateExperienceGrade = (trekking: string, activity: string) => {
   return map[trekking]?.[activity] ?? 1;
 };
 
+const normalizeSex = (value?: string | null): "" | "M" | "F" =>
+  value === "M" || value === "F" ? value : "";
+
 interface SelectionCardProps {
   selected: boolean;
   onClick: () => void;
@@ -200,6 +203,7 @@ const ProfileSetup = () => {
   // Step 1 (only in first-time mode)
   const [phone, setPhone] = useState(profile?.phone || "");
   const [dateOfBirth, setDateOfBirth] = useState(profile?.birth_date || "");
+  const [sex, setSex] = useState<"" | "M" | "F">(normalizeSex(profile?.sex));
   const [instagramHandle, setInstagramHandle] = useState(profile?.instagram_handle || "");
 
   // Step 2 - prefill from profile in edit mode
@@ -222,9 +226,11 @@ const ProfileSetup = () => {
 
   // Sync fields when profile loads (fixes blank fields when navigating in edit mode)
   useEffect(() => {
-    if (isEditMode && profile) {
+    if (!profile) return;
+    if (isEditMode) {
       setPhone(profile.phone || "");
       setDateOfBirth(profile.birth_date || "");
+      setSex(normalizeSex(profile.sex));
       setInstagramHandle(profile.instagram_handle || "");
       setTrekkingExp(profile.trekking_experience || "");
       setSelfLevel(profile.self_level || "");
@@ -232,6 +238,11 @@ const ProfileSetup = () => {
       setHealthSafety(getHealthSafetyValueFromProfile(profile));
       setInterests(profile.interests ? (profile.interests as string[]) : []);
       setEventMotivation(profile.event_motivation || "");
+    } else {
+      setPhone(profile.phone || "");
+      setDateOfBirth(profile.birth_date || "");
+      setSex(normalizeSex(profile.sex));
+      setInstagramHandle(profile.instagram_handle || "");
     }
   }, [isEditMode, profile]);
 
@@ -379,6 +390,7 @@ const ProfileSetup = () => {
         }
         updateData.phone = phone.trim();
         updateData.birth_date = dateOfBirth || null;
+        updateData.sex = sex || null;
         updateData.instagram_handle = normalizedInstagramHandle;
       }
 
@@ -408,7 +420,7 @@ const ProfileSetup = () => {
     if (/[a-zA-Z]/.test(cleaned)) return false;
     return /^\+?[\d\s\-().]{5,20}$/.test(cleaned);
   };
-  const step1Valid = isValidPhone(phone) && !!dateOfBirth && isValidInstagramHandle(normalizeInstagramHandle(instagramHandle));
+  const step1Valid = isValidPhone(phone) && !!dateOfBirth && !!sex && isValidInstagramHandle(normalizeInstagramHandle(instagramHandle));
   const step2Valid = !!trekkingExp && !!selfLevel && !!activityFreq;
   const step3Valid = validateHealthSafety(healthSafety).isValid;
   const step4Valid =
@@ -685,6 +697,32 @@ const ProfileSetup = () => {
                     <Info className="h-4 w-4 shrink-0 mt-0.5 text-secondary" />
                     <p>
                       La tua data di nascita sarà visibile solo agli organizzatori per scopi di sicurezza e assicurativi.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="font-body text-sm font-semibold">
+                    Sesso anagrafico <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["M", "F"] as const).map((value) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={sex === value ? "default" : "outline"}
+                        className="h-11 font-body font-semibold"
+                        aria-pressed={sex === value}
+                        onClick={() => setSex(value)}
+                      >
+                        {value}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex items-start gap-1.5 mt-2 text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
+                    <Info className="h-4 w-4 shrink-0 mt-0.5 text-secondary" />
+                    <p>
+                      Serve nel formato M/F per tessera associativa e copertura assicurativa.
                     </p>
                   </div>
                 </div>

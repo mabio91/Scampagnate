@@ -570,6 +570,33 @@ export type Database = {
         }
         Relationships: []
       }
+      event_closing_sentences: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          sentence: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sentence: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sentence?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_meeting_points: {
         Row: {
           event_id: string
@@ -725,8 +752,8 @@ export type Database = {
       }
       event_registrations: {
         Row: {
-          additional_responses: Json | null
           added_by: string | null
+          additional_responses: Json | null
           amount_paid: number | null
           balance_due_amount: number | null
           balance_payment_mode:
@@ -755,8 +782,8 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          additional_responses?: Json | null
           added_by?: string | null
+          additional_responses?: Json | null
           amount_paid?: number | null
           balance_due_amount?: number | null
           balance_payment_mode?:
@@ -785,8 +812,8 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          additional_responses?: Json | null
           added_by?: string | null
+          additional_responses?: Json | null
           amount_paid?: number | null
           balance_due_amount?: number | null
           balance_payment_mode?:
@@ -884,6 +911,60 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_staff: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          event_id: string
+          id: string
+          is_public: boolean
+          profile_id: string | null
+          role_label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name: string
+          event_id: string
+          id?: string
+          is_public?: boolean
+          profile_id?: string | null
+          role_label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          event_id?: string
+          id?: string
+          is_public?: boolean
+          profile_id?: string | null
+          role_label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_staff_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_staff_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1858,6 +1939,7 @@ export type Database = {
           province_of_residence: string | null
           residential_address: string | null
           review_note: string | null
+          sex: string | null
           source_row: Json
           status: string
           updated_at: string
@@ -1886,6 +1968,7 @@ export type Database = {
           province_of_residence?: string | null
           residential_address?: string | null
           review_note?: string | null
+          sex?: string | null
           source_row?: Json
           status?: string
           updated_at?: string
@@ -1914,18 +1997,12 @@ export type Database = {
           province_of_residence?: string | null
           residential_address?: string | null
           review_note?: string | null
+          sex?: string | null
           source_row?: Json
           status?: string
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "prepaid_memberships_imported_by_fkey"
-            columns: ["imported_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "prepaid_memberships_matched_user_id_fkey"
             columns: ["matched_user_id"]
@@ -1946,17 +2023,17 @@ export type Database = {
           city_of_residence: string | null
           created_at: string
           email: string | null
+          emergency_medication_has: boolean | null
+          emergency_medication_notes: string | null
           event_motivation: string | null
-	          experience_grade: number | null
-	          first_name: string
-	          has_car: string | null
-	          health_safety_help_notes: string | null
-	          health_safety_notes: string | null
-	          health_safety_status: string | null
-	          health_safety_updated_at: string | null
-	          emergency_medication_has: boolean | null
-	          emergency_medication_notes: string | null
-	          id: string
+          experience_grade: number | null
+          first_name: string
+          has_car: string | null
+          health_safety_help_notes: string | null
+          health_safety_notes: string | null
+          health_safety_status: string | null
+          health_safety_updated_at: string | null
+          id: string
           instagram_handle: string | null
           interests: string[] | null
           is_founding_member: boolean
@@ -1976,6 +2053,7 @@ export type Database = {
           province_of_residence: string | null
           residential_address: string | null
           self_level: string | null
+          sex: string | null
           total_points: number
           trekking_experience: string | null
           updated_at: string
@@ -1990,17 +2068,17 @@ export type Database = {
           city_of_residence?: string | null
           created_at?: string
           email?: string | null
+          emergency_medication_has?: boolean | null
+          emergency_medication_notes?: string | null
           event_motivation?: string | null
-	          experience_grade?: number | null
-	          first_name?: string
-	          has_car?: string | null
-	          health_safety_help_notes?: string | null
-	          health_safety_notes?: string | null
-	          health_safety_status?: string | null
-	          health_safety_updated_at?: string | null
-	          emergency_medication_has?: boolean | null
-	          emergency_medication_notes?: string | null
-	          id: string
+          experience_grade?: number | null
+          first_name?: string
+          has_car?: string | null
+          health_safety_help_notes?: string | null
+          health_safety_notes?: string | null
+          health_safety_status?: string | null
+          health_safety_updated_at?: string | null
+          id: string
           instagram_handle?: string | null
           interests?: string[] | null
           is_founding_member?: boolean
@@ -2020,6 +2098,7 @@ export type Database = {
           province_of_residence?: string | null
           residential_address?: string | null
           self_level?: string | null
+          sex?: string | null
           total_points?: number
           trekking_experience?: string | null
           updated_at?: string
@@ -2034,17 +2113,17 @@ export type Database = {
           city_of_residence?: string | null
           created_at?: string
           email?: string | null
+          emergency_medication_has?: boolean | null
+          emergency_medication_notes?: string | null
           event_motivation?: string | null
-	          experience_grade?: number | null
-	          first_name?: string
-	          has_car?: string | null
-	          health_safety_help_notes?: string | null
-	          health_safety_notes?: string | null
-	          health_safety_status?: string | null
-	          health_safety_updated_at?: string | null
-	          emergency_medication_has?: boolean | null
-	          emergency_medication_notes?: string | null
-	          id?: string
+          experience_grade?: number | null
+          first_name?: string
+          has_car?: string | null
+          health_safety_help_notes?: string | null
+          health_safety_notes?: string | null
+          health_safety_status?: string | null
+          health_safety_updated_at?: string | null
+          id?: string
           instagram_handle?: string | null
           interests?: string[] | null
           is_founding_member?: boolean
@@ -2064,6 +2143,7 @@ export type Database = {
           province_of_residence?: string | null
           residential_address?: string | null
           self_level?: string | null
+          sex?: string | null
           total_points?: number
           trekking_experience?: string | null
           updated_at?: string
@@ -2096,6 +2176,227 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      registration_change_requests: {
+        Row: {
+          additional_payment_amount: number
+          amount_paid_before: number
+          created_at: string
+          error_message: string | null
+          event_id: string
+          event_paid_before: number
+          id: string
+          metadata: Json
+          new_amount_paid: number
+          new_balance_due_amount: number
+          new_balance_payment_mode:
+            | Database["public"]["Enums"]["balance_payment_mode"]
+            | null
+          new_deposit_amount: number | null
+          new_payment_status: string
+          new_payment_type: string
+          new_price_option_id: string
+          new_registration_status: Database["public"]["Enums"]["registration_status"]
+          new_total_amount: number
+          old_payment_type: string | null
+          old_price_option_id: string | null
+          old_total_amount: number
+          refund_amount: number
+          registration_id: string
+          service_fee_amount: number
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_refund_id: string | null
+          target_event_paid_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_payment_amount?: number
+          amount_paid_before?: number
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          event_paid_before?: number
+          id?: string
+          metadata?: Json
+          new_amount_paid?: number
+          new_balance_due_amount?: number
+          new_balance_payment_mode?:
+            | Database["public"]["Enums"]["balance_payment_mode"]
+            | null
+          new_deposit_amount?: number | null
+          new_payment_status: string
+          new_payment_type: string
+          new_price_option_id: string
+          new_registration_status: Database["public"]["Enums"]["registration_status"]
+          new_total_amount?: number
+          old_payment_type?: string | null
+          old_price_option_id?: string | null
+          old_total_amount?: number
+          refund_amount?: number
+          registration_id: string
+          service_fee_amount?: number
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          target_event_paid_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_payment_amount?: number
+          amount_paid_before?: number
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          event_paid_before?: number
+          id?: string
+          metadata?: Json
+          new_amount_paid?: number
+          new_balance_due_amount?: number
+          new_balance_payment_mode?:
+            | Database["public"]["Enums"]["balance_payment_mode"]
+            | null
+          new_deposit_amount?: number | null
+          new_payment_status?: string
+          new_payment_type?: string
+          new_price_option_id?: string
+          new_registration_status?: Database["public"]["Enums"]["registration_status"]
+          new_total_amount?: number
+          old_payment_type?: string | null
+          old_price_option_id?: string | null
+          old_total_amount?: number
+          refund_amount?: number
+          registration_id?: string
+          service_fee_amount?: number
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          target_event_paid_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_change_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_change_requests_new_price_option_id_fkey"
+            columns: ["new_price_option_id"]
+            isOneToOne: false
+            referencedRelation: "event_price_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_change_requests_old_price_option_id_fkey"
+            columns: ["old_price_option_id"]
+            isOneToOne: false
+            referencedRelation: "event_price_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_change_requests_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_change_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registration_payment_transactions: {
+        Row: {
+          amount: number
+          change_request_id: string | null
+          created_at: string
+          currency: string
+          event_id: string
+          id: string
+          kind: string
+          metadata: Json
+          registration_id: string
+          source: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_refund_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          change_request_id?: string | null
+          created_at?: string
+          currency?: string
+          event_id: string
+          id?: string
+          kind: string
+          metadata?: Json
+          registration_id: string
+          source?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          change_request_id?: string | null
+          created_at?: string
+          currency?: string
+          event_id?: string
+          id?: string
+          kind?: string
+          metadata?: Json
+          registration_id?: string
+          source?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_payment_transactions_change_request_id_fkey"
+            columns: ["change_request_id"]
+            isOneToOne: false
+            referencedRelation: "registration_change_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_payment_transactions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_payment_transactions_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_payment_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_events: {
         Row: {
@@ -2570,6 +2871,85 @@ export type Database = {
           },
         ]
       }
+      user_payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          event_amount: number
+          event_id: string | null
+          id: string
+          kind: string
+          membership_fee_amount: number
+          metadata: Json
+          registration_id: string | null
+          service_fee_amount: number
+          source: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_refund_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          event_amount?: number
+          event_id?: string | null
+          id?: string
+          kind: string
+          membership_fee_amount?: number
+          metadata?: Json
+          registration_id?: string | null
+          service_fee_amount?: number
+          source: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          event_amount?: number
+          event_id?: string | null
+          id?: string
+          kind?: string
+          membership_fee_amount?: number
+          metadata?: Json
+          registration_id?: string | null
+          service_fee_amount?: number
+          source?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_payment_transactions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_payment_transactions_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_payment_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_rewards: {
         Row: {
           created_at: string
@@ -2679,8 +3059,40 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_user_payment_summary: {
+        Row: {
+          event_amount: number | null
+          gross_amount: number | null
+          last_payment_at: string | null
+          last_transaction_at: string | null
+          membership_fee_amount: number | null
+          net_amount: number | null
+          payment_count: number | null
+          refund_count: number | null
+          refunded_amount: number | null
+          service_fee_amount: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_payment_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      _apply_prepaid_membership_to_user: {
+        Args: {
+          p_manually_assigned_by?: string
+          p_prepaid_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       _scamp_activity_group: {
         Args: { activity_type: string }
         Returns: string
@@ -2706,6 +3118,17 @@ export type Database = {
         Args: { row_data: Json; table_name: string }
         Returns: string
       }
+      _scamp_identity_part: { Args: { value: string }; Returns: string }
+      _scamp_normalize_email: { Args: { value: string }; Returns: string }
+      _scamp_prepaid_identity_key: {
+        Args: {
+          p_birth_date: string
+          p_first_name: string
+          p_last_name: string
+        }
+        Returns: string
+      }
+      _scamp_safe_date: { Args: { value: string }; Returns: string }
       _scamp_safe_numeric: { Args: { value: string }; Returns: number }
       _scamp_safe_uuid: { Args: { value: string }; Returns: string }
       _scamp_sanitize_audit_row: { Args: { row_data: Json }; Returns: Json }
@@ -2724,25 +3147,35 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_assign_badge: {
-        Args: { p_badge_id: string; p_user_id: string }
-        Returns: undefined
-      }
       admin_activate_prepaid_membership: {
         Args: { p_prepaid_id: string; p_user_id: string }
         Returns: Json
       }
       admin_apply_prepaid_membership_to_user: {
         Args: {
-          p_manually_assigned_by?: string | null
+          p_manually_assigned_by?: string
           p_prepaid_id: string
           p_user_id: string
         }
         Returns: Json
       }
+      admin_assign_badge: {
+        Args: { p_badge_id: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_import_prepaid_memberships: {
-        Args: { p_batch_label?: string | null; p_rows: Json }
+        Args: { p_batch_label?: string; p_rows: Json }
         Returns: Json
+      }
+      award_configured_user_points: {
+        Args: {
+          p_action_type: string
+          p_admin_id?: string
+          p_description?: string
+          p_reference_id?: string
+          p_user_id: string
+        }
+        Returns: string
       }
       award_event_attendance_badges: {
         Args: { p_event_id: string; p_user_id: string }
@@ -2789,9 +3222,9 @@ export type Database = {
       get_event_participant_avatars: {
         Args: { p_event_id: string }
         Returns: {
-          avatar_url: string | null
+          avatar_url: string
           first_name: string
-          user_id: string | null
+          user_id: string
         }[]
       }
       get_event_people_public: {
@@ -2805,18 +3238,18 @@ export type Database = {
           role: string
           sort_order: number
           total_points: number
-          user_id: string | null
+          user_id: string
         }[]
       }
       get_public_profile: {
         Args: { profile_id: string }
         Returns: {
           avatar_url: string
-          bio: string | null
+          bio: string
           first_name: string
           id: string
           last_name_initial: string
-          phone: string | null
+          phone: string
           total_points: number
         }[]
       }
@@ -2824,11 +3257,11 @@ export type Database = {
         Args: { profile_ids: string[] }
         Returns: {
           avatar_url: string
-          bio: string | null
+          bio: string
           first_name: string
           id: string
           last_name_initial: string
-          phone: string | null
+          phone: string
           total_points: number
         }[]
       }
@@ -2857,8 +3290,16 @@ export type Database = {
         Args: { p_payment_status?: string; p_status: string }
         Returns: boolean
       }
+      is_event_closed_for_registration_status: {
+        Args: { p_status: string }
+        Returns: boolean
+      }
       is_event_option_bookable: {
         Args: { p_event_id: string; p_price_option_id?: string }
+        Returns: boolean
+      }
+      is_event_registration_open_status: {
+        Args: { p_status: string }
         Returns: boolean
       }
       next_available_membership_id: { Args: never; Returns: number }

@@ -34,6 +34,7 @@ interface Profile {
   phone_verified?: boolean;
   phone_verified_at?: string;
   phone_verification_method?: string;
+  sex?: string | null;
   birth_date?: string | null;
   birth_place?: string | null;
   province_of_birth?: string | null;

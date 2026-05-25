@@ -14,6 +14,7 @@ const hasCompleteMembershipData = (profile: Record<string, unknown> | null) =>
   !!profile &&
   [
     "birth_date",
+    "sex",
     "birth_place",
     "province_of_birth",
     "residential_address",
@@ -217,7 +218,7 @@ serve(async (req) => {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("membership_status, membership_registration_date, birth_date, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
+      .select("membership_status, membership_registration_date, birth_date, sex, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
       .eq("id", userId)
       .maybeSingle();
 

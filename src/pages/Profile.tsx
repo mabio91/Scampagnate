@@ -20,6 +20,7 @@ import { ActivityHistory } from "@/components/profile/ActivityHistory";
 import ProfileEditSheet from "@/components/profile/ProfileEditSheet";
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import { hasCompletedHealthSafety } from "@/lib/healthSafety";
+import { hasCompleteMembershipProfile } from "@/lib/membershipProfile";
 
 const MEMBERSHIP_BENEFITS = [
   "Copertura assicurativa durante le attività",
@@ -76,6 +77,12 @@ const Profile = () => {
     setShowEditSheet(true);
   };
 
+  const openMembershipSection = () => {
+    navigate({ pathname: "/profile", search: "?section=membership" }, { replace: true });
+    setShowEditSheet(true);
+  };
+
+  const membershipProfileMissing = profile && !hasCompleteMembershipProfile(profile);
   const healthSafetyMissing = profile && !hasCompletedHealthSafety(profile);
 
   return (
@@ -135,6 +142,30 @@ const Profile = () => {
         <ProfileCompleteness
           onCompleteProfile={() => setShowEditSheet(true)}
         />
+
+        {membershipProfileMissing && (
+          <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <CreditCard className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-sm font-bold text-foreground">Completa dati tessera e assicurazione</h3>
+                <p className="mt-1 text-xs font-body leading-relaxed text-muted-foreground">
+                  Per attivare tessera e copertura assicurativa servono anche sesso anagrafico, nascita e residenza.
+                </p>
+                <Button
+                  onClick={openMembershipSection}
+                  size="sm"
+                  className="mt-3 bg-primary text-primary-foreground font-body font-semibold"
+                >
+                  Completa ora
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {healthSafetyMissing && (
           <div className="mb-6 rounded-2xl border border-secondary/20 bg-secondary/5 p-4 animate-fade-in">

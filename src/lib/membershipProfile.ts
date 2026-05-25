@@ -1,4 +1,5 @@
 type MembershipProfileLike = {
+  sex?: string | null;
   birth_date?: string | null;
   birth_place?: string | null;
   province_of_birth?: string | null;
@@ -9,6 +10,7 @@ type MembershipProfileLike = {
 
 export const MEMBERSHIP_REQUIRED_FIELDS = [
   { key: "birth_date", label: "Data di nascita" },
+  { key: "sex", label: "Sesso anagrafico" },
   { key: "birth_place", label: "Luogo di nascita" },
   { key: "province_of_birth", label: "Provincia di nascita" },
   { key: "residential_address", label: "Indirizzo di residenza" },

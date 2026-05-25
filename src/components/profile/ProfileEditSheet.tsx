@@ -62,6 +62,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
   const [phone, setPhone] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [sex, setSex] = useState<"" | "M" | "F">("");
   const [birthPlace, setBirthPlace] = useState("");
   const [provinceOfBirth, setProvinceOfBirth] = useState("");
   const [residentialAddress, setResidentialAddress] = useState("");
@@ -111,6 +112,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
     setPhone(profile?.phone || "");
     setInstagramHandle(profile?.instagram_handle || "");
     setDateOfBirth(profile?.birth_date || "");
+    setSex(profile?.sex === "M" || profile?.sex === "F" ? profile.sex : "");
     setBirthPlace(profile?.birth_place || "");
     setProvinceOfBirth(profile?.province_of_birth || "");
     setResidentialAddress(profile?.residential_address || "");
@@ -139,6 +141,7 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 	    profile?.phone,
 	    profile?.instagram_handle,
 	    profile?.birth_date,
+	    profile?.sex,
 	    profile?.birth_place,
 	    profile?.province_of_birth,
 	    profile?.residential_address,
@@ -227,11 +230,12 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
 	      last_name: lastName,
 	      phone,
 	      instagram_handle: normalizedInstagramHandle,
-      birth_date: dateOfBirth || null,
-      birth_place: birthPlace.trim() || null,
-      province_of_birth: provinceOfBirth.trim().toUpperCase() || null,
-      residential_address: residentialAddress.trim() || null,
-      city_of_residence: cityOfResidence.trim() || null,
+	      birth_date: dateOfBirth || null,
+	      sex: sex || null,
+	      birth_place: birthPlace.trim() || null,
+	      province_of_birth: provinceOfBirth.trim().toUpperCase() || null,
+	      residential_address: residentialAddress.trim() || null,
+	      city_of_residence: cityOfResidence.trim() || null,
 	      province_of_residence: provinceOfResidence.trim().toUpperCase() || null,
 	      bio,
 	      updated_at: new Date().toISOString(),
@@ -520,6 +524,28 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                     onChange={(e) => { setDateOfBirth(e.target.value); markChanged(); }}
                     className="mt-1 max-w-full [min-inline-size:0]"
                   />
+                </div>
+                <div>
+                  <MembershipLabel tooltip="Richiesto come valore M/F per tessera associativa e copertura assicurativa.">
+                    Sesso anagrafico
+                  </MembershipLabel>
+                  <div className="mt-1 grid grid-cols-2 gap-2">
+                    {(["M", "F"] as const).map((value) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={sex === value ? "default" : "outline"}
+                        className="h-10 font-body font-semibold"
+                        aria-pressed={sex === value}
+                        onClick={() => {
+                          setSex(value);
+                          markChanged();
+                        }}
+                      >
+                        {value}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <MembershipLabel tooltip={'Inserisci il comune di nascita. Se sei nato/a all\'estero, inserisci il nome della nazione (es. "Francia", "Romania").'}>
