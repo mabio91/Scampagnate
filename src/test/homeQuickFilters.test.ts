@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getDifficultyLevel,
-  matchesAllHomeQuickFilters,
+  matchesAnyHomeQuickFilter,
   matchesHomeQuickFilter,
   parseDurationHours,
 } from "@/lib/homeQuickFilters";
@@ -56,21 +56,25 @@ describe("home quick filters", () => {
     expect(getDifficultyLevel("Avanzato")).toBe(5);
   });
 
-  it("combines selected quick filters with AND semantics", () => {
+  it("combines selected quick filters with OR semantics", () => {
     const easyLongEvent = event({ difficulty: "2", duration: "2 giorni" });
     const easyShortEvent = event({ difficulty: "2", duration: "4h" });
+    const hardShortEvent = event({ difficulty: "4", duration: "4h" });
     const selectedFilters: QuickFilterType[] = ["easy", "weekendAway"];
 
-    expect(matchesAllHomeQuickFilters(easyLongEvent, selectedFilters)).toBe(true);
-    expect(matchesAllHomeQuickFilters(easyShortEvent, selectedFilters)).toBe(false);
+    expect(matchesAnyHomeQuickFilter(easyLongEvent, selectedFilters)).toBe(true);
+    expect(matchesAnyHomeQuickFilter(easyShortEvent, selectedFilters)).toBe(true);
+    expect(matchesAnyHomeQuickFilter(hardShortEvent, selectedFilters)).toBe(false);
   });
 
-  it("does not treat multiple difficulty quick filters as OR", () => {
+  it("treats multiple difficulty quick filters as OR", () => {
     const easyEvent = event({ difficulty: "2" });
+    const intermediateEvent = event({ difficulty: "3" });
     const selectedFilters: QuickFilterType[] = ["easy", "intermediate"];
 
     expect(matchesHomeQuickFilter(easyEvent, "easy")).toBe(true);
-    expect(matchesAllHomeQuickFilters(easyEvent, selectedFilters)).toBe(false);
+    expect(matchesAnyHomeQuickFilter(easyEvent, selectedFilters)).toBe(true);
+    expect(matchesAnyHomeQuickFilter(intermediateEvent, selectedFilters)).toBe(true);
   });
 
   it("matches last spots only before the event is full", () => {

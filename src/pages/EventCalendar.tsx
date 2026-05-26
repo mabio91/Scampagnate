@@ -18,10 +18,10 @@ const hiddenStatuses = new Set(["draft", "unpublished", "past", "completed", "ca
 const toDateKey = (date: Date) => format(date, "yyyy-MM-dd");
 
 const EventCalendar = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
-  const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
+  const { data: events, isLoading, isFetching } = useEvents(selectedCategories);
   const { data: categories } = useCategories();
   const { data: discountMap } = useActiveDiscounts();
 
@@ -66,7 +66,16 @@ const EventCalendar = () => {
         </div>
       </div>
 
-      <CategoryFilter categories={categories || []} selected={selectedCategory} onSelect={setSelectedCategory} />
+      <CategoryFilter
+        categories={categories || []}
+        selected={selectedCategories}
+        onToggle={(category) => {
+          setSelectedCategories((current) =>
+            current.includes(category) ? current.filter((value) => value !== category) : [...current, category]
+          );
+        }}
+        onClear={() => setSelectedCategories([])}
+      />
 
       <div className="px-4">
         <div className="rounded-2xl border border-border/50 bg-card p-3 shadow-sm">

@@ -11,18 +11,19 @@ interface Category {
 
 interface CategoryFilterProps {
   categories: Category[];
-  selected: string | null;
-  onSelect: (cat: string | null) => void;
+  selected: string[];
+  onToggle: (cat: string) => void;
+  onClear: () => void;
 }
 
-const CategoryFilter = memo(({ categories, selected, onSelect }: CategoryFilterProps) => (
+const CategoryFilter = memo(({ categories, selected, onToggle, onClear }: CategoryFilterProps) => (
   <div className="px-4 py-3">
     <div className="overflow-x-auto py-1 no-scrollbar snap-x scroll-px-0">
       <div className="flex w-max min-w-full gap-2">
         <button
-          onClick={() => onSelect(null)}
+          onClick={onClear}
           className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-body font-medium transition-all active:scale-95 snap-start ${
-            selected === null
+            selected.length === 0
               ? "bg-primary text-primary-foreground shadow-md"
               : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
@@ -32,9 +33,9 @@ const CategoryFilter = memo(({ categories, selected, onSelect }: CategoryFilterP
         {categories.map((cat) => (
           <button
             key={cat.id}
-            onClick={() => onSelect(selected === cat.name ? null : cat.name)}
+            onClick={() => onToggle(cat.name)}
             className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-body font-medium transition-all active:scale-95 snap-start ${
-              selected === cat.name
+              selected.includes(cat.name)
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}

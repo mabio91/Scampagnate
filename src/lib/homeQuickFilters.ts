@@ -69,5 +69,5 @@ export const matchesHomeQuickFilter = (event: EventWithDetails, filter: QuickFil
   }
 };
 
-export const matchesAllHomeQuickFilters = (event: EventWithDetails, filters: QuickFilterType[]) =>
-  filters.every((filter) => matchesHomeQuickFilter(event, filter));
+export const matchesAnyHomeQuickFilter = (event: EventWithDetails, filters: QuickFilterType[]) =>
+  filters.length === 0 || filters.some((filter) => matchesHomeQuickFilter(event, filter));

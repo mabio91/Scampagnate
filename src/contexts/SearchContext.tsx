@@ -9,8 +9,9 @@ interface SearchContextType {
   openSearch: () => void;
   closeSearch: () => void;
   // Persisted filter state
-  selectedCategory: string | null;
-  setSelectedCategory: (cat: string | null) => void;
+  selectedCategories: string[];
+  setSelectedCategories: (cats: string[]) => void;
+  toggleCategoryFilter: (cat: string) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   dateFilter: Date | undefined;
@@ -30,8 +31,9 @@ const SearchContext = createContext<SearchContextType>({
   toggleSearch: () => {},
   openSearch: () => {},
   closeSearch: () => {},
-  selectedCategory: null,
-  setSelectedCategory: () => {},
+  selectedCategories: [],
+  setSelectedCategories: () => {},
+  toggleCategoryFilter: () => {},
   searchQuery: "",
   setSearchQuery: () => {},
   dateFilter: undefined,
@@ -50,7 +52,7 @@ export const useSearch = () => useContext(SearchContext);
 
 export const SearchProvider = ({ children }: { children: ReactNode }) => {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
@@ -61,11 +63,15 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     setQuickFilters(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
   }, []);
 
+  const toggleCategoryFilter = useCallback((cat: string) => {
+    setSelectedCategories(prev => prev.includes(cat) ? prev.filter(x => x !== cat) : [...prev, cat]);
+  }, []);
+
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
     setDateFilter(undefined);
     setPriceFilter("all");
-    setSelectedCategory(null);
+    setSelectedCategories([]);
     setQuickFilters([]);
     setShowFilters(false);
   }, []);
@@ -82,15 +88,16 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     setSearchOpen(false);
   }, []);
 
-  const hasActiveFilters = !!(searchQuery || dateFilter || priceFilter !== "all" || quickFilters.length > 0);
+  const hasActiveFilters = !!(searchQuery || dateFilter || priceFilter !== "all" || selectedCategories.length > 0 || quickFilters.length > 0);
 
   const value = useMemo(() => ({
     searchOpen,
     toggleSearch,
     openSearch,
     closeSearch,
-    selectedCategory,
-    setSelectedCategory,
+    selectedCategories,
+    setSelectedCategories,
+    toggleCategoryFilter,
     searchQuery,
     setSearchQuery,
     dateFilter,
@@ -108,11 +115,12 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     toggleSearch,
     openSearch,
     closeSearch,
-    selectedCategory,
+    selectedCategories,
     searchQuery,
     dateFilter,
     priceFilter,
     quickFilters,
+    toggleCategoryFilter,
     toggleQuickFilter,
     showFilters,
     clearAllFilters,

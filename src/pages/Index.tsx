@@ -27,14 +27,14 @@ import { UI_LABELS } from "@/lib/labels";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
 import { isEventUpcomingByDate } from "@/lib/eventDates";
-import { matchesAllHomeQuickFilters } from "@/lib/homeQuickFilters";
+import { matchesAnyHomeQuickFilter } from "@/lib/homeQuickFilters";
 
 const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
 
 const Index = () => {
   const {
     searchOpen,
-    selectedCategory, setSelectedCategory,
+    selectedCategories, setSelectedCategories, toggleCategoryFilter,
     searchQuery, setSearchQuery,
     dateFilter, setDateFilter,
     priceFilter, setPriceFilter,
@@ -137,7 +137,7 @@ const Index = () => {
     }
   }, [searchOpen, setSearchQuery, setDateFilter, setPriceFilter, setShowFilters]);
 
-  const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
+  const { data: events, isLoading, isFetching } = useEvents(selectedCategories);
   const { data: categories } = useCategories();
   const { data: discountMap } = useActiveDiscounts();
 
@@ -147,8 +147,6 @@ const Index = () => {
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
-
-  const hasSearchQuery = normalizeSearchText(searchQuery).length > 0;
 
   // All upcoming events that can be shown publicly.
   const allUpcoming = useMemo(() => {
@@ -205,7 +203,7 @@ const Index = () => {
     if (priceFilter === "paid") filtered = filtered.filter(e => Number(e.price) > 0);
 
     if (quickFilters.length > 0) {
-      filtered = filtered.filter(e => matchesAllHomeQuickFilters(e, quickFilters));
+      filtered = filtered.filter(e => matchesAnyHomeQuickFilter(e, quickFilters));
     }
 
     return filtered;
@@ -337,15 +335,16 @@ const Index = () => {
             {/* Category filters */}
             <CategoryFilter
               categories={categories || []}
-              selected={selectedCategory}
-              onSelect={setSelectedCategory}
+              selected={selectedCategories}
+              onToggle={toggleCategoryFilter}
+              onClear={() => setSelectedCategories([])}
             />
 
             {/* Quick filters */}
             <QuickFilters active={quickFilters} onToggle={toggleQuickFilter} />
 
             {/* Personalized recommendations */}
-            {user && recommended.length > 0 && !hasSearchQuery && (
+            {user && recommended.length > 0 && !hasActiveFilters && (
               <div className="mt-4">
                 <RecommendedSection events={recommended} registeredEventIds={userRegisteredEventIds} />
               </div>

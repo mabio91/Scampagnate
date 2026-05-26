@@ -85,25 +85,34 @@ const PRICE_OPTION_SELECT =
   "id, name, price, sort_order, original_price, eligible_group, is_promotional, promo_start, promo_end, payment_type, deposit_amount, balance_amount, balance_payment_mode, has_dedicated_spots, dedicated_spots, spots_taken, waitlist_enabled";
 const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
 
-export const useEvents = (categoryName?: string | null) => {
+export const useEvents = (categoryNames?: string | string[] | null) => {
   const { user, isOrganizer, isAdmin } = useAuth();
+  const selectedCategoryNames = Array.isArray(categoryNames)
+    ? categoryNames
+    : categoryNames
+      ? [categoryNames]
+      : [];
+
   return useQuery({
-    queryKey: ["events", categoryName, user?.id, isOrganizer, isAdmin],
+    queryKey: ["events", selectedCategoryNames, user?.id, isOrganizer, isAdmin],
     queryFn: async () => {
       let query = supabase
         .from("events")
         .select(`id, title, date, time, location, location_label, category_id, status, price, deposit, payment_type, balance_payment_mode, image_url, difficulty, distance, elevation, duration, spots_total, spots_taken, featured, organizer_id, organizer_name, description, cancellation_policy, equipment_list, additional_fields, visibility, gallery_images, event_categories(name, icon), event_meeting_points(id, name, location, time, notes), event_price_options(${PRICE_OPTION_SELECT})`)
         .order("date", { ascending: true });
 
-      if (categoryName) {
-        const { data: cat } = await supabase
+      if (selectedCategoryNames.length > 0) {
+        const { data: cats, error: categoryError } = await supabase
           .from("event_categories")
           .select("id")
-          .eq("name", categoryName)
-          .single();
-        if (cat) {
-          query = query.eq("category_id", cat.id);
+          .in("name", selectedCategoryNames);
+        if (categoryError) throw categoryError;
+
+        const categoryIds = (cats || []).map((cat) => cat.id);
+        if (categoryIds.length === 0) {
+          return [];
         }
+        query = query.in("category_id", categoryIds);
       }
 
       // Visibility filtering

@@ -120,7 +120,7 @@ const ProfileMissions = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setSelectedCategory, toggleQuickFilter, clearAllFilters } = useSearch();
+  const { setSelectedCategories, toggleQuickFilter, clearAllFilters } = useSearch();
   const { data: userMissions = [], isFetched: userMissionsFetched } = useUserMissions(user?.id);
   const { data: activeMissions = [], isFetched: activeMissionsFetched } = useActiveMissions();
   const [extraActiveOpen, setExtraActiveOpen] = useState(false);
@@ -233,7 +233,7 @@ const ProfileMissions = () => {
     clearAllFilters();
     const filter = getFilterForMission(mission);
     if (filter.category) {
-      setSelectedCategory(filter.category);
+      setSelectedCategories([filter.category]);
     }
     if (filter.quickFilter) {
       toggleQuickFilter(filter.quickFilter as any);
