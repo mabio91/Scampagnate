@@ -211,13 +211,27 @@ export const useEventParticipants = (eventId: string) => {
         .map((r: any) => r.user_id)
         .filter(Boolean);
       
-      // Fetch public profile data via security definer function (bypasses RLS safely)
-      const profilesMap: Record<string, { first_name: string; avatar_url: string | null; last_name_initial: string | null }> = {};
+      // Fetch public participant data via security definer function (bypasses RLS safely)
+      const profilesMap: Record<string, {
+        first_name: string;
+        avatar_url: string | null;
+        last_name_initial: string | null;
+        age: number | null;
+        total_points: number;
+      }> = {};
       if (userIds.length > 0) {
-        const { data: publicProfiles } = await supabase.rpc("get_public_profiles", { profile_ids: userIds });
-        if (publicProfiles) {
-          for (const p of publicProfiles) {
-            profilesMap[p.id] = { first_name: p.first_name, avatar_url: p.avatar_url, last_name_initial: (p as any).last_name_initial || null };
+        const { data: eventPeople, error: eventPeopleError } = await supabase.rpc("get_event_people_public", { p_event_id: eventId });
+        if (eventPeopleError) throw eventPeopleError;
+        if (eventPeople) {
+          for (const person of eventPeople) {
+            if (person.role !== "participant" || !person.user_id) continue;
+            profilesMap[person.user_id] = {
+              first_name: person.first_name,
+              avatar_url: person.avatar_url,
+              last_name_initial: person.last_name_initial || null,
+              age: person.age ?? null,
+              total_points: person.total_points ?? 0,
+            };
           }
         }
       }
@@ -256,8 +270,8 @@ export const useEventParticipants = (eventId: string) => {
         return {
           ...r,
           profiles: isManual
-            ? { first_name: manualName, avatar_url: null, last_name_initial: null }
-            : profilesMap[r.user_id] || { first_name: "?", avatar_url: null },
+            ? { first_name: manualName, avatar_url: null, last_name_initial: null, age: null, total_points: 0 }
+            : profilesMap[r.user_id] || { first_name: "?", avatar_url: null, last_name_initial: null, age: null, total_points: 0 },
           badges: isManual ? [] : badgesMap[r.user_id] || [],
           is_manual: isManual,
           manual_level: manualLevel,

@@ -140,6 +140,17 @@ function calculateAge(birthDate: string | null | undefined): number | null {
   return age;
 }
 
+function formatLastNameInitial(lastNameInitial: string | null | undefined): string | null {
+  const initial = lastNameInitial?.trim().replace(/\.$/, "").charAt(0);
+  return initial ? `${initial.toUpperCase()}.` : null;
+}
+
+function formatParticipantDisplayName(firstName: string | null | undefined, lastNameInitial: string | null | undefined) {
+  const baseName = firstName?.trim() || "Utente";
+  const formattedInitial = formatLastNameInitial(lastNameInitial);
+  return formattedInitial ? `${baseName} ${formattedInitial}` : baseName;
+}
+
 // --- Level badge pill ---
 const LevelBadgePill = ({ level }: { level: CommunityLevel | null | undefined }) => {
   if (!level) return null;
@@ -161,21 +172,26 @@ const LevelBadgePill = ({ level }: { level: CommunityLevel | null | undefined })
 const ParticipantRow = ({
   avatarUrl,
   firstName,
+  lastNameInitial,
   points,
   level,
   age,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
+  lastNameInitial?: string | null;
   points: number;
   level?: CommunityLevel | null;
   age?: number | null;
 }) => {
+  const displayName = formatParticipantDisplayName(firstName, lastNameInitial);
+
   return (
     <div className="flex items-center gap-3 py-3">
       <LevelAvatar
         avatarUrl={avatarUrl}
         firstName={firstName}
+        lastName={lastNameInitial || undefined}
         points={points}
         level={level}
         size="md"
@@ -183,7 +199,7 @@ const ParticipantRow = ({
       />
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <p className="text-sm font-body font-semibold text-foreground truncate">
-          {firstName || "Utente"}{age != null ? `, ${age}` : ""}
+          {displayName}{age != null ? `, ${age}` : ""}
         </p>
         <LevelBadgePill level={level} />
       </div>
@@ -195,6 +211,7 @@ const ParticipantRow = ({
 const AdminParticipantRow = ({
   avatarUrl,
   firstName,
+  lastNameInitial,
   points,
   level,
   fitScore,
@@ -210,6 +227,7 @@ const AdminParticipantRow = ({
 }: {
   avatarUrl?: string | null;
   firstName?: string;
+  lastNameInitial?: string | null;
   points: number;
   level?: CommunityLevel | null;
   fitScore: FitScoreResult | null;
@@ -223,11 +241,14 @@ const AdminParticipantRow = ({
   emergencyMedicationNotes?: string | null;
   healthHelpNotes?: string | null;
 }) => {
+  const displayName = formatParticipantDisplayName(firstName, lastNameInitial);
+
   return (
     <div className="flex items-center gap-3 py-3">
       <LevelAvatar
         avatarUrl={avatarUrl}
         firstName={firstName}
+        lastName={lastNameInitial || undefined}
         points={points}
         level={level}
         size="md"
@@ -236,7 +257,7 @@ const AdminParticipantRow = ({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-body font-semibold text-foreground truncate">
-            {firstName || "Utente"}
+            {displayName}
           </p>
           <LevelBadgePill level={level} />
         </div>
@@ -333,20 +354,6 @@ const EventParticipants = () => {
       .map((p: any) => p.user_id))]
   ), [visibleParticipants]);
 
-  const { data: publicParticipantProfiles } = useQuery({
-    queryKey: ["participant-public-profiles", participantIds],
-    queryFn: async () => {
-      if (participantIds.length === 0) return {};
-      const { data } = await supabase.rpc("get_public_profiles", { profile_ids: participantIds });
-      const map: Record<string, any> = {};
-      ((data as any[]) || []).forEach((profile: any) => {
-        map[profile.id] = profile;
-      });
-      return map;
-    },
-    enabled: participantIds.length > 0,
-  });
-  
   // Fetch full profiles (for fit score calc + points)
   const { data: fullProfiles } = useQuery({
     queryKey: ["participant-full-profiles", id, participantIds],
@@ -540,7 +547,7 @@ const EventParticipants = () => {
             <div>
               {visibleParticipants.map((p: any) => {
                 const pProfile = fullProfiles?.[p.user_id];
-                const points = pProfile?.total_points ?? publicParticipantProfiles?.[p.user_id]?.total_points ?? 0;
+                const points = pProfile?.total_points ?? p.profiles?.total_points ?? 0;
 
                 if (isOrgOrAdmin) {
                   const fitScore = pProfile
@@ -552,6 +559,7 @@ const EventParticipants = () => {
                       key={p.id}
                       avatarUrl={p.profiles?.avatar_url}
                       firstName={p.profiles?.first_name}
+                      lastNameInitial={p.profiles?.last_name_initial}
                       points={points}
                       fitScore={fitScore}
                       reliabilityLabel={getReliabilityLabel(p.user_id)}
@@ -559,6 +567,7 @@ const EventParticipants = () => {
                       isManual={p.is_manual}
 	                      manualLevel={p.manual_level}
 	                      birthDate={pProfile?.birth_date}
+                      age={p.profiles?.age ?? null}
 	                      instagramHandle={pProfile?.instagram_handle}
 	                      healthStatus={pProfile?.health_safety_status}
 	                      healthNotes={pProfile?.health_safety_notes}
@@ -574,10 +583,12 @@ const EventParticipants = () => {
                     key={p.id}
                     avatarUrl={p.profiles?.avatar_url}
                     firstName={p.profiles?.first_name}
+                    lastNameInitial={p.profiles?.last_name_initial}
                     points={points}
                     isManual={p.is_manual}
                     manualLevel={p.manual_level}
                     birthDate={p.is_manual ? null : pProfile?.birth_date}
+                    age={p.profiles?.age ?? null}
                   />
                 );
               })}
@@ -598,17 +609,21 @@ const EventParticipants = () => {
 const ParticipantRowWithLevel = ({
   avatarUrl,
   firstName,
+  lastNameInitial,
   points,
   isManual,
   manualLevel,
   birthDate,
+  age,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
+  lastNameInitial?: string | null;
   points: number;
   isManual?: boolean;
   manualLevel?: string | null;
   birthDate?: string | null;
+  age?: number | null;
 }) => {
   const { data: levelData } = useCommunityLevel(points);
   
@@ -628,9 +643,10 @@ const ParticipantRowWithLevel = ({
     <ParticipantRow
       avatarUrl={avatarUrl}
       firstName={firstName}
+      lastNameInitial={isManual ? null : lastNameInitial}
       points={points}
       level={finalLevel}
-      age={calculateAge(birthDate)}
+      age={age ?? calculateAge(birthDate)}
     />
   );
 };
@@ -639,6 +655,7 @@ const ParticipantRowWithLevel = ({
 const AdminParticipantRowWithLevel = ({
   avatarUrl,
   firstName,
+  lastNameInitial,
   points,
   fitScore,
   reliabilityLabel,
@@ -646,6 +663,7 @@ const AdminParticipantRowWithLevel = ({
   isManual,
 	  manualLevel,
 	  birthDate,
+  age,
 	  instagramHandle,
 	  healthStatus,
 	  healthNotes,
@@ -655,6 +673,7 @@ const AdminParticipantRowWithLevel = ({
 	}: {
   avatarUrl?: string | null;
   firstName?: string;
+  lastNameInitial?: string | null;
   points: number;
   fitScore: FitScoreResult | null;
   reliabilityLabel: string;
@@ -662,6 +681,7 @@ const AdminParticipantRowWithLevel = ({
   isManual?: boolean;
 	  manualLevel?: string | null;
 	  birthDate?: string | null;
+  age?: number | null;
 	  instagramHandle?: string | null;
 	  healthStatus?: string | null;
 	  healthNotes?: string | null;
@@ -683,16 +703,19 @@ const AdminParticipantRowWithLevel = ({
     };
   }
 
+  const resolvedAge = calculateAge(birthDate) ?? age ?? null;
+
   return (
     <AdminParticipantRow
       avatarUrl={avatarUrl}
       firstName={firstName}
+      lastNameInitial={isManual ? null : lastNameInitial}
       points={points}
       level={finalLevel}
       fitScore={fitScore}
       reliabilityLabel={reliabilityLabel}
 	      completedEvents={completedEvents}
-	      age={calculateAge(birthDate)}
+	      age={resolvedAge}
 	      instagramHandle={isManual ? null : instagramHandle}
 	      healthStatus={isManual ? null : healthStatus}
 	      healthNotes={isManual ? null : healthNotes}
