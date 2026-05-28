@@ -1,16 +1,27 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import {
-  hasCompleteMembershipData,
-  hasCurrentYearActiveMembership,
-} from "../_shared/membership.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const hasCompleteMembershipData = (profile: Record<string, unknown> | null) =>
+  !!profile &&
+  [
+    "birth_date",
+    "sex",
+    "birth_place",
+    "province_of_birth",
+    "residential_address",
+    "city_of_residence",
+    "province_of_residence",
+  ].every((key) => {
+    const value = profile[key];
+    return typeof value === "string" ? value.trim().length > 0 : value != null;
+  });
 
 const isAllowedReturnUrl = (value: unknown, allowedHosts: string[]) => {
   if (typeof value !== "string" || value.trim().length === 0) return false;
@@ -68,7 +79,7 @@ serve(async (req) => {
     // Check if already an active member FOR THE CURRENT YEAR
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("membership_status, membership_registration_date, membership_year, birth_date, sex, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
+      .select("membership_status, membership_registration_date, birth_date, sex, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -87,11 +98,16 @@ serve(async (req) => {
       );
     }
 
-    if (hasCurrentYearActiveMembership(profile)) {
-      return new Response(
-        JSON.stringify({ error: "Your membership is still active" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
+    if (profile?.membership_status === "Active" && profile?.membership_registration_date) {
+      const regDate = new Date(profile.membership_registration_date);
+      const year = regDate.getFullYear();
+      const expiry = new Date(year, 11, 31, 23, 59, 59, 999);
+      if (new Date() < expiry) {
+        return new Response(
+          JSON.stringify({ error: "Your membership is still active" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
     }
 
     const { eventId, returnUrlBase, cancelUrlBase } = await req.json();

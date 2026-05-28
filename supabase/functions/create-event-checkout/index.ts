@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import {
-  hasCurrentYearActiveMembership,
-  shouldRequireMembershipDataForEventCheckout,
-} from "../_shared/membership.ts";
 
 const SERVICE_FEE_EUR = 1;
 
@@ -13,6 +9,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const hasCompleteMembershipData = (profile: Record<string, unknown> | null) =>
+  !!profile &&
+  [
+    "birth_date",
+    "sex",
+    "birth_place",
+    "province_of_birth",
+    "residential_address",
+    "city_of_residence",
+    "province_of_residence",
+  ].every((key) => {
+    const value = profile[key];
+    return typeof value === "string" ? value.trim().length > 0 : value != null;
+  });
 
 const isAllowedReturnUrl = (value: unknown, allowedHosts: string[]) => {
   if (typeof value !== "string" || value.trim().length === 0) return false;
@@ -207,15 +218,29 @@ serve(async (req) => {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("membership_status, membership_registration_date, membership_year, birth_date, sex, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
+      .select("membership_status, membership_registration_date, birth_date, sex, birth_place, province_of_birth, residential_address, city_of_residence, province_of_residence")
       .eq("id", userId)
       .maybeSingle();
 
     if (profileError) throw new Error("Unable to verify membership status");
 
-    const hasActiveMembership = hasCurrentYearActiveMembership(profile);
+    const hasActiveMembership = (() => {
+      if (profile?.membership_status !== "Active") return false;
+      if (!profile?.membership_registration_date) return true;
 
-    if (shouldRequireMembershipDataForEventCheckout(profile)) {
+      const regDate = new Date(profile.membership_registration_date);
+      if (Number.isNaN(regDate.getTime())) return true;
+
+      // Calendar year expiry: Dec 31 of the registration year
+      const year = regDate.getFullYear();
+      const expiry = new Date(year, 11, 31, 23, 59, 59, 999);
+      return new Date() < expiry;
+    })();
+
+    const eventRequiresMembership = Array.isArray(event.access_rules?.rules) &&
+      event.access_rules.rules.some((rule: { type?: string }) => rule.type === "require_membership");
+
+    if ((eventRequiresMembership || !hasActiveMembership) && !hasCompleteMembershipData(profile)) {
       return new Response(
         JSON.stringify({ error: "Completa i dati per il tesseramento prima di procedere." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
