@@ -10,7 +10,6 @@ import RecommendedSection from "@/components/events/RecommendedSection";
 import ProposalSuggestionCard from "@/components/ProposalSuggestionCard";
 import EmptyState from "@/components/EmptyState";
 import { useEvents, useCategories } from "@/hooks/useEvents";
-import { useActiveDiscounts } from "@/hooks/useActiveDiscounts";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -139,7 +138,6 @@ const Index = () => {
 
   const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
-  const { data: discountMap } = useActiveDiscounts();
 
   const normalizeSearchText = (value: string | null | undefined) =>
     (value || "")
@@ -365,10 +363,9 @@ const Index = () => {
               <div className={`transition-opacity duration-200 ${isFetching ? "opacity-50" : "opacity-100"}`}>
                 {filteredEvents.length > 0 ? (
                   <div className="space-y-2.5">
-                    {filteredEvents.map((event, i) => {
-                      const discount = discountMap?.[event.id] || discountMap?.["__all__"] || null;
-                      return <EventCard key={event.id} event={event} index={i} discount={discount} isUserRegistered={!!userRegisteredEventIds?.has(event.id)} />;
-                    })}
+                    {filteredEvents.map((event, i) => (
+                      <EventCard key={event.id} event={event} index={i} isUserRegistered={!!userRegisteredEventIds?.has(event.id)} />
+                    ))}
                   </div>
                 ) : (
                   /* Empty states */

@@ -12,6 +12,7 @@ import { getEventHomeCardImageSrc } from "@/lib/eventImages";
 import {
   canOptionJoinWaitlist,
   getEventFillRatio,
+  hasActivePromotionalPriceOption,
   hasEventLastSpots,
   isEventSoldOut,
   isOptionBookable,
@@ -19,12 +20,6 @@ import {
   type PriceOptionLike,
 } from "@/lib/priceOptions";
 import { isEventPastByDate } from "@/lib/eventDates";
-
-export interface EventDiscount {
-  discount_type: string;
-  discount_value: number;
-  code: string;
-}
 
 type CardStatus = "attended" | "joined" | "spot_available" | "coming_soon" | "waitlist" | "open" | "closed";
 
@@ -98,14 +93,12 @@ function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInf
 const EventCard = memo(({
   event,
   index,
-  discount,
   showCompatibility,
   isUserRegistered = false,
   userRegistration = null,
 }: {
   event: EventWithDetails;
   index: number;
-  discount?: EventDiscount | null;
   showCompatibility?: boolean;
   isUserRegistered?: boolean;
   userRegistration?: UserRegistrationInfo;
@@ -124,7 +117,8 @@ const EventCard = memo(({
   );
   const statusConfig = STATUS_CONFIG[cardStatus];
 
-  const hasPromo = !!discount;
+  const priceOptions = (event as EventCardDetails).price_options || (event as EventCardDetails).event_price_options || [];
+  const hasPromo = hasActivePromotionalPriceOption(priceOptions);
 
   const formattedDate = useMemo(() => {
     const d = new Date(event.date);

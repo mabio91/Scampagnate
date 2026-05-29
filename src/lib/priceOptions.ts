@@ -1,3 +1,5 @@
+import { isWithinPromoWindow } from "@/lib/promoPricing";
+
 export type PriceOptionPaymentType = "free" | "paid" | "deposit" | "location";
 export type BalancePaymentMode = "online" | "on_site";
 
@@ -142,6 +144,14 @@ export const hasEventLastSpots = (event: EventPricingLike) =>
   && getEventFillRatio(event) >= LAST_SPOTS_FILL_RATIO
   && getEventRemainingSpots(event) > 0
   && !isEventSoldOut(event);
+
+export const hasActivePromotionalPriceOption = (
+  options: PriceOptionLike[] | null | undefined,
+  now = new Date(),
+) =>
+  (options || []).some((option) =>
+    Boolean(option.is_promotional) && isWithinPromoWindow(option.promo_start, option.promo_end, now)
+  );
 
 export const isWaitlistEnabledForEvent = (event: EventPricingLike) =>
   event.waiting_list_enabled === true

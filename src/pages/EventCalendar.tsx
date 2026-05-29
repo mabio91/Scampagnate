@@ -8,7 +8,6 @@ import EventCard from "@/components/events/EventCard";
 import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useActiveDiscounts } from "@/hooks/useActiveDiscounts";
 import { useCategories, useEvents } from "@/hooks/useEvents";
 import { cn } from "@/lib/utils";
 import { isEventUpcomingByDate } from "@/lib/eventDates";
@@ -23,7 +22,6 @@ const EventCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const { data: events, isLoading, isFetching } = useEvents(selectedCategory);
   const { data: categories } = useCategories();
-  const { data: discountMap } = useActiveDiscounts();
 
   const visibleEvents = useMemo(() => {
     if (!events) return [];
@@ -151,7 +149,6 @@ const EventCalendar = () => {
                   key={event.id}
                   event={event}
                   index={index}
-                  discount={discountMap?.[event.id] || discountMap?.["__all__"] || null}
                 />
               ))}
             </div>

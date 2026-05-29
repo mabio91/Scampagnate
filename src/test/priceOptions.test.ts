@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canOptionJoinWaitlist,
+  hasActivePromotionalPriceOption,
   hasEventLastSpots,
   isEventSoldOut,
   isOptionBookable,
@@ -72,5 +73,18 @@ describe("event availability helpers", () => {
     };
 
     expect(canOptionJoinWaitlist(option, event)).toBe(false);
+  });
+
+  it("shows promo only when a promotional price option is active", () => {
+    const now = new Date("2026-05-20T10:00:00.000Z");
+
+    expect(hasActivePromotionalPriceOption([
+      { is_promotional: false, promo_start: null, promo_end: null },
+      { is_promotional: true, promo_start: "2026-05-21T00:00:00.000Z", promo_end: null },
+    ], now)).toBe(false);
+
+    expect(hasActivePromotionalPriceOption([
+      { is_promotional: true, promo_start: "2026-05-19T00:00:00.000Z", promo_end: "2026-05-21T00:00:00.000Z" },
+    ], now)).toBe(true);
   });
 });
