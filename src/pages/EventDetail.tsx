@@ -1011,16 +1011,16 @@ const getCTALabel = () => {
         <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
           {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
-            {event.difficulty && (
-              <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center hover:opacity-90 transition-opacity">
-                <DifficultyBadge difficulty={event.difficulty} />
-              </button>
-            )}
             {event.category && (
               <EventBadgePill className="bg-muted text-muted-foreground">
                 {event.category.icon && <span className="flex items-center justify-center shrink-0"><DynamicIcon value={event.category.icon} size={14} /></span>}
                 {event.category.name}
               </EventBadgePill>
+            )}
+            {event.difficulty && (
+              <button onClick={() => setShowDifficultyGuide(true)} className="flex items-center hover:opacity-90 transition-opacity">
+                <DifficultyBadge difficulty={event.difficulty} />
+              </button>
             )}
             {eventBadges.map((b) => (
               <EventBadgePill key={b.key} className={`font-bold shadow-sm ${b.className}`}>
