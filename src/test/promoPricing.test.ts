@@ -37,7 +37,7 @@ describe("promo pricing helpers", () => {
 
     expect(formatPromoCountdownLabel("2026-05-25T10:30:00.000Z", now)).toBe("scade tra 2h 30m");
     expect(formatPromoCountdownLabel("2026-05-26T10:30:00.000Z", now)).toBe("scade tra 1g 2h");
-    expect(getPromoBadgeLabel("2026-05-25T10:30:00.000Z", now)).toBe("Promo · scade tra 2h 30m");
+    expect(getPromoBadgeLabel("2026-05-25T10:30:00.000Z", now)).toBe("scade tra 2h 30m");
   });
 
   it("shows expired promo copy when the end has passed", () => {

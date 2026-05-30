@@ -128,6 +128,5 @@ export const getPromoBadgeLabel = (
 ) => {
   const countdownLabel = formatPromoCountdownLabel(end, now);
   if (!countdownLabel) return "Promo";
-  if (countdownLabel === "Promo scaduta") return countdownLabel;
-  return `Promo · ${countdownLabel}`;
+  return countdownLabel;
 };
