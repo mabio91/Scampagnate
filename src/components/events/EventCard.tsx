@@ -196,6 +196,11 @@ const EventCard = memo(({
                     showIcon={false}
                   />
                 )}
+                {!isSoldOut && hasPromo && (
+                  <EventBadgePill className="shrink-0 border border-destructive/30 bg-destructive/15 text-destructive">
+                    {UI_LABELS.badgePromo}
+                  </EventBadgePill>
+                )}
               </div>
 
               {useCompactCardLayout && showPublicCapacity && (
@@ -233,11 +238,6 @@ const EventCard = memo(({
             />
             {isSoldOut && (
               <SoldOutOverlay size="card" />
-            )}
-            {!isSoldOut && hasPromo && (
-              <span className="absolute left-1.5 top-1.5 rounded-full bg-amber-500/95 px-1.5 py-0.5 text-[9px] font-body font-bold uppercase leading-none tracking-wide text-white shadow-sm sm:left-2 sm:top-2 sm:text-[10px]">
-                Promo
-              </span>
             )}
           </div>
         </div>

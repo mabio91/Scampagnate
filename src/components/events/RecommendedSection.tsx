@@ -8,7 +8,7 @@ import { EventBadgePill } from "./EventBadgePill";
 import { UI_LABELS } from "@/lib/labels";
 import { EventWithDetails } from "@/hooks/useEvents";
 import SoldOutOverlay from "./SoldOutOverlay";
-import { isEventSoldOut, shouldShowPublicCapacity } from "@/lib/priceOptions";
+import { hasActivePromotionalPriceOption, isEventSoldOut, shouldShowPublicCapacity, type PriceOptionLike } from "@/lib/priceOptions";
 
 interface Props {
   events: Array<{ event: EventWithDetails; whyText: string; score: number }>;
@@ -16,6 +16,7 @@ interface Props {
 }
 
 type RecommendedEventDetails = EventWithDetails & {
+  event_price_options?: PriceOptionLike[];
   location_label?: string | null;
 };
 
@@ -37,6 +38,8 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
   const formattedTime = event.time?.slice(0, 5) || "";
   const locationLabel = (event as RecommendedEventDetails).location_label || event.location;
   const isSoldOut = isEventSoldOut(event);
+  const priceOptions = (event as RecommendedEventDetails).price_options || (event as RecommendedEventDetails).event_price_options || [];
+  const hasPromo = hasActivePromotionalPriceOption(priceOptions);
   const showPublicCapacity = shouldShowPublicCapacity(event);
   const eventStatus = String(event.status || "");
   const isClosedStatus = ["closed", "cancelled", "past", "completed", "rescheduled"].includes(eventStatus);
@@ -73,7 +76,11 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
             className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${isSoldOut ? "grayscale" : ""}`}
           />
           <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between p-3">
-            {event.featured ? (
+            {hasPromo && !isSoldOut ? (
+              <EventBadgePill className="border border-destructive/30 bg-destructive/15 text-destructive">
+                {UI_LABELS.badgePromo}
+              </EventBadgePill>
+            ) : event.featured ? (
               <EventBadgePill className="bg-primary uppercase tracking-[0.08em] text-primary-foreground">
                 Nuovo
               </EventBadgePill>
