@@ -1358,30 +1358,37 @@ const getCTALabel = () => {
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-3">
                 <div className="space-y-2">
-                  {event.meeting_points.map((mp: any) => (
-                    <button
-                      key={mp.id}
-                      onClick={() => { setNavigationLocation(mp.location); setShowNavigationModal(true); }}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 w-full text-left hover:bg-muted transition-colors group"
-                    >
-                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center">
-                        <MapPin className="h-4 w-4 text-secondary" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-body font-semibold text-foreground truncate">{mp.name}</p>
-                        <p className="text-xs font-body text-muted-foreground truncate">{mp.location}</p>
-                        {mp.notes && (
-                          <p className="text-xs font-body text-muted-foreground/90 mt-0.5 break-words">
-                            {mp.notes}
-                          </p>
+                  {event.meeting_points.map((mp) => {
+                    const note = mp.notes?.trim() ?? "";
+                    const time = mp.time?.slice(0, 5) ?? "";
+
+                    return (
+                      <button
+                        key={mp.id}
+                        onClick={() => { setNavigationLocation(mp.location); setShowNavigationModal(true); }}
+                        className="flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl py-2 text-left transition-colors hover:bg-muted/30 group"
+                      >
+                        <div className="flex-shrink-0 w-9 h-9 rounded-[11px] bg-secondary/20 flex items-center justify-center">
+                          <MapPin className="h-4 w-4 text-secondary" />
+                        </div>
+                        <div className="min-w-0 min-h-[3.25rem] flex flex-1 flex-col justify-center">
+                          <p className="truncate text-sm font-body font-semibold text-foreground">{mp.name || "Ritrovo"}</p>
+                          <p className="truncate text-xs font-body text-muted-foreground">{mp.location}</p>
+                          {note && (
+                            <p className="truncate text-xs font-body text-muted-foreground/90">
+                              {note}
+                            </p>
+                          )}
+                        </div>
+                        {time && (
+                          <div className="flex-shrink-0 text-right">
+                            <p className="text-base font-body font-bold text-foreground tabular-nums">{time}</p>
+                          </div>
                         )}
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <p className="text-sm font-body font-bold text-foreground">{mp.time?.slice(0, 5)}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </button>
-                  ))}
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </button>
+                    );
+                  })}
                 </div>
               </CollapsibleContent>
             </Collapsible>
