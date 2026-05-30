@@ -906,8 +906,8 @@ const getCTALabel = () => {
     return items;
   };
 
-  const visibleParticipants = ((participants || []) as any[]).filter((participant) => participant.user_id !== event.organizer_id);
-  const visiblePublicAvatars = ((publicAvatars || []) as any[]).filter((participant) => participant.user_id !== event.organizer_id);
+  const visibleParticipants = ((participants || []) as any[]);
+  const visiblePublicAvatars = ((publicAvatars || []) as any[]);
 
   // remainingSpots already computed above
   const activeParticipantCount = participants ? visibleParticipants.length : (event.spots_taken || 0);

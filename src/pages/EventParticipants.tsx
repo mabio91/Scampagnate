@@ -344,9 +344,8 @@ const EventParticipants = () => {
   const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
 
   const visibleParticipants = useMemo(() => {
-    const organizerId = event?.organizer_id;
-    return (participants || []).filter((p: any) => !organizerId || p.user_id !== organizerId);
-  }, [event?.organizer_id, participants]);
+    return participants || [];
+  }, [participants]);
 
   const participantIds = useMemo(() => (
     [...new Set(visibleParticipants
@@ -402,9 +401,8 @@ const EventParticipants = () => {
   });
 
   const visiblePublicAvatars = useMemo(() => {
-    const organizerId = event?.organizer_id;
-    return ((publicAvatars || []) as any[]).filter((p: any) => !organizerId || p.user_id !== organizerId);
-  }, [event?.organizer_id, publicAvatars]);
+    return ((publicAvatars || []) as any[]);
+  }, [publicAvatars]);
 
   const totalParticipants = user && participants
     ? visibleParticipants.length
