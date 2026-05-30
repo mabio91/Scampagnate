@@ -27,7 +27,7 @@ import {
   isOptionBookable,
   type PriceOptionLike,
 } from "@/lib/priceOptions";
-import { getPromoBadgeLabel, getPromoWindowStatus, isPromoExpired } from "@/lib/promoPricing";
+import { getPromoBadgeLabel, getPromoWindowStatus } from "@/lib/promoPricing";
 import {
   MapPin, Clock, Car, CreditCard, Loader2, Tag, Lock, Sparkles, ShieldCheck,
   AlertTriangle, ChevronRight
@@ -251,13 +251,8 @@ const RegistrationCheckoutDialog = ({
   const shouldShowPromoBadge = (option: PriceOptionLike | null | undefined) => {
     if (!option?.is_promotional) return false;
     const promoStatus = getPromoWindowStatus(option.promo_start, option.promo_end, promoNow);
-    return promoStatus === "active" || promoStatus === "expired";
+    return promoStatus === "active";
   };
-
-  const getPromoBadgeClassName = (option: PriceOptionLike | null | undefined) =>
-    isPromoExpired(option?.promo_end, promoNow)
-      ? "bg-muted text-muted-foreground"
-      : "bg-destructive/10 text-destructive";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -444,7 +439,7 @@ const RegistrationCheckoutDialog = ({
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
                       {shouldShowPromoBadge(singlePriceOption) && (
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold ${getPromoBadgeClassName(singlePriceOption)}`}>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold bg-destructive/10 text-destructive">
                           {getPromoBadgeLabel(singlePriceOption.promo_end, promoNow)}
                         </span>
                       )}
@@ -498,7 +493,7 @@ const RegistrationCheckoutDialog = ({
                                   </span>
                                 )}
                                 {shouldShowPromoBadge(opt) && (
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold ${getPromoBadgeClassName(opt)}`}>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold bg-destructive/10 text-destructive">
                                     {getPromoBadgeLabel(opt.promo_end, promoNow)}
                                   </span>
                                 )}
