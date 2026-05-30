@@ -1,25 +1,11 @@
 import type { QuickFilterType } from "@/components/events/QuickFilters";
 import type { EventWithDetails } from "@/hooks/useEvents";
+import { parseEventDurationMinutes } from "@/lib/eventDates";
 import { hasEventLastSpots } from "@/lib/priceOptions";
 
-const parseLocalizedNumber = (value: string | undefined) => {
-  if (!value) return null;
-  const parsed = Number(value.replace(",", "."));
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
 export const parseDurationHours = (duration: string | null | undefined) => {
-  if (!duration) return null;
-
-  const lower = duration.trim().toLowerCase();
-  if (!lower) return null;
-
-  const days = parseLocalizedNumber(lower.match(/(\d+(?:[,.]\d+)?)\s*(?:giorn(?:o|i)?|gg|g|days?|d)\b/i)?.[1]) || 0;
-  const hours = parseLocalizedNumber(lower.match(/(\d+(?:[,.]\d+)?)\s*(?:h|ore?|hours?)\b/i)?.[1]) || 0;
-  const minutes = parseLocalizedNumber(lower.match(/(\d+(?:[,.]\d+)?)\s*(?:m|min|mins|minuti?)\b/i)?.[1]) || 0;
-  const total = days * 24 + hours + minutes / 60;
-
-  return total > 0 ? total : null;
+  const minutes = parseEventDurationMinutes(duration);
+  return minutes ? minutes / 60 : null;
 };
 
 export const getDifficultyLevel = (difficulty: string | null | undefined) => {

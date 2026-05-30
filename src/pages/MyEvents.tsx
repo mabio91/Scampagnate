@@ -37,7 +37,7 @@ import {
   isOptionBookable,
   type PriceOptionLike,
 } from "@/lib/priceOptions";
-import { isEventPastByDate, isEventUpcomingByDate } from "@/lib/eventDates";
+import { isEventPastByDateTime, isEventUpcomingByDateTime } from "@/lib/eventDates";
 
 interface AdditionalRegistrationField {
   label: string;
@@ -65,6 +65,8 @@ interface MyEventRecord extends EventPricingLike {
   title: string;
   date: string;
   time?: string | null;
+  duration?: string | null;
+  status?: string | null;
   location?: string | null;
   location_label?: string | null;
   cancellation_policy?: string | null;
@@ -237,8 +239,8 @@ const MyEvents = () => {
   }
 
   const active = (registrations as MyRegistrationRecord[] | undefined)?.filter((r) => r.status !== "cancelled") || [];
-  const upcoming = active.filter((r) => isEventUpcomingByDate(r.events?.date));
-  const past = active.filter((r) => isEventPastByDate(r.events?.date));
+  const upcoming = active.filter((r) => !!r.events && isEventUpcomingByDateTime(r.events));
+  const past = active.filter((r) => !!r.events && isEventPastByDateTime(r.events));
 
   return (
     <>
@@ -680,7 +682,7 @@ const SavedEventCard = ({ savedEvent }: { savedEvent: SavedEventRecord }) => {
   const { t, language } = useLanguage();
 
   if (!event) return null;
-  const isPast = isEventPastByDate(event.date);
+  const isPast = isEventPastByDateTime(event);
   const displayLocation = event.location_label || event.location;
 
   const handleUnsave = async (e: React.MouseEvent) => {

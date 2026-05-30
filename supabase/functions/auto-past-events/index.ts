@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  AUTO_COMPLETE_EVENT_STATUSES,
+  isEventComplete,
+  toRomeDateString,
+} from "./event-completion.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,25 +21,48 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get current date in Europe/Rome timezone
     const now = new Date();
-    const romeDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' }); // YYYY-MM-DD
+    const romeDateStr = toRomeDateString(now);
 
-    // Mark elapsed public/active events as completed. Do not overwrite hidden,
-    // unpublished, cancelled, or rescheduled organizer/admin states.
-    const { data, error } = await supabase
+    const { data: candidateEvents, error: fetchError } = await supabase
       .from('events')
-      .update({ status: 'completed' })
-      .lt('date', romeDateStr)
-      .in('status', ['available', 'published', 'open', 'full', 'closed'])
-      .select('id, title');
+      .select('id, title, date, time, duration, status')
+      .lte('date', romeDateStr)
+      .in('status', AUTO_COMPLETE_EVENT_STATUSES);
 
-    if (error) {
-      console.error('Error updating past events:', error);
-      return new Response(JSON.stringify({ error: error.message }), {
+    if (fetchError) {
+      console.error('Error fetching candidate events:', fetchError);
+      return new Response(JSON.stringify({ error: fetchError.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    const completedEventIds = (candidateEvents || [])
+      .filter((event) => isEventComplete(event, now))
+      .map((event) => event.id);
+
+    let data: Array<{ id: string; title: string }> = [];
+
+    // Mark elapsed public/active events as completed. Do not overwrite draft,
+    // upcoming, cancelled, or rescheduled organizer/admin states.
+    if (completedEventIds.length > 0) {
+      const { data: updatedEvents, error } = await supabase
+        .from('events')
+        .update({ status: 'completed' })
+        .in('id', completedEventIds)
+        .in('status', AUTO_COMPLETE_EVENT_STATUSES)
+        .select('id, title');
+
+      if (error) {
+        console.error('Error updating past events:', error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      data = updatedEvents || [];
     }
 
     const count = data?.length || 0;
@@ -55,7 +83,13 @@ serve(async (req) => {
       console.log(`Cleaned up ${staleRegs?.length || 0} stale pending registrations`);
     }
 
-    return new Response(JSON.stringify({ success: true, updated: count, events: data, stale_cleaned: staleRegs?.length || 0 }), {
+    return new Response(JSON.stringify({
+      success: true,
+      checked: candidateEvents?.length || 0,
+      updated: count,
+      events: data,
+      stale_cleaned: staleRegs?.length || 0,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

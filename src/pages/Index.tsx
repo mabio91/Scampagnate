@@ -25,7 +25,7 @@ import { useSearch } from "@/contexts/SearchContext";
 import { UI_LABELS } from "@/lib/labels";
 import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
-import { isEventUpcomingByDate } from "@/lib/eventDates";
+import { isEventUpcomingByDateTime } from "@/lib/eventDates";
 import { matchesAllHomeQuickFilters } from "@/lib/homeQuickFilters";
 
 const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
@@ -152,7 +152,7 @@ const Index = () => {
   const allUpcoming = useMemo(() => {
     if (!events) return [];
     const hiddenStatuses = new Set(["draft", "unpublished", "past", "completed", "cancelled"]);
-    return events.filter(e => isEventUpcomingByDate(e.date) && !hiddenStatuses.has(String(e.status || "")));
+    return events.filter(e => isEventUpcomingByDateTime(e) && !hiddenStatuses.has(String(e.status || "")));
   }, [events]);
 
   // Featured event

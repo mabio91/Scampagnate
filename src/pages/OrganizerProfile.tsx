@@ -15,11 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
-import { isEventPastByDate, isEventUpcomingByDate } from "@/lib/eventDates";
+import { isEventPastByDateTime, isEventUpcomingByDateTime } from "@/lib/eventDates";
 
 type OrganizerProfileEvent = Pick<
   EventWithDetails,
-  "id" | "title" | "date" | "time" | "location" | "image_url" | "difficulty" | "price" | "spots_taken" | "spots_total"
+  "id" | "title" | "date" | "time" | "duration" | "status" | "location" | "image_url" | "difficulty" | "price" | "spots_taken" | "spots_total"
 > & {
   category?: { name: string } | null;
 };
@@ -70,8 +70,8 @@ const OrganizerProfile = () => {
   const { profile, eventCount, events } = organizer;
   const organizerEvents = (events || []) as OrganizerProfileEvent[];
   const fullName = profile?.first_name || "Organizer";
-  const upcomingEvents = organizerEvents.filter(e => isEventUpcomingByDate(e.date));
-  const pastEvents = organizerEvents.filter(e => isEventPastByDate(e.date));
+  const upcomingEvents = organizerEvents.filter(e => isEventUpcomingByDateTime(e));
+  const pastEvents = organizerEvents.filter(e => isEventPastByDateTime(e));
 
   return (
     <>

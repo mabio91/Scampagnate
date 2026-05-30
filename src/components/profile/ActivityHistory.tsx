@@ -9,7 +9,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, Dr
 import EmptyState from "@/components/EmptyState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { dedupeRegistrationsByEvent, isAttendedRegistration } from "@/lib/eventRegistrations";
-import { isEventPastByDate, parseEventCalendarDate } from "@/lib/eventDates";
+import { isEventPastByDateTime, parseEventCalendarDate } from "@/lib/eventDates";
 import {
   Activity, CalendarCheck, CalendarX, AlertCircle, CheckCircle2,
   Flame, Clock, TrendingUp, ChevronDown, ChevronUp, BarChart3, Shield,
@@ -28,6 +28,8 @@ interface RegistrationWithEvent {
     title: string;
     date: string;
     time: string;
+    duration: string | null;
+    status: string | null;
     event_categories: { name: string; icon: string } | null;
   } | null;
 }
@@ -57,7 +59,7 @@ export const ActivityHistory = () => {
       if (!user) return null;
       const { data: regs, error } = await supabase
         .from("event_registrations")
-        .select("id, event_id, status, checked_in, created_at, sport_level, events(id, title, date, time, event_categories(name, icon))")
+        .select("id, event_id, status, checked_in, created_at, sport_level, events(id, title, date, time, duration, status, event_categories(name, icon))")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -75,7 +77,7 @@ export const ActivityHistory = () => {
 
     uniqueData.forEach((reg) => {
       const eventDate = parseEventCalendarDate(reg.events?.date);
-      const isPast = isEventPastByDate(reg.events?.date);
+      const isPast = !!reg.events && isEventPastByDateTime(reg.events);
       if (reg.status === "registered" || reg.status === "deposit_paid" || reg.status === "paid") joined++;
       if (isAttendedRegistration(reg)) {
         attended++;
@@ -89,7 +91,7 @@ export const ActivityHistory = () => {
 
     // Streak
     const pastRegs = uniqueData
-      .filter(r => r.events?.date && isEventPastByDate(r.events.date) && (r.status === "registered" || r.status === "deposit_paid" || r.status === "paid" || r.status === "attended" || r.checked_in))
+      .filter(r => r.events && isEventPastByDateTime(r.events) && (r.status === "registered" || r.status === "deposit_paid" || r.status === "paid" || r.status === "attended" || r.checked_in))
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
     const streakEvents: RegistrationWithEvent[] = [];
     let streak = 0;
@@ -113,7 +115,7 @@ export const ActivityHistory = () => {
       : undefined;
 
     const allTimeline = uniqueData
-      .filter(r => r.events?.date && isEventPastByDate(r.events.date))
+      .filter(r => r.events && isEventPastByDateTime(r.events))
       .sort((a, b) => new Date(b.events!.date).getTime() - new Date(a.events!.date).getTime());
 
     return { attended, cancelled, noShows, joined, streak, streakEvents, reliability, frequency, topCategory, topCategoryPct, topCategoryIcon, allTimeline };
@@ -123,7 +125,7 @@ export const ActivityHistory = () => {
     if (isAttendedRegistration(reg)) return { label: "Partecipato", color: "text-success", Icon: CheckCircle2 };
     if (reg.status === "cancelled") return { label: "Cancellato", color: "text-destructive", Icon: CalendarX };
     if (reg.status === "no_show") return { label: "No-show", color: "text-destructive", Icon: AlertCircle };
-    const isPast = isEventPastByDate(reg.events?.date);
+    const isPast = !!reg.events && isEventPastByDateTime(reg.events);
     if (isPast && !reg.checked_in) return { label: "Non presentato", color: "text-warning", Icon: AlertCircle };
     return { label: "Iscritto", color: "text-primary", Icon: CalendarCheck };
   }, []);

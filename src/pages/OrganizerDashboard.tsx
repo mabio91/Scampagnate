@@ -23,7 +23,7 @@ import MissionsPanel from "@/components/admin/MissionsPanel";
 import BroadcastTemplatesPanel from "@/components/admin/BroadcastTemplatesPanel";
 import { format } from "date-fns";
 import { isActiveParticipantRegistration } from "@/lib/eventPayments";
-import { isEventPastByDate, isEventUpcomingByDate } from "@/lib/eventDates";
+import { isEventPastByDateTime, isEventUpcomingByDateTime } from "@/lib/eventDates";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, PieChart, Pie, AreaChart, Area, Legend, CartesianGrid,
@@ -65,15 +65,15 @@ const OrganizerDashboard = () => {
     },
   });
 
-  const upcomingEvents = events?.filter((e) => isEventUpcomingByDate(e.date)) || [];
-  const pastEvents = events?.filter((e) => isEventPastByDate(e.date)) || [];
+  const upcomingEvents = events?.filter((e) => isEventUpcomingByDateTime(e)) || [];
+  const pastEvents = events?.filter((e) => isEventPastByDateTime(e)) || [];
 
   // Aggregate analytics
   const analytics = useMemo(() => {
     if (!events?.length || !allRegistrations) return null;
 
     const totalEvents = events.length;
-    const pe = events.filter((e) => isEventPastByDate(e.date));
+    const pe = events.filter((e) => isEventPastByDateTime(e));
     const totalPast = pe.length;
 
     const regsByEvent: Record<string, typeof allRegistrations> = {};
