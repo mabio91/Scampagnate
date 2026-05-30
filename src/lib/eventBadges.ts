@@ -4,7 +4,7 @@ import { hasEventLastSpots } from "@/lib/priceOptions";
  * Event Badge System
  * 
  * Resolves up to 2 badges per event based on automatic rules + manual selection.
- * Priority (highest first): ULTIMI_POSTI > FOUNDING_EVENT > GRATUITO > manual badges
+ * Automatic badges keep the top priority; custom badges can replace lower-priority manual overflow.
  */
 
 export interface EventBadge {
@@ -56,6 +56,9 @@ const BADGE_CATALOG: Record<string, Omit<EventBadge, "key">> = {
     className: "bg-sky-500/90 text-white",
   },
 };
+
+const AUTO_BADGE_KEYS = new Set(["ultimi_posti", "founding_event", "gratuito"]);
+const MAX_VISIBLE_BADGES = 2;
 
 export const MANUAL_BADGE_OPTIONS = [
   { value: "evento_top", label: "⭐ Evento Top" },
@@ -112,15 +115,19 @@ export function resolveEventBadges(event: EventForBadges): EventBadge[] {
     autoBadges.push("gratuito");
   }
 
-  // Manual badges from event_badges field
-  const manualBadges = (event.event_badges || []).filter(Boolean);
+  // Manual/custom badges from event_badges field
+  const storedBadges = (event.event_badges || [])
+    .map((badge) => String(badge || "").trim())
+    .filter(Boolean);
+  const storedBadgeSet = new Set(storedBadges);
+  const customBadgeSet = new Set(storedBadges.filter((badge) => !BADGE_CATALOG[badge]));
 
   // Merge in priority order, max 2
   const priorityOrder = [
     "ultimi_posti",
     "founding_event",
     "gratuito",
-    ...manualBadges,
+    ...storedBadges,
   ];
 
   // Deduplicate and keep order
@@ -131,23 +138,37 @@ export function resolveEventBadges(event: EventForBadges): EventBadge[] {
     if (seen.has(key)) continue;
     seen.add(key);
 
-    // Check if it's an auto badge or manual badge
-    if (!autoBadges.includes(key) && !manualBadges.includes(key)) continue;
+    // Check if it's an auto badge or stored badge
+    if (!autoBadges.includes(key) && !storedBadgeSet.has(key)) continue;
 
     const catalog = BADGE_CATALOG[key];
-    if (catalog) {
-      result.push({ key, ...catalog });
-    } else {
-      // Custom badge (free text)
-      result.push({
+    const badge = catalog
+      ? { key, ...catalog }
+      : {
         key,
         label: key,
         emoji: "",
         className: "bg-muted/90 text-foreground",
-      });
+      };
+
+    if (result.length < MAX_VISIBLE_BADGES) {
+      result.push(badge);
+      continue;
     }
 
-    if (result.length >= 2) break;
+    if (customBadgeSet.has(key)) {
+      let replaceableIndex = -1;
+      for (let index = result.length - 1; index >= 0; index -= 1) {
+        if (!AUTO_BADGE_KEYS.has(result[index].key)) {
+          replaceableIndex = index;
+          break;
+        }
+      }
+
+      if (replaceableIndex !== -1) {
+        result[replaceableIndex] = badge;
+      }
+    }
   }
 
   return result;
