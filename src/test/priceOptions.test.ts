@@ -81,6 +81,7 @@ describe("event availability helpers", () => {
     expect(hasActivePromotionalPriceOption([
       { is_promotional: false, promo_start: null, promo_end: null },
       { is_promotional: true, promo_start: "2026-05-21T00:00:00.000Z", promo_end: null },
+      { is_promotional: true, promo_start: null, promo_end: "2026-05-19T00:00:00.000Z" },
     ], now)).toBe(false);
 
     expect(hasActivePromotionalPriceOption([

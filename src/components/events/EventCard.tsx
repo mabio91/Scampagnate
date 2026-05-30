@@ -188,11 +188,6 @@ const EventCard = memo(({
                     <span className="truncate">{event.category.name}</span>
                   </EventBadgePill>
                 )}
-                {!useCompactCardLayout && hasPromo && (
-                  <EventBadgePill className="border border-amber-500/30 bg-amber-500/15 text-amber-600">
-                    Promo
-                  </EventBadgePill>
-                )}
                 {hasDifficulty && (
                   <DifficultyBadge
                     difficulty={event.difficulty}
@@ -238,6 +233,11 @@ const EventCard = memo(({
             />
             {isSoldOut && (
               <SoldOutOverlay size="card" />
+            )}
+            {!isSoldOut && hasPromo && (
+              <span className="absolute left-1.5 top-1.5 rounded-full bg-amber-500/95 px-1.5 py-0.5 text-[9px] font-body font-bold uppercase leading-none tracking-wide text-white shadow-sm sm:left-2 sm:top-2 sm:text-[10px]">
+                Promo
+              </span>
             )}
           </div>
         </div>

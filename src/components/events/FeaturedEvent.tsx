@@ -8,22 +8,20 @@ import { UI_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { eventBadgePillClassName } from "./EventBadgePill";
 import SoldOutOverlay from "./SoldOutOverlay";
-import { isEventSoldOut } from "@/lib/priceOptions";
+import { hasActivePromotionalPriceOption, isEventSoldOut, type PriceOptionLike } from "@/lib/priceOptions";
 
 type HeroBadge = "sold_out" | "promo" | "top" | null;
+
+type FeaturedEventDetails = EventWithDetails & {
+  event_price_options?: PriceOptionLike[];
+};
 
 function resolveHeroBadge(event: EventWithDetails): HeroBadge {
   if (isEventSoldOut(event)) return "sold_out";
 
-  const badges = (event as any).event_badges;
-  if (Array.isArray(badges)) {
-    const hasPromo = badges.some((b: any) =>
-      typeof b === "string"
-        ? b.toLowerCase().includes("promo")
-        : b?.label?.toLowerCase()?.includes("promo")
-    );
-    if (hasPromo) return "promo";
-  }
+  const eventDetails = event as FeaturedEventDetails;
+  const priceOptions = eventDetails.price_options || eventDetails.event_price_options || [];
+  if (hasActivePromotionalPriceOption(priceOptions)) return "promo";
 
   if (event.featured) return "top";
   return null;
