@@ -680,9 +680,9 @@ const EventForm = () => {
       }
       if ((event as any).event_badges && Array.isArray((event as any).event_badges)) {
         const badges = (event as any).event_badges as string[];
-        const knownManual = ["evento_top", "best_seller", "consigliato", "prezzo_speciale", "early_bird"];
-        setManualBadges(badges.filter(b => knownManual.includes(b)));
-        const custom = badges.find(b => !knownManual.includes(b));
+        const knownManual = new Set(MANUAL_BADGE_OPTIONS.map((option) => option.value));
+        setManualBadges(badges.filter(b => knownManual.has(b as (typeof MANUAL_BADGE_OPTIONS)[number]["value"])));
+        const custom = badges.find(b => !knownManual.has(b as (typeof MANUAL_BADGE_OPTIONS)[number]["value"]));
         if (custom) setCustomBadge(custom);
       }
 

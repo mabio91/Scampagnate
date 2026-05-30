@@ -55,6 +55,11 @@ const BADGE_CATALOG: Record<string, Omit<EventBadge, "key">> = {
     emoji: "🐦",
     className: "bg-sky-500/90 text-white",
   },
+  pet_friendly: {
+    label: "Friendly",
+    emoji: "🐶",
+    className: "bg-emerald-500/90 text-white",
+  },
 };
 
 const AUTO_BADGE_KEYS = new Set(["ultimi_posti", "founding_event", "gratuito"]);
@@ -66,6 +71,7 @@ export const MANUAL_BADGE_OPTIONS = [
   { value: "consigliato", label: "👍 Consigliato" },
   { value: "prezzo_speciale", label: "💰 Prezzo Speciale" },
   { value: "early_bird", label: "🐦 Early Bird" },
+  { value: "pet_friendly", label: "🐶 Friendly" },
 ] as const;
 
 interface EventForBadges {
