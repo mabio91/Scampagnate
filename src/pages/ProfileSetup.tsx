@@ -29,6 +29,8 @@ import {
 } from "@/lib/healthSafety";
 import { compressImageForUpload, imageFileExtension } from "@/lib/imageCompression";
 
+const INSTAGRAM_HANDLE_HELP_TEXT = "Inserisci il tuo username Instagram, cioè la parte dopo la @. Esempio: gruppo_scampagnate.";
+
 const calculateExperienceGrade = (trekking: string, activity: string) => {
   const map: Record<string, Record<string, number>> = {
     "0_2": { low: 1, medium: 1, high: 2 },
@@ -673,11 +675,14 @@ const ProfileSetup = () => {
                     type="text"
                     value={instagramHandle}
                     onChange={(e) => setInstagramHandle(e.target.value)}
-                    placeholder="@nomeutente"
+                    placeholder="gruppo_scampagnate"
                     autoCapitalize="none"
                     autoCorrect="off"
                     inputMode="text"
                   />
+                  <p className="text-xs text-muted-foreground font-body">
+                    {INSTAGRAM_HANDLE_HELP_TEXT}
+                  </p>
                   <p className="text-xs text-muted-foreground font-body">
                     Visibile solo allo staff e all'organizzatore degli eventi a cui partecipi.
                   </p>

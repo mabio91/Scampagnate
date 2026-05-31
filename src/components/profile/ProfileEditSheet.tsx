@@ -40,6 +40,7 @@ import {
 
 const HIDE_SOCIAL_AUTH = true;
 const DELETE_CONFIRMATION_PHRASE = "CANCELLA IL MIO ACCOUNT";
+const INSTAGRAM_HANDLE_HELP_TEXT = "Inserisci il tuo username Instagram, cioè la parte dopo la @. Esempio: gruppo_scampagnate.";
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "Errore imprevisto";
 
 interface ProfileEditSheetProps {
@@ -506,10 +507,13 @@ const ProfileEditSheet = ({ open, onOpenChange }: ProfileEditSheetProps) => {
                     value={instagramHandle}
                     onChange={(e) => { setInstagramHandle(e.target.value); markChanged(); }}
                     className="mt-1"
-                    placeholder="@nomeutente"
+                    placeholder="gruppo_scampagnate"
                     autoCapitalize="none"
                     autoCorrect="off"
                   />
+                  <p className="mt-1 text-[11px] font-body text-muted-foreground">
+                    {INSTAGRAM_HANDLE_HELP_TEXT}
+                  </p>
                   <p className="mt-1 text-[11px] font-body text-muted-foreground">
                     Visibile solo allo staff e all'organizzatore degli eventi a cui partecipi.
                   </p>
