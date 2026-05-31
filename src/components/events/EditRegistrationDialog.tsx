@@ -91,7 +91,8 @@ const EditRegistrationDialog = ({
     return af && Array.isArray(af.fields) ? af.fields : [];
   }, [event?.additional_fields]);
 
-  const hasMeetingPoints = Boolean(event?.meeting_points?.length);
+  const meetingPoints = useMemo(() => event?.meeting_points || [], [event?.meeting_points]);
+  const hasMeetingPoints = meetingPoints.length > 0;
   const carEnabled = Boolean(event?.additional_fields?.car_availability_enabled || event?.additional_fields?.ask_car_availability);
 
   const [selectedMeetingPoint, setSelectedMeetingPoint] = useState("");
@@ -101,11 +102,13 @@ const EditRegistrationDialog = ({
 
   useEffect(() => {
     if (!open) return;
-    setSelectedMeetingPoint(registration?.meeting_point_id || "");
+    setSelectedMeetingPoint(
+      registration?.meeting_point_id || (meetingPoints.length === 1 ? meetingPoints[0].id : ""),
+    );
     setCarAvailability(registration?.car_availability || "");
     setAdditionalResponses((registration?.additional_responses as Record<string, string> | null) || {});
     setSelectedPriceOption(registration?.price_option_id || "");
-  }, [open, registration]);
+  }, [open, registration, meetingPoints]);
 
   const priceOptions = useMemo(() => event?.price_options || [], [event?.price_options]);
   const currentPriceOption = useMemo(
@@ -159,7 +162,7 @@ const EditRegistrationDialog = ({
             <div>
               <Label className="font-body text-sm font-semibold mb-2 block">Punto di ritrovo *</Label>
               <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className="space-y-2">
-                {(event.meeting_points || []).map((mp) => (
+                {meetingPoints.map((mp) => (
                   <label
                     key={mp.id}
                     className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border ${

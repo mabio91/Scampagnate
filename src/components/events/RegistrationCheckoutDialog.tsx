@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { useMembershipFee } from "@/hooks/useMembershipFee";
 import { getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
@@ -90,7 +90,8 @@ const RegistrationCheckoutDialog = ({
     return () => window.clearInterval(timer);
   }, [open]);
 
-  const hasMeetingPoints = event.meeting_points && event.meeting_points.length > 0;
+  const meetingPoints = useMemo(() => event.meeting_points || [], [event.meeting_points]);
+  const hasMeetingPoints = meetingPoints.length > 0;
   const hasPriceOptions = event.price_options && event.price_options.length > 0;
   const visiblePriceOptions = resolvedPriceOptions ?? event.price_options ?? [];
   const singlePriceOption = visiblePriceOptions.length === 1 ? visiblePriceOptions[0] : null;
@@ -224,6 +225,14 @@ const RegistrationCheckoutDialog = ({
     setSelectedPriceOption(singlePriceOption.id);
   }, [open, selectedPriceOption, singlePriceOption?.id]);
 
+  useEffect(() => {
+    if (!open || meetingPoints.length !== 1) return;
+    const onlyMeetingPointId = meetingPoints[0]?.id || "";
+    if (onlyMeetingPointId && selectedMeetingPoint !== onlyMeetingPointId) {
+      setSelectedMeetingPoint(onlyMeetingPointId);
+    }
+  }, [open, meetingPoints, selectedMeetingPoint]);
+
   const getCheckoutPaymentDetail = (option: PriceOptionLike | null | undefined) => {
     const paymentType = getOptionPaymentType(option, event);
     if (paymentType === "free") return "Gratis";
@@ -281,7 +290,7 @@ const RegistrationCheckoutDialog = ({
                 <div ref={meetingPointRef}>
                   <Label className="font-body text-sm font-semibold mb-2 block">Punto di Ritrovo *</Label>
                   <RadioGroup value={selectedMeetingPoint} onValueChange={setSelectedMeetingPoint} className={`space-y-2 rounded-xl ${attemptedSubmit && meetingPointRequired ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : ""}`}>
-                    {event.meeting_points.map((mp: any) => (
+                    {meetingPoints.map((mp: any) => (
                       <label
                         key={mp.id}
                         className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border ${

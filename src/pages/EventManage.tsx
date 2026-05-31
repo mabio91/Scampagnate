@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Navigate, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEventRegistrations, useEventMeetingPoints } from "@/hooks/useOrganizerEvents";
@@ -192,6 +192,11 @@ const EventManage = () => {
 
   const { data: registrations, isLoading: regsLoading } = useEventRegistrations(id!);
   const { data: meetingPoints } = useEventMeetingPoints(id!);
+
+  useEffect(() => {
+    if (!showAddParticipant || manualMeetingPoint || meetingPoints?.length !== 1) return;
+    setManualMeetingPoint(meetingPoints[0].id);
+  }, [showAddParticipant, manualMeetingPoint, meetingPoints]);
 
   // Fetch price options for this event
   const { data: priceOptions } = useQuery({
@@ -1250,7 +1255,7 @@ const EventManage = () => {
                                 setEditingParticipant(null);
                               } else {
                                 setEditingParticipant(reg.id);
-                                setEditMeetingPoint(reg.meeting_point_id || NO_MEETING_POINT);
+                                setEditMeetingPoint(reg.meeting_point_id || (meetingPoints?.length === 1 ? meetingPoints[0].id : NO_MEETING_POINT));
                                 setEditPaymentStatus(reg.payment_status || "pending");
                                 setEditPriceOptionId((reg as any).price_option_id || NO_PRICE_OPTION);
                               }
