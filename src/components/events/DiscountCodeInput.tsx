@@ -14,6 +14,7 @@ interface DiscountResult {
   original_price?: number;
   final_price?: number;
   description?: string;
+  waives_service_fee?: boolean;
 }
 
 interface DiscountCodeInputProps {
@@ -39,8 +40,22 @@ const DiscountCodeInput = ({ eventId, userId, onDiscountApplied }: DiscountCodeI
       });
       if (error) throw error;
       const res = data as unknown as DiscountResult;
-      setResult(res);
-      onDiscountApplied(res.valid ? res : null);
+      let enrichedResult = res;
+      if (res.valid && res.discount_code_id) {
+        const { data: discountMeta } = await supabase
+          .from("discount_codes")
+          .select("waives_service_fee")
+          .eq("id", res.discount_code_id)
+          .maybeSingle();
+
+        enrichedResult = {
+          ...res,
+          waives_service_fee: res.waives_service_fee === true || discountMeta?.waives_service_fee === true,
+        };
+      }
+
+      setResult(enrichedResult);
+      onDiscountApplied(enrichedResult.valid ? enrichedResult : null);
     } catch {
       setResult({ valid: false, error: t("validationError") });
       onDiscountApplied(null);

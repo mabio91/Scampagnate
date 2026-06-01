@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from "@/lib/membership";
 import { useMembershipFee } from "@/hooks/useMembershipFee";
-import { getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
+import { getPolicyDefinition } from "@/lib/cancellationPolicy";
+import { getCheckoutServiceFeeAmount, getDiscountedCheckoutAmount } from "@/lib/checkoutPricing";
 import { useAuth } from "@/contexts/AuthContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -133,8 +134,15 @@ const RegistrationCheckoutDialog = ({
     ? (isDepositPayment ? depositAmount : totalEventPrice)
     : totalEventPrice;
   const membershipFee = needsMembership && !selectedOptionIsWaitlist ? membershipFeeAmount : 0;
-  const serviceFee = isPaymentEvent && !selectedOptionIsWaitlist ? getServiceFeeAmount(selectedPaymentType) : 0;
-  const discountedEventPrice = appliedDiscount ? Number(appliedDiscount.final_price) : displayPrice;
+  const serviceFee = getCheckoutServiceFeeAmount(
+    selectedPaymentType,
+    isPaymentEvent,
+    selectedOptionIsWaitlist,
+    appliedDiscount,
+  );
+  const discountedEventPrice = appliedDiscount
+    ? getDiscountedCheckoutAmount(displayPrice, appliedDiscount)
+    : displayPrice;
   const totalDueToday = discountedEventPrice + serviceFee + membershipFee;
   const remainingAmount = selectedPaymentType === "deposit" && isDepositPayment
     ? getOptionBalanceAmount(selectedOpt, event)
