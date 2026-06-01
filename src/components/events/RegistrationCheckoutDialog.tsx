@@ -45,11 +45,10 @@ const PromoOptionLabel = ({ endsAt, now }: { endsAt: string | null | undefined; 
     >
       <span>Promo</span>
       {hasCountdown && (
-        <>
-          <span aria-hidden="true">•</span>
+        <span className="inline-flex items-center">
           <Clock className="h-2.5 w-2.5" aria-hidden="true" />
-          <span>{label}</span>
-        </>
+          <span className="-ml-px">{label}</span>
+        </span>
       )}
     </span>
   );
@@ -506,12 +505,16 @@ const RegistrationCheckoutDialog = ({
                       const bookable = isOptionBookable(opt, event);
                       const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
                       const disabled = !opt.isEligible || (!bookable && !canWaitlist);
+                      const selected = selectedPriceOption === opt.id;
+                      const selectedClass = shouldShowPromoBadge(opt)
+                        ? "bg-primary/5 border-warning shadow-sm cursor-pointer"
+                        : "bg-primary/5 border-primary/30 shadow-sm cursor-pointer";
                       return (
                         <label
                           key={opt.id}
                           className={`flex items-start justify-between gap-3 p-3 rounded-xl transition-all border ${
                             disabled ? "bg-muted/30 opacity-60 cursor-not-allowed border-transparent" :
-                            selectedPriceOption === opt.id ? "bg-primary/5 border-primary/30 shadow-sm cursor-pointer" :
+                            selected ? selectedClass :
                             "bg-muted/40 border-transparent hover:bg-muted/60 cursor-pointer"
                           }`}
                         >
@@ -567,10 +570,14 @@ const RegistrationCheckoutDialog = ({
                       const bookable = isOptionBookable(opt, event);
                       const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
                       const disabled = !bookable && !canWaitlist;
+                      const selected = selectedPriceOption === opt.id;
+                      const selectedClass = shouldShowPromoBadge(opt)
+                        ? "bg-primary/5 border-warning shadow-sm cursor-pointer"
+                        : "bg-primary/5 border-primary/30 shadow-sm cursor-pointer";
                       return (
                         <label key={opt.id} className={`flex items-start justify-between gap-3 p-3 rounded-xl transition-all border ${
                           disabled ? "bg-muted/30 opacity-60 cursor-not-allowed border-transparent" :
-                          selectedPriceOption === opt.id ? "bg-primary/5 border-primary/30 shadow-sm cursor-pointer" : "bg-muted/40 border-transparent hover:bg-muted/60 cursor-pointer"
+                          selected ? selectedClass : "bg-muted/40 border-transparent hover:bg-muted/60 cursor-pointer"
                         }`}>
                           <div className="flex items-start gap-3 min-w-0">
                             <RadioGroupItem value={opt.id} disabled={disabled} className="mt-1" />
