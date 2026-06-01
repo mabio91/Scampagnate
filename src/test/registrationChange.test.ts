@@ -30,6 +30,17 @@ class FakeQuery {
     return this;
   }
 
+  then<TResult1 = unknown, TResult2 = never>(
+    onfulfilled?: ((value: { data: Row[]; error: null; count: number }) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+  ) {
+    return Promise.resolve({
+      data: this.matchingRows(),
+      error: null,
+      count: this.matchingRows().length,
+    }).then(onfulfilled, onrejected);
+  }
+
   async single() {
     const row = this.matchingRows()[0] ?? null;
     return row ? { data: row, error: null } : { data: null, error: new Error("No rows") };
@@ -61,7 +72,7 @@ const createFakeSupabase = (tables: Record<string, Row[]>) => ({
   from: (table: string) => new FakeQuery(tables, table),
 });
 
-const baseTables = (registration: Row, priceOptions: Row[]) => ({
+const baseTables = (registration: Row, priceOptions: Row[], discountCodeUsage: Row[] = []) => ({
   event_registrations: [registration],
   events: [{
     id: "event_1",
@@ -77,8 +88,9 @@ const baseTables = (registration: Row, priceOptions: Row[]) => ({
     event_id: "event_1",
     has_dedicated_spots: false,
     dedicated_spots: null,
-    ...option,
-  })),
+      ...option,
+    })),
+  discount_code_usage: discountCodeUsage,
 });
 
 describe("buildRegistrationChangeQuote", () => {
@@ -199,6 +211,125 @@ describe("buildRegistrationChangeQuote", () => {
       newDepositAmount: 10,
       newPaymentStatus: "deposit_paid",
       newRegistrationStatus: "deposit_paid",
+    });
+  });
+
+  it("counts a discount-covered deposit as settled credit when changing formula", async () => {
+    const quote = await buildRegistrationChangeQuote(createFakeSupabase(baseTables({
+      id: "reg_1",
+      event_id: "event_1",
+      user_id: "user_1",
+      status: "deposit_paid",
+      payment_status: "deposit_paid",
+      price_option_id: "deposit_base",
+      amount_paid: 0,
+      service_fee_amount: 0,
+      total_price_amount: 45,
+      balance_due_amount: 25,
+      sport_level: "intermediate",
+    }, [
+      {
+        id: "deposit_base",
+        name: "Escursione",
+        price: 45,
+        payment_type: "deposit",
+        deposit_amount: 20,
+        balance_payment_mode: "online",
+      },
+      {
+        id: "deposit_plus",
+        name: "Escursione + degustazione",
+        price: 85,
+        payment_type: "deposit",
+        deposit_amount: 20,
+        balance_payment_mode: "online",
+      },
+    ], [
+      {
+        discount_code_id: "discount_1",
+        event_id: "event_1",
+        user_id: "user_1",
+        original_price: 20,
+        discounted_price: 0,
+      },
+    ])), {
+      registrationId: "reg_1",
+      eventId: "event_1",
+      userId: "user_1",
+      newPriceOptionId: "deposit_plus",
+    });
+
+    expect(quote).toMatchObject({
+      oldTotalAmount: 45,
+      newTotalAmount: 85,
+      amountPaidBefore: 0,
+      cashEventPaidBefore: 0,
+      discountCreditBefore: 20,
+      eventPaidBefore: 20,
+      targetEventPaidAmount: 20,
+      additionalPaymentAmount: 0,
+      refundAmount: 0,
+      newAmountPaid: 0,
+      newBalanceDueAmount: 65,
+      newPaymentStatus: "deposit_paid",
+      newRegistrationStatus: "deposit_paid",
+    });
+  });
+
+  it("does not refund cash when only a discount covered the previous payment", async () => {
+    const quote = await buildRegistrationChangeQuote(createFakeSupabase(baseTables({
+      id: "reg_1",
+      event_id: "event_1",
+      user_id: "user_1",
+      status: "deposit_paid",
+      payment_status: "deposit_paid",
+      price_option_id: "premium",
+      amount_paid: 0,
+      service_fee_amount: 0,
+      total_price_amount: 80,
+      balance_due_amount: 60,
+      sport_level: "intermediate",
+    }, [
+      {
+        id: "standard",
+        name: "Standard",
+        price: 10,
+        payment_type: "deposit",
+        deposit_amount: 10,
+        balance_payment_mode: "online",
+      },
+      {
+        id: "premium",
+        name: "Premium",
+        price: 80,
+        payment_type: "deposit",
+        deposit_amount: 20,
+        balance_payment_mode: "online",
+      },
+    ], [
+      {
+        discount_code_id: "discount_1",
+        event_id: "event_1",
+        user_id: "user_1",
+        original_price: 20,
+        discounted_price: 0,
+      },
+    ])), {
+      registrationId: "reg_1",
+      eventId: "event_1",
+      userId: "user_1",
+      newPriceOptionId: "standard",
+    });
+
+    expect(quote).toMatchObject({
+      eventPaidBefore: 20,
+      targetEventPaidAmount: 10,
+      additionalPaymentAmount: 0,
+      refundAmount: 0,
+      newAmountPaid: 0,
+      newBalanceDueAmount: 0,
+      newPaymentStatus: "paid",
+      newRegistrationStatus: "paid",
     });
   });
 });

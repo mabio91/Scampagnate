@@ -450,12 +450,13 @@ serve(async (req) => {
       }
 
       const freeStatus = paymentType === "deposit" && checkoutKind === "deposit" ? "deposit_paid" : "paid";
+      const settledEventAmount = checkoutKind === "deposit" ? originalPrice : totalPriceAmount;
       const { error: freeUpdateError } = await supabaseAdmin
         .from("event_registrations")
         .update({
           payment_status: freeStatus,
           status: freeStatus,
-          balance_due_amount: freeStatus === "deposit_paid" ? Math.max(0, totalPriceAmount - Number(finalPrice)) : 0,
+          balance_due_amount: freeStatus === "deposit_paid" ? Math.max(0, totalPriceAmount - settledEventAmount) : 0,
           balance_payment_mode: paymentType === "deposit" ? balancePaymentMode : null,
         })
         .eq("id", registrationId);

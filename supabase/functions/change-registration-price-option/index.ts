@@ -98,7 +98,16 @@ serve(async (req) => {
       cancelUrlBase,
     } = await req.json();
 
-    if (!eventId || !registrationId || !priceOptionId) {
+    if (!registrationId) {
+      return jsonResponse({ error: "Registration is required" }, 400);
+    }
+
+    if (mode === "cancel") {
+      await cancelActiveRegistrationChanges(supabaseAdmin, registrationId, user.id);
+      return jsonResponse({ cancelled: true });
+    }
+
+    if (!eventId || !priceOptionId) {
       return jsonResponse({ error: "Event, registration and price option are required" }, 400);
     }
 
@@ -145,7 +154,7 @@ serve(async (req) => {
       const successBase = isAllowedReturnUrl(returnUrlBase, allowedHosts) ? returnUrlBase : `${origin}/payment-success`;
       const cancelBase = isAllowedReturnUrl(cancelUrlBase, allowedHosts) ? cancelUrlBase : `${origin}/event/${eventId}`;
       const successParams = `session_id={CHECKOUT_SESSION_ID}&event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}`;
-      const cancelParams = `payment_cancelled=1&event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}`;
+      const cancelParams = `payment_cancelled=1&event_id=${encodeURIComponent(eventId)}&registration_id=${encodeURIComponent(registrationId)}&change_request_id=${encodeURIComponent(String(changeRequest.id))}`;
 
       const session = await stripe.checkout.sessions.create({
         customer: customerId,

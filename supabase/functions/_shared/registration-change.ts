@@ -19,6 +19,8 @@ export type RegistrationChangeQuote = {
   amountPaidBefore: number;
   serviceFeeAmount: number;
   eventPaidBefore: number;
+  cashEventPaidBefore: number;
+  discountCreditBefore: number;
   targetEventPaidAmount: number;
   additionalPaymentAmount: number;
   refundAmount: number;
@@ -104,7 +106,6 @@ const eventHasStarted = (event: Record<string, unknown>) => {
 const getTargetEventPaidAmount = (
   registration: Record<string, unknown>,
   oldPaymentType: PaymentType,
-  oldTotalAmount: number,
   newPaymentType: PaymentType,
   newTotalAmount: number,
   newDepositAmount: number,
@@ -119,10 +120,6 @@ const getTargetEventPaidAmount = (
   const minimumDeposit = Math.min(newTotalAmount, newDepositAmount);
   if (eventPaidBefore <= 0 || oldPaymentType === "free" || oldPaymentType === "location") {
     return minimumDeposit;
-  }
-
-  if (newTotalAmount > oldTotalAmount) {
-    return Math.min(newTotalAmount, eventPaidBefore + (newTotalAmount - oldTotalAmount));
   }
 
   return Math.min(newTotalAmount, Math.max(eventPaidBefore, minimumDeposit));
@@ -147,6 +144,28 @@ const getNextStatuses = (
     return { paymentStatus: "paid", registrationStatus: "paid" };
   }
   return { paymentStatus: "pending", registrationStatus: "pending_payment" };
+};
+
+const getDiscountCreditAmount = async (
+  db: SupabaseLike,
+  params: {
+    eventId: string;
+    userId: string;
+  },
+) => {
+  const { data, error } = await db
+    .from("discount_code_usage")
+    .select("original_price, discounted_price")
+    .eq("event_id", params.eventId)
+    .eq("user_id", params.userId);
+  if (error) throw error;
+
+  const rows = Array.isArray(data) ? data : [];
+  return money(rows.reduce((total, row) => {
+    if (!row || typeof row !== "object") return total;
+    const usage = row as Record<string, unknown>;
+    return total + Math.max(0, money(usage.original_price) - money(usage.discounted_price));
+  }, 0));
 };
 
 export const buildRegistrationChangeQuote = async (
@@ -228,21 +247,28 @@ export const buildRegistrationChangeQuote = async (
   const newConfig = resolvePaymentConfig(event, newOption);
   const amountPaidBefore = money(registration.amount_paid);
   const serviceFeeAmount = money(registration.service_fee_amount);
-  const eventPaidBefore = Math.max(0, money(amountPaidBefore - serviceFeeAmount));
+  const cashEventPaidBefore = Math.max(0, money(amountPaidBefore - serviceFeeAmount));
   const oldTotalAmount = money(registration.total_price_amount) > 0
     ? money(registration.total_price_amount)
     : oldConfig.totalAmount;
+  const discountCreditBefore = Math.min(
+    oldTotalAmount,
+    await getDiscountCreditAmount(db, { eventId: params.eventId, userId: params.userId }),
+  );
+  const eventPaidBefore = Math.min(oldTotalAmount, money(cashEventPaidBefore + discountCreditBefore));
   const targetEventPaidAmount = getTargetEventPaidAmount(
     registration,
     oldConfig.paymentType,
-    oldTotalAmount,
     newConfig.paymentType,
     newConfig.totalAmount,
     newConfig.depositAmount,
     eventPaidBefore,
   );
   const additionalPaymentAmount = Math.max(0, money(targetEventPaidAmount - eventPaidBefore));
-  const refundAmount = Math.max(0, money(eventPaidBefore - targetEventPaidAmount));
+  const refundAmount = Math.min(
+    cashEventPaidBefore,
+    Math.max(0, money(eventPaidBefore - targetEventPaidAmount)),
+  );
   const newBalanceDueAmount = newConfig.paymentType === "deposit"
     ? Math.max(0, money(newConfig.totalAmount - targetEventPaidAmount))
     : 0;
@@ -252,7 +278,11 @@ export const buildRegistrationChangeQuote = async (
     newConfig.totalAmount,
     newBalanceDueAmount,
   );
-  const newAmountPaid = targetEventPaidAmount > 0 ? money(targetEventPaidAmount + serviceFeeAmount) : 0;
+  const newCashEventPaidAmount = Math.max(
+    0,
+    money(cashEventPaidBefore - refundAmount + additionalPaymentAmount),
+  );
+  const newAmountPaid = newCashEventPaidAmount > 0 ? money(newCashEventPaidAmount + serviceFeeAmount) : 0;
 
   return {
     registrationId: params.registrationId,
@@ -270,6 +300,8 @@ export const buildRegistrationChangeQuote = async (
     amountPaidBefore,
     serviceFeeAmount,
     eventPaidBefore,
+    cashEventPaidBefore,
+    discountCreditBefore,
     targetEventPaidAmount,
     additionalPaymentAmount,
     refundAmount,
@@ -308,6 +340,8 @@ export const quoteToRequestRow = (quote: RegistrationChangeQuote, status: string
   metadata: {
     old_price_option_name: quote.oldPriceOptionName,
     new_price_option_name: quote.newPriceOptionName,
+    cash_event_paid_before: quote.cashEventPaidBefore,
+    discount_credit_before: quote.discountCreditBefore,
   },
 });
 

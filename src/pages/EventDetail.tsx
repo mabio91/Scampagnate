@@ -204,6 +204,16 @@ const EventDetail = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("payment_cancelled") !== "1") return;
+    const cancelledEventId = params.get("event_id") || id;
+    const cancelledRegistrationId = params.get("registration_id");
+
+    if (cancelledEventId && cancelledRegistrationId) {
+      void invokeAuthenticatedFunction("change-registration-price-option", {
+        mode: "cancel",
+        eventId: cancelledEventId,
+        registrationId: cancelledRegistrationId,
+      }).catch(() => undefined);
+    }
 
     toast({
       title: "Pagamento annullato",
@@ -213,6 +223,7 @@ const EventDetail = () => {
     params.delete("payment_cancelled");
     params.delete("event_id");
     params.delete("registration_id");
+    params.delete("change_request_id");
     navigate(
       {
         pathname: location.pathname,
@@ -220,7 +231,7 @@ const EventDetail = () => {
       },
       { replace: true }
     );
-  }, [location.pathname, location.search, navigate, toast]);
+  }, [id, location.pathname, location.search, navigate, toast]);
 
   // Gallery carousel
   const [emblaRef, emblaApi] = useEmblaCarousel({ startIndex: galleryStartIndex });
