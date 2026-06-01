@@ -57,7 +57,15 @@ class FakeQuery {
   ) {
     try {
       if (this.updateValues) {
-        for (const row of this.matchingRows()) Object.assign(row, this.updateValues);
+        const rows = this.matchingRows();
+        const updateError = rows.find((row) => row.__updateError && this.updateValues?.status !== "waitlist");
+        if (updateError) {
+          return Promise.resolve({
+            data: null,
+            error: new Error(String(updateError.__updateError)),
+          }).then(onfulfilled as never, onrejected);
+        }
+        for (const row of rows) Object.assign(row, this.updateValues);
       }
 
       if (this.shouldDelete) {
@@ -265,6 +273,71 @@ describe("finalizeEventCheckoutSession", () => {
       status: "cancelled",
       payment_status: "refunded",
       refund_status: "completed",
+    });
+  });
+
+  it("refunds and waitlists when the database capacity guard rejects finalization", async () => {
+    const tables = {
+      event_registrations: [{
+        id: "reg_1",
+        user_id: "user_1",
+        event_id: "event_1",
+        status: "pending_payment",
+        payment_status: "pending",
+        amount_paid: null,
+        service_fee_amount: 0,
+        total_price_amount: 20,
+        deposit_amount: null,
+        balance_due_amount: null,
+        price_option_id: null,
+        __updateError: "Questa formula non ha più posti dedicati disponibili.",
+      }],
+      events: [{
+        id: "event_1",
+        status: "open",
+        spots_total: 10,
+        spots_taken: 0,
+        title: "Evento test",
+      }],
+      notifications: [],
+      user_payment_transactions: [],
+    };
+    const stripe = createStripe();
+
+    const result = await finalizeEventCheckoutSession({
+      session: {
+        id: "cs_1",
+        payment_status: "paid",
+        payment_intent: "pi_1",
+        metadata: {
+          registration_id: "reg_1",
+          event_id: "event_1",
+          user_id: "user_1",
+          checkout_kind: "full",
+          booking_amount_cents: "2100",
+          service_fee_cents: "100",
+        },
+      },
+      stripe: stripe.client,
+      supabaseAdmin: createFakeSupabase(tables),
+    });
+
+    expect(result).toMatchObject({
+      success: false,
+      spot_taken: true,
+      auto_refunded: true,
+      eventId: "event_1",
+    });
+    expect(stripe.refunds).toEqual([{ payment_intent: "pi_1", amount: 2100 }]);
+    expect(tables.event_registrations[0]).toMatchObject({
+      status: "waitlist",
+      payment_status: "refunded",
+      refund_status: "completed",
+    });
+    expect(tables.notifications[0]).toMatchObject({
+      user_id: "user_1",
+      type: "waitlist_spot_lost",
+      event_id: "event_1",
     });
   });
 });

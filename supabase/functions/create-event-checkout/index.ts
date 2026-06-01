@@ -108,6 +108,13 @@ const requiresOnlinePayment = (paymentType: PaymentType) =>
 const acceptsRegistrationStatus = (status: unknown) =>
   ["available", "published", "open"].includes(String(status ?? ""));
 
+const isRegistrationCapacityError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return message.includes("posti disponibili")
+    || message.includes("posti dedicati")
+    || message.includes("formula di prezzo selezionata");
+};
+
 const recordDiscountUsage = async (
   supabaseAdmin: unknown,
   params: {
@@ -425,10 +432,11 @@ serve(async (req) => {
       });
     }
 
-    await supabaseAdmin
+    const { error: registrationUpdateError } = await supabaseAdmin
       .from("event_registrations")
       .update(registrationUpdate)
       .eq("id", registrationId);
+    if (registrationUpdateError) throw registrationUpdateError;
 
     if (totalAmountCents <= 0) {
       if (appliedDiscountCodeId) {
@@ -442,7 +450,7 @@ serve(async (req) => {
       }
 
       const freeStatus = paymentType === "deposit" && checkoutKind === "deposit" ? "deposit_paid" : "paid";
-      await supabaseAdmin
+      const { error: freeUpdateError } = await supabaseAdmin
         .from("event_registrations")
         .update({
           payment_status: freeStatus,
@@ -451,6 +459,7 @@ serve(async (req) => {
           balance_payment_mode: paymentType === "deposit" ? balancePaymentMode : null,
         })
         .eq("id", registrationId);
+      if (freeUpdateError) throw freeUpdateError;
 
       return new Response(JSON.stringify({ free: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -563,7 +572,7 @@ serve(async (req) => {
     console.error("Event checkout error:", error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unable to create checkout session" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: isRegistrationCapacityError(error) ? 400 : 500,
     });
   }
 });

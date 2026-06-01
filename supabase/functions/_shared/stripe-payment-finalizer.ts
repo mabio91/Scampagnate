@@ -85,6 +85,13 @@ const acceptsRegistrationStatus = (status: unknown) =>
 const isCancelledRegistrationStatus = (status: unknown) =>
   ["cancelled", "failed", "expired"].includes(String(status ?? ""));
 
+const isRegistrationCapacityError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return message.includes("posti disponibili")
+    || message.includes("posti dedicati")
+    || message.includes("formula di prezzo selezionata");
+};
+
 const paymentIntentIdFromSession = (session: StripeSessionLike) => {
   const paymentIntent = session.payment_intent;
   return typeof paymentIntent === "string" ? paymentIntent : paymentIntent?.id || null;
@@ -166,6 +173,79 @@ const recordDiscountUsageFromSession = async (
     discounted_price: discountedPrice,
   });
   if (usageError) throw usageError;
+};
+
+const refundSpotTakenRegistration = async (
+  db: SupabaseAdminClient,
+  stripe: StripeRefundsClient,
+  params: {
+    session: StripeSessionLike;
+    registrationId: string;
+    userId: string;
+    eventId: string | null;
+    registrationEventId: string;
+    eventTitle: string;
+    selectedOptionName: string;
+    stripePaymentIntentId: string | null;
+    bookingAmountCents: number;
+    membershipIncluded: boolean;
+  },
+): Promise<PaymentFinalizerResult> => {
+  if (params.stripePaymentIntentId && params.bookingAmountCents > 0) {
+    try {
+      await refundBookingAmount(stripe, params.stripePaymentIntentId, params.bookingAmountCents);
+      await recordUserPaymentTransaction(db, {
+        user_id: params.userId,
+        registration_id: params.registrationId,
+        event_id: params.eventId || params.registrationEventId,
+        kind: "refund",
+        source: "event_checkout_auto_refund",
+        amount: params.bookingAmountCents / 100,
+        event_amount: params.bookingAmountCents / 100,
+        stripe_checkout_session_id: params.session.id || null,
+        stripe_payment_intent_id: params.stripePaymentIntentId,
+        metadata: {
+          reason: "spot_taken",
+        },
+      });
+      console.log(`Auto-refunded payment ${params.stripePaymentIntentId} - spot taken by another user`);
+    } catch (refundError) {
+      console.error("Auto-refund error:", refundError);
+    }
+  }
+
+  await db
+    .from("event_registrations")
+    .update({
+      payment_status: "refunded",
+      status: "waitlist",
+      stripe_payment_intent_id: params.stripePaymentIntentId,
+      refund_percentage: 100,
+      refund_amount: params.bookingAmountCents / 100,
+      refund_status: "completed",
+    })
+    .eq("id", params.registrationId)
+    .eq("user_id", params.userId);
+
+  await db.from("notifications").insert({
+    user_id: params.userId,
+    type: "waitlist_spot_lost",
+    title: "Posto non confermato",
+    message: `Il posto per "${params.eventTitle || "questo evento"}${params.selectedOptionName}" è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente. Resti in lista d'attesa.`,
+    event_id: params.registrationEventId,
+  });
+
+  if (params.membershipIncluded) {
+    await db.rpc("activate_membership", { user_id_param: params.userId });
+  }
+
+  return {
+    success: false,
+    spot_taken: true,
+    auto_refunded: true,
+    eventId: params.eventId || params.registrationEventId,
+    message: "Il posto è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente.",
+  };
 };
 
 export const finalizeMembershipCheckoutSession = async ({
@@ -369,61 +449,18 @@ export const finalizeEventCheckoutSession = async ({
   }
 
   if (checkoutKind !== "balance" && (!acceptsRegistrationStatus(event.status) || spotsAvailable <= 0)) {
-    if (stripePaymentIntentId && bookingAmountCents > 0) {
-      try {
-        await refundBookingAmount(stripe, stripePaymentIntentId, bookingAmountCents);
-        await recordUserPaymentTransaction(db, {
-          user_id: userId,
-          registration_id: registrationId,
-          event_id: eventId || reg.event_id,
-          kind: "refund",
-          source: "event_checkout_auto_refund",
-          amount: bookingAmountCents / 100,
-          event_amount: bookingAmountCents / 100,
-          stripe_checkout_session_id: session.id || null,
-          stripe_payment_intent_id: stripePaymentIntentId,
-          metadata: {
-            reason: "spot_taken",
-          },
-        });
-        console.log(`Auto-refunded payment ${stripePaymentIntentId} - spot taken by another user`);
-      } catch (refundError) {
-        console.error("Auto-refund error:", refundError);
-      }
-    }
-
-    await db
-      .from("event_registrations")
-      .update({
-        payment_status: "refunded",
-        status: "waitlist",
-        stripe_payment_intent_id: stripePaymentIntentId,
-        refund_percentage: 100,
-        refund_amount: bookingAmountCents / 100,
-        refund_status: "completed",
-      })
-      .eq("id", registrationId)
-      .eq("user_id", userId);
-
-    await db.from("notifications").insert({
-      user_id: userId,
-      type: "waitlist_spot_lost",
-      title: "Posto non confermato",
-      message: `Il posto per "${event.title || "questo evento"}${selectedOptionName}" è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente. Resti in lista d'attesa.`,
-      event_id: reg.event_id,
+    return await refundSpotTakenRegistration(db, stripe, {
+      session,
+      registrationId,
+      userId,
+      eventId,
+      registrationEventId: reg.event_id,
+      eventTitle: event.title || "questo evento",
+      selectedOptionName,
+      stripePaymentIntentId,
+      bookingAmountCents,
+      membershipIncluded,
     });
-
-    if (membershipIncluded) {
-      await db.rpc("activate_membership", { user_id_param: userId });
-    }
-
-    return {
-      success: false,
-      spot_taken: true,
-      auto_refunded: true,
-      eventId: eventId || null,
-      message: "Il posto è stato appena preso da un altro partecipante. Nessun problema: ti abbiamo rimborsato automaticamente.",
-    };
   }
 
   const nextStatus = checkoutKind === "deposit" ? "deposit_paid" : "paid";
@@ -453,6 +490,20 @@ export const finalizeEventCheckoutSession = async ({
     .eq("id", registrationId)
     .eq("user_id", userId);
   if (updateError) {
+    if (checkoutKind !== "balance" && isRegistrationCapacityError(updateError)) {
+      return await refundSpotTakenRegistration(db, stripe, {
+        session,
+        registrationId,
+        userId,
+        eventId,
+        registrationEventId: reg.event_id,
+        eventTitle: event.title || "questo evento",
+        selectedOptionName,
+        stripePaymentIntentId,
+        bookingAmountCents,
+        membershipIncluded,
+      });
+    }
     console.error("Registration update error:", updateError);
     throw new Error("Failed to update registration");
   }
