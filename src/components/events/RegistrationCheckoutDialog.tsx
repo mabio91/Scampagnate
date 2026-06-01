@@ -34,6 +34,27 @@ import {
   AlertTriangle, ChevronRight
 } from "lucide-react";
 
+const PromoOptionLabel = ({ endsAt, now }: { endsAt: string | null | undefined; now: Date }) => {
+  const label = getPromoBadgeLabel(endsAt, now);
+  const hasCountdown = label.startsWith("-");
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[10px] font-body font-semibold leading-none text-warning"
+      aria-label={hasCountdown ? `Promo ${label}` : label}
+    >
+      <span>Promo</span>
+      {hasCountdown && (
+        <>
+          <span aria-hidden="true">•</span>
+          <Clock className="h-2.5 w-2.5" aria-hidden="true" />
+          <span>{label}</span>
+        </>
+      )}
+    </span>
+  );
+};
+
 interface RegistrationCheckoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -453,14 +474,10 @@ const RegistrationCheckoutDialog = ({
               {singlePriceOption && (
                 <div ref={priceOptionRef} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-muted/40 border border-transparent">
                   <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
-                      {shouldShowPromoBadge(singlePriceOption) && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold bg-destructive/10 text-destructive">
-                          {getPromoBadgeLabel(singlePriceOption.promo_end, promoNow)}
-                        </span>
-                      )}
-                    </div>
+                    {shouldShowPromoBadge(singlePriceOption) && (
+                      <PromoOptionLabel endsAt={singlePriceOption.promo_end} now={promoNow} />
+                    )}
+                    <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
                     <p className="text-[10px] text-muted-foreground font-body">
                       {getCheckoutDetailLine(singlePriceOption)}
                     </p>
@@ -501,17 +518,15 @@ const RegistrationCheckoutDialog = ({
                           <div className="flex items-start gap-3 min-w-0">
                             <RadioGroupItem value={opt.id} disabled={disabled} className="mt-1" />
                             <div className="min-w-0">
+                              {shouldShowPromoBadge(opt) && (
+                                <PromoOptionLabel endsAt={opt.promo_end} now={promoNow} />
+                              )}
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
                                 {opt.isEligible && opt.eligible_group !== "all" && (
                                   <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-body font-semibold flex items-center gap-0.5">
                                     <Sparkles className="h-2.5 w-2.5" />
                                     {getEligibilityLabel(opt.eligible_group)}
-                                  </span>
-                                )}
-                                {shouldShowPromoBadge(opt) && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-body font-semibold bg-destructive/10 text-destructive">
-                                    {getPromoBadgeLabel(opt.promo_end, promoNow)}
                                   </span>
                                 )}
                               </div>
@@ -560,6 +575,9 @@ const RegistrationCheckoutDialog = ({
                           <div className="flex items-start gap-3 min-w-0">
                             <RadioGroupItem value={opt.id} disabled={disabled} className="mt-1" />
                             <div className="min-w-0">
+                              {shouldShowPromoBadge(opt) && (
+                                <PromoOptionLabel endsAt={opt.promo_end} now={promoNow} />
+                              )}
                               <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
                               <p className="text-[10px] text-muted-foreground font-body mt-0.5">
                                 {getCheckoutDetailLine(opt)}

@@ -122,11 +122,39 @@ export const formatPromoCountdownLabel = (
   return `scade tra ${totalMinutes}m`;
 };
 
+export const formatPromoCompactCountdownLabel = (
+  end: string | null | undefined,
+  now = new Date(),
+) => {
+  const endsAt = parsePromoBoundaryDate(end, "end");
+  if (!endsAt) return null;
+
+  const diffMs = endsAt.getTime() - now.getTime();
+  if (diffMs <= 0) return "Promo scaduta";
+
+  const totalMinutes = Math.max(1, Math.ceil(diffMs / 60_000));
+
+  if (totalMinutes >= 1_440) {
+    const days = Math.floor(totalMinutes / 1_440);
+    const hours = Math.floor((totalMinutes % 1_440) / 60);
+    return hours > 0 ? `-${days}g ${hours}h` : `-${days}g`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return minutes > 0 ? `-${hours}h ${minutes}m` : `-${hours}h`;
+  }
+
+  return `-${totalMinutes}m`;
+};
+
 export const getPromoBadgeLabel = (
   end: string | null | undefined,
   now = new Date(),
 ) => {
-  const countdownLabel = formatPromoCountdownLabel(end, now);
+  const countdownLabel = formatPromoCompactCountdownLabel(end, now);
   if (!countdownLabel) return "Promo";
   return countdownLabel;
 };
