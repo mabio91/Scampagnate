@@ -490,7 +490,7 @@ const RegistrationCheckoutDialog = ({
                     {singlePriceOption.original_price && Number(singlePriceOption.original_price) > Number(singlePriceOption.price) && (
                       <span className="text-xs font-body text-muted-foreground line-through block">€{Number(singlePriceOption.original_price).toFixed(2)}</span>
                     )}
-                    <span className={`text-sm font-display font-bold ${singlePriceOption.original_price && Number(singlePriceOption.original_price) > Number(singlePriceOption.price) ? "text-green-600" : "text-foreground"}`}>
+                    <span className={`text-sm font-display font-bold ${shouldShowPromoBadge(singlePriceOption) ? "text-warning" : singlePriceOption.original_price && Number(singlePriceOption.original_price) > Number(singlePriceOption.price) ? "text-green-600" : "text-foreground"}`}>
                       {getCheckoutAmountLabel(singlePriceOption)}
                     </span>
                   </div>
@@ -506,8 +506,9 @@ const RegistrationCheckoutDialog = ({
                       const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
                       const disabled = !opt.isEligible || (!bookable && !canWaitlist);
                       const selected = selectedPriceOption === opt.id;
-                      const selectedClass = shouldShowPromoBadge(opt)
-                        ? "bg-primary/5 border-warning shadow-sm cursor-pointer"
+                      const hasPromo = shouldShowPromoBadge(opt);
+                      const selectedClass = hasPromo
+                        ? "bg-warning/5 border-warning shadow-sm cursor-pointer"
                         : "bg-primary/5 border-primary/30 shadow-sm cursor-pointer";
                       return (
                         <label
@@ -519,9 +520,9 @@ const RegistrationCheckoutDialog = ({
                           }`}
                         >
                           <div className="flex items-start gap-3 min-w-0">
-                            <RadioGroupItem value={opt.id} disabled={disabled} className="mt-1" />
+                            <RadioGroupItem value={opt.id} disabled={disabled} className={`mt-1 ${hasPromo ? "border-warning text-warning" : ""}`} />
                             <div className="min-w-0">
-                              {shouldShowPromoBadge(opt) && (
+                              {hasPromo && (
                                 <PromoOptionLabel endsAt={opt.promo_end} now={promoNow} />
                               )}
                               <div className="flex items-center gap-2 flex-wrap">
@@ -547,7 +548,7 @@ const RegistrationCheckoutDialog = ({
                             {opt.original_price && opt.original_price > opt.price && (
                               <span className="text-xs font-body text-muted-foreground line-through block">€{opt.original_price.toFixed(2)}</span>
                             )}
-                            <span className={`text-sm font-display font-bold ${opt.isEligible && opt.original_price && opt.original_price > opt.price ? "text-green-600" : "text-foreground"}`}>
+                            <span className={`text-sm font-display font-bold ${hasPromo ? "text-warning" : opt.isEligible && opt.original_price && opt.original_price > opt.price ? "text-green-600" : "text-foreground"}`}>
                               {getCheckoutAmountLabel(opt)}
                             </span>
                           </div>
@@ -571,8 +572,9 @@ const RegistrationCheckoutDialog = ({
                       const canWaitlist = !bookable && canOptionJoinWaitlist(opt, event);
                       const disabled = !bookable && !canWaitlist;
                       const selected = selectedPriceOption === opt.id;
-                      const selectedClass = shouldShowPromoBadge(opt)
-                        ? "bg-primary/5 border-warning shadow-sm cursor-pointer"
+                      const hasPromo = shouldShowPromoBadge(opt);
+                      const selectedClass = hasPromo
+                        ? "bg-warning/5 border-warning shadow-sm cursor-pointer"
                         : "bg-primary/5 border-primary/30 shadow-sm cursor-pointer";
                       return (
                         <label key={opt.id} className={`flex items-start justify-between gap-3 p-3 rounded-xl transition-all border ${
@@ -580,9 +582,9 @@ const RegistrationCheckoutDialog = ({
                           selected ? selectedClass : "bg-muted/40 border-transparent hover:bg-muted/60 cursor-pointer"
                         }`}>
                           <div className="flex items-start gap-3 min-w-0">
-                            <RadioGroupItem value={opt.id} disabled={disabled} className="mt-1" />
+                            <RadioGroupItem value={opt.id} disabled={disabled} className={`mt-1 ${hasPromo ? "border-warning text-warning" : ""}`} />
                             <div className="min-w-0">
-                              {shouldShowPromoBadge(opt) && (
+                              {hasPromo && (
                                 <PromoOptionLabel endsAt={opt.promo_end} now={promoNow} />
                               )}
                               <span className="text-sm font-body font-semibold text-foreground">{opt.name}</span>
@@ -591,7 +593,7 @@ const RegistrationCheckoutDialog = ({
                               </p>
                             </div>
                           </div>
-                          <span className="text-sm font-display font-bold text-foreground shrink-0">{getCheckoutAmountLabel(opt)}</span>
+                          <span className={`text-sm font-display font-bold ${hasPromo ? "text-warning" : "text-foreground"} shrink-0`}>{getCheckoutAmountLabel(opt)}</span>
                         </label>
                       );
                     })}
