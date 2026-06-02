@@ -1336,7 +1336,7 @@ const EventManage = () => {
                           )}
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             <span className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[9px] font-body font-semibold text-muted-foreground">
-                              Livello (1/5): {formatParticipantLevelBadge(profile)}
+                              Liv. (1/5): {formatParticipantLevelBadge(profile)}
                             </span>
                             <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-body font-semibold ${participantPaymentBadgeClassName[paymentBadge.tone]}`}>
                               {paymentBadge.label}
