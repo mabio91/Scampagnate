@@ -102,13 +102,11 @@ const EditRegistrationDialog = ({
 
   useEffect(() => {
     if (!open) return;
-    setSelectedMeetingPoint(
-      registration?.meeting_point_id || (meetingPoints.length === 1 ? meetingPoints[0].id : ""),
-    );
+    setSelectedMeetingPoint(registration?.meeting_point_id || "");
     setCarAvailability(registration?.car_availability || "");
     setAdditionalResponses((registration?.additional_responses as Record<string, string> | null) || {});
     setSelectedPriceOption(registration?.price_option_id || "");
-  }, [open, registration, meetingPoints]);
+  }, [open, registration]);
 
   const priceOptions = useMemo(() => event?.price_options || [], [event?.price_options]);
   const currentPriceOption = useMemo(

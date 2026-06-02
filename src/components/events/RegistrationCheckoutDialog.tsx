@@ -100,7 +100,10 @@ const RegistrationCheckoutDialog = ({
   const customFieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
-    if (!open) setAttemptedSubmit(false);
+    if (!open) {
+      setAttemptedSubmit(false);
+      setSelectedMeetingPoint("");
+    }
   }, [open]);
 
   useEffect(() => {
@@ -252,14 +255,6 @@ const RegistrationCheckoutDialog = ({
     if (!open || !singlePriceOption?.id || selectedPriceOption === singlePriceOption.id) return;
     setSelectedPriceOption(singlePriceOption.id);
   }, [open, selectedPriceOption, singlePriceOption?.id]);
-
-  useEffect(() => {
-    if (!open || meetingPoints.length !== 1) return;
-    const onlyMeetingPointId = meetingPoints[0]?.id || "";
-    if (onlyMeetingPointId && selectedMeetingPoint !== onlyMeetingPointId) {
-      setSelectedMeetingPoint(onlyMeetingPointId);
-    }
-  }, [open, meetingPoints, selectedMeetingPoint]);
 
   const getCheckoutPaymentDetail = (option: PriceOptionLike | null | undefined) => {
     const paymentType = getOptionPaymentType(option, event);

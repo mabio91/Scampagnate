@@ -156,7 +156,7 @@ const PaymentSuccess = () => {
                 variant="outline"
                 className="w-full font-body"
               >
-                I miei eventi
+                My events
               </Button>
             </div>
           </>

@@ -13,10 +13,8 @@ import LocationAutocomplete from "@/components/LocationAutocomplete";
 import ImageCropDialog from "@/components/ImageCropDialog";
 import { HOME_CARD_IMAGE_FIELD, getEventHomeCardImageUrl } from "@/lib/eventImages";
 import {
-  ensurePrimaryMeetingPoint,
   getRemovedMeetingPointIds,
   getRetainedMeetingPointIds,
-  type PrimaryMeetingPointSource,
 } from "@/lib/meetingPoints";
 import { formatPromoDateInput, promoDateInputToIso } from "@/lib/promoPricing";
 import { Button } from "@/components/ui/button";
@@ -362,7 +360,6 @@ const EventForm = () => {
   const [customBadge, setCustomBadge] = useState("");
   const [eventSpecialBadgeIds, setEventSpecialBadgeIds] = useState<string[]>([]);
   const [existingOrganizer, setExistingOrganizer] = useState<{ id: string | null; name: string | null }>({ id: null, name: null });
-  const [initialMeetingPointSource, setInitialMeetingPointSource] = useState<PrimaryMeetingPointSource | null>(null);
   const [eventStaff, setEventStaff] = useState<EventStaffInput[]>([]);
   const [activeStaffSearchIndex, setActiveStaffSearchIndex] = useState<number | null>(null);
   const { data: remoteClosingSentences = [] } = useQuery({
@@ -480,7 +477,6 @@ const EventForm = () => {
     } else if (isDuplicating) {
       loadEvent(duplicateId);
     } else {
-      setInitialMeetingPointSource(null);
       // Pre-fill from query params (e.g. proposal conversion)
       const title = searchParams.get("title");
       const description = searchParams.get("description");
@@ -491,7 +487,6 @@ const EventForm = () => {
       const spotsTotal = searchParams.get("spots_total");
       const categoryId = searchParams.get("category_id");
       if (title || description || location) {
-        setInitialMeetingPointSource(null);
         setForm(prev => ({
           ...prev,
           ...(title && { title }),
@@ -570,11 +565,6 @@ const EventForm = () => {
               name: event.organizer_name || null,
             }
       );
-      setInitialMeetingPointSource({
-        location: event.location,
-        locationLabel: (event as any).location_label,
-        time: event.time,
-      });
       setEventStatus(isDuplicating ? "open" : normalizeEditableEventStatus(event.status));
       const { policyType: pt, customText: ct } = parseCancellationPolicy(event.cancellation_policy);
       setPolicyType(pt || "flexible_24h");
@@ -1070,16 +1060,7 @@ const EventForm = () => {
     try {
       const imageUrl = await uploadImage();
       const resolvedHomeCardImageUrl = await uploadHomeCardImage();
-      const meetingPointsForSave = ensurePrimaryMeetingPoint(
-        meetingPoints,
-        {
-          location: form.location,
-          locationLabel: form.location_label,
-          time: form.time,
-        },
-        (point) => ({ ...point, notes: "" }),
-        initialMeetingPointSource,
-      );
+      const explicitMeetingPointsForSave = meetingPoints;
 
       // Format duration with unit
       const durationFormatted = form.duration ? `${form.duration}${form.duration_unit === "giorni" ? " giorni" : "h"}` : null;
@@ -1183,7 +1164,7 @@ const EventForm = () => {
 
         const removedPointIds = getRemovedMeetingPointIds(
           (existingPoints || []).map((point) => point.id),
-          meetingPointsForSave,
+          explicitMeetingPointsForSave,
         );
 
         if (removedPointIds.length > 0) {
@@ -1201,8 +1182,8 @@ const EventForm = () => {
           if (deleteError) throw deleteError;
         }
 
-        const retainedPointIds = new Set(getRetainedMeetingPointIds(meetingPointsForSave));
-        for (const [index, point] of meetingPointsForSave.entries()) {
+        const retainedPointIds = new Set(getRetainedMeetingPointIds(explicitMeetingPointsForSave));
+        for (const [index, point] of explicitMeetingPointsForSave.entries()) {
           const pointPayload = {
             name: point.name,
             location: point.location,
@@ -1225,8 +1206,8 @@ const EventForm = () => {
             if (insertPointError) throw insertPointError;
           }
         }
-      } else if (meetingPointsForSave.length > 0) {
-        const pointsData = meetingPointsForSave.map((p, i) => ({
+      } else if (explicitMeetingPointsForSave.length > 0) {
+        const pointsData = explicitMeetingPointsForSave.map((p, i) => ({
           event_id: eventId!,
           name: p.name,
           location: p.location,

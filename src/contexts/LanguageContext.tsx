@@ -9,7 +9,7 @@ const translations = {
   it: {
     // Navigation
     home: "Home",
-    myEvents: "I Miei Eventi",
+    myEvents: "My events",
     organize: "Organizza",
     merch: "Shop",
     profile: "Profilo",
