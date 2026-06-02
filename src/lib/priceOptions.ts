@@ -37,6 +37,20 @@ export interface EventPricingLike {
 
 const paymentTypes = new Set(["free", "paid", "deposit", "location"]);
 export const LAST_SPOTS_FILL_RATIO = 0.7;
+export const DEFAULT_PRICE_OPTION_DISPLAY_NAME = "Partecipazione evento";
+
+export const isGeneratedPriceOptionName = (name: string | null | undefined) => {
+  const cleanName = String(name ?? "").trim();
+  return /^formula(?:\s+\d+)?$/i.test(cleanName);
+};
+
+export const getPriceOptionDisplayName = (
+  option: PriceOptionLike | null | undefined,
+  fallback = DEFAULT_PRICE_OPTION_DISPLAY_NAME,
+) => {
+  const cleanName = option?.name?.trim();
+  return cleanName && !isGeneratedPriceOptionName(cleanName) ? cleanName : fallback;
+};
 
 export const toMoney = (value: number | string | null | undefined) => {
   const parsed = Number(value ?? 0);

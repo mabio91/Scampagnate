@@ -21,6 +21,7 @@ import {
   getOptionBalanceAmount,
   getOptionBalancePaymentMode,
   getOptionDepositAmount,
+  getPriceOptionDisplayName,
   getOptionPaymentSummary,
   getOptionPaymentType,
   getOptionTotalPrice,
@@ -264,13 +265,6 @@ const RegistrationCheckoutDialog = ({
     return getOptionPaymentSummary(option, event);
   };
 
-  const isGeneratedFormulaName = (name: string) => /^formula\s+\d+$/i.test(name.trim());
-
-  const getSinglePriceOptionTitle = (option: PriceOptionLike) => {
-    const cleanName = option.name?.trim();
-    return cleanName && !isGeneratedFormulaName(cleanName) ? cleanName : "Partecipazione evento";
-  };
-
   const getCheckoutAmountLabel = (option: PriceOptionLike | null | undefined) =>
     getOptionPaymentType(option, event) === "free" ? "Gratis" : `€${getOptionTotalPrice(option, event).toFixed(2)}`;
 
@@ -471,7 +465,7 @@ const RegistrationCheckoutDialog = ({
                     {shouldShowPromoBadge(singlePriceOption) && (
                       <PromoOptionLabel endsAt={singlePriceOption.promo_end} now={promoNow} />
                     )}
-                    <p className="text-sm font-body font-semibold text-foreground">{getSinglePriceOptionTitle(singlePriceOption)}</p>
+                    <p className="text-sm font-body font-semibold text-foreground">{getPriceOptionDisplayName(singlePriceOption)}</p>
                     <p className="text-[10px] text-muted-foreground font-body">
                       {getCheckoutDetailLine(singlePriceOption)}
                     </p>

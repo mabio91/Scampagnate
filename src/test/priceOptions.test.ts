@@ -1,12 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
   canOptionJoinWaitlist,
+  getPriceOptionDisplayName,
   hasActivePromotionalPriceOption,
   hasEventLastSpots,
   isEventSoldOut,
   isOptionBookable,
   shouldShowPublicCapacity,
 } from "@/lib/priceOptions";
+
+describe("price option display names", () => {
+  it("hides empty and generated formula names", () => {
+    expect(getPriceOptionDisplayName({ name: null })).toBe("Partecipazione evento");
+    expect(getPriceOptionDisplayName({ name: "" })).toBe("Partecipazione evento");
+    expect(getPriceOptionDisplayName({ name: "Formula 1" })).toBe("Partecipazione evento");
+    expect(getPriceOptionDisplayName({ name: " formula 12 " })).toBe("Partecipazione evento");
+  });
+
+  it("keeps organizer-provided formula names", () => {
+    expect(getPriceOptionDisplayName({ name: "Quota soci" })).toBe("Quota soci");
+    expect(getPriceOptionDisplayName({ name: "Formula famiglia" })).toBe("Formula famiglia");
+  });
+});
 
 describe("event availability helpers", () => {
   it("keeps an open event with free spots bookable", () => {

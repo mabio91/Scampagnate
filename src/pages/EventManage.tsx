@@ -12,6 +12,7 @@ import {
   getOptionPaymentType,
   getOptionRemainingSpots,
   getOptionTotalPrice,
+  getPriceOptionDisplayName,
   isWaitlistEnabledForEvent,
   type EventPricingLike,
   type PriceOptionLike,
@@ -758,7 +759,7 @@ const EventManage = () => {
             <DropdownMenuRadioItem value={NO_PRICE_OPTION}>Nessuna formula</DropdownMenuRadioItem>
             {sortedPriceOptions.map((option) => (
               <DropdownMenuRadioItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
-                {option.name || "Formula"}
+                {getPriceOptionDisplayName(option)}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
@@ -932,7 +933,7 @@ const EventManage = () => {
         manual ? "" : (profile.instagram_handle ? `@${profile.instagram_handle}` : ""),
         manual ? "manuale" : "utente",
         manual ? "-" : (r.sport_level || "-"),
-        po?.name || "-",
+        po ? getPriceOptionDisplayName(po) : "-",
         r.status || "-",
         r.payment_status || "-",
         (r as any).amount_paid ?? 0,
@@ -985,7 +986,7 @@ const EventManage = () => {
             {sortedPriceOptions.map((option) => (
               <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
                 <div className="flex flex-col py-0.5">
-                  <span>{option.name || "Formula"}</span>
+                  <span>{getPriceOptionDisplayName(option)}</span>
                   <span className="text-[10px] text-muted-foreground">
                     {getOptionPaymentSummary(option, event || {})}
                   </span>
@@ -1187,7 +1188,7 @@ const EventManage = () => {
                   <SelectItem value={ALL_PRICE_OPTIONS}>Tutte</SelectItem>
                   {sortedPriceOptions.map((option) => (
                     <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
-                      {option.name || "Formula"}
+                      {getPriceOptionDisplayName(option)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1202,7 +1203,7 @@ const EventManage = () => {
                   <div key={option.id || option.name || "option"} className="rounded-lg border border-border p-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold font-body text-foreground">{option.name || "Formula"}</p>
+                        <p className="truncate text-sm font-semibold font-body text-foreground">{getPriceOptionDisplayName(option)}</p>
                         <p className="text-[11px] font-body text-muted-foreground">{getOptionPaymentSummary(option, event)}</p>
                       </div>
                       <Badge variant={remaining > 0 ? "secondary" : waitlistCount > 0 ? "outline" : "destructive"} className="shrink-0 text-[10px]">
@@ -1320,7 +1321,7 @@ const EventManage = () => {
                           <p className="text-[11px] text-muted-foreground font-body">
                             {!isManual && (profile?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
                             {regPriceOption && (
-                              <span className="text-secondary ml-1">· {regPriceOption.name}</span>
+                              <span className="text-secondary ml-1">· {getPriceOptionDisplayName(regPriceOption)}</span>
                             )}
                           </p>
                           {instagramHandle && (
@@ -1404,7 +1405,7 @@ const EventManage = () => {
                                   <SelectItem value={NO_PRICE_OPTION}>Nessuna</SelectItem>
                                   {sortedPriceOptions.map((option) => (
                                     <SelectItem key={option.id || option.name || "option"} value={option.id || NO_PRICE_OPTION}>
-                                      {option.name || "Formula"}
+                                      {getPriceOptionDisplayName(option)}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -1584,7 +1585,7 @@ const EventManage = () => {
                         )}
                       </p>
                       <p className="text-[11px] text-muted-foreground font-body">
-                        Posizione {index + 1} · Stato {waitlistStatus} · Formula {priceOption?.name || "-"}
+                        Posizione {index + 1} · Stato {waitlistStatus} · Formula {priceOption ? getPriceOptionDisplayName(priceOption) : "-"}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -1691,7 +1692,7 @@ const EventManage = () => {
                     <ProfileField label="Iscrizione" value={status} />
                     <ProfileField label="Pagamento" value={payment} />
                     <ProfileField label="Ritrovo" value={mp?.name || "Nessun ritrovo"} />
-                    <ProfileField label="Formula" value={priceOption?.name || "Nessuna formula"} />
+                    <ProfileField label="Formula" value={priceOption ? getPriceOptionDisplayName(priceOption) : "Nessuna formula"} />
                   </div>
                   {specialRequests.length > 0 && (
                     <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 space-y-2">

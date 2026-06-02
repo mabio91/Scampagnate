@@ -17,6 +17,7 @@ import {
   getRetainedMeetingPointIds,
 } from "@/lib/meetingPoints";
 import { formatPromoDateInput, promoDateInputToIso } from "@/lib/promoPricing";
+import { isGeneratedPriceOptionName } from "@/lib/priceOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -465,10 +466,9 @@ const EventForm = () => {
     createBlankPriceOption(),
   ]);
 
-  const fallbackFormulaName = (index: number) => `Formula ${index + 1}`;
   const normalizeFormulaInputName = (name: string | null | undefined, index: number) => {
     const trimmedName = (name || "").trim();
-    return trimmedName === fallbackFormulaName(index) ? "" : trimmedName;
+    return trimmedName === `Formula ${index + 1}` || isGeneratedPriceOptionName(trimmedName) ? "" : trimmedName;
   };
 
   useEffect(() => {
@@ -1304,7 +1304,7 @@ const EventForm = () => {
           : null;
         const optionPayload = {
           event_id: eventId!,
-          name: option.name.trim() || fallbackFormulaName(index),
+          name: option.name.trim(),
           price: optionPaymentType === "free" ? 0 : Number(option.price || 0),
           sort_order: index,
           eligible_group: option.eligible_group || "all",

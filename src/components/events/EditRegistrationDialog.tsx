@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { getOptionPaymentSummary, type EventPricingLike, type PriceOptionLike } from "@/lib/priceOptions";
+import { getOptionPaymentSummary, getPriceOptionDisplayName, type EventPricingLike, type PriceOptionLike } from "@/lib/priceOptions";
 
 interface AdditionalRegistrationField {
   label: string;
@@ -258,7 +258,7 @@ const EditRegistrationDialog = ({
                 <Label className="font-body text-sm font-semibold mb-2 block">Formula di iscrizione</Label>
                 {currentPriceOption && (
                   <p className="mb-2 text-xs font-body text-muted-foreground">
-                    Attuale: <span className="font-semibold text-foreground">{currentPriceOption.name}</span> · {getOptionPaymentSummary(currentPriceOption, event)}
+                    Attuale: <span className="font-semibold text-foreground">{getPriceOptionDisplayName(currentPriceOption)}</span> · {getOptionPaymentSummary(currentPriceOption, event)}
                   </p>
                 )}
                 <RadioGroup value={selectedPriceOption} onValueChange={handlePriceOptionChange} className="space-y-2">
@@ -273,7 +273,7 @@ const EditRegistrationDialog = ({
                     >
                       <RadioGroupItem value={option.id || ""} className="mt-0.5" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-body font-semibold text-foreground">{option.name}</p>
+                        <p className="text-sm font-body font-semibold text-foreground">{getPriceOptionDisplayName(option)}</p>
                         <p className="text-xs font-body text-muted-foreground">{getOptionPaymentSummary(option, event)}</p>
                       </div>
                     </label>
