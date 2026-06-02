@@ -91,6 +91,11 @@ const ProfileField = ({ label, value }: { label: string; value?: string | null }
   </div>
 );
 
+type SpecialRequestAnswer = {
+  label: string;
+  value: string;
+};
+
 const normalizeEditableEventStatus = (status?: string | null) => {
   if (status === "available" || status === "published") return "open";
   if (status === "unpublished") return "draft";
@@ -279,6 +284,43 @@ const EventManage = () => {
   const normalizePriceOptionId = (value: string) => value && value !== NO_PRICE_OPTION ? value : null;
   const getPriceOptionForRegistration = (reg: any) =>
     sortedPriceOptions.find((option) => option.id === reg.price_option_id) || null;
+  const getSpecialRequestFields = () => {
+    const additionalFields = event?.additional_fields as any;
+    const rawFields = Array.isArray(additionalFields?.fields)
+      ? additionalFields.fields
+      : Array.isArray(additionalFields?.custom_fields)
+        ? additionalFields.custom_fields
+        : Array.isArray(additionalFields)
+          ? additionalFields
+          : [];
+
+    return rawFields
+      .map((field: any) => String(field?.label || "").trim())
+      .filter(Boolean);
+  };
+  const getSpecialRequestAnswers = (reg: any): SpecialRequestAnswer[] => {
+    const responses = reg?.additional_responses;
+    if (!responses || typeof responses !== "object" || Array.isArray(responses)) return [];
+
+    const usedLabels = new Set<string>();
+    const answers: SpecialRequestAnswer[] = getSpecialRequestFields()
+      .map((label) => {
+        const value = String((responses as Record<string, unknown>)[label] ?? "").trim();
+        if (!value) return null;
+        usedLabels.add(label);
+        return { label, value };
+      })
+      .filter((answer): answer is SpecialRequestAnswer => Boolean(answer));
+
+    Object.entries(responses as Record<string, unknown>).forEach(([rawLabel, rawValue]) => {
+      const label = rawLabel.trim();
+      const value = String(rawValue ?? "").trim();
+      if (!label || !value || usedLabels.has(label)) return;
+      answers.push({ label, value });
+    });
+
+    return answers;
+  };
   const getOptionActiveCount = (optionId: string | null | undefined) =>
     registered.filter((reg) => reg.price_option_id === optionId).length;
   const getOptionWaitlistCount = (optionId: string | null | undefined) =>
@@ -1168,6 +1210,7 @@ const EventManage = () => {
                   const { firstName, lastName, isManual } = getParticipantName(reg);
                   const regPriceOption = getPriceOptionForRegistration(reg);
                   const depositLabel = getDepositPaymentLabel(reg, event, regPriceOption);
+                  const specialRequests = getSpecialRequestAnswers(reg);
                   const instagramHandle = !isManual && isConfirmedEffectiveRegistration(reg)
                     ? (reg.profiles as any)?.instagram_handle
                     : null;
@@ -1210,28 +1253,38 @@ const EventManage = () => {
                             </a>
                           )}
                           {/* Suitability indicators for organizers */}
-                          {!isManual && (reg.profiles as any)?.self_level && (
+                          {(!isManual || specialRequests.length > 0) && ((reg.profiles as any)?.self_level || specialRequests.length > 0) && (
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-body font-semibold ${
-                                (reg.profiles as any).self_level === "advanced" ? "bg-success/10 text-success" :
-                                (reg.profiles as any).self_level === "intermediate" ? "bg-primary/10 text-primary" :
-                                "bg-warning/10 text-warning"
-                              }`}>
-                                {(reg.profiles as any).self_level === "advanced" ? "💪" : (reg.profiles as any).self_level === "intermediate" ? "🥾" : "🌱"} {(reg.profiles as any).self_level}
-                              </span>
-                              {(reg.profiles as any).trekking_experience && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
-                                  🏔️ {(reg.profiles as any).trekking_experience === "5_plus" || (reg.profiles as any).trekking_experience === "5+" ? "5+" : (reg.profiles as any).trekking_experience} trek
-                                </span>
+                              {(reg.profiles as any)?.self_level && (
+                                <>
+                                  <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-body font-semibold ${
+                                    (reg.profiles as any).self_level === "advanced" ? "bg-success/10 text-success" :
+                                    (reg.profiles as any).self_level === "intermediate" ? "bg-primary/10 text-primary" :
+                                    "bg-warning/10 text-warning"
+                                  }`}>
+                                    {(reg.profiles as any).self_level === "advanced" ? "💪" : (reg.profiles as any).self_level === "intermediate" ? "🥾" : "🌱"} {(reg.profiles as any).self_level}
+                                  </span>
+                                  {(reg.profiles as any).trekking_experience && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
+                                      🏔️ {(reg.profiles as any).trekking_experience === "5_plus" || (reg.profiles as any).trekking_experience === "5+" ? "5+" : (reg.profiles as any).trekking_experience} trek
+                                    </span>
+                                  )}
+                                  {(reg.profiles as any).activity_frequency && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
+                                      {(reg.profiles as any).activity_frequency === "high" || (reg.profiles as any).activity_frequency === ">2/week" ? "⚡" : "🙂"} {(reg.profiles as any).activity_frequency}
+                                    </span>
+                                  )}
+                                  {(reg.profiles as any).experience_grade != null && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary/10 text-[9px] font-body text-secondary font-semibold">
+                                      Grade: {(reg.profiles as any).experience_grade}
+                                    </span>
+                                  )}
+                                </>
                               )}
-                              {(reg.profiles as any).activity_frequency && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
-                                  {(reg.profiles as any).activity_frequency === "high" || (reg.profiles as any).activity_frequency === ">2/week" ? "⚡" : "🙂"} {(reg.profiles as any).activity_frequency}
-                                </span>
-                              )}
-                              {(reg.profiles as any).experience_grade != null && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary/10 text-[9px] font-body text-secondary font-semibold">
-                                  Grade: {(reg.profiles as any).experience_grade}
+                              {specialRequests.length > 0 && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/10 text-[9px] font-body text-warning font-semibold">
+                                  <AlertTriangle className="h-2.5 w-2.5" />
+                                  Richiesta speciale
                                 </span>
                               )}
                             </div>
@@ -1556,6 +1609,7 @@ const EventManage = () => {
             const priceOption = getPriceOptionForRegistration(reg);
             const profile = (reg.profiles || {}) as any;
             const payment = PAYMENT_STATUS_OPTIONS.find((option) => option.value === paymentMenuValue(reg))?.label || paymentMenuValue(reg);
+            const specialRequests = getSpecialRequestAnswers(reg);
             const status = reg.status === "no_show"
               ? "No-show"
               : REGISTRATION_STATUS_OPTIONS.find((option) => option.value === registrationMenuValue(reg))?.label || reg.status;
@@ -1574,6 +1628,16 @@ const EventManage = () => {
                     <ProfileField label="Ritrovo" value={mp?.name || "Nessun ritrovo"} />
                     <ProfileField label="Formula" value={priceOption?.name || "Nessuna formula"} />
                   </div>
+                  {specialRequests.length > 0 && (
+                    <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 space-y-2">
+                      {specialRequests.map((answer, index) => (
+                        <div key={`${answer.label}-${index}`} className={index > 0 ? "border-t border-warning/20 pt-2" : ""}>
+                          <p className="text-xs font-body font-semibold text-foreground">{answer.label}</p>
+                          <p className="mt-1 text-xs font-body text-muted-foreground whitespace-pre-wrap">{answer.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="rounded-lg border border-border p-3 space-y-1">
                     {profile.phone && <p><span className="text-muted-foreground">Telefono:</span> {profile.phone}</p>}
                     {profile.instagram_handle && (
