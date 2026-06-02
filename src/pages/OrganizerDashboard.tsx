@@ -400,14 +400,14 @@ const OrganizerDashboard = () => {
                       <BarChart data={analytics.pastEventStats.slice(0, 10).map(e => ({
                         name: e.title.length > 15 ? e.title.slice(0, 15) + "…" : e.title,
                         registered: e.registered,
-                        attended: e.checkedIn,
+                        capacity: e.spotsTotal,
                       }))} layout="vertical">
                         <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={90} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
                         <Bar dataKey="registered" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Registered" />
-                        <Bar dataKey="attended" fill="hsl(var(--success))" radius={[0, 4, 4, 0]} name="Attended" />
+                        <Bar dataKey="capacity" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} name="Capacity" />
                       </BarChart>
                     </ResponsiveContainer>
                   </Card>
