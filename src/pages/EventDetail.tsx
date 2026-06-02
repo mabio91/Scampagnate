@@ -1482,9 +1482,21 @@ const getCTALabel = () => {
         {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className={isRegistered && !hasPendingPayment ? "pt-3" : "hidden"}>
           {isRegistered && !hasPendingPayment && (
-            <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
-              {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
+                {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}
+              </Button>
+              <div className="mt-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-xs font-body leading-relaxed text-muted-foreground">
+                <p className="font-semibold text-foreground">Vuoi modificare la tua iscrizione?</p>
+                <p className="mt-1">
+                  Per cambiare meeting point o altre preferenze, vai su{" "}
+                  <Link to="/my-events" className="font-semibold text-foreground underline underline-offset-4 hover:text-primary">
+                    My events
+                  </Link>{" "}
+                  e gestisci la tua partecipazione da lì.
+                </p>
+              </div>
+            </>
           )}
 
           {/* Cancel Confirmation Dialog */}
