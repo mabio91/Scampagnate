@@ -4,13 +4,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEventRegistrations, useEventMeetingPoints } from "@/hooks/useOrganizerEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getDepositPaymentLabel, isDepositRegistration } from "@/lib/eventPayments";
+import { isDepositRegistration } from "@/lib/eventPayments";
 import {
+  getOptionBalanceAmount,
   getOptionBalancePaymentMode,
   getOptionPaymentSummary,
   getOptionPaymentType,
   getOptionRemainingSpots,
+  getOptionTotalPrice,
   isWaitlistEnabledForEvent,
+  type EventPricingLike,
   type PriceOptionLike,
 } from "@/lib/priceOptions";
 
@@ -94,6 +97,91 @@ const ProfileField = ({ label, value }: { label: string; value?: string | null }
 type SpecialRequestAnswer = {
   label: string;
   value: string;
+};
+
+type ParticipantPaymentBadge = {
+  label: string;
+  tone: "success" | "warning";
+};
+
+type ParticipantProfileBadgeSource = {
+  avatar_url?: string | null;
+  phone?: string | null;
+  instagram_handle?: string | null;
+  experience_grade?: number | string | null;
+  health_safety_status?: string | null;
+};
+
+type ParticipantPaymentRegistrationSource = {
+  status?: string | null;
+  payment_status?: string | null;
+  balance_due_amount?: number | string | null;
+};
+
+const participantPaymentBadgeClassName: Record<ParticipantPaymentBadge["tone"], string> = {
+  success: "border-success/20 bg-success/10 text-success",
+  warning: "border-warning/25 bg-warning/10 text-warning",
+};
+
+const formatParticipantLevelBadge = (profile?: ParticipantProfileBadgeSource | null) => {
+  const grade = profile?.experience_grade;
+  return grade === null || grade === undefined || grade === "" ? "-" : String(grade);
+};
+
+const getParticipantPaymentBadge = (
+  registration: ParticipantPaymentRegistrationSource,
+  event: EventPricingLike,
+  priceOption?: PriceOptionLike | null,
+): ParticipantPaymentBadge => {
+  const paymentStatus = String(registration?.payment_status || "").toLowerCase();
+  const registrationStatus = String(registration?.status || "").toLowerCase();
+  const paymentType = getOptionPaymentType(priceOption, event);
+  const totalPrice = getOptionTotalPrice(priceOption, event);
+
+  if (paymentStatus === "paid" || registrationStatus === "paid") {
+    return { label: "Pagato", tone: "success" };
+  }
+
+  if (paymentType === "free" || totalPrice <= 0) {
+    return { label: "Gratis", tone: "success" };
+  }
+
+  if (paymentStatus === "not_required") {
+    return { label: "Non richiesto", tone: "success" };
+  }
+
+  if (paymentStatus === "deposit_paid" || registrationStatus === "deposit_paid") {
+    const balanceMode = getOptionBalancePaymentMode(priceOption, event);
+    const storedBalanceDue = Number(registration?.balance_due_amount ?? 0);
+    const balanceDue = Math.max(
+      Number.isFinite(storedBalanceDue) ? storedBalanceDue : 0,
+      getOptionBalanceAmount(priceOption, event),
+    );
+
+    if (balanceMode === "on_site") {
+      return { label: "Saldo sul posto", tone: "success" };
+    }
+
+    return balanceDue > 0
+      ? { label: "Da saldare", tone: "warning" }
+      : { label: "Pagato", tone: "success" };
+  }
+
+  if (paymentStatus === "pay_on_location" || paymentType === "location") {
+    return { label: "Sul posto", tone: "warning" };
+  }
+
+  if (paymentStatus === "pending" || registrationStatus === "pending_payment") {
+    return { label: "In attesa pagamento", tone: "warning" };
+  }
+
+  if (paymentStatus === "failed") {
+    return { label: "Pagamento fallito", tone: "warning" };
+  }
+
+  return paymentType === "paid" || paymentType === "deposit"
+    ? { label: "In attesa pagamento", tone: "warning" }
+    : { label: "Non richiesto", tone: "success" };
 };
 
 const normalizeEditableEventStatus = (status?: string | null) => {
@@ -1209,17 +1297,19 @@ const EventManage = () => {
                   const mp = meetingPoints?.find((p) => p.id === reg.meeting_point_id);
                   const { firstName, lastName, isManual } = getParticipantName(reg);
                   const regPriceOption = getPriceOptionForRegistration(reg);
-                  const depositLabel = getDepositPaymentLabel(reg, event, regPriceOption);
                   const specialRequests = getSpecialRequestAnswers(reg);
+                  const paymentBadge = getParticipantPaymentBadge(reg, event, regPriceOption);
+                  const profile = isManual ? null : (reg.profiles as ParticipantProfileBadgeSource | null);
+                  const hasHealthAttention = profile?.health_safety_status === "has_info";
                   const instagramHandle = !isManual && isConfirmedEffectiveRegistration(reg)
-                    ? (reg.profiles as any)?.instagram_handle
+                    ? profile?.instagram_handle
                     : null;
                   return (
                     <Card key={reg.id} className="p-3 space-y-2">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
-                          {isManual ? (firstName[0] || "?") : ((reg.profiles as any)?.avatar_url ? (
-                            <img src={(reg.profiles as any).avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          {isManual ? (firstName[0] || "?") : (profile?.avatar_url ? (
+                            <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
                           ) : firstName[0])}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1228,17 +1318,9 @@ const EventManage = () => {
                             {isManual && <span className="text-[10px] text-warning ml-1">(manual)</span>}
                           </p>
                           <p className="text-[11px] text-muted-foreground font-body">
-                            {!isManual && ((reg.profiles as any)?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
-                            {reg.sport_level && !reg.sport_level.startsWith("manual:") && (
-                              <span className="text-primary ml-1">· Level: {reg.sport_level}</span>
-                            )}
+                            {!isManual && (profile?.phone || "No phone")} {mp ? `· ${mp.name}` : ""}
                             {regPriceOption && (
                               <span className="text-secondary ml-1">· {regPriceOption.name}</span>
-                            )}
-                            {(depositLabel || (reg.payment_status && reg.payment_status !== "not_required")) && (
-                              <span className={`ml-1 ${(reg.payment_status === "paid" || reg.status === "paid") ? "text-success" : "text-warning"}`}>
-                                · {depositLabel || reg.payment_status}
-                              </span>
                             )}
                           </p>
                           {instagramHandle && (
@@ -1252,43 +1334,26 @@ const EventManage = () => {
                               @{instagramHandle}
                             </a>
                           )}
-                          {/* Suitability indicators for organizers */}
-                          {(!isManual || specialRequests.length > 0) && ((reg.profiles as any)?.self_level || specialRequests.length > 0) && (
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              {(reg.profiles as any)?.self_level && (
-                                <>
-                                  <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-body font-semibold ${
-                                    (reg.profiles as any).self_level === "advanced" ? "bg-success/10 text-success" :
-                                    (reg.profiles as any).self_level === "intermediate" ? "bg-primary/10 text-primary" :
-                                    "bg-warning/10 text-warning"
-                                  }`}>
-                                    {(reg.profiles as any).self_level === "advanced" ? "💪" : (reg.profiles as any).self_level === "intermediate" ? "🥾" : "🌱"} {(reg.profiles as any).self_level}
-                                  </span>
-                                  {(reg.profiles as any).trekking_experience && (
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
-                                      🏔️ {(reg.profiles as any).trekking_experience === "5_plus" || (reg.profiles as any).trekking_experience === "5+" ? "5+" : (reg.profiles as any).trekking_experience} trek
-                                    </span>
-                                  )}
-                                  {(reg.profiles as any).activity_frequency && (
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] font-body text-muted-foreground">
-                                      {(reg.profiles as any).activity_frequency === "high" || (reg.profiles as any).activity_frequency === ">2/week" ? "⚡" : "🙂"} {(reg.profiles as any).activity_frequency}
-                                    </span>
-                                  )}
-                                  {(reg.profiles as any).experience_grade != null && (
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary/10 text-[9px] font-body text-secondary font-semibold">
-                                      Grade: {(reg.profiles as any).experience_grade}
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                              {specialRequests.length > 0 && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/10 text-[9px] font-body text-warning font-semibold">
-                                  <AlertTriangle className="h-2.5 w-2.5" />
-                                  Richiesta speciale
-                                </span>
-                              )}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[9px] font-body font-semibold text-muted-foreground">
+                              Livello (1/5): {formatParticipantLevelBadge(profile)}
+                            </span>
+                            <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-body font-semibold ${participantPaymentBadgeClassName[paymentBadge.tone]}`}>
+                              {paymentBadge.label}
+                            </span>
+                            {hasHealthAttention && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-warning/25 bg-warning/10 text-[9px] font-body text-warning font-semibold">
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                Salute
+                              </span>
+                            )}
+                            {specialRequests.length > 0 && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-warning/25 bg-warning/10 text-[9px] font-body text-warning font-semibold">
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                Richiesta speciale
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-1">
                           <Badge variant={reg.checked_in ? "default" : "outline"} className="text-[10px]">
