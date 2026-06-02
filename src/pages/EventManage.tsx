@@ -1350,7 +1350,7 @@ const EventManage = () => {
                             {specialRequests.length > 0 && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-warning/25 bg-warning/10 text-[9px] font-body text-warning font-semibold">
                                 <AlertTriangle className="h-2.5 w-2.5" />
-                                Richiesta speciale
+                                Rich. speciale
                               </span>
                             )}
                           </div>
