@@ -16,7 +16,7 @@ const REWARD_ICON: Record<string, typeof Gift> = {
   coupon: Ticket,
   badge: Trophy,
   physical: Gift,
-  points: Gift,
+  points: Star,
   other: Gift,
 };
 
@@ -95,6 +95,55 @@ const getPhysicalDisplayValue = (reward: RewardCardRow) => {
   return value === getPhysicalClaimInstructions(reward) ? null : value;
 };
 
+const formatPointLabel = (points: number) => {
+  const unit = Math.abs(points) === 1 ? "punto" : "punti";
+  return `${points > 0 ? "+" : ""}${points} ${unit}`;
+};
+
+const getPointValueLabel = (reward: RewardCardRow) => {
+  const candidates = [reward.value, reward.title]
+    .map((value) => value?.trim())
+    .filter((value): value is string => !!value);
+
+  for (const candidate of candidates) {
+    const lower = candidate.toLowerCase();
+    if (lower.includes("punt")) {
+      const match = candidate.match(/[+-]?\d+/);
+      return match ? formatPointLabel(Number(match[0])) : candidate;
+    }
+
+    if (/^[+-]?\d+$/.test(candidate)) {
+      return formatPointLabel(Number(candidate));
+    }
+  }
+
+  return null;
+};
+
+const getPointRewardReason = (reward: RewardCardRow) => {
+  const title = reward.title?.trim();
+  if (!title) return null;
+
+  const valueLabel = getPointValueLabel(reward);
+  if (valueLabel && title.toLowerCase() === valueLabel.toLowerCase()) return null;
+  if (title.toLowerCase() === "punti" || title.toLowerCase() === "points") return null;
+  if (title.toLowerCase().includes("punt") && /[+-]?\d+/.test(title)) return null;
+
+  return title;
+};
+
+const getRewardStatus = (reward: RewardCardRow, isExpired: boolean) => {
+  const statusKey = isExpired && reward.status === "active" ? "expired" : reward.status;
+
+  if (reward.type === "points") {
+    return statusKey === "expired"
+      ? { label: "Scaduti", color: "text-destructive" }
+      : { label: "Accreditati", color: "text-success" };
+  }
+
+  return STATUS_LABELS[statusKey] || STATUS_LABELS.active;
+};
+
 const Rewards = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -135,20 +184,22 @@ const Rewards = () => {
     const sourceBadge = sourceReward?.badges;
     const badgeName = sourceBadge?.name || (r.type === "badge" ? r.value : null);
     const badgeDescription = sourceBadge?.description || null;
-    const displayTitle = r.type === "badge" && isGenericBadgeTitle(r.title) && badgeName
+    const displayTitle = r.type === "points"
+      ? getPointValueLabel(r) || r.title
+      : r.type === "badge" && isGenericBadgeTitle(r.title) && badgeName
       ? badgeName
       : isPhysicalReward(r)
         ? getPhysicalRewardTitle(r)
         : r.title;
     const Icon = REWARD_ICON[r.type] || Gift;
-    const status = STATUS_LABELS[r.status] || STATUS_LABELS.active;
     const isExpired = r.expiry_date && new Date(r.expiry_date) < new Date();
-    const actualStatus = isExpired && r.status === "active" ? STATUS_LABELS.expired : status;
+    const actualStatus = getRewardStatus(r, !!isExpired);
     const iconValue = r.type === "badge" ? sourceBadge?.icon : null;
 
     const isPhysical = isPhysicalReward(r);
     const claimInstructions = getPhysicalClaimInstructions(r);
     const physicalDisplayValue = isPhysical ? getPhysicalDisplayValue(r) : null;
+    const pointRewardReason = r.type === "points" ? getPointRewardReason(r) : null;
     return (
       <Card
         key={r.id}
@@ -198,6 +249,9 @@ const Rewards = () => {
             )}
             {physicalDisplayValue && (
               <p className="text-xs font-body text-muted-foreground mt-0.5">{physicalDisplayValue}</p>
+            )}
+            {pointRewardReason && (
+              <p className="text-xs font-body text-muted-foreground mt-0.5">{pointRewardReason}</p>
             )}
             {r.type === "badge" && badgeName && displayTitle !== badgeName && (
               <p className="text-xs font-body text-muted-foreground mt-0.5">{badgeName}</p>

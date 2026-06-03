@@ -1,5 +1,5 @@
 import { useState, forwardRef } from "react";
-import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock } from "lucide-react";
+import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock, Star } from "lucide-react";
 import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
@@ -21,8 +21,13 @@ const typeIcons: Record<string, React.ReactNode> = {
   event_reminder_24h: <Clock className="h-4 w-4 text-orange-500" />,
   event_reminder_3h: <Clock className="h-4 w-4 text-red-500" />,
   issue_resolved: <CheckCheck className="h-4 w-4 text-green-500" />,
+  points: <Star className="h-4 w-4 text-secondary" />,
   info: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
+
+const rewardsNotificationTypes = new Set(["reward", "rewards", "points", "coupon", "coupon_unlocked", "mission_reward", "prize"]);
+
+const isRewardsNotification = (notification: Notification) => rewardsNotificationTypes.has(notification.type);
 
 const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notification; onSelect: (n: Notification) => void }>(
   ({ notification, onSelect }, ref) => {
@@ -106,11 +111,15 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
 
   if (selectedNotification) {
     const localized = localizeNotification(selectedNotification, language as "it" | "en");
-    const handleOpenEvent = () => {
-      if (!selectedNotification.event_id) return;
+    const handleOpenDestination = () => {
       onClose();
-      navigate(`/event/${selectedNotification.event_id}`);
+      if (selectedNotification.event_id) {
+        navigate(`/event/${selectedNotification.event_id}`);
+      } else if (isRewardsNotification(selectedNotification)) {
+        navigate("/rewards");
+      }
     };
+    const canOpenDestination = !!selectedNotification.event_id || isRewardsNotification(selectedNotification);
 
     return (
       <div ref={ref} className="w-[calc(100vw-2rem)] max-w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
@@ -129,9 +138,11 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
           <p className="text-[10px] text-muted-foreground/60">
             {formatDistanceToNow(new Date(selectedNotification.created_at), { addSuffix: true, locale })}
           </p>
-          {selectedNotification.event_id && (
-            <Button type="button" size="sm" className="w-full" onClick={handleOpenEvent}>
-              {language === "it" ? "Apri evento" : "Open event"}
+          {canOpenDestination && (
+            <Button type="button" size="sm" className="w-full" onClick={handleOpenDestination}>
+              {selectedNotification.event_id
+                ? language === "it" ? "Apri evento" : "Open event"
+                : language === "it" ? "Apri ricompense" : "Open rewards"}
             </Button>
           )}
         </div>

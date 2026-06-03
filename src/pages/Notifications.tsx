@@ -1,4 +1,4 @@
-import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock, ArrowLeft, MapPin, Navigation } from "lucide-react";
+import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock, ArrowLeft, MapPin, Navigation, Star } from "lucide-react";
 import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
@@ -22,8 +22,13 @@ const typeIcons: Record<string, React.ReactNode> = {
   event_reminder_24h: <Clock className="h-5 w-5 text-orange-500" />,
   event_reminder_3h: <Clock className="h-5 w-5 text-destructive" />,
   issue_resolved: <CheckCheck className="h-5 w-5 text-success" />,
+  points: <Star className="h-5 w-5 text-secondary" />,
   info: <Bell className="h-5 w-5 text-muted-foreground" />,
 };
+
+const rewardsNotificationTypes = new Set(["reward", "rewards", "points", "coupon", "coupon_unlocked", "mission_reward", "prize"]);
+
+const isRewardsNotification = (notification: Notification) => rewardsNotificationTypes.has(notification.type);
 
 const NotificationRow = ({ notification }: { notification: Notification }) => {
   const navigate = useNavigate();
@@ -36,6 +41,8 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
     }
     if (notification.event_id) {
       navigate(`/event/${notification.event_id}`);
+    } else if (isRewardsNotification(notification)) {
+      navigate("/rewards");
     }
   };
 
