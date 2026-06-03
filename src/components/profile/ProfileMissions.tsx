@@ -52,7 +52,7 @@ const getMissionProgressValue = (mission: any) => {
   return Math.min(Number(mission.progress || 0), target) / target;
 };
 
-const getMissionProgressClassName = (mission: any, baseClassName: string) =>
+const getMissionProgressClassName = (mission: { completed?: boolean | null }, baseClassName: string) =>
   `${baseClassName} bg-muted ${mission.completed ? "[&>div]:bg-primary" : "[&>div]:bg-secondary"}`;
 
 const normalizeRewards = (mission: any) => {
