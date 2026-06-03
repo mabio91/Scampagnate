@@ -1,20 +1,26 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Instagram, User as UserIcon, LogIn, Check, AlertTriangle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CalendarCheck, Instagram, Star, User as UserIcon, AlertTriangle, ShieldCheck, ZoomIn } from "lucide-react";
 import { useEvent, useEventParticipants } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LevelAvatar from "@/components/LevelAvatar";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { useCommunityLevel, type CommunityLevel } from "@/hooks/useCommunityLevel";
 import type { FitScoreResult } from "@/hooks/useEventFitScore";
 import type { AccessRulesConfig, AccessRule } from "@/hooks/useEventAccessRules";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { countUniqueAttendedEvents, dedupeRegistrationsByEvent } from "@/lib/eventRegistrations";
 import { instagramProfileUrl } from "@/lib/instagram";
 import { formatHealthSafetyStatus } from "@/lib/healthSafety";
+
+type PublicParticipantBadge = {
+  icon?: string | null;
+  name?: string | null;
+};
 
 // --- Fit score calc (organizer/admin only) ---
 const LEVEL_MAP: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
@@ -176,6 +182,7 @@ const ParticipantRow = ({
   points,
   level,
   age,
+  onOpen,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -183,11 +190,24 @@ const ParticipantRow = ({
   points: number;
   level?: CommunityLevel | null;
   age?: number | null;
+  onOpen?: () => void;
 }) => {
   const displayName = formatParticipantDisplayName(firstName, lastNameInitial);
 
   return (
-    <div className="flex items-center gap-3 py-3">
+    <div
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (!onOpen) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`flex items-center gap-3 rounded-xl py-3 ${onOpen ? "cursor-pointer px-2 -mx-2 transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}`}
+    >
       <LevelAvatar
         avatarUrl={avatarUrl}
         firstName={firstName}
@@ -224,6 +244,7 @@ const AdminParticipantRow = ({
   emergencyMedicationHas,
   emergencyMedicationNotes,
   healthHelpNotes,
+  onOpen,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -240,11 +261,24 @@ const AdminParticipantRow = ({
   emergencyMedicationHas?: boolean | null;
   emergencyMedicationNotes?: string | null;
   healthHelpNotes?: string | null;
+  onOpen?: () => void;
 }) => {
   const displayName = formatParticipantDisplayName(firstName, lastNameInitial);
 
   return (
-    <div className="flex items-center gap-3 py-3">
+    <div
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (!onOpen) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`flex items-center gap-3 rounded-xl py-3 ${onOpen ? "cursor-pointer px-2 -mx-2 transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}`}
+    >
       <LevelAvatar
         avatarUrl={avatarUrl}
         firstName={firstName}
@@ -333,6 +367,125 @@ const AdminParticipantRow = ({
 	  );
 };
 
+const PublicParticipantProfileDialog = ({
+  participant,
+  onOpenChange,
+}: {
+  participant: any | null;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  const [avatarExpanded, setAvatarExpanded] = useState(false);
+  const profile = participant?.profiles || {};
+  const firstName = profile.first_name || participant?.first_name || "Partecipante";
+  const displayName = formatParticipantDisplayName(firstName, profile.last_name_initial);
+  const age = profile.age ?? null;
+  const points = profile.total_points ?? participant?.total_points ?? 0;
+  const attendedEventsCount = profile.attended_events_count ?? participant?.attended_events_count ?? 0;
+  const badges = ((participant?.badges || profile.badges || []) as PublicParticipantBadge[])
+    .filter((badge) => badge?.name || badge?.icon);
+  const bio = profile.bio || participant?.bio || null;
+  const avatarUrl = profile.avatar_url || participant?.avatar_url || null;
+  const { data: levelData } = useCommunityLevel(points);
+
+  return (
+    <Dialog
+      open={!!participant}
+      onOpenChange={(open) => {
+        if (!open) setAvatarExpanded(false);
+        onOpenChange(open);
+      }}
+    >
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-0">
+        <div className="px-5 pb-5 pt-6">
+          <DialogHeader className="items-center text-center">
+            <div className="relative">
+              {avatarUrl ? (
+                <button
+                  type="button"
+                  onClick={() => setAvatarExpanded((expanded) => !expanded)}
+                  className="group relative block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={avatarExpanded ? "Riduci avatar" : "Ingrandisci avatar"}
+                >
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    className={`${avatarExpanded ? "h-72 w-72 max-w-[72vw]" : "h-28 w-28"} rounded-full object-cover border-4 border-background shadow-md transition-all duration-200`}
+                  />
+                  <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-background text-foreground shadow-sm ring-1 ring-border">
+                    <ZoomIn className="h-4 w-4" />
+                  </span>
+                </button>
+              ) : (
+                <LevelAvatar
+                  avatarUrl={null}
+                  firstName={firstName}
+                  lastName={profile.last_name_initial || undefined}
+                  points={points}
+                  level={levelData}
+                  size="lg"
+                  showBadge
+                  className="scale-125"
+                />
+              )}
+            </div>
+            <div className="space-y-2 pt-2">
+              <DialogTitle className="font-display text-2xl">
+                {displayName}{age != null ? `, ${age}` : ""}
+              </DialogTitle>
+              <div className="flex flex-wrap justify-center gap-2">
+                <LevelBadgePill level={levelData} />
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border bg-muted/35 p-3">
+              <div className="mb-1 flex items-center gap-1.5 text-muted-foreground">
+                <CalendarCheck className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-body font-semibold">Eventi</span>
+              </div>
+              <p className="font-display text-xl font-bold text-foreground">{attendedEventsCount}</p>
+              <p className="text-[11px] font-body text-muted-foreground">partecipati</p>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/35 p-3">
+              <div className="mb-1 flex items-center gap-1.5 text-muted-foreground">
+                <Star className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-body font-semibold">Punti</span>
+              </div>
+              <p className="font-display text-xl font-bold text-foreground">{points}</p>
+              <p className="text-[11px] font-body text-muted-foreground">community</p>
+            </div>
+          </div>
+
+          {bio && (
+            <section className="mt-5 space-y-2">
+              <h3 className="font-body text-xs font-bold uppercase tracking-wide text-muted-foreground">Bio</h3>
+              <p className="whitespace-pre-line text-sm font-body leading-relaxed text-foreground/90">{bio}</p>
+            </section>
+          )}
+
+          {badges.length > 0 && (
+            <section className="mt-5 space-y-2">
+              <h3 className="font-body text-xs font-bold uppercase tracking-wide text-muted-foreground">Badge</h3>
+              <div className="flex flex-wrap gap-2">
+                {badges.map((badge, index) => (
+                  <span
+                    key={`${badge.name || badge.icon}-${index}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-body font-semibold text-primary"
+                  >
+                    <BadgeIcon icon={badge.icon || "Sparkles"} className="h-3.5 w-3.5" />
+                    {badge.name || "Badge"}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // --- Main page ---
 const EventParticipants = () => {
   const { id } = useParams();
@@ -340,6 +493,7 @@ const EventParticipants = () => {
   const { user, isAdmin, isOrganizer } = useAuth();
   const { data: event, isLoading: eventLoading } = useEvent(id!);
   const { data: participants, isLoading: participantsLoading } = useEventParticipants(id!);
+  const [selectedParticipant, setSelectedParticipant] = useState<any | null>(null);
 
   const isOrgOrAdmin = isAdmin || (isOrganizer && user?.id === event?.organizer_id);
 
@@ -572,6 +726,7 @@ const EventParticipants = () => {
 	                      emergencyMedicationHas={pProfile?.emergency_medication_has}
 	                      emergencyMedicationNotes={pProfile?.emergency_medication_notes}
 	                      healthHelpNotes={pProfile?.health_safety_help_notes}
+                      onOpen={() => setSelectedParticipant(p)}
 	                    />
                   );
                 }
@@ -587,6 +742,7 @@ const EventParticipants = () => {
                     manualLevel={p.manual_level}
                     birthDate={p.is_manual ? null : pProfile?.birth_date}
                     age={p.profiles?.age ?? null}
+                    onOpen={() => setSelectedParticipant(p)}
                   />
                 );
               })}
@@ -599,6 +755,13 @@ const EventParticipants = () => {
           </div>
         )}
       </div>
+
+      <PublicParticipantProfileDialog
+        participant={selectedParticipant}
+        onOpenChange={(open) => {
+          if (!open) setSelectedParticipant(null);
+        }}
+      />
     </div>
   );
 };
@@ -613,6 +776,7 @@ const ParticipantRowWithLevel = ({
   manualLevel,
   birthDate,
   age,
+  onOpen,
 }: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -622,6 +786,7 @@ const ParticipantRowWithLevel = ({
   manualLevel?: string | null;
   birthDate?: string | null;
   age?: number | null;
+  onOpen?: () => void;
 }) => {
   const { data: levelData } = useCommunityLevel(points);
   
@@ -645,6 +810,7 @@ const ParticipantRowWithLevel = ({
       points={points}
       level={finalLevel}
       age={age ?? calculateAge(birthDate)}
+      onOpen={onOpen}
     />
   );
 };
@@ -668,6 +834,7 @@ const AdminParticipantRowWithLevel = ({
 	  emergencyMedicationHas,
 	  emergencyMedicationNotes,
 	  healthHelpNotes,
+  onOpen,
 	}: {
   avatarUrl?: string | null;
   firstName?: string;
@@ -686,6 +853,7 @@ const AdminParticipantRowWithLevel = ({
 	  emergencyMedicationHas?: boolean | null;
 	  emergencyMedicationNotes?: string | null;
 	  healthHelpNotes?: string | null;
+  onOpen?: () => void;
 	}) => {
   const { data: levelData } = useCommunityLevel(points);
 
@@ -720,6 +888,7 @@ const AdminParticipantRowWithLevel = ({
 	      emergencyMedicationHas={isManual ? null : emergencyMedicationHas}
 	      emergencyMedicationNotes={isManual ? null : emergencyMedicationNotes}
 	      healthHelpNotes={isManual ? null : healthHelpNotes}
+      onOpen={onOpen}
 	    />
   );
 };

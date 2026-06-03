@@ -3231,7 +3231,10 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: {
           age: number
+          attended_events_count: number
           avatar_url: string
+          badges: Json
+          bio: string
           first_name: string
           id: string
           last_name_initial: string
