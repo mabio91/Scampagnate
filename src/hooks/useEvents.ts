@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isMembershipActive as isMembershipActiveFn } from "@/lib/membership";
 import { parseEventDateTime } from "@/lib/timezone";
 import { ACTIVE_PARTICIPANT_STATUSES } from "@/lib/eventPayments";
+import { sortMeetingPointsChronologically } from "@/lib/meetingPoints";
 
 const EDGE_GATEWAY_JWT =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -122,7 +123,7 @@ export const useEvents = (categoryName?: string | null) => {
       return (data as any).map((event: any) => ({
         ...event,
         category: event.event_categories,
-        meeting_points: event.event_meeting_points,
+        meeting_points: sortMeetingPointsChronologically(event.event_meeting_points),
         price_options: event.event_price_options?.sort((a: any, b: any) => a.sort_order - b.sort_order) || [],
       })) as unknown as EventWithDetails[];
     },
@@ -145,7 +146,7 @@ export const useEvent = (id: string) => {
       return {
         ...data,
         category: data.event_categories,
-        meeting_points: data.event_meeting_points || [],
+        meeting_points: sortMeetingPointsChronologically(data.event_meeting_points),
         price_options: ((data as any).event_price_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
       } as unknown as EventWithDetails;
     },
@@ -512,7 +513,7 @@ export const useMyEvents = () => {
           ? {
               ...registration.events,
               category: registration.events.event_categories,
-              meeting_points: registration.events.event_meeting_points || [],
+              meeting_points: sortMeetingPointsChronologically(registration.events.event_meeting_points),
               price_options: (registration.events.event_price_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
             }
           : registration.events,
