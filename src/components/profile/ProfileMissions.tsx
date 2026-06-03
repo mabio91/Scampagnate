@@ -52,6 +52,9 @@ const getMissionProgressValue = (mission: any) => {
   return Math.min(Number(mission.progress || 0), target) / target;
 };
 
+const getMissionProgressClassName = (mission: any, baseClassName: string) =>
+  `${baseClassName} bg-muted ${mission.completed ? "[&>div]:bg-primary" : "[&>div]:bg-secondary"}`;
+
 const normalizeRewards = (mission: any) => {
   const configuredRewards = Array.isArray(mission.mission_rewards)
     ? mission.mission_rewards
@@ -293,7 +296,7 @@ const ProfileMissions = () => {
             <div className="flex items-center gap-2 mt-2">
               <Progress
                 value={progressValue}
-                className="h-1.5 flex-1"
+                className={getMissionProgressClassName(mission, "h-1.5 flex-1")}
               />
               <span className="text-[10px] font-display text-muted-foreground font-bold whitespace-nowrap">
                 {Math.min(mission.progress, mission.target)} di {mission.target}
@@ -423,7 +426,7 @@ const ProfileMissions = () => {
                   </div>
                   <Progress
                     value={selectedMission.target > 0 ? (Math.min(selectedMission.progress, selectedMission.target) / selectedMission.target) * 100 : 0}
-                    className="h-1.5"
+                    className={getMissionProgressClassName(selectedMission, "h-1.5")}
                   />
                   <p className="text-xs text-muted-foreground">
                     {selectedMission.completed ? "Missione completata. La ricompensa collegata è stata sbloccata." : "Continua con gli eventi adatti per completarla."}
