@@ -3316,6 +3316,10 @@ export type Database = {
         Args: { new_data: Json; old_data: Json }
         Returns: string[]
       }
+      sync_current_periodic_user_missions: {
+        Args: never
+        Returns: number
+      }
       sync_user_missions_for_user: {
         Args: { p_user_id: string }
         Returns: undefined
