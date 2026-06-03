@@ -353,8 +353,9 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const hasOnlineBalanceDue = isDepositRegistration(registration)
     && getEventBalancePaymentMode(event, selectedPriceOption) === "online"
     && Math.max(storedBalanceDue, configuredBalanceDue) > 0;
-  const canCompletePayment = Boolean(showActions)
-    && registration.status !== "cancelled"
+  const isPastEvent = Boolean(isPast || isEventPastByDateTime(event));
+  const canManageUpcomingRegistration = Boolean(showActions && !isPastEvent && registration.status !== "cancelled");
+  const canCompletePayment = canManageUpcomingRegistration
     && (hasSpotAvailable || hasPendingPayment || hasOnlineBalanceDue);
   const paymentActionTitle = hasOnlineBalanceDue
     ? "Completa il saldo"
@@ -363,13 +364,13 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
       : "Completa il pagamento";
 
   const hasPaidPayment = registration.payment_status === "paid" || isDepositRegistration(registration);
-  const canCancel = showActions && registration.status !== "cancelled" && !hasSpotAvailable;
+  const canCancel = canManageUpcomingRegistration && !hasSpotAvailable;
   const canChangeFormula = Boolean(
     event.price_options?.length && event.price_options.length > 1 && ["registered", "paid", "deposit_paid"].includes(registration.status || ""),
   );
   const editableFieldsAvailable = hasEditableRegistrationFields(event) || canChangeFormula;
   const registrationStillEditable = canEditRegistration(event);
-  const showEditButton = Boolean(showActions && registration.status !== "cancelled" && editableFieldsAvailable && registrationStillEditable);
+  const showEditButton = Boolean(canManageUpcomingRegistration && editableFieldsAvailable && registrationStillEditable);
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
   const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US")}`;
@@ -560,7 +561,7 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
           </div>
         </Link>
 
-        {(showActions || isPast) && registration.status !== "cancelled" && (
+        {canManageUpcomingRegistration && (
           <div className="flex items-center gap-2 px-3 pb-3 pt-1 flex-wrap">
             <button onClick={shareEvent} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-body font-medium hover:bg-muted/80 active:scale-95 transition-all">
               <Share2 className="h-3.5 w-3.5" /> {t("share")}
