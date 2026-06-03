@@ -37,6 +37,29 @@ interface LocationAutocompleteProps {
 
 const GOOGLE_API_KEY = "AIzaSyCPktJ9nE3SLzugNWgWoh_givCXkl8w2Qg";
 
+const formatSelectedPlaceAddress = (
+  placeName?: string,
+  formattedAddress?: string,
+  fallback?: string
+) => {
+  const cleanName = placeName?.trim();
+  const cleanAddress = formattedAddress?.trim();
+  const cleanFallback = fallback?.trim();
+
+  if (cleanName && cleanAddress) {
+    const normalizedName = cleanName.toLocaleLowerCase("it-IT");
+    const normalizedAddress = cleanAddress.toLocaleLowerCase("it-IT");
+
+    if (normalizedAddress === normalizedName || normalizedAddress.startsWith(`${normalizedName},`)) {
+      return cleanAddress;
+    }
+
+    return `${cleanName}, ${cleanAddress}`;
+  }
+
+  return cleanAddress || cleanName || cleanFallback || "";
+};
+
 const LocationAutocomplete = ({
   value,
   onChange,
@@ -158,7 +181,11 @@ const LocationAutocomplete = ({
 
       if (res.ok) {
         const place = await res.json();
-        const displayName = place.formattedAddress || place.displayName?.text || suggestion.fullText;
+        const displayName = formatSelectedPlaceAddress(
+          place.displayName?.text,
+          place.formattedAddress,
+          suggestion.fullText
+        );
         const lat = place.location?.latitude;
         const lng = place.location?.longitude;
         setInputValue(displayName);

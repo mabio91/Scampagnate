@@ -22,14 +22,16 @@ const autocompleteResponse = (mainText: string, fullText = mainText) =>
       }),
   } as Response);
 
-const placeDetailsResponse = Promise.resolve({
-  ok: true,
-  json: () =>
-    Promise.resolve({
-      formattedAddress: "Roma, RM, Italia",
-      location: { latitude: 41.9028, longitude: 12.4964 },
-    }),
-} as Response);
+const placeDetailsResponse = (
+  place = {
+    formattedAddress: "Roma, RM, Italia",
+    location: { latitude: 41.9028, longitude: 12.4964 },
+  }
+) =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve(place),
+  } as Response);
 
 describe("LocationAutocomplete", () => {
   afterEach(() => {
@@ -54,7 +56,7 @@ describe("LocationAutocomplete", () => {
             : staleSearch;
         }
 
-        return placeDetailsResponse;
+        return placeDetailsResponse();
       });
 
     render(<LocationAutocomplete value="" onChange={onChange} />);
@@ -85,5 +87,42 @@ describe("LocationAutocomplete", () => {
       expect(screen.queryByText("Roma")).not.toBeInTheDocument();
     });
     expect(onChange).toHaveBeenCalledWith("Roma, RM, Italia", 41.9028, 12.4964);
+  });
+
+  it("keeps the Google place name together with the formatted address for POI selections", async () => {
+    const onChange = vi.fn();
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation((input) => {
+        const url = String(input);
+        if (url.includes("places:autocomplete")) {
+          return autocompleteResponse("Rifugio Rosso", "Rifugio Rosso, Lazio, Italia");
+        }
+
+        return placeDetailsResponse({
+          displayName: { text: "Rifugio Rosso" },
+          formattedAddress: "Via del Sentiero 12, 00010 Roma RM, Italia",
+          location: { latitude: 42.1, longitude: 12.4 },
+        });
+      });
+
+    render(<LocationAutocomplete value="" onChange={onChange} />);
+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "rif" } });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    });
+
+    fireEvent.click(await screen.findByText("Rifugio Rosso"));
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(
+        "Rifugio Rosso, Via del Sentiero 12, 00010 Roma RM, Italia",
+        42.1,
+        12.4
+      );
+    });
+
+    expect(fetchMock).toHaveBeenCalled();
   });
 });
