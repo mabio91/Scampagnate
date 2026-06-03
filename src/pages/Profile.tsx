@@ -6,7 +6,7 @@ import { isMembershipActive, isMembershipExpired, getMembershipExpiryDate } from
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronDown, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle, ShieldCheck } from "lucide-react";
+import { User, LogOut, Edit3, Star, CreditCard, Copy, Crown, CheckCircle2, ChevronDown, ChevronRight, Mountain, Lightbulb, HelpCircle, Users, Gift, Info, X, MessageCircle, ShieldCheck, Loader2 } from "lucide-react";
 import ProfileBadges from "@/components/profile/ProfileBadges";
 import ProfileCompleteness from "@/components/profile/ProfileCompleteness";
 import ProfileGamification from "@/components/profile/ProfileGamification";
@@ -21,6 +21,7 @@ import ProfileEditSheet from "@/components/profile/ProfileEditSheet";
 import ConsentPrivacySection from "@/components/profile/ConsentPrivacySection";
 import { hasCompletedHealthSafety } from "@/lib/healthSafety";
 import { hasCompleteMembershipProfile } from "@/lib/membershipProfile";
+import { supabase } from "@/integrations/supabase/client";
 
 const MEMBERSHIP_BENEFITS = [
   "Copertura assicurativa durante le attività",
@@ -42,6 +43,7 @@ const Profile = () => {
   const [showProposalForm, setShowProposalForm] = useState(false);
   const [showPointsInfo, setShowPointsInfo] = useState(false);
   const [benefitsExpanded, setBenefitsExpanded] = useState(false);
+  const [membershipCheckoutLoading, setMembershipCheckoutLoading] = useState(false);
   const profileMeta = profile as typeof profile & {
     created_at?: string;
     is_founding_member?: boolean;
@@ -85,8 +87,57 @@ const Profile = () => {
     setShowEditSheet(true);
   };
 
+  const handleMembershipCheckout = async () => {
+    if (!profile) return;
+    if (!hasCompleteMembershipProfile(profile)) {
+      openMembershipSection();
+      return;
+    }
+
+    setMembershipCheckoutLoading(true);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (sessionError || !accessToken) {
+        throw new Error("Devi effettuare l'accesso per acquistare la tessera.");
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-membership-checkout", {
+        body: {
+          returnUrlBase: `${window.location.origin}/membership-success`,
+          cancelUrlBase: `${window.location.origin}/profile`,
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      throw new Error("No checkout URL returned");
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : "Non è stato possibile avviare il checkout tessera.";
+      toast({
+        title: "Errore",
+        description,
+        variant: "destructive",
+      });
+      setMembershipCheckoutLoading(false);
+    }
+  };
+
   const membershipProfileMissing = profile && !hasCompleteMembershipProfile(profile);
   const healthSafetyMissing = profile && !hasCompletedHealthSafety(profile);
+  const membershipActionLabel = membershipProfileMissing
+    ? "Completa dati tessera"
+    : isMembershipExpired(profile)
+      ? "Rinnova la tessera"
+      : "Acquista tessera";
 
   return (
     <>
@@ -303,10 +354,18 @@ const Profile = () => {
                   </p>
                 </div>
                 <Button
-                  onClick={() => navigate("/")}
+                  onClick={handleMembershipCheckout}
+                  disabled={membershipCheckoutLoading}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
-                  Rinnova la tessera
+                  {membershipCheckoutLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Prepariamo il checkout
+                    </>
+                  ) : (
+                    membershipActionLabel
+                  )}
                 </Button>
               </div>
             ) : (
@@ -317,10 +376,18 @@ const Profile = () => {
                   Attivala per partecipare agli eventi e ottenere la copertura assicurativa
                 </p>
                 <Button
-                  onClick={() => navigate("/")}
+                  onClick={handleMembershipCheckout}
+                  disabled={membershipCheckoutLoading}
                   className="w-full bg-primary text-primary-foreground font-body font-semibold"
                 >
-                  Scopri eventi
+                  {membershipCheckoutLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Prepariamo il checkout
+                    </>
+                  ) : (
+                    membershipActionLabel
+                  )}
                 </Button>
               </div>
             )}
