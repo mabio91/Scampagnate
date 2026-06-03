@@ -205,7 +205,8 @@ export const useEventParticipants = (eventId: string) => {
         .select(`*, meeting_point:event_meeting_points(id, name), price_option:event_price_options(${PRICE_OPTION_SELECT})`)
         .eq("event_id", eventId)
         .in("status", [...ACTIVE_PARTICIPANT_STATUSES])
-        .neq("payment_status", "pending");
+        .neq("payment_status", "pending")
+        .order("created_at", { ascending: true });
       if (error) throw error;
 
       const userIds = (data || [])
