@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   getEventEndDateTime,
+  getEventStartDateTime,
   isEventPastByDateTime,
+  isEventStartedByDateTime,
   isEventUpcomingByDateTime,
   parseEventDurationMinutes,
 } from "@/lib/eventDates";
@@ -19,6 +21,21 @@ describe("event date helpers", () => {
     const end = getEventEndDateTime({ date: "2026-05-30", time: "09:00", duration: "3h" });
 
     expect(end?.toISOString()).toBe("2026-05-30T10:00:00.000Z");
+  });
+
+  it("falls back to midnight after the event day when duration is missing", () => {
+    const end = getEventEndDateTime({ date: "2026-05-30", time: "09:00", duration: null });
+
+    expect(end?.toISOString()).toBe("2026-05-30T22:00:00.000Z");
+  });
+
+  it("detects the event start separately from the event end", () => {
+    const event = { date: "2026-05-30", time: "09:00", duration: "3h", status: "open" };
+
+    expect(getEventStartDateTime(event)?.toISOString()).toBe("2026-05-30T07:00:00.000Z");
+    expect(isEventStartedByDateTime(event, new Date("2026-05-30T06:59:00.000Z"))).toBe(false);
+    expect(isEventStartedByDateTime(event, new Date("2026-05-30T07:00:00.000Z"))).toBe(true);
+    expect(isEventPastByDateTime(event, new Date("2026-05-30T09:59:00.000Z"))).toBe(false);
   });
 
   it("treats a same-day event as past only after its computed end", () => {

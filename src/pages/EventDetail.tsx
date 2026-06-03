@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage, getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
-import { isEventPastByDate } from "@/lib/eventDates";
+import { isEventPastByDateTime, isEventStartedByDateTime } from "@/lib/eventDates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useEventOpeningReminders, useToggleEventOpeningReminder, useEventStaff } from "@/hooks/useEvents";
 import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
@@ -370,11 +370,12 @@ const EventDetail = () => {
     event_badges: (event as any).event_badges,
   });
   const isSaved = savedEvents?.some((se: any) => se.event_id === event.id) || false;
-  const isEventPast = isEventPastByDate(event.date);
+  const isEventPast = isEventPastByDateTime(event);
+  const eventStarted = isEventStartedByDateTime(event);
   const eventStatus = String(event.status || "");
   const eventComingSoon = ["draft", "unpublished", "upcoming"].includes(eventStatus);
   const isOpeningReminderActive = eventOpeningReminders?.some((reminder) => reminder.event_id === event.id) || false;
-  const eventRegistrationsClosed = isEventPast || ["closed", "rescheduled", "cancelled", "past", "completed"].includes(eventStatus) || eventComingSoon;
+  const eventRegistrationsClosed = eventStarted || isEventPast || ["closed", "rescheduled", "cancelled", "past", "completed"].includes(eventStatus) || eventComingSoon;
   const canViewParticipants = !!user && (!!isRegistered || user.id === event.organizer_id || isAdmin);
   const canViewMeetingPoints = !!user && (
     isRegistered ||
@@ -655,6 +656,12 @@ const EventDetail = () => {
   };
 
   const handleRegister = async (requestApproval = false) => {
+    if (eventRegistrationsClosed) {
+      setShowRegisterDialog(false);
+      toast({ title: "Iscrizioni chiuse", description: "Le iscrizioni per questo evento sono chiuse." });
+      return;
+    }
+
     if ((eventRequiresMembership || !isMembershipActive(profile)) && !ensureMembershipDataForMembershipFlow()) {
       return;
     }
@@ -799,7 +806,7 @@ const EventDetail = () => {
 
 const getCTALabel = () => {
     if (eventComingSoon) return isOpeningReminderActive ? "Avviso attivo" : "Avvisami";
-    if (eventStatus === "closed") return "Iscrizioni chiuse";
+    if (eventStatus === "closed" || (eventStarted && !isEventPast && !["cancelled", "past", "completed"].includes(eventStatus))) return "Iscrizioni chiuse";
     if (eventStatus === "rescheduled") return "Riprogrammato";
     if (isEventPast || eventStatus === "cancelled" || eventStatus === "past" || eventStatus === "completed") return "Chiuso";
     if (!user) return "Partecipa";
@@ -1769,6 +1776,12 @@ const getCTALabel = () => {
         event={event}
         resolvedPriceOptions={resolvedPriceOptions}
         onRegister={async (opts) => {
+          if (eventRegistrationsClosed) {
+            setShowRegisterDialog(false);
+            toast({ title: "Iscrizioni chiuse", description: "Le iscrizioni per questo evento sono chiuse." });
+            return;
+          }
+
           // Set state from dialog choices
           if (opts.appliedDiscount) setAppliedDiscount(opts.appliedDiscount);
           if (opts.priceOptionId) setSelectedPriceOption(opts.priceOptionId);

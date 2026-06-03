@@ -7,7 +7,6 @@ type EventTiming = {
   status?: string | null;
 };
 
-const DEFAULT_EVENT_DURATION_MINUTES = 3 * 60;
 const COMPLETED_EVENT_STATUSES = new Set(["past", "completed"]);
 
 const parseLocalizedNumber = (value: string | undefined) => {
@@ -30,16 +29,41 @@ export const parseEventDurationMinutes = (duration: string | null | undefined) =
   return total > 0 ? Math.round(total) : null;
 };
 
-export const getEventEndDateTime = (
-  event: EventTiming,
-  fallbackDurationMinutes = DEFAULT_EVENT_DURATION_MINUTES,
-): Date | null => {
+const parseEventDateParts = (date: string | null | undefined) => {
+  const match = String(date || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  return { year: Number(year), month: Number(month), day: Number(day) };
+};
+
+const nextLocalDateString = (date: string | null | undefined) => {
+  const parts = parseEventDateParts(date);
+  if (!parts) return null;
+  const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1));
+  const year = next.getUTCFullYear();
+  const month = String(next.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(next.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+export const getEventStartDateTime = (event: EventTiming): Date | null => {
   if (!event.date || !event.time) return null;
+  return parseEventDateTime(event.date, event.time);
+};
 
-  const start = parseEventDateTime(event.date, event.time);
-  const durationMinutes = parseEventDurationMinutes(event.duration) ?? fallbackDurationMinutes;
+export const getEventEndOfDayDateTime = (date: string | null | undefined): Date | null => {
+  const nextDate = nextLocalDateString(date);
+  return nextDate ? parseEventDateTime(nextDate, "00:00:00") : null;
+};
 
-  return new Date(start.getTime() + durationMinutes * 60 * 1000);
+export const getEventEndDateTime = (event: EventTiming): Date | null => {
+  const start = getEventStartDateTime(event);
+  const durationMinutes = parseEventDurationMinutes(event.duration);
+  if (start && durationMinutes) {
+    return new Date(start.getTime() + durationMinutes * 60 * 1000);
+  }
+
+  return getEventEndOfDayDateTime(event.date);
 };
 
 export function parseEventCalendarDate(date?: string | null): Date | null {
@@ -75,6 +99,11 @@ export function isEventPastByDateTime(event: EventTiming, referenceDate = new Da
   if (endDate) return endDate.getTime() <= referenceDate.getTime();
 
   return isEventPastByDate(event.date, referenceDate);
+}
+
+export function isEventStartedByDateTime(event: EventTiming, referenceDate = new Date()): boolean {
+  const startDate = getEventStartDateTime(event);
+  return startDate ? startDate.getTime() <= referenceDate.getTime() : false;
 }
 
 export function isEventUpcomingByDateTime(event: EventTiming, referenceDate = new Date()): boolean {

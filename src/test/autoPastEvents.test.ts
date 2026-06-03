@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   eventEndDate,
   isEventComplete,
+  isEventStarted,
   parseEventDurationMinutes,
   toRomeDateString,
 } from "../../supabase/functions/auto-past-events/event-completion";
@@ -20,11 +21,24 @@ describe("auto-past-events completion helpers", () => {
     expect(end?.toISOString()).toBe("2026-05-30T10:00:00.000Z");
   });
 
+  it("uses the next Rome midnight when duration is missing", () => {
+    const end = eventEndDate({ date: "2026-05-30", time: "09:00", duration: null });
+
+    expect(end?.toISOString()).toBe("2026-05-30T22:00:00.000Z");
+  });
+
   it("marks an event complete only after the computed end", () => {
     const event = { date: "2026-05-30", time: "09:00", duration: "3h" };
 
     expect(isEventComplete(event, new Date("2026-05-30T09:59:00.000Z"))).toBe(false);
     expect(isEventComplete(event, new Date("2026-05-30T10:00:00.000Z"))).toBe(true);
+  });
+
+  it("marks an event started at the departure time", () => {
+    const event = { date: "2026-05-30", time: "09:00", duration: "3h" };
+
+    expect(isEventStarted(event, new Date("2026-05-30T06:59:00.000Z"))).toBe(false);
+    expect(isEventStarted(event, new Date("2026-05-30T07:00:00.000Z"))).toBe(true);
   });
 
   it("uses the Rome day for candidate selection", () => {

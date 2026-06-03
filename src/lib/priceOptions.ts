@@ -1,3 +1,4 @@
+import { isEventStartedByDateTime } from "@/lib/eventDates";
 import { isWithinPromoWindow } from "@/lib/promoPricing";
 
 export type PriceOptionPaymentType = "free" | "paid" | "deposit" | "location";
@@ -31,6 +32,9 @@ export interface EventPricingLike {
   spots_total?: number | null;
   spots_taken?: number | null;
   status?: string | null;
+  date?: string | null;
+  time?: string | null;
+  duration?: string | null;
   waiting_list_enabled?: boolean | null;
   additional_fields?: Record<string, unknown> | null;
 }
@@ -139,7 +143,7 @@ export const getEventFillRatio = (event: EventPricingLike) => {
 const closedStatuses = new Set(["closed", "cancelled", "past", "completed", "draft", "unpublished", "upcoming", "rescheduled"]);
 
 export const isEventClosedForRegistration = (event: EventPricingLike) =>
-  closedStatuses.has(String(event.status || ""));
+  closedStatuses.has(String(event.status || "")) || isEventStartedByDateTime(event);
 
 export const isEventCapacitySoldOut = (event: EventPricingLike) =>
   Number(event.spots_total || 0) > 0 && getEventRemainingSpots(event) <= 0;

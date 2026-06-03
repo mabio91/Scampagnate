@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
+  AUTO_CLOSE_EVENT_STATUSES,
   AUTO_COMPLETE_EVENT_STATUSES,
   isEventComplete,
+  isEventStarted,
   toRomeDateString,
 } from "./event-completion.ts";
 
@@ -42,7 +44,33 @@ serve(async (req) => {
       .filter((event) => isEventComplete(event, now))
       .map((event) => event.id);
 
-    let data: Array<{ id: string; title: string }> = [];
+    const closedEventIds = (candidateEvents || [])
+      .filter((event) => AUTO_CLOSE_EVENT_STATUSES.includes(event.status as any))
+      .filter((event) => !completedEventIds.includes(event.id))
+      .filter((event) => isEventStarted(event, now))
+      .map((event) => event.id);
+
+    let closedEvents: Array<{ id: string; title: string }> = [];
+    let completedEvents: Array<{ id: string; title: string }> = [];
+
+    if (closedEventIds.length > 0) {
+      const { data: updatedClosedEvents, error } = await supabase
+        .from('events')
+        .update({ status: 'closed' })
+        .in('id', closedEventIds)
+        .in('status', AUTO_CLOSE_EVENT_STATUSES)
+        .select('id, title');
+
+      if (error) {
+        console.error('Error closing started events:', error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      closedEvents = updatedClosedEvents || [];
+    }
 
     // Mark elapsed public/active events as completed. Do not overwrite draft,
     // upcoming, cancelled, or rescheduled organizer/admin states.
@@ -62,11 +90,13 @@ serve(async (req) => {
         });
       }
 
-      data = updatedEvents || [];
+      completedEvents = updatedEvents || [];
     }
 
-    const count = data?.length || 0;
-    console.log(`Marked ${count} events as completed:`, data?.map(e => e.title));
+    const closedCount = closedEvents?.length || 0;
+    const completedCount = completedEvents?.length || 0;
+    console.log(`Marked ${closedCount} events as closed:`, closedEvents?.map(e => e.title));
+    console.log(`Marked ${completedCount} events as completed:`, completedEvents?.map(e => e.title));
 
     // Clean up stale pending registrations (older than 30 minutes)
     const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
@@ -86,8 +116,11 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       checked: candidateEvents?.length || 0,
-      updated: count,
-      events: data,
+      closed: closedCount,
+      completed: completedCount,
+      updated: closedCount + completedCount,
+      closed_events: closedEvents,
+      events: completedEvents,
       stale_cleaned: staleRegs?.length || 0,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

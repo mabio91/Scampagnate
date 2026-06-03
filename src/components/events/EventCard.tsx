@@ -19,7 +19,7 @@ import {
   shouldShowPublicCapacity,
   type PriceOptionLike,
 } from "@/lib/priceOptions";
-import { isEventPastByDate } from "@/lib/eventDates";
+import { isEventPastByDateTime, isEventStartedByDateTime } from "@/lib/eventDates";
 
 type CardStatus = "attended" | "joined" | "spot_available" | "coming_soon" | "waitlist" | "open" | "closed";
 
@@ -67,8 +67,8 @@ type EventCardDetails = EventWithDetails & {
 
 function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInfo): CardStatus {
   const status = String(event.status || "");
-  const isEventPast = ["past", "completed", "cancelled"].includes(status);
-  const isPastDate = isEventPastByDate(event.date);
+  const isEventPast = ["past", "completed", "cancelled"].includes(status) || isEventPastByDateTime(event);
+  const isEventStarted = isEventStartedByDateTime(event);
   const eventDetails = event as EventCardDetails;
   const priceOptions = eventDetails.price_options || eventDetails.event_price_options || [];
   const hasPriceOptions = priceOptions.length > 0;
@@ -79,13 +79,13 @@ function resolveCardStatus(event: EventWithDetails, userReg: UserRegistrationInf
     ? priceOptions.some((option) => canOptionJoinWaitlist(option, event))
     : canOptionJoinWaitlist(null, event);
 
-  if ((isEventPast || isPastDate) && userReg?.checked_in) return "attended";
+  if (isEventPast && userReg?.checked_in) return "attended";
   if (userReg && (userReg.status === "registered" || userReg.status === "paid" || userReg.status === "attended")) return "joined";
   if (userReg?.status === "waitlist" && hasBookableOption) return "spot_available";
   if (["draft", "unpublished", "upcoming"].includes(status)) return "coming_soon";
   if (userReg?.status === "waitlist") return "waitlist";
-  if (isEventPast || isPastDate) return "closed";
-  if (["closed", "rescheduled"].includes(status)) return "closed";
+  if (isEventPast) return "closed";
+  if (["closed", "rescheduled"].includes(status) || isEventStarted) return "closed";
   if (!hasBookableOption) return hasWaitlistOption ? "waitlist" : "closed";
   return "open";
 }

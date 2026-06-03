@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isEventStarted } from "../_shared/event-timing.ts";
 
 const SERVICE_FEE_EUR = 1;
 
@@ -107,6 +108,9 @@ const requiresOnlinePayment = (paymentType: PaymentType) =>
 
 const acceptsRegistrationStatus = (status: unknown) =>
   ["available", "published", "open"].includes(String(status ?? ""));
+
+const acceptsRegistrationWindow = (event: { status?: unknown; date?: string | null; time?: string | null }) =>
+  acceptsRegistrationStatus(event.status) && !isEventStarted(event);
 
 const isRegistrationCapacityError = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error || "");
@@ -217,7 +221,7 @@ serve(async (req) => {
     // Fetch event details using admin client to bypass RLS
     const { data: event, error: eventError } = await supabaseAdmin
       .from("events")
-      .select("id, title, price, deposit, payment_type, balance_payment_mode, spots_total, spots_taken, status, cancellation_policy, access_rules")
+      .select("id, title, date, time, duration, price, deposit, payment_type, balance_payment_mode, spots_total, spots_taken, status, cancellation_policy, access_rules")
       .eq("id", eventId)
       .single();
 
@@ -321,7 +325,7 @@ serve(async (req) => {
 
     if (checkoutKind !== "balance") {
       let optionIsBookable = false;
-      if (!acceptsRegistrationStatus(event.status)) {
+      if (!acceptsRegistrationWindow(event)) {
         optionIsBookable = false;
       } else if (effectivePriceOptionId) {
         const { data: availabilityRows, error: availabilityError } = await supabaseAdmin

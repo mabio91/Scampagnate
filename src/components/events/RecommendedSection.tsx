@@ -9,6 +9,7 @@ import { UI_LABELS } from "@/lib/labels";
 import { EventWithDetails } from "@/hooks/useEvents";
 import SoldOutOverlay from "./SoldOutOverlay";
 import { hasActivePromotionalPriceOption, isEventSoldOut, shouldShowPublicCapacity, type PriceOptionLike } from "@/lib/priceOptions";
+import { isEventStartedByDateTime } from "@/lib/eventDates";
 
 interface Props {
   events: Array<{ event: EventWithDetails; whyText: string; score: number }>;
@@ -42,7 +43,7 @@ const RecommendedCarouselCard = memo(({ event, whyText, index, isUserRegistered 
   const hasPromo = hasActivePromotionalPriceOption(priceOptions);
   const showPublicCapacity = shouldShowPublicCapacity(event);
   const eventStatus = String(event.status || "");
-  const isClosedStatus = ["closed", "cancelled", "past", "completed", "rescheduled"].includes(eventStatus);
+  const isClosedStatus = ["closed", "cancelled", "past", "completed", "rescheduled"].includes(eventStatus) || isEventStartedByDateTime(event);
   const isUpcomingStatus = ["draft", "unpublished", "upcoming"].includes(eventStatus);
   const statusLabel = isUserRegistered
     ? UI_LABELS.statusJoined

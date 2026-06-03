@@ -1,4 +1,5 @@
 import { applyRegistrationChangeRequest } from "./registration-change.ts";
+import { isEventStarted } from "./event-timing.ts";
 import { centsToEuros, recordUserPaymentTransaction } from "./user-payment-transactions.ts";
 
 type CheckoutKind = "full" | "deposit" | "balance";
@@ -53,6 +54,9 @@ type EventRow = {
   spots_taken?: number | string | null;
   status?: string | null;
   title?: string | null;
+  date?: string | null;
+  time?: string | null;
+  duration?: string | null;
 };
 
 type AvailabilityRow = {
@@ -425,7 +429,7 @@ export const finalizeEventCheckoutSession = async ({
 
   const { data: event, error: eventError } = await db
     .from<EventRow>("events")
-    .select("spots_total, spots_taken, status, title")
+    .select("spots_total, spots_taken, status, title, date, time, duration")
     .eq("id", reg.event_id)
     .single();
   if (eventError || !event) throw new Error("Event not found");
@@ -448,7 +452,7 @@ export const finalizeEventCheckoutSession = async ({
     selectedOptionName = option?.name ? ` - ${option.name}` : "";
   }
 
-  if (checkoutKind !== "balance" && (!acceptsRegistrationStatus(event.status) || spotsAvailable <= 0)) {
+  if (checkoutKind !== "balance" && (!acceptsRegistrationStatus(event.status) || isEventStarted(event) || spotsAvailable <= 0)) {
     return await refundSpotTakenRegistration(db, stripe, {
       session,
       registrationId,
