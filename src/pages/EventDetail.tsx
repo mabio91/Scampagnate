@@ -56,11 +56,11 @@ import {
   findPriceOptionById,
   getEventRemainingSpots,
   getOptionPaymentType,
-  hasEventLastSpots,
   isEventSoldOut,
   shouldShowPublicCapacity,
   isOnlinePaymentType,
   isOptionBookable,
+  shouldShowLastSpotsUrgency,
 } from "@/lib/priceOptions";
 import { renderEventDescriptionHtml } from "@/lib/eventDescription";
 
@@ -850,6 +850,7 @@ const EventDetail = () => {
     && (myRegistration.payment_status === "pending" || hasOnlineBalanceDue);
   const isPendingApproval = hasCurrentRegistration && myRegistration.status === "pending_approval";
   const isOnWaitlist = hasCurrentRegistration && myRegistration.status === "waitlist";
+  const isConfirmedRegistration = isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval;
 
   // Detect if a spot has become available for a waitlisted user
   const remainingSpots = getEventRemainingSpots(event);
@@ -870,7 +871,7 @@ const EventDetail = () => {
       : remainingSpots === 1
         ? "1 posto disponibile"
         : `${remainingSpots} posti disponibili`;
-  const showUrgencyBadge = hasEventLastSpots(event);
+  const showUrgencyBadge = shouldShowLastSpotsUrgency(event, { isAlreadyRegistered: isConfirmedRegistration });
 
   // CTA PRIORITY ORDER (from highest to lowest)
   // Check if user is blocked by hard access rules
@@ -889,7 +890,7 @@ const getCTALabel = () => {
     if (waitlistSpotAvailable) return currentRegistrationRequiresOnlinePayment ? "Completa prenotazione" : "Conferma il posto";
     if (hasOnlineBalanceDue) return "Completa il saldo";
     // Already registered → "Iscritto" (disabled, informational)
-    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "Iscritto ✓";
+    if (isConfirmedRegistration) return "Iscritto ✓";
     if (isPendingApproval) return "In attesa di approvazione";
     // On waitlist with no spot → no action CTA, show informational
     if (isOnWaitlist) return "In lista d'attesa";
@@ -909,7 +910,7 @@ const getCTALabel = () => {
     if (!user) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (waitlistSpotAvailable) return "bg-primary text-primary-foreground hover:bg-primary/90";
     if (hasOnlineBalanceDue) return "bg-accent text-accent-foreground hover:bg-accent/90";
-    if (isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval) return "bg-success/20 text-success cursor-default";
+    if (isConfirmedRegistration) return "bg-success/20 text-success cursor-default";
     if (isPendingApproval) return "bg-warning/20 text-warning border border-warning/30";
     if (isOnWaitlist) return "bg-warning/20 text-warning border border-warning/30 cursor-default";
     if (isBlockedByAccessRules) return "bg-muted text-muted-foreground cursor-not-allowed opacity-70";
@@ -1682,7 +1683,7 @@ const getCTALabel = () => {
               (!eventComingSoon && (
                 eventRegistrationsClosed ||
                 (isSoldOut && !waitlistAvailable && !waitlistSpotAvailable) ||
-                (!!user && isRegistered && !needsPayment && !isOnWaitlist && !isPendingApproval && !waitlistSpotAvailable) ||
+                (!!user && isConfirmedRegistration && !waitlistSpotAvailable) ||
                 (!!user && isOnWaitlist && !waitlistSpotAvailable) ||
                 (isBlockedByAccessRules && !waitlistSpotAvailable)
               ))

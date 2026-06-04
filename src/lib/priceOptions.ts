@@ -163,6 +163,11 @@ export const hasEventLastSpots = (event: EventPricingLike) =>
   && getEventRemainingSpots(event) > 0
   && !isEventSoldOut(event);
 
+export const shouldShowLastSpotsUrgency = (
+  event: EventPricingLike,
+  options: { isAlreadyRegistered?: boolean } = {},
+) => hasEventLastSpots(event) && !options.isAlreadyRegistered;
+
 export const hasActivePromotionalPriceOption = (
   options: PriceOptionLike[] | null | undefined,
   now = new Date(),
