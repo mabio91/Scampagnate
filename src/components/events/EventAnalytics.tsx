@@ -1,22 +1,27 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts";
-import { format, parseISO, eachDayOfInterval, startOfDay, subDays } from "date-fns";
-import { Users, CheckCircle2, UserX, TrendingUp } from "lucide-react";
+import { format, parseISO, eachDayOfInterval, startOfDay } from "date-fns";
+import { CalendarX, Users, CheckCircle2, UserX, TrendingUp } from "lucide-react";
 import { isActiveParticipantRegistration } from "@/lib/eventPayments";
 import { isEventPastByDate, parseEventCalendarDate } from "@/lib/eventDates";
+import { findPriceOptionById, getPriceOptionDisplayName, type PriceOptionLike } from "@/lib/priceOptions";
 
 interface Registration {
   id: string;
   created_at: string;
+  cancelled_at?: string | null;
   status: string;
   payment_status?: string | null;
   checked_in: boolean;
   meeting_point_id: string | null;
+  price_option_id?: string | null;
+  sport_level?: string | null;
   profiles: any;
 }
 
@@ -34,6 +39,7 @@ interface EventAnalyticsProps {
   };
   registrations: Registration[];
   meetingPoints: MeetingPoint[];
+  priceOptions?: PriceOptionLike[];
 }
 
 const CHART_COLORS = [
@@ -45,7 +51,22 @@ const CHART_COLORS = [
   "hsl(var(--destructive))",
 ];
 
-const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsProps) => {
+function manualParticipantName(sportLevel: string | null | undefined) {
+  if (!sportLevel?.startsWith("manual:")) return null;
+  return sportLevel.replace("manual:", "").split("|")[0]?.trim() || "Partecipante manuale";
+}
+
+function formatCancellationDate(value?: string | null) {
+  if (!value) return "Data non disponibile";
+
+  const parsed = parseISO(value);
+  if (Number.isNaN(parsed.getTime())) return "Data non disponibile";
+
+  return format(parsed, "dd/MM/yyyy HH:mm");
+}
+
+const EventAnalytics = ({ event, registrations, meetingPoints, priceOptions = [] }: EventAnalyticsProps) => {
+  const [showCancelledDetails, setShowCancelledDetails] = useState(false);
   const registered = registrations.filter(isActiveParticipantRegistration);
   const checkedIn = registered.filter((r) => r.checked_in);
   const isPast = isEventPastByDate(event.date);
@@ -109,6 +130,31 @@ const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsP
     { name: "Cancelled", value: cancelled.length },
   ].filter((d) => d.value > 0), [registered, registrations, cancelled]);
 
+  const cancelledDetails = useMemo(
+    () => [...cancelled].sort((a, b) => {
+      const dateA = new Date(a.cancelled_at || a.created_at).getTime();
+      const dateB = new Date(b.cancelled_at || b.created_at).getTime();
+      return dateB - dateA;
+    }),
+    [cancelled],
+  );
+
+  const getRegistrationName = (registration: Registration) => {
+    const manualName = manualParticipantName(registration.sport_level);
+    if (manualName) return manualName;
+
+    const firstName = String(registration.profiles?.first_name || "").trim();
+    const lastName = String(registration.profiles?.last_name || "").trim();
+    return [firstName, lastName].filter(Boolean).join(" ") || "Partecipante senza nome";
+  };
+
+  const getRegistrationFormulaName = (registration: Registration) => {
+    const priceOption = findPriceOptionById(priceOptions, registration.price_option_id);
+    if (priceOption) return getPriceOptionDisplayName(priceOption);
+    if (registration.price_option_id) return "Formula non disponibile";
+    return "Nessuna formula";
+  };
+
   return (
     <div className="space-y-4">
       {/* KPI Cards */}
@@ -133,6 +179,29 @@ const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsP
           <p className="text-xl font-bold font-display text-foreground">{registrations.length}</p>
           <p className="text-[10px] text-muted-foreground font-body mt-1">
             {cancelled.length} cancelled
+          </p>
+        </Card>
+
+        <Card
+          role="button"
+          tabIndex={0}
+          aria-expanded={showCancelledDetails}
+          className={`p-3 cursor-pointer transition-colors ${showCancelledDetails ? "ring-1 ring-destructive bg-destructive/5" : "hover:bg-muted/50"}`}
+          onClick={() => setShowCancelledDetails((current) => !current)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setShowCancelledDetails((current) => !current);
+            }
+          }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarX className="h-4 w-4 text-destructive" />
+            <span className="text-xs text-muted-foreground font-body">Cancellati</span>
+          </div>
+          <p className="text-xl font-bold font-display text-foreground">{cancelled.length}</p>
+          <p className="text-[10px] text-muted-foreground font-body mt-1">
+            {cancelled.length === 1 ? "1 iscrizione cancellata" : `${cancelled.length} iscrizioni cancellate`}
           </p>
         </Card>
 
@@ -164,6 +233,37 @@ const EventAnalytics = ({ event, registrations, meetingPoints }: EventAnalyticsP
           </>
         )}
       </div>
+
+      {showCancelledDetails && (
+        <Card className="p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="font-display text-sm font-bold text-foreground">Cancellati</h3>
+            <Badge variant="outline" className="text-[10px]">{cancelledDetails.length}</Badge>
+          </div>
+
+          {cancelledDetails.length === 0 ? (
+            <p className="text-sm text-muted-foreground font-body">Nessuna cancellazione registrata.</p>
+          ) : (
+            <div className="space-y-2">
+              {cancelledDetails.map((registration) => (
+                <div key={registration.id} className="rounded-md border border-border p-3">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                    <p className="text-sm font-semibold text-foreground font-body">
+                      {getRegistrationName(registration)}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-body">
+                      {formatCancellationDate(registration.cancelled_at)}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground font-body">
+                    Formula: <span className="font-medium text-foreground">{getRegistrationFormulaName(registration)}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Registration Trend */}
       {trendData.length > 1 && (

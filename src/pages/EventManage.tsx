@@ -1726,6 +1726,7 @@ const EventManage = () => {
               event={event}
               registrations={registrations || []}
               meetingPoints={meetingPoints || []}
+              priceOptions={sortedPriceOptions}
             />
           </TabsContent>
         </Tabs>
