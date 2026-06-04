@@ -258,8 +258,10 @@ const EventDetail = () => {
   const heroHeight = 430;
   const heroImageHeight = "min(100vw, 430px)";
   const heroContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight})`;
-  const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 0.7));
+  const heroScrollProgress = Math.min(Math.max(scrollY / heroHeight, 0), 1);
+  const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 1.05));
   const heroTranslateY = scrollY * 0.08;
+  const heroScale = 1.08 - heroScrollProgress * 0.08;
   const showStickyHeader = scrollY > heroHeight - 60;
   const imageSrc = event ? resolveEventImageSrc(event.image_url) : undefined;
 
@@ -973,13 +975,12 @@ const getCTALabel = () => {
       {/* 1. HERO with parallax/fade */}
       <div ref={heroRef} className="relative overflow-hidden bg-background" style={{ height: heroContainerHeight }}>
         <div
-          className="absolute left-0 right-0"
+          className="absolute inset-0"
           style={{
             opacity: heroOpacity,
-            transform: `translateY(${heroTranslateY}px)`,
+            transform: `translateY(${heroTranslateY}px) scale(${heroScale})`,
+            transformOrigin: "top center",
             willChange: "transform, opacity",
-            top: "env(safe-area-inset-top, 0px)",
-            height: heroImageHeight,
           }}
         >
           <OptimizedImage
@@ -990,11 +991,9 @@ const getCTALabel = () => {
           />
         </div>
         <div
-          className="absolute left-0 right-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             opacity: heroOpacity,
-            top: "env(safe-area-inset-top, 0px)",
-            height: heroImageHeight,
             background: isSoldOut
               ? "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.38) 68%, rgba(0,0,0,0.78) 100%)"
               : "linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.32) 68%, rgba(0,0,0,0.72) 100%)",
