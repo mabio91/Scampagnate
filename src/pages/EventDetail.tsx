@@ -244,7 +244,11 @@ const EventDetail = () => {
   
   // Hero parallax/fade on scroll
   const [scrollY, setScrollY] = useState(0);
+  const [heroPullY, setHeroPullY] = useState(0);
+  const [isHeroPulling, setIsHeroPulling] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+  const heroPullStartYRef = useRef<number | null>(null);
+  const heroPullLockedRef = useRef(false);
   
   const handleScroll = useCallback(() => {
     setScrollY(window.scrollY);
@@ -254,14 +258,83 @@ const EventDetail = () => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
+
+  useEffect(() => {
+    const maxPull = 150;
+    const previousHtmlOverscroll = document.documentElement.style.overscrollBehaviorY;
+    const previousBodyOverscroll = document.body.style.overscrollBehaviorY;
+
+    document.documentElement.style.overscrollBehaviorY = "contain";
+    document.body.style.overscrollBehaviorY = "contain";
+
+    const finishPull = () => {
+      heroPullStartYRef.current = null;
+      heroPullLockedRef.current = false;
+      setIsHeroPulling(false);
+      setHeroPullY(0);
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target?.closest("[data-event-detail-root]") || event.touches.length !== 1 || window.scrollY > 0) {
+        heroPullStartYRef.current = null;
+        heroPullLockedRef.current = false;
+        return;
+      }
+
+      heroPullStartYRef.current = event.touches[0].clientY;
+      heroPullLockedRef.current = false;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const startY = heroPullStartYRef.current;
+      if (startY === null || event.touches.length !== 1) return;
+
+      const deltaY = event.touches[0].clientY - startY;
+
+      if (deltaY <= 0) {
+        if (heroPullLockedRef.current) finishPull();
+        return;
+      }
+
+      if (window.scrollY > 0 && !heroPullLockedRef.current) {
+        finishPull();
+        return;
+      }
+
+      const easedPull = Math.min(maxPull, Math.pow(deltaY, 0.86) * 1.35);
+      heroPullLockedRef.current = true;
+      setIsHeroPulling(true);
+      setHeroPullY(easedPull);
+      event.preventDefault();
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", finishPull, { passive: true });
+    window.addEventListener("touchcancel", finishPull, { passive: true });
+
+    return () => {
+      document.documentElement.style.overscrollBehaviorY = previousHtmlOverscroll;
+      document.body.style.overscrollBehaviorY = previousBodyOverscroll;
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", finishPull);
+      window.removeEventListener("touchcancel", finishPull);
+    };
+  }, []);
   
   const heroHeight = 430;
   const heroImageHeight = "min(100vw, 430px)";
-  const heroContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight})`;
+  const heroContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight} + ${heroPullY}px)`;
   const heroScrollProgress = Math.min(Math.max(scrollY / heroHeight, 0), 1);
+  const heroPullProgress = Math.min(heroPullY / 150, 1);
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 1.05));
   const heroTranslateY = scrollY * 0.08;
-  const heroScale = 1.08 - heroScrollProgress * 0.08;
+  const heroScale = 1.08 - heroScrollProgress * 0.08 + heroPullProgress * 0.12;
+  const heroTransition = isHeroPulling
+    ? "opacity 300ms ease"
+    : "height 360ms cubic-bezier(0.22, 1, 0.36, 1), transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease";
   const showStickyHeader = scrollY > heroHeight - 60;
   const imageSrc = event ? resolveEventImageSrc(event.image_url) : undefined;
 
@@ -946,7 +1019,7 @@ const getCTALabel = () => {
   const staffCount = staffPreview.length;
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background pb-36">
+    <div data-event-detail-root className="min-h-screen min-h-[100dvh] bg-background pb-36">
       {/* 17. STICKY HEADER ON SCROLL */}
       <div
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-safe ${
@@ -973,13 +1046,22 @@ const getCTALabel = () => {
         </div>
       </div>
       {/* 1. HERO with parallax/fade */}
-      <div ref={heroRef} className="relative overflow-hidden bg-background" style={{ height: heroContainerHeight }}>
+      <div
+        ref={heroRef}
+        className="relative overflow-hidden bg-background"
+        style={{
+          height: heroContainerHeight,
+          transition: isHeroPulling ? "none" : "height 360ms cubic-bezier(0.22, 1, 0.36, 1)",
+          willChange: "height",
+        }}
+      >
         <div
           className="absolute inset-0"
           style={{
             opacity: heroOpacity,
             transform: `translateY(${heroTranslateY}px) scale(${heroScale})`,
             transformOrigin: "top center",
+            transition: heroTransition,
             willChange: "transform, opacity",
           }}
         >
