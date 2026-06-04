@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   getEventEndDateTime,
-  getEventCalendarDateKeys,
   getEventStartDateTime,
   isEventPastByDateTime,
   isEventStartedByDateTime,
@@ -28,26 +27,6 @@ describe("event date helpers", () => {
     const end = getEventEndDateTime({ date: "2026-05-30", time: "09:00", duration: null });
 
     expect(end?.toISOString()).toBe("2026-05-30T22:00:00.000Z");
-  });
-
-  it("expands multi-day events across every touched calendar date", () => {
-    expect(getEventCalendarDateKeys({ date: "2026-05-30", time: "09:00", duration: "2 giorni" })).toEqual([
-      "2026-05-30",
-      "2026-05-31",
-      "2026-06-01",
-    ]);
-  });
-
-  it("does not include the next date when an event ends exactly at midnight", () => {
-    expect(getEventCalendarDateKeys({ date: "2026-05-30", time: "22:00", duration: "2h" })).toEqual([
-      "2026-05-30",
-    ]);
-  });
-
-  it("uses the start date only when duration is missing", () => {
-    expect(getEventCalendarDateKeys({ date: "2026-05-30", time: "09:00", duration: null })).toEqual([
-      "2026-05-30",
-    ]);
   });
 
   it("detects the event start separately from the event end", () => {

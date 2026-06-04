@@ -1,4 +1,4 @@
-import { formatEventDateTime, parseEventDateTime } from "@/lib/timezone";
+import { parseEventDateTime } from "@/lib/timezone";
 
 type EventTiming = {
   date?: string | null;
@@ -36,38 +36,14 @@ const parseEventDateParts = (date: string | null | undefined) => {
   return { year: Number(year), month: Number(month), day: Number(day) };
 };
 
-const toDateKeyFromParts = (parts: { year: number; month: number; day: number }) => {
-  const year = String(parts.year).padStart(4, "0");
-  const month = String(parts.month).padStart(2, "0");
-  const day = String(parts.day).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
 const nextLocalDateString = (date: string | null | undefined) => {
   const parts = parseEventDateParts(date);
   if (!parts) return null;
   const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1));
-  return toDateKeyFromParts({
-    year: next.getUTCFullYear(),
-    month: next.getUTCMonth() + 1,
-    day: next.getUTCDate(),
-  });
-};
-
-const normalizedDateKey = (date: string | null | undefined) => {
-  const parts = parseEventDateParts(date);
-  return parts ? toDateKeyFromParts(parts) : null;
-};
-
-const addDaysToDateKey = (dateKey: string, days: number) => {
-  const parts = parseEventDateParts(dateKey);
-  if (!parts) return null;
-  const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
-  return toDateKeyFromParts({
-    year: next.getUTCFullYear(),
-    month: next.getUTCMonth() + 1,
-    day: next.getUTCDate(),
-  });
+  const year = next.getUTCFullYear();
+  const month = String(next.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(next.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 export const getEventStartDateTime = (event: EventTiming): Date | null => {
@@ -88,29 +64,6 @@ export const getEventEndDateTime = (event: EventTiming): Date | null => {
   }
 
   return getEventEndOfDayDateTime(event.date);
-};
-
-export const getEventCalendarDateKeys = (event: EventTiming): string[] => {
-  const startKey = normalizedDateKey(event.date);
-  if (!startKey) return [];
-
-  const start = getEventStartDateTime(event);
-  const end = getEventEndDateTime(event);
-  let endKey = startKey;
-
-  if (start && end && end.getTime() > start.getTime()) {
-    endKey = formatEventDateTime(new Date(end.getTime() - 1), "yyyy-MM-dd");
-  }
-
-  const keys: string[] = [];
-  let currentKey: string | null = startKey;
-  while (currentKey) {
-    keys.push(currentKey);
-    if (currentKey >= endKey) break;
-    currentKey = addDaysToDateKey(currentKey, 1);
-  }
-
-  return keys;
 };
 
 export function parseEventCalendarDate(date?: string | null): Date | null {

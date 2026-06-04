@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories, useEvents } from "@/hooks/useEvents";
 import { cn } from "@/lib/utils";
-import { getEventCalendarDateKeys, isEventUpcomingByDateTime } from "@/lib/eventDates";
+import { isEventUpcomingByDateTime } from "@/lib/eventDates";
 
 const hiddenStatuses = new Set(["draft", "unpublished", "past", "completed", "cancelled"]);
 
@@ -32,10 +32,8 @@ const EventCalendar = () => {
 
   const eventsByDate = useMemo(() => {
     return visibleEvents.reduce<Record<string, typeof visibleEvents>>((acc, event) => {
-      getEventCalendarDateKeys(event).forEach((dateKey) => {
-        if (!acc[dateKey]) acc[dateKey] = [];
-        acc[dateKey].push(event);
-      });
+      if (!acc[event.date]) acc[event.date] = [];
+      acc[event.date].push(event);
       return acc;
     }, {});
   }, [visibleEvents]);
