@@ -44,7 +44,7 @@ import {
   Loader2, Zap, BarChart3, Trash2, Send, Search, Copy,
   MessageCircle, Bell, AlertTriangle, History,
   FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog, Instagram,
-  MoreVertical
+  MoreVertical, ZoomIn
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -98,6 +98,50 @@ const ProfileField = ({ label, value }: { label: string; value?: string | null }
 type SpecialRequestAnswer = {
   label: string;
   value: string;
+};
+
+type ParticipantAvatarDialogState = {
+  name: string;
+  avatarUrl: string;
+};
+
+const ParticipantAvatarButton = ({
+  avatarUrl,
+  name,
+  initial,
+  fallbackClassName,
+  onOpen,
+}: {
+  avatarUrl?: string | null;
+  name: string;
+  initial: string;
+  fallbackClassName: string;
+  onOpen: (avatar: ParticipantAvatarDialogState) => void;
+}) => {
+  if (avatarUrl) {
+    return (
+      <button
+        type="button"
+        aria-label={`Ingrandisci avatar di ${name}`}
+        className="group relative h-8 w-8 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpen({ name, avatarUrl });
+        }}
+      >
+        <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+        <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-background text-foreground opacity-0 shadow-sm ring-1 ring-border transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+          <ZoomIn className="h-2.5 w-2.5" />
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <div className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${fallbackClassName}`}>
+      {initial || "?"}
+    </div>
+  );
 };
 
 type ParticipantPaymentBadge = {
@@ -229,6 +273,8 @@ const EventManage = () => {
   const [editPaymentStatus, setEditPaymentStatus] = useState("");
   const [editPriceOptionId, setEditPriceOptionId] = useState(NO_PRICE_OPTION);
   const [selectedProfileRegistration, setSelectedProfileRegistration] = useState<any | null>(null);
+  const [profileAvatarExpanded, setProfileAvatarExpanded] = useState(false);
+  const [expandedParticipantAvatar, setExpandedParticipantAvatar] = useState<ParticipantAvatarDialogState | null>(null);
   const [addingParticipant, setAddingParticipant] = useState(false);
   const [ownerSearch, setOwnerSearch] = useState("");
   const [savingOwnerId, setSavingOwnerId] = useState<string | null>(null);
@@ -1308,11 +1354,13 @@ const EventManage = () => {
                   return (
                     <Card key={reg.id} className="p-3 space-y-2">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
-                          {isManual ? (firstName[0] || "?") : (profile?.avatar_url ? (
-                            <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                          ) : firstName[0])}
-                        </div>
+                        <ParticipantAvatarButton
+                          avatarUrl={isManual ? null : profile?.avatar_url}
+                          name={`${firstName} ${lastName}`.trim() || "Partecipante"}
+                          initial={firstName[0] || "?"}
+                          fallbackClassName={isManual ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}
+                          onOpen={setExpandedParticipantAvatar}
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="font-body text-sm font-semibold text-foreground truncate">
                             {firstName} {lastName}
@@ -1510,6 +1558,7 @@ const EventManage = () => {
                 {filteredCheckIn.map((reg) => {
                   const { firstName, lastName, isManual } = getParticipantName(reg);
                   const mp = meetingPoints?.find((p) => p.id === reg.meeting_point_id);
+                  const profile = isManual ? null : (reg.profiles as ParticipantProfileBadgeSource | null);
                   return (
                     <Card
                       key={reg.id}
@@ -1518,15 +1567,19 @@ const EventManage = () => {
                       }`}
                       onClick={quickCheckIn ? () => handleCheckIn(reg.id, reg.checked_in) : undefined}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        reg.checked_in ? "bg-success text-success-foreground" : "bg-muted"
-                      }`}>
-                        {reg.checked_in ? (
+                      {reg.checked_in ? (
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-success text-success-foreground">
                           <CheckCircle2 className="h-4 w-4" />
-                        ) : (
-                          <span className="text-xs font-bold text-muted-foreground">{firstName[0]}</span>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <ParticipantAvatarButton
+                          avatarUrl={profile?.avatar_url}
+                          name={`${firstName} ${lastName}`.trim() || "Partecipante"}
+                          initial={firstName[0] || "?"}
+                          fallbackClassName="bg-muted text-muted-foreground"
+                          onOpen={setExpandedParticipantAvatar}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="font-body text-sm font-semibold text-foreground truncate">
                           {firstName} {lastName}
@@ -1569,11 +1622,16 @@ const EventManage = () => {
                 {waitlisted.map((reg, index) => {
                   const priceOption = getPriceOptionForRegistration(reg);
                   const waitlistStatus = (reg as any).waitlist_status || "waiting";
+                  const profile = (reg.profiles as any) || {};
                   return (
                   <Card key={reg.id} className="p-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center text-warning text-xs font-bold">
-                      {(reg.profiles as any)?.first_name?.[0] || "?"}
-                    </div>
+                    <ParticipantAvatarButton
+                      avatarUrl={profile.avatar_url}
+                      name={`${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Partecipante"}
+                      initial={profile.first_name?.[0] || "?"}
+                      fallbackClassName="bg-warning/10 text-warning"
+                      onOpen={setExpandedParticipantAvatar}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm font-semibold text-foreground truncate">
                         {(reg.profiles as any)?.first_name} {(reg.profiles as any)?.last_name}
@@ -1625,32 +1683,39 @@ const EventManage = () => {
               <p className="text-center text-muted-foreground font-body text-sm py-6">No pending manual approvals</p>
             ) : (
               <div className="space-y-2">
-                {pending.map((reg) => (
-                  <Card key={reg.id} className="p-3 flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive text-xs font-bold">
-                        {(reg.profiles as any)?.first_name?.[0] || "?"}
+                {pending.map((reg) => {
+                  const profile = (reg.profiles as any) || {};
+                  return (
+                    <Card key={reg.id} className="p-3 flex flex-col gap-2">
+                      <div className="flex items-center gap-3">
+                        <ParticipantAvatarButton
+                          avatarUrl={profile.avatar_url}
+                          name={`${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Partecipante"}
+                          initial={profile.first_name?.[0] || "?"}
+                          fallbackClassName="bg-destructive/10 text-destructive"
+                          onOpen={setExpandedParticipantAvatar}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-body text-sm font-semibold text-foreground truncate">
+                            {profile.first_name} {profile.last_name}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground font-body truncate">
+                            {profile.phone || "No phone"} · Level {profile.experience_grade || "?"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-body text-sm font-semibold text-foreground truncate">
-                          {(reg.profiles as any)?.first_name} {(reg.profiles as any)?.last_name}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground font-body truncate">
-                          {(reg.profiles as any)?.phone || "No phone"} · Level {(reg.profiles as any)?.experience_grade || "?"}
-                        </p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="default" className="flex-1 text-xs" onClick={() => handleApprovePending(reg.id)}>
+                          Approve
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setPendingCancelRegistrationId(reg.id)}>
+                          Reject
+                        </Button>
+                        {renderParticipantOptionsMenu(reg)}
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="default" className="flex-1 text-xs" onClick={() => handleApprovePending(reg.id)}>
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex-1 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setPendingCancelRegistrationId(reg.id)}>
-                        Reject
-                      </Button>
-                      {renderParticipantOptionsMenu(reg)}
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -1666,8 +1731,13 @@ const EventManage = () => {
         </Tabs>
       </div>
 
-      <Dialog open={!!selectedProfileRegistration} onOpenChange={(open) => { if (!open) setSelectedProfileRegistration(null); }}>
-        <DialogContent className="max-w-sm">
+      <Dialog open={!!selectedProfileRegistration} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedProfileRegistration(null);
+          setProfileAvatarExpanded(false);
+        }
+      }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           {selectedProfileRegistration && (() => {
             const reg = selectedProfileRegistration;
             const { firstName, lastName } = getParticipantName(reg);
@@ -1681,8 +1751,31 @@ const EventManage = () => {
               : REGISTRATION_STATUS_OPTIONS.find((option) => option.value === registrationMenuValue(reg))?.label || reg.status;
             return (
               <>
-                <DialogHeader>
-                  <DialogTitle className="font-display">Profilo partecipante</DialogTitle>
+                <DialogHeader className="items-center text-center">
+                  <div className="flex justify-center pb-2">
+                    {profile.avatar_url ? (
+                      <button
+                        type="button"
+                        onClick={() => setProfileAvatarExpanded((expanded) => !expanded)}
+                        className="group relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={profileAvatarExpanded ? "Riduci avatar" : "Ingrandisci avatar"}
+                      >
+                        <img
+                          src={profile.avatar_url}
+                          alt=""
+                          className={`${profileAvatarExpanded ? "h-72 w-72 max-w-[72vw]" : "h-24 w-24"} rounded-full object-cover border-4 border-background shadow-md transition-all duration-200`}
+                        />
+                        <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-background text-foreground shadow-sm ring-1 ring-border">
+                          <ZoomIn className="h-4 w-4" />
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="h-24 w-24 rounded-full border-4 border-background bg-primary/10 text-primary shadow-md flex items-center justify-center text-3xl font-display font-bold">
+                        {firstName[0] || "?"}
+                      </div>
+                    )}
+                  </div>
+                  <DialogTitle className="font-display text-center">Profilo partecipante</DialogTitle>
                   <DialogDescription className="font-body text-sm">
                     {firstName} {lastName}
                   </DialogDescription>
@@ -1730,6 +1823,25 @@ const EventManage = () => {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!expandedParticipantAvatar} onOpenChange={(open) => { if (!open) setExpandedParticipantAvatar(null); }}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md rounded-2xl p-0">
+          {expandedParticipantAvatar && (
+            <div className="px-5 pb-5 pt-6 text-center">
+              <DialogHeader className="items-center text-center">
+                <img
+                  src={expandedParticipantAvatar.avatarUrl}
+                  alt=""
+                  className="h-72 w-72 max-w-[72vw] rounded-full object-cover border-4 border-background shadow-md"
+                />
+                <DialogTitle className="font-display text-xl">
+                  {expandedParticipantAvatar.name}
+                </DialogTitle>
+              </DialogHeader>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
