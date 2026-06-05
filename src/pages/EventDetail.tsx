@@ -246,6 +246,7 @@ const EventDetail = () => {
   const [scrollY, setScrollY] = useState(0);
   const [heroPullY, setHeroPullY] = useState(0);
   const [isHeroPulling, setIsHeroPulling] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 430 : window.innerWidth));
   const heroRef = useRef<HTMLDivElement>(null);
   const heroPullStartYRef = useRef<number | null>(null);
   const heroPullLockedRef = useRef(false);
@@ -260,7 +261,13 @@ const EventDetail = () => {
   }, [handleScroll]);
 
   useEffect(() => {
-    const maxPull = 150;
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
     const previousHtmlOverscroll = document.documentElement.style.overscrollBehaviorY;
     const previousBodyOverscroll = document.body.style.overscrollBehaviorY;
 
@@ -302,7 +309,7 @@ const EventDetail = () => {
         return;
       }
 
-      const easedPull = Math.min(maxPull, Math.pow(deltaY, 0.86) * 1.35);
+      const easedPull = Math.pow(deltaY, 0.86) * 1.35;
       heroPullLockedRef.current = true;
       setIsHeroPulling(true);
       setHeroPullY(easedPull);
@@ -324,14 +331,16 @@ const EventDetail = () => {
     };
   }, []);
   
-  const heroHeight = 430;
   const heroImageHeight = "min(100vw, 430px)";
-  const heroContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight} + ${heroPullY}px)`;
+  const heroBaseContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight})`;
+  const heroContainerHeight = `calc(${heroBaseContainerHeight} + ${heroPullY}px)`;
+  const heroImageBaseHeight = Math.min(viewportWidth, 430);
+  const heroHeight = heroImageBaseHeight;
   const heroScrollProgress = Math.min(Math.max(scrollY / heroHeight, 0), 1);
-  const heroPullProgress = Math.min(heroPullY / 150, 1);
+  const heroPullScale = Math.min((heroPullY / Math.max(heroImageBaseHeight, 1)) * 0.42, 0.16);
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 1.05));
-  const heroTranslateY = scrollY * 0.08;
-  const heroScale = 1.08 - heroScrollProgress * 0.08 + heroPullProgress * 0.12;
+  const heroScale = 1.08 - heroScrollProgress * 0.08 + heroPullScale;
+  const heroTitleOffsetY = heroPullY - scrollY * 0.72;
   const heroTransition = isHeroPulling
     ? "opacity 300ms ease"
     : "height 360ms cubic-bezier(0.22, 1, 0.36, 1), transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease";
@@ -1014,7 +1023,7 @@ const getCTALabel = () => {
   const staffCount = staffPreview.length;
 
   return (
-    <div data-event-detail-root className="min-h-screen min-h-[100dvh] bg-background pb-36">
+    <div data-event-detail-root className="relative min-h-screen min-h-[100dvh] bg-background pb-36">
       {/* 17. STICKY HEADER ON SCROLL */}
       <div
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-safe ${
@@ -1043,7 +1052,7 @@ const getCTALabel = () => {
       {/* 1. HERO with parallax/fade */}
       <div
         ref={heroRef}
-        className="relative overflow-hidden bg-background"
+        className="fixed top-0 left-0 right-0 z-0 overflow-hidden bg-background"
         style={{
           height: heroContainerHeight,
           transition: isHeroPulling ? "none" : "height 360ms cubic-bezier(0.22, 1, 0.36, 1)",
@@ -1054,7 +1063,7 @@ const getCTALabel = () => {
           className="absolute inset-0"
           style={{
             opacity: heroOpacity,
-            transform: `translateY(${heroTranslateY}px) scale(${heroScale})`,
+            transform: `scale(${heroScale})`,
             transformOrigin: "top center",
             transition: heroTransition,
             willChange: "transform, opacity",
@@ -1095,14 +1104,33 @@ const getCTALabel = () => {
           </div>
         </div>
 
-        <div className="absolute bottom-12 left-4 right-4" style={{ opacity: heroOpacity }}>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">{event.title}</h1>
+        <div
+          className="absolute left-0 right-0 top-0 pointer-events-none"
+          style={{
+            height: heroBaseContainerHeight,
+            opacity: heroOpacity,
+            transform: `translateY(${heroTitleOffsetY}px)`,
+            transition: heroTransition,
+            willChange: "transform, opacity",
+          }}
+        >
+          <div className="absolute bottom-12 left-4 right-4">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">{event.title}</h1>
+          </div>
         </div>
       </div>
 
-      {/* 16. Rounded top container overlapping the hero */}
-      <div className="relative -mt-6 bg-background rounded-t-3xl z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
+      <div
+        className="relative z-10 pointer-events-none"
+        style={{
+          paddingTop: heroContainerHeight,
+          transition: isHeroPulling ? "none" : "padding-top 360ms cubic-bezier(0.22, 1, 0.36, 1)",
+          willChange: "padding-top",
+        }}
+      >
+        {/* 16. Rounded top container overlapping the hero */}
+        <div className="relative -mt-6 bg-background rounded-t-3xl z-10 pointer-events-auto shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="max-w-lg mx-auto px-4 pt-5 pb-2">
           {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
             {event.category && (
@@ -1623,8 +1651,9 @@ const getCTALabel = () => {
             </DialogContent>
           </Dialog>
         </motion.div>
+          </div>
+        </div> {/* end rounded top container */}
       </div>
-      </div> {/* end rounded top container */}
 
       {/* 12. STICKY BOTTOM BAR */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50">
