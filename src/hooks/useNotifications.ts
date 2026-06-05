@@ -13,6 +13,8 @@ export interface Notification {
   created_at: string;
 }
 
+const HIDDEN_NOTIFICATION_TYPE = "event_update";
+
 export const useNotifications = () => {
   const { user } = useAuth();
 
@@ -23,6 +25,7 @@ export const useNotifications = () => {
         .from("notifications" as any)
         .select("*")
         .eq("user_id", user!.id)
+        .neq("type", HIDDEN_NOTIFICATION_TYPE)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -43,7 +46,8 @@ export const useUnreadCount = () => {
         .from("notifications" as any)
         .select("*", { count: "exact", head: true })
         .eq("user_id", user!.id)
-        .eq("read", false);
+        .eq("read", false)
+        .neq("type", HIDDEN_NOTIFICATION_TYPE);
       if (error) throw error;
       return count || 0;
     },

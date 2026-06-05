@@ -43,9 +43,9 @@ vi.mock("@/contexts/LanguageContext", () => ({
 const notification = {
   id: "notification-1",
   user_id: "user-1",
-  type: "event_update",
-  title: "Cambio programma",
-  message: "Il punto di ritrovo e stato aggiornato.",
+  type: "broadcast",
+  title: "Messaggio organizzatore",
+  message: "Controlla le ultime informazioni sull'evento.",
   event_id: "event-1",
   read: false,
   created_at: new Date("2026-05-17T08:00:00.000Z").toISOString(),
@@ -84,7 +84,7 @@ describe("NotificationPanel", () => {
   it("opens the notification detail in-place without navigating away", () => {
     const { onClose } = renderPanel();
 
-    fireEvent.click(screen.getByText("Cambio programma").closest("button")!);
+    fireEvent.click(screen.getByText("Messaggio organizzatore").closest("button")!);
 
     expect(markAsRead).toHaveBeenCalledWith("notification-1");
     expect(onClose).not.toHaveBeenCalled();
@@ -95,7 +95,7 @@ describe("NotificationPanel", () => {
   it("navigates to the event only from the explicit detail action", () => {
     const { onClose } = renderPanel();
 
-    fireEvent.click(screen.getByText("Cambio programma").closest("button")!);
+    fireEvent.click(screen.getByText("Messaggio organizzatore").closest("button")!);
     fireEvent.click(screen.getByRole("button", { name: "Apri evento" }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
