@@ -103,6 +103,78 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_organizer_activity_log: {
+        Row: {
+          action_type: string
+          actor_app_role: string
+          actor_id: string
+          changed_columns: string[]
+          created_at: string
+          event_id: string | null
+          id: string
+          metadata: Json
+          new_row: Json | null
+          occurred_at: string
+          old_row: Json | null
+          operation: string
+          payment_status_after: string | null
+          payment_status_before: string | null
+          registration_id: string | null
+          source_record_id: string | null
+          source_schema: string
+          source_table: string
+          status_after: string | null
+          status_before: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          actor_app_role: string
+          actor_id: string
+          changed_columns?: string[]
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          metadata?: Json
+          new_row?: Json | null
+          occurred_at?: string
+          old_row?: Json | null
+          operation: string
+          payment_status_after?: string | null
+          payment_status_before?: string | null
+          registration_id?: string | null
+          source_record_id?: string | null
+          source_schema?: string
+          source_table: string
+          status_after?: string | null
+          status_before?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          actor_app_role?: string
+          actor_id?: string
+          changed_columns?: string[]
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          metadata?: Json
+          new_row?: Json | null
+          occurred_at?: string
+          old_row?: Json | null
+          operation?: string
+          payment_status_after?: string | null
+          payment_status_before?: string | null
+          registration_id?: string | null
+          source_record_id?: string | null
+          source_schema?: string
+          source_table?: string
+          status_after?: string | null
+          status_before?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           category: string | null
@@ -3205,6 +3277,10 @@ export type Database = {
         Args: { p_category: string; p_user_id: string }
         Returns: number
       }
+      event_registration_start_at: {
+        Args: { p_date: string; p_time: string }
+        Returns: string
+      }
       get_event_option_availability: {
         Args: { p_event_id: string }
         Returns: {
@@ -3301,6 +3377,10 @@ export type Database = {
         Args: { p_event_id: string; p_price_option_id?: string }
         Returns: boolean
       }
+      is_event_registration_open_at: {
+        Args: { p_event_id: string; p_reference?: string }
+        Returns: boolean
+      }
       is_event_registration_open_status: {
         Args: { p_status: string }
         Returns: boolean
@@ -3319,10 +3399,11 @@ export type Database = {
         Args: { new_data: Json; old_data: Json }
         Returns: string[]
       }
-      sync_current_periodic_user_missions: {
+      scamp_install_admin_organizer_activity_triggers: {
         Args: never
-        Returns: number
+        Returns: undefined
       }
+      sync_current_periodic_user_missions: { Args: never; Returns: number }
       sync_user_missions_for_user: {
         Args: { p_user_id: string }
         Returns: undefined
