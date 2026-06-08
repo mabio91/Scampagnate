@@ -30,7 +30,7 @@ const rewardsNotificationTypes = new Set(["reward", "rewards", "points", "coupon
 const isRewardsNotification = (notification: Notification) => rewardsNotificationTypes.has(notification.type);
 
 const panelShellClassName =
-  "w-full max-w-none sm:w-80 sm:max-w-80 max-h-[calc(100dvh_-_env(safe-area-inset-top,0px)_-_env(safe-area-inset-bottom,0px)_-_9rem)] sm:max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden";
+  "w-full max-w-[22rem] sm:w-80 sm:max-w-80 max-h-[calc(100dvh_-_env(safe-area-inset-top,0px)_-_env(safe-area-inset-bottom,0px)_-_9rem)] sm:max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden";
 
 const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notification; onSelect: (n: Notification) => void }>(
   ({ notification, onSelect }, ref) => {
