@@ -29,6 +29,9 @@ const rewardsNotificationTypes = new Set(["reward", "rewards", "points", "coupon
 
 const isRewardsNotification = (notification: Notification) => rewardsNotificationTypes.has(notification.type);
 
+const panelShellClassName =
+  "w-full max-w-none sm:w-80 sm:max-w-80 max-h-[calc(100dvh_-_env(safe-area-inset-top,0px)_-_env(safe-area-inset-bottom,0px)_-_9rem)] sm:max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden";
+
 const NotificationItem = forwardRef<HTMLButtonElement, { notification: Notification; onSelect: (n: Notification) => void }>(
   ({ notification, onSelect }, ref) => {
     const markAsRead = useMarkAsRead();
@@ -122,14 +125,14 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
     const canOpenDestination = !!selectedNotification.event_id || isRewardsNotification(selectedNotification);
 
     return (
-      <div ref={ref} className="w-[calc(100vw-2rem)] max-w-80 max-h-[70vh] flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
+      <div ref={ref} className={panelShellClassName}>
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSelectedNotification(null)}>
             {"<-"}
           </Button>
           <h3 className="font-display font-semibold text-sm truncate">{localized.title}</h3>
         </div>
-        <div className="p-4 space-y-3">
+        <div className="min-h-0 overflow-y-auto p-4 space-y-3 overscroll-contain">
           <div className="flex items-center gap-2">
             {typeIcons[selectedNotification.type] || typeIcons.info}
             <span className="text-xs font-medium text-muted-foreground capitalize">{selectedNotification.type.replace(/_/g, " ")}</span>
@@ -151,7 +154,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
   }
 
   return (
-    <div ref={ref} className="w-[calc(100vw-2rem)] max-w-80 flex flex-col bg-background rounded-xl border border-border shadow-xl overflow-hidden">
+    <div ref={ref} className={panelShellClassName}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 className="font-display font-semibold text-sm">{t("notifications")}</h3>
         <div className="flex items-center gap-1">
@@ -182,7 +185,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto max-h-[60vh] overscroll-contain">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {isLoading ? (
           <div className="p-6 text-center text-sm text-muted-foreground">{language === "it" ? "Caricamento..." : "Loading..."}</div>
         ) : !notifications?.length ? (

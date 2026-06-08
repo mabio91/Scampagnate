@@ -101,7 +101,7 @@ const Header = () => {
                   )}
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 top-full mt-2 z-50">
+                  <div className="fixed inset-x-3 top-[calc(env(safe-area-inset-top,0px)_+_4.25rem)] z-[60] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-auto">
                     <NotificationPanel onClose={() => setShowNotifications(false)} />
                   </div>
                 )}
