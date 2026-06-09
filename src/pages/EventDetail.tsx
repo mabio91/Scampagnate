@@ -68,6 +68,15 @@ import {
 import { renderEventDescriptionHtml } from "@/lib/eventDescription";
 import { canRegistrationViewWhatsappGroup, normalizeWhatsappGroupUrl } from "@/lib/eventWhatsapp";
 
+const clampUnit = (value: number) => Math.min(Math.max(value, 0), 1);
+
+const smoothStep = (value: number, start: number, end: number) => {
+  if (end <= start) return value >= end ? 1 : 0;
+
+  const progress = clampUnit((value - start) / (end - start));
+  return progress * progress * (3 - 2 * progress);
+};
+
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
   const [isClamped, setIsClamped] = useState(false);
@@ -361,15 +370,17 @@ const EventDetail = () => {
   const heroBaseContainerHeight = `calc(env(safe-area-inset-top, 0px) + ${heroImageHeight})`;
   const heroContainerHeight = `calc(${heroBaseContainerHeight} + ${heroPullY}px)`;
   const heroImageBaseHeight = Math.min(viewportWidth, 430);
-  const heroHeight = heroImageBaseHeight;
-  const heroScrollProgress = Math.min(Math.max(scrollY / heroHeight, 0), 1);
+  const heroHeight = Math.max(heroImageBaseHeight, 1);
+  const heroScrollProgress = clampUnit(scrollY / heroHeight);
   const heroPullScale = Math.min((heroPullY / Math.max(heroImageBaseHeight, 1)) * 0.42, 0.16);
-  const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 1.05));
+  const heroOpacity = clampUnit(1 - scrollY / (heroHeight * 1.05));
+  const heroTitleOpacity = clampUnit(1 - scrollY / (heroHeight * 1.16));
   const heroScale = 1.08 - heroScrollProgress * 0.08 + heroPullScale;
   const heroTransition = isHeroPulling
     ? "opacity 300ms ease"
     : "height 360ms cubic-bezier(0.22, 1, 0.36, 1), transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease";
-  const showStickyHeader = scrollY > heroHeight - 60;
+  const stickyHeaderProgress = smoothStep(scrollY, heroHeight * 0.92, heroHeight * 1.02);
+  const showStickyHeader = stickyHeaderProgress > 0.04;
   const imageSrc = event ? resolveEventImageSrc(event.image_url) : undefined;
 
   const eventAccessRules = event?.access_rules as AccessRulesConfig | null;
@@ -1087,9 +1098,14 @@ const getCTALabel = () => {
       <div
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-safe ${
           showStickyHeader
-            ? "bg-background/95 backdrop-blur-lg shadow-sm border-b border-border/50 translate-y-0 opacity-100"
-            : "-translate-y-full opacity-0 pointer-events-none"
+            ? "bg-background/95 backdrop-blur-lg shadow-sm border-b border-border/50"
+            : ""
         }`}
+        style={{
+          opacity: stickyHeaderProgress,
+          transform: `translateY(${(1 - stickyHeaderProgress) * -100}%)`,
+          pointerEvents: stickyHeaderProgress > 0.35 ? "auto" : "none",
+        }}
       >
         <div className="max-w-lg mx-auto flex items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1177,7 +1193,7 @@ const getCTALabel = () => {
           className="absolute left-0 right-0 z-20 px-4 pointer-events-none"
           style={{
             top: `calc(${heroContainerHeight} - 3rem)`,
-            opacity: heroOpacity,
+            opacity: heroTitleOpacity,
             transform: "translateY(-100%)",
             transition: isHeroPulling ? "none" : "top 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease",
             willChange: "top, opacity",
