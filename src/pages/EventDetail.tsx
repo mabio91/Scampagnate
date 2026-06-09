@@ -19,6 +19,7 @@ import { usePricingEligibility, getBestUserPrice, type PriceOption, type Resolve
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import DynamicIcon from "@/components/DynamicIcon";
 import ShareSheet from "@/components/events/ShareSheet";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import { EventBadgePill } from "@/components/events/EventBadgePill";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { DifficultyGuideDialog } from "@/components/events/DifficultyGuideDialog";
@@ -1639,10 +1640,10 @@ const getCTALabel = () => {
         {/* Actions for registered users */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className={canUseRegisteredActions || canViewWhatsappGroup ? "pt-3" : "hidden"}>
           {canViewWhatsappGroup && (
-            <div className="mb-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 p-3">
+            <div className="mb-3 rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-800/30 dark:bg-green-950/20">
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#25D366] text-white">
-                  <MessageCircle className="h-4 w-4" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-green-500 text-white">
+                  <WhatsAppIcon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-body font-semibold text-foreground">Gruppo WhatsApp evento</p>
@@ -1651,9 +1652,9 @@ const getCTALabel = () => {
                   </p>
                 </div>
               </div>
-              <Button asChild className="mt-3 h-10 w-full bg-[#25D366] text-white hover:bg-[#22bf5b]">
+              <Button asChild className="mt-3 h-10 w-full bg-green-500 text-white hover:bg-green-600">
                 <a href={whatsappGroupUrl!} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" />
+                  <WhatsAppIcon className="mr-2 h-4 w-4" />
                   Entra nel gruppo
                 </a>
               </Button>

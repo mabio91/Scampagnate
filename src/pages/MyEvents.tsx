@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
-  CalendarPlus, Clock, Calendar, Mail, Loader2, Zap, SquarePen, MessageCircle
+  CalendarPlus, Clock, Calendar, Mail, Loader2, Zap, SquarePen
 } from "lucide-react";
 import { getRefundInfo, getCancellationDialogMessage, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ShareSheet from "@/components/events/ShareSheet";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import EditRegistrationDialog, { type RegistrationChangeQuote } from "@/components/events/EditRegistrationDialog";
 import { useMyEvents, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useUpdateRegistrationDetails } from "@/hooks/useEvents";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -585,10 +586,10 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         </Link>
 
         {canViewWhatsappGroup && (
-          <div className="mx-3 mb-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 p-3">
+          <div className="mx-3 mb-3 rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-800/30 dark:bg-green-950/20">
             <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#25D366] text-white">
-                <MessageCircle className="h-4 w-4" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-green-500 text-white">
+                <WhatsAppIcon className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-body font-semibold text-foreground">Gruppo WhatsApp evento</p>
@@ -597,9 +598,9 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
                 </p>
               </div>
             </div>
-            <Button asChild className="mt-3 h-10 w-full bg-[#25D366] text-white hover:bg-[#22bf5b]">
+            <Button asChild className="mt-3 h-10 w-full bg-green-500 text-white hover:bg-green-600">
               <a href={whatsappGroupUrl!} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="mr-2 h-4 w-4" />
+                <WhatsAppIcon className="mr-2 h-4 w-4" />
                 Entra nel gruppo
               </a>
             </Button>
