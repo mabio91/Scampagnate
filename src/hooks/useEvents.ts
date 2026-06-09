@@ -196,8 +196,10 @@ export const useEventStaff = (eventId: string) => {
 };
 
 export const useEventParticipants = (eventId: string) => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ["event-participants", eventId],
+    queryKey: ["event-participants", eventId, user?.id ?? "anon"],
     queryFn: async () => {
       // Fetch registrations with meeting points (no profile join — use RPC for public profile data)
       const { data, error } = await supabase
@@ -218,6 +220,7 @@ export const useEventParticipants = (eventId: string) => {
         first_name: string;
         avatar_url: string | null;
         last_name_initial: string | null;
+        last_name: string | null;
         age: number | null;
         total_points: number;
         bio: string | null;
@@ -234,6 +237,7 @@ export const useEventParticipants = (eventId: string) => {
               first_name: person.first_name,
               avatar_url: person.avatar_url,
               last_name_initial: person.last_name_initial || null,
+              last_name: person.last_name || null,
               age: person.age ?? null,
               total_points: person.total_points ?? 0,
               bio: person.bio || null,
@@ -263,8 +267,8 @@ export const useEventParticipants = (eventId: string) => {
         return {
           ...r,
           profiles: isManual
-            ? { first_name: manualName, avatar_url: null, last_name_initial: null, age: null, total_points: 0, bio: null, attended_events_count: 0, badges: [] }
-            : profilesMap[r.user_id] || { first_name: "?", avatar_url: null, last_name_initial: null, age: null, total_points: 0, bio: null, attended_events_count: 0, badges: [] },
+            ? { first_name: manualName, avatar_url: null, last_name_initial: null, last_name: null, age: null, total_points: 0, bio: null, attended_events_count: 0, badges: [] }
+            : profilesMap[r.user_id] || { first_name: "?", avatar_url: null, last_name_initial: null, last_name: null, age: null, total_points: 0, bio: null, attended_events_count: 0, badges: [] },
           badges: isManual ? [] : profilesMap[r.user_id]?.badges || [],
           is_manual: isManual,
           manual_level: manualLevel,

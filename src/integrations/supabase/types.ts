@@ -3313,6 +3313,7 @@ export type Database = {
           bio: string
           first_name: string
           id: string
+          last_name: string
           last_name_initial: string
           role: string
           sort_order: number

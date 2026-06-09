@@ -22,8 +22,15 @@ function formatLastNameInitial(lastNameInitial: string | null | undefined): stri
   return initial ? `${initial.toUpperCase()}.` : null;
 }
 
-function formatParticipantDisplayName(firstName: string | null | undefined, lastNameInitial: string | null | undefined) {
+function formatParticipantDisplayName(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+  lastNameInitial: string | null | undefined
+) {
   const baseName = firstName?.trim() || "Utente";
+  const fullLastName = lastName?.trim();
+  if (fullLastName) return `${baseName} ${fullLastName}`;
+
   const formattedInitial = formatLastNameInitial(lastNameInitial);
   return formattedInitial ? `${baseName} ${formattedInitial}` : baseName;
 }
@@ -49,6 +56,7 @@ const LevelBadgePill = ({ level }: { level: CommunityLevel | null | undefined })
 const ParticipantRow = ({
   avatarUrl,
   firstName,
+  lastName,
   lastNameInitial,
   points,
   level,
@@ -57,13 +65,14 @@ const ParticipantRow = ({
 }: {
   avatarUrl?: string | null;
   firstName?: string;
+  lastName?: string | null;
   lastNameInitial?: string | null;
   points: number;
   level?: CommunityLevel | null;
   age?: number | null;
   onOpen?: () => void;
 }) => {
-  const displayName = formatParticipantDisplayName(firstName, lastNameInitial);
+  const displayName = formatParticipantDisplayName(firstName, lastName, lastNameInitial);
 
   return (
     <div
@@ -82,7 +91,7 @@ const ParticipantRow = ({
       <LevelAvatar
         avatarUrl={avatarUrl}
         firstName={firstName}
-        lastName={lastNameInitial || undefined}
+        lastName={lastName || lastNameInitial || undefined}
         points={points}
         level={level}
         size="md"
@@ -108,7 +117,7 @@ const PublicParticipantProfileDialog = ({
   const [avatarExpanded, setAvatarExpanded] = useState(false);
   const profile = participant?.profiles || {};
   const firstName = profile.first_name || participant?.first_name || "Partecipante";
-  const displayName = formatParticipantDisplayName(firstName, profile.last_name_initial);
+  const displayName = formatParticipantDisplayName(firstName, profile.last_name, profile.last_name_initial);
   const age = profile.age ?? null;
   const points = profile.total_points ?? participant?.total_points ?? 0;
   const attendedEventsCount = profile.attended_events_count ?? participant?.attended_events_count ?? 0;
@@ -150,7 +159,7 @@ const PublicParticipantProfileDialog = ({
                 <LevelAvatar
                   avatarUrl={null}
                   firstName={firstName}
-                  lastName={profile.last_name_initial || undefined}
+                  lastName={profile.last_name || profile.last_name_initial || undefined}
                   points={points}
                   level={levelData}
                   size="lg"
@@ -382,6 +391,7 @@ const EventParticipants = () => {
                     key={p.id}
                     avatarUrl={p.profiles?.avatar_url}
                     firstName={p.profiles?.first_name}
+                    lastName={p.profiles?.last_name}
                     lastNameInitial={p.profiles?.last_name_initial}
                     points={points}
                     isManual={p.is_manual}
@@ -415,6 +425,7 @@ const EventParticipants = () => {
 const ParticipantRowWithLevel = ({
   avatarUrl,
   firstName,
+  lastName,
   lastNameInitial,
   points,
   isManual,
@@ -424,6 +435,7 @@ const ParticipantRowWithLevel = ({
 }: {
   avatarUrl?: string | null;
   firstName?: string;
+  lastName?: string | null;
   lastNameInitial?: string | null;
   points: number;
   isManual?: boolean;
@@ -449,6 +461,7 @@ const ParticipantRowWithLevel = ({
     <ParticipantRow
       avatarUrl={avatarUrl}
       firstName={firstName}
+      lastName={isManual ? null : lastName}
       lastNameInitial={isManual ? null : lastNameInitial}
       points={points}
       level={finalLevel}
