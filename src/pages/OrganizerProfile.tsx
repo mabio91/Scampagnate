@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate, type NavigateFunction } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate, type NavigateFunction } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, MapPin, CalendarDays, MessageCircle, Phone,
@@ -29,6 +29,7 @@ type OrganizerProfileEvent = Pick<
 
 const OrganizerProfile = () => {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: organizer, isLoading, error } = useOrganizerProfile(id);
@@ -74,6 +75,10 @@ const OrganizerProfile = () => {
   const { profile, eventCount, events } = organizer;
   const organizerEvents = (events || []) as OrganizerProfileEvent[];
   const fullName = profile?.first_name || "Organizer";
+  const locationState = location.state as { role?: unknown } | null;
+  const roleLabel = typeof locationState?.role === "string" && locationState.role.trim()
+    ? locationState.role.trim()
+    : "Organizzatore";
   const communityLevel = getCurrentCommunityLevel(profile?.total_points, communityLevels);
   const instagramHandle = profile?.instagram_handle || null;
   const upcomingEvents = organizerEvents.filter(e => isEventUpcomingByDateTime(e));
@@ -117,14 +122,17 @@ const OrganizerProfile = () => {
                     <UserIcon className="h-12 w-12 text-primary" />
                   </div>
                 )}
-                <span className="absolute -bottom-1 -right-1 bg-secondary text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-background shadow">
-                  Organizer
+                <span className="absolute -bottom-1 -right-1 max-w-36 truncate bg-secondary text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-background shadow">
+                  {roleLabel}
                 </span>
               </div>
 
               {/* Name */}
               <div>
                 <h1 className="font-display text-2xl font-bold text-foreground">{fullName || "Organizer"}</h1>
+                <p className="mt-1 text-[11px] font-body font-bold uppercase tracking-widest text-muted-foreground">
+                  {roleLabel}
+                </p>
                 <div className="mt-2 flex justify-center">
                   <CommunityLevelBadge level={communityLevel} />
                 </div>

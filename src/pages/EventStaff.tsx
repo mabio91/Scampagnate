@@ -1,16 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, ChevronRight, Info, Instagram, Phone, MessageCircle, User as UserIcon } from "lucide-react";
+import { ArrowLeft, ChevronRight, Info, Phone, MessageCircle, User as UserIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEvent, useEventStaff } from "@/hooks/useEvents";
-import { useAllCommunityLevels } from "@/hooks/useCommunityLevel";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import CommunityLevelBadge from "@/components/profile/CommunityLevelBadge";
-import { getCurrentCommunityLevel } from "@/lib/communityLevels";
-import { instagramProfileUrl } from "@/lib/instagram";
 
 type StaffContact = {
   id: string;
@@ -49,7 +45,6 @@ const EventStaff = () => {
   const navigate = useNavigate();
   const { data: event, isLoading: eventLoading } = useEvent(id!);
   const { data: staff, isLoading: staffLoading } = useEventStaff(id!);
-  const { data: communityLevels = [] } = useAllCommunityLevels();
   const [selectedContact, setSelectedContact] = useState<StaffContact | null>(null);
 
   const { data: organizerProfile } = useQuery({
@@ -129,7 +124,6 @@ const EventStaff = () => {
     totalPoints: member.profile?.total_points ?? 0,
     instagramHandle: member.profile?.instagram_handle || null,
   }));
-  const selectedContactLevel = getCurrentCommunityLevel(selectedContact?.totalPoints, communityLevels);
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,7 +190,6 @@ const EventStaff = () => {
               <p className="text-xs font-body font-semibold uppercase tracking-wide text-muted-foreground">
                 {selectedContact.role}
               </p>
-              <CommunityLevelBadge level={selectedContactLevel} />
             </div>
             <div className="space-y-2">
               {selectedContact.profileId && (
@@ -206,22 +199,10 @@ const EventStaff = () => {
                   onClick={() => {
                     const profileId = selectedContact.profileId;
                     setSelectedContact(null);
-                    navigate(`/organizer/${profileId}`);
+                    navigate(`/organizer/${profileId}`, { state: { role: selectedContact.role } });
                   }}
                 >
                   <UserIcon className="h-4 w-4 mr-3" /> Profilo
-                </Button>
-              )}
-
-              {selectedContact.instagramHandle && (
-                <Button variant="outline" asChild className="w-full justify-start font-body">
-                  <a
-                    href={instagramProfileUrl(selectedContact.instagramHandle)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Instagram className="h-4 w-4 mr-3" /> @{selectedContact.instagramHandle}
-                  </a>
                 </Button>
               )}
 
@@ -244,7 +225,7 @@ const EventStaff = () => {
                 </>
               )}
 
-              {!selectedContact.profileId && !selectedContact.phone && !selectedContact.instagramHandle && (
+              {!selectedContact.profileId && !selectedContact.phone && (
                 <p className="flex items-center justify-center gap-2 rounded-xl bg-muted/50 px-3 py-3 text-center text-xs font-body text-muted-foreground">
                   <Info className="h-4 w-4" />
                   Nessuna azione disponibile per questo membro dello staff.
