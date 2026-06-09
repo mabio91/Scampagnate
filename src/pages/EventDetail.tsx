@@ -340,7 +340,6 @@ const EventDetail = () => {
   const heroPullScale = Math.min((heroPullY / Math.max(heroImageBaseHeight, 1)) * 0.42, 0.16);
   const heroOpacity = Math.max(0, 1 - scrollY / (heroHeight * 1.05));
   const heroScale = 1.08 - heroScrollProgress * 0.08 + heroPullScale;
-  const heroTitleOffsetY = heroPullY - scrollY * 0.72;
   const heroTransition = isHeroPulling
     ? "opacity 300ms ease"
     : "height 360ms cubic-bezier(0.22, 1, 0.36, 1), transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease";
@@ -1007,7 +1006,11 @@ const getCTALabel = () => {
   const visiblePublicAvatars = ((publicAvatars || []) as any[]);
 
   // remainingSpots already computed above
-  const activeParticipantCount = participants ? visibleParticipants.length : (event.spots_taken || 0);
+  const activeParticipantCount = Math.max(
+    event.spots_taken || 0,
+    visibleParticipants.length,
+    visiblePublicAvatars.length
+  );
   const staffPreview = [
     {
       id: event.organizer_id || "organizer",
@@ -1104,20 +1107,6 @@ const getCTALabel = () => {
           </div>
         </div>
 
-        <div
-          className="absolute left-0 right-0 top-0 pointer-events-none"
-          style={{
-            height: heroBaseContainerHeight,
-            opacity: heroOpacity,
-            transform: `translateY(${heroTitleOffsetY}px)`,
-            transition: heroTransition,
-            willChange: "transform, opacity",
-          }}
-        >
-          <div className="absolute bottom-12 left-4 right-4">
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">{event.title}</h1>
-          </div>
-        </div>
       </div>
 
       <div
@@ -1128,6 +1117,21 @@ const getCTALabel = () => {
           willChange: "padding-top",
         }}
       >
+        <div
+          className="absolute left-0 right-0 z-20 px-4 pointer-events-none"
+          style={{
+            top: `calc(${heroContainerHeight} - 3rem)`,
+            opacity: heroOpacity,
+            transform: "translateY(-100%)",
+            transition: isHeroPulling ? "none" : "top 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease",
+            willChange: "top, opacity",
+          }}
+        >
+          <div className="mx-auto max-w-lg">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">{event.title}</h1>
+          </div>
+        </div>
+
         {/* 16. Rounded top container overlapping the hero */}
         <div className="relative -mt-6 bg-background rounded-t-3xl z-10 pointer-events-auto shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
           <div className="max-w-lg mx-auto px-4 pt-5 pb-2">

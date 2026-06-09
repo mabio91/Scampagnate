@@ -244,11 +244,11 @@ const EventParticipants = () => {
     return ((publicAvatars || []) as any[]);
   }, [publicAvatars]);
 
-  const totalParticipants = user && participants
-    ? visibleParticipants.length
-    : visiblePublicAvatars.length > 0
-      ? visiblePublicAvatars.length
-      : event?.spots_taken || 0;
+  const totalParticipants = Math.max(
+    event?.spots_taken || 0,
+    visibleParticipants.length,
+    visiblePublicAvatars.length
+  );
 
   // --- Loading ---
   if (eventLoading || participantsLoading) {
@@ -284,9 +284,10 @@ const EventParticipants = () => {
 
   // --- Guest / not logged in ---
   if (!user) {
-    const renderList = visiblePublicAvatars.length > 0
-      ? visiblePublicAvatars
-      : Array.from({ length: totalParticipants });
+    const renderList = [
+      ...visiblePublicAvatars,
+      ...Array.from({ length: Math.max(totalParticipants - visiblePublicAvatars.length, 0) }),
+    ];
 
     return (
       <div className="min-h-screen bg-background relative">
