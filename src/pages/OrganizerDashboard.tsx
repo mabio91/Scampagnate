@@ -44,6 +44,19 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
+const comparePastStatsRecentFirst = (
+  a: { date: string; title: string; id: string },
+  b: { date: string; title: string; id: string },
+) => {
+  const dateComparison = b.date.localeCompare(a.date);
+  if (dateComparison !== 0) return dateComparison;
+
+  const titleComparison = a.title.localeCompare(b.title);
+  if (titleComparison !== 0) return titleComparison;
+
+  return a.id.localeCompare(b.id);
+};
+
 const OrganizerDashboard = () => {
   const navigate = useNavigate();
   const { user, isOrganizer, isAdmin, loading } = useAuth();
@@ -87,7 +100,7 @@ const OrganizerDashboard = () => {
     let totalCancelled = 0;
     let totalNoShows = 0;
 
-    const pastEventStats = pe.map((evt) => {
+    const pastEventStatsChronological = pe.map((evt) => {
       const regs = regsByEvent[evt.id] || [];
       const active = regs.filter(isActiveParticipantRegistration);
       const checkedIn = active.filter((r) => r.checked_in);
@@ -112,6 +125,7 @@ const OrganizerDashboard = () => {
         attendanceRate: active.length > 0 ? Math.round((checkedIn.length / active.length) * 100) : 0,
       };
     });
+    const pastEventStats = [...pastEventStatsChronological].sort(comparePastStatsRecentFirst);
 
     const avgParticipants = totalPast > 0 ? Math.round(totalRegistered / totalPast) : 0;
     const avgAttendanceRate = totalRegistered > 0 ? Math.round((totalCheckedIn / totalRegistered) * 100) : 0;
@@ -129,7 +143,7 @@ const OrganizerDashboard = () => {
     return {
       totalEvents, totalPast, avgParticipants, avgAttendanceRate,
       cancellationRate, noShowRate, totalRegistered, totalCheckedIn,
-      totalCancelled, totalNoShows, pastEventStats,
+      totalCancelled, totalNoShows, pastEventStats, pastEventStatsChronological,
       bestAttended, highestAttendance, highestCancellation,
     };
   }, [events, allRegistrations]);
@@ -393,11 +407,11 @@ const OrganizerDashboard = () => {
                 </Card>
 
                 {/* Participation Chart */}
-                {analytics.pastEventStats.length > 1 && (
+                {analytics.pastEventStatsChronological.length > 1 && (
                   <Card className="p-4">
                     <h3 className="font-display text-sm font-bold text-foreground mb-3">Participation by Event</h3>
-                    <ResponsiveContainer width="100%" height={Math.max(120, analytics.pastEventStats.length * 36)}>
-                      <BarChart data={analytics.pastEventStats.slice(0, 10).map(e => ({
+                    <ResponsiveContainer width="100%" height={Math.max(120, analytics.pastEventStatsChronological.length * 36)}>
+                      <BarChart data={analytics.pastEventStatsChronological.slice(-10).map(e => ({
                         name: e.title.length > 15 ? e.title.slice(0, 15) + "…" : e.title,
                         registered: e.registered,
                         capacity: e.spotsTotal,
@@ -414,11 +428,11 @@ const OrganizerDashboard = () => {
                 )}
 
                 {/* Attendance Rate Trend */}
-                {analytics.pastEventStats.length > 1 && (
+                {analytics.pastEventStatsChronological.length > 1 && (
                   <Card className="p-4">
                     <h3 className="font-display text-sm font-bold text-foreground mb-3">Attendance Rate Trend</h3>
                     <ResponsiveContainer width="100%" height={200}>
-                      <LineChart data={analytics.pastEventStats.map(e => ({
+                      <LineChart data={analytics.pastEventStatsChronological.map(e => ({
                         name: format(new Date(e.date), "dd MMM"),
                         rate: e.attendanceRate,
                       }))}>
@@ -458,11 +472,11 @@ const OrganizerDashboard = () => {
                 })()}
 
                 {/* Registration Trend Area Chart */}
-                {analytics.pastEventStats.length > 1 && (
+                {analytics.pastEventStatsChronological.length > 1 && (
                   <Card className="p-4">
                     <h3 className="font-display text-sm font-bold text-foreground mb-3">Registration Trend</h3>
                     <ResponsiveContainer width="100%" height={200}>
-                      <AreaChart data={analytics.pastEventStats.map(e => ({
+                      <AreaChart data={analytics.pastEventStatsChronological.map(e => ({
                         name: format(new Date(e.date), "dd MMM"),
                         registered: e.registered,
                         cancelled: e.cancelled,
