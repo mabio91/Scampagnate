@@ -14,7 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Calendar, Users, TrendingUp, ChevronRight, CheckCircle2,
-  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Trash2, Lightbulb, Ticket, Link2
+  UserX, Award, BarChart3, Target, XCircle, AlertTriangle, Copy, Lightbulb, Ticket, Link2,
+  ClipboardList, History, Pencil
 } from "lucide-react";
 import IssuesPanel from "@/components/admin/IssuesPanel";
 import ProposalsPanel from "@/components/admin/ProposalsPanel";
@@ -24,6 +25,7 @@ import BroadcastTemplatesPanel from "@/components/admin/BroadcastTemplatesPanel"
 import { format } from "date-fns";
 import { isActiveParticipantRegistration } from "@/lib/eventPayments";
 import { isEventPastByDateTime, isEventUpcomingByDateTime } from "@/lib/eventDates";
+import { cn } from "@/lib/utils";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, PieChart, Pie, AreaChart, Area, Legend, CartesianGrid,
@@ -44,6 +46,13 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
+const DRAFT_EVENT_STATUSES = new Set(["draft", "unpublished"]);
+const CANCELLED_EVENT_STATUSES = new Set(["cancelled"]);
+const HIDDEN_EVENT_STATUSES = new Set(["draft", "unpublished", "cancelled", "rescheduled", "past", "completed"]);
+const EVENT_FILTERS = ["published", "draft", "cancelled"] as const;
+
+type EventFilter = (typeof EVENT_FILTERS)[number];
+
 const comparePastStatsRecentFirst = (
   a: { date: string; title: string; id: string },
   b: { date: string; title: string; id: string },
@@ -62,9 +71,11 @@ const OrganizerDashboard = () => {
   const { user, isOrganizer, isAdmin, loading } = useAuth();
   const { toast } = useToast();
   const { data: events, isLoading } = useOrganizerEvents();
+  const organizerEvents = useMemo(() => events || [], [events]);
+  const [eventFilter, setEventFilter] = useState<EventFilter>("published");
 
   // Fetch all registrations for organizer's events
-  const eventIds = events?.map((e) => e.id) || [];
+  const eventIds = organizerEvents.map((e) => e.id);
   const { data: allRegistrations } = useQuery({
     queryKey: ["organizer-all-registrations", eventIds],
     enabled: eventIds.length > 0,
@@ -78,15 +89,30 @@ const OrganizerDashboard = () => {
     },
   });
 
-  const upcomingEvents = events?.filter((e) => isEventUpcomingByDateTime(e)) || [];
-  const pastEvents = events?.filter((e) => isEventPastByDateTime(e)) || [];
+  const publishedEvents = organizerEvents.filter((e) => (
+    isEventUpcomingByDateTime(e) && !HIDDEN_EVENT_STATUSES.has(String(e.status || ""))
+  ));
+  const draftEvents = organizerEvents.filter((e) => DRAFT_EVENT_STATUSES.has(String(e.status || "")));
+  const cancelledEvents = organizerEvents.filter((e) => CANCELLED_EVENT_STATUSES.has(String(e.status || "")));
+  const pastEvents = organizerEvents.filter((e) => isEventPastByDateTime(e));
+  const filteredEvents = {
+    published: publishedEvents,
+    draft: draftEvents,
+    cancelled: cancelledEvents,
+  }[eventFilter];
+  const totalRegistrations = organizerEvents.reduce((sum, event) => sum + event.spots_taken, 0);
+  const emptyMessage = {
+    published: "Nessun evento pubblicato",
+    draft: "Nessuna bozza",
+    cancelled: "Nessun evento annullato",
+  }[eventFilter];
 
   // Aggregate analytics
   const analytics = useMemo(() => {
-    if (!events?.length || !allRegistrations) return null;
+    if (!organizerEvents.length || !allRegistrations) return null;
 
-    const totalEvents = events.length;
-    const pe = events.filter((e) => isEventPastByDateTime(e));
+    const totalEvents = organizerEvents.length;
+    const pe = organizerEvents.filter((e) => isEventPastByDateTime(e));
     const totalPast = pe.length;
 
     const regsByEvent: Record<string, typeof allRegistrations> = {};
@@ -146,7 +172,7 @@ const OrganizerDashboard = () => {
       totalCancelled, totalNoShows, pastEventStats, pastEventStatsChronological,
       bestAttended, highestAttendance, highestCancellation,
     };
-  }, [events, allRegistrations]);
+  }, [organizerEvents, allRegistrations]);
 
   if (loading) return null;
   if (!user || !isOrganizer) return <Navigate to="/" replace />;
@@ -155,82 +181,157 @@ const OrganizerDashboard = () => {
     <>
       <div className="px-4 pt-4 pb-8 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <ClipboardList className="h-7 w-7 shrink-0 text-primary" />
+            <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
+          </div>
           <Link to="/organizer/events/new">
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> New Event
+            <Button size="sm" className="gap-1.5 rounded-full px-4 font-display font-bold">
+              <Plus className="h-4 w-4" /> Nuovo evento
             </Button>
           </Link>
         </div>
 
         <Tabs defaultValue="events" className="w-full">
-          <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-            <TabsTrigger value="events" className="flex-1 min-w-0 text-xs px-2">Events</TabsTrigger>
-            <TabsTrigger value="history" className="flex-1 min-w-0 text-xs px-2">History</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 min-w-0 text-xs px-2">
-              <BarChart3 className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Analytics</span>
+          <TabsList className="h-auto w-full justify-start gap-3 overflow-x-auto bg-transparent p-0 text-muted-foreground no-scrollbar">
+            <TabsTrigger
+              value="events"
+              className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+            >
+              <Calendar className="mr-2 h-4 w-4 shrink-0" />
+              Eventi {publishedEvents.length}
             </TabsTrigger>
-            <TabsTrigger value="proposals" className="flex-1 min-w-0 text-xs px-2">
-              <Lightbulb className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Proposals</span>
+            <TabsTrigger
+              value="history"
+              className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+            >
+              <History className="mr-2 h-4 w-4 shrink-0" />
+              Passati {pastEvents.length}
+            </TabsTrigger>
+            <TabsTrigger
+              value="analytics"
+              className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+            >
+              <BarChart3 className="mr-2 h-4 w-4 shrink-0" /> Analytics
+            </TabsTrigger>
+            <TabsTrigger
+              value="proposals"
+              className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+            >
+              <Lightbulb className="mr-2 h-4 w-4 shrink-0" /> Proposte
             </TabsTrigger>
             {isAdmin && (
               <>
-                <TabsTrigger value="discounts" className="flex-1 min-w-0 text-xs px-2">
-                  <Ticket className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Discounts</span>
+                <TabsTrigger
+                  value="discounts"
+                  className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                >
+                  <Ticket className="mr-2 h-4 w-4 shrink-0" /> Sconti
                 </TabsTrigger>
-                <TabsTrigger value="missions" className="flex-1 min-w-0 text-xs px-2">
-                  <Target className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Missions</span>
+                <TabsTrigger
+                  value="missions"
+                  className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                >
+                  <Target className="mr-2 h-4 w-4 shrink-0" /> Missioni
                 </TabsTrigger>
-                <TabsTrigger value="issues" className="flex-1 min-w-0 text-xs px-2">
-                  <AlertTriangle className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Issues</span>
+                <TabsTrigger
+                  value="issues"
+                  className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4 shrink-0" /> Issue
                 </TabsTrigger>
-                <TabsTrigger value="templates" className="flex-1 min-w-0 text-xs px-2">
-                  <Copy className="h-3 w-3 mr-0.5 shrink-0" /> <span className="truncate">Templates</span>
+                <TabsTrigger
+                  value="templates"
+                  className="h-12 shrink-0 rounded-2xl border border-border bg-card/80 px-4 text-sm font-display font-bold shadow-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                >
+                  <Copy className="mr-2 h-4 w-4 shrink-0" /> Template
                 </TabsTrigger>
               </>
             )}
           </TabsList>
 
           {/* Events Tab */}
-          <TabsContent value="events" className="space-y-6 mt-4">
+          <TabsContent value="events" className="space-y-4 mt-4">
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3">
-              <Card className="p-3 text-center">
-                <Calendar className="h-5 w-5 mx-auto text-primary mb-1" />
-                <p className="text-xl font-bold font-display text-foreground">{events?.length || 0}</p>
-                <p className="text-[11px] text-muted-foreground font-body">Total Events</p>
+              <Card className="rounded-2xl p-4 text-center shadow-none">
+                <Calendar className="h-6 w-6 mx-auto text-primary mb-2" />
+                <p className="text-2xl font-bold font-display text-foreground">{organizerEvents.length}</p>
+                <p className="text-xs text-muted-foreground font-display font-bold">Eventi</p>
               </Card>
-              <Card className="p-3 text-center">
-                <Users className="h-5 w-5 mx-auto text-primary mb-1" />
-                <p className="text-xl font-bold font-display text-foreground">
-                  {events?.reduce((s, e) => s + e.spots_taken, 0) || 0}
-                </p>
-                <p className="text-[11px] text-muted-foreground font-body">Registrations</p>
+              <Card className="rounded-2xl p-4 text-center shadow-none">
+                <Users className="h-6 w-6 mx-auto text-primary mb-2" />
+                <p className="text-2xl font-bold font-display text-foreground">{totalRegistrations}</p>
+                <p className="text-xs text-muted-foreground font-display font-bold">Iscrizioni</p>
               </Card>
-              <Card className="p-3 text-center">
-                <TrendingUp className="h-5 w-5 mx-auto text-primary mb-1" />
-                <p className="text-xl font-bold font-display text-foreground">{upcomingEvents.length}</p>
-                <p className="text-[11px] text-muted-foreground font-body">Upcoming</p>
+              <Card className="rounded-2xl p-4 text-center shadow-none">
+                <TrendingUp className="h-6 w-6 mx-auto text-primary mb-2" />
+                <p className="text-2xl font-bold font-display text-foreground">{publishedEvents.length}</p>
+                <p className="text-xs text-muted-foreground font-display font-bold">Futuri</p>
               </Card>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                aria-pressed={eventFilter === "published"}
+                onClick={() => setEventFilter("published")}
+                className={cn(
+                  "flex h-12 items-center justify-center gap-1.5 rounded-2xl border px-2 text-xs font-display font-bold transition-colors active:scale-[0.98] sm:gap-2 sm:px-3 sm:text-sm",
+                  eventFilter === "published"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card/80 text-foreground",
+                )}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                <span className="truncate">Pubblicati {publishedEvents.length}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={eventFilter === "draft"}
+                onClick={() => setEventFilter("draft")}
+                className={cn(
+                  "flex h-12 items-center justify-center gap-1.5 rounded-2xl border px-2 text-xs font-display font-bold transition-colors active:scale-[0.98] sm:gap-2 sm:px-3 sm:text-sm",
+                  eventFilter === "draft"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card/80 text-foreground",
+                )}
+              >
+                <Pencil className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                <span className="truncate">Bozze {draftEvents.length}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={eventFilter === "cancelled"}
+                onClick={() => setEventFilter("cancelled")}
+                className={cn(
+                  "flex h-12 items-center justify-center gap-1.5 rounded-2xl border px-2 text-xs font-display font-bold transition-colors active:scale-[0.98] sm:gap-2 sm:px-3 sm:text-sm",
+                  eventFilter === "cancelled"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card/80 text-foreground",
+                )}
+              >
+                <XCircle className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                <span className="truncate">Annullati {cancelledEvents.length}</span>
+              </button>
             </div>
 
             {/* Upcoming Events */}
             <div>
-              <h2 className="font-display text-lg font-bold text-foreground mb-3">Upcoming Events</h2>
               {isLoading ? (
                 <div className="space-y-2">
                   {[1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
                 </div>
-              ) : upcomingEvents.length === 0 ? (
+              ) : filteredEvents.length === 0 ? (
                 <Card className="p-6 text-center">
-                  <p className="text-muted-foreground font-body text-sm">No upcoming events</p>
+                  <p className="text-muted-foreground font-body text-sm">{emptyMessage}</p>
                   <Link to="/organizer/events/new">
-                    <Button variant="outline" size="sm" className="mt-3">Create your first event</Button>
+                    <Button variant="outline" size="sm" className="mt-3">Crea un evento</Button>
                   </Link>
                 </Card>
               ) : (
                 <div className="space-y-2">
-                  {upcomingEvents.map((event) => (
+                  {filteredEvents.map((event) => (
                     <Link key={event.id} to={`/organizer/events/${event.id}`}>
                       <Card className="p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors">
                         <div className="flex-1 min-w-0">
