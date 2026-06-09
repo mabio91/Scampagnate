@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, MapPin, CalendarDays, MessageCircle, Phone,
   User as UserIcon, Calendar, Star, Users, ChevronRight, Lock,
-  Info, Clock
+  Info, Instagram
 } from "lucide-react";
 
 import { type EventWithDetails, useOrganizerProfile } from "@/hooks/useEvents";
+import { useAllCommunityLevels } from "@/hooks/useCommunityLevel";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,9 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { DifficultyBadge } from "@/components/events/DifficultyBadge";
 import { CapacityWarning } from "@/components/events/CapacityWarning";
 import { isEventPastByDateTime, isEventUpcomingByDateTime } from "@/lib/eventDates";
+import CommunityLevelBadge from "@/components/profile/CommunityLevelBadge";
+import { getCurrentCommunityLevel } from "@/lib/communityLevels";
+import { instagramProfileUrl } from "@/lib/instagram";
 
 type OrganizerProfileEvent = Pick<
   EventWithDetails,
@@ -29,6 +32,7 @@ const OrganizerProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: organizer, isLoading, error } = useOrganizerProfile(id);
+  const { data: communityLevels = [] } = useAllCommunityLevels();
 
   if (isLoading) {
     return (
@@ -70,6 +74,8 @@ const OrganizerProfile = () => {
   const { profile, eventCount, events } = organizer;
   const organizerEvents = (events || []) as OrganizerProfileEvent[];
   const fullName = profile?.first_name || "Organizer";
+  const communityLevel = getCurrentCommunityLevel(profile?.total_points, communityLevels);
+  const instagramHandle = profile?.instagram_handle || null;
   const upcomingEvents = organizerEvents.filter(e => isEventUpcomingByDateTime(e));
   const pastEvents = organizerEvents.filter(e => isEventPastByDateTime(e));
 
@@ -119,6 +125,9 @@ const OrganizerProfile = () => {
               {/* Name */}
               <div>
                 <h1 className="font-display text-2xl font-bold text-foreground">{fullName || "Organizer"}</h1>
+                <div className="mt-2 flex justify-center">
+                  <CommunityLevelBadge level={communityLevel} />
+                </div>
 
                 {/* Stats row */}
                 <div className="flex items-center justify-center gap-4 mt-2">
@@ -143,7 +152,18 @@ const OrganizerProfile = () => {
               )}
 
               {/* Contact Buttons */}
-              <div className="w-full">
+              <div className="w-full space-y-2">
+                {instagramHandle && (
+                  <a
+                    href={instagramProfileUrl(instagramHandle)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-sm font-body font-semibold text-foreground transition-colors hover:bg-muted/60"
+                  >
+                    <Instagram className="h-4 w-4 text-primary" />
+                    @{instagramHandle}
+                  </a>
+                )}
                 {!user ? (
                   <button
                     onClick={() => navigate("/auth")}

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, X, ZoomIn, Bell, BellRing
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, X, ZoomIn, Bell, BellRing, Instagram
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage, getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
@@ -15,6 +15,7 @@ import { isEventPastByDateTime, isEventStartedByDateTime } from "@/lib/eventDate
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvent, useEventParticipants, useMyRegistration, useRegisterForEvent, useCancelRegistration, useSavedEvents, useToggleSaveEvent, useEventOpeningReminders, useToggleEventOpeningReminder, useEventStaff } from "@/hooks/useEvents";
 import { useCheckEventAccessRules, getExclusivityIndicators, type AccessRulesConfig } from "@/hooks/useEventAccessRules";
+import { useAllCommunityLevels } from "@/hooks/useCommunityLevel";
 import { usePricingEligibility, getBestUserPrice, type PriceOption, type ResolvedPriceOption } from "@/hooks/usePricingEligibility";
 import { BadgeIcon as BadgeIconComp } from "@/components/BadgeIcon";
 import DynamicIcon from "@/components/DynamicIcon";
@@ -66,6 +67,9 @@ import {
 } from "@/lib/priceOptions";
 import { renderEventDescriptionHtml } from "@/lib/eventDescription";
 import { canRegistrationViewWhatsappGroup, normalizeWhatsappGroupUrl } from "@/lib/eventWhatsapp";
+import CommunityLevelBadge from "@/components/profile/CommunityLevelBadge";
+import { getCurrentCommunityLevel } from "@/lib/communityLevels";
+import { instagramProfileUrl } from "@/lib/instagram";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
@@ -406,11 +410,14 @@ const EventDetail = () => {
       return {
         first_name: pub?.first_name || "",
         avatar_url: pub?.avatar_url || null,
+        total_points: pub?.total_points ?? 0,
+        instagram_handle: pub?.instagram_handle || null,
         phone,
       };
     },
     enabled: !!event?.organizer_id,
   });
+  const { data: communityLevels = [] } = useAllCommunityLevels();
 
   const canRequestWhatsappGroupUrl = Boolean(
     event?.id && (isAdmin || isOrganizer || canRegistrationViewWhatsappGroup(myRegistration)),
@@ -1067,6 +1074,7 @@ const getCTALabel = () => {
     }))),
   ].filter((member) => member.first_name);
   const staffCount = staffPreview.length;
+  const organizerCommunityLevel = getCurrentCommunityLevel(organizerProfile?.total_points, communityLevels);
 
   return (
     <div data-event-detail-root className="relative min-h-screen min-h-[100dvh] bg-background pb-36">
@@ -1833,7 +1841,7 @@ const getCTALabel = () => {
           <DialogHeader>
             <DialogTitle className="font-display">{organizerProfile?.first_name || event.organizer_name}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-2">
+          <div className="flex flex-col items-center gap-3 py-2">
             {organizerProfile?.avatar_url ? (
               <img src={organizerProfile.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover" />
             ) : (
@@ -1841,6 +1849,7 @@ const getCTALabel = () => {
                 {event.organizer_name?.[0] || "O"}
               </div>
             )}
+            <CommunityLevelBadge level={organizerCommunityLevel} />
           </div>
           <div className="space-y-2">
             <Button
@@ -1850,6 +1859,21 @@ const getCTALabel = () => {
             >
               <UserIcon className="h-4 w-4 mr-3" /> Profilo
             </Button>
+            {organizerProfile?.instagram_handle && (
+              <Button
+                variant="outline"
+                asChild
+                className="w-full justify-start font-body"
+              >
+                <a
+                  href={instagramProfileUrl(organizerProfile.instagram_handle)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Instagram className="h-4 w-4 mr-3" /> @{organizerProfile.instagram_handle}
+                </a>
+              </Button>
+            )}
             {organizerProfile?.phone && (
               <>
                 <Button

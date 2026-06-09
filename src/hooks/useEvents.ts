@@ -78,6 +78,8 @@ export interface EventStaffMember {
     first_name: string;
     avatar_url: string | null;
     last_name_initial?: string | null;
+    total_points?: number | null;
+    instagram_handle?: string | null;
     phone?: string | null;
     bio?: string | null;
   } | null;
@@ -181,6 +183,8 @@ export const useEventStaff = (eventId: string) => {
               first_name: profile.first_name,
               avatar_url: profile.avatar_url,
               last_name_initial: profile.last_name_initial || null,
+              total_points: profile.total_points ?? 0,
+              instagram_handle: profile.instagram_handle || null,
               phone: profile.phone || null,
               bio: profile.bio || null,
             },
@@ -633,21 +637,23 @@ export const useOrganizerProfile = (organizerId: string | undefined) => {
     queryFn: async () => {
       if (!organizerId) return null;
 
-      // Fetch public profile data via security definer function (first_name, avatar_url only)
+      // Fetch public profile data via security definer function.
       const { data: publicProfile } = await supabase.rpc("get_public_profile", { profile_id: organizerId });
       const publicData = publicProfile?.[0] || null;
 
-      // Try to get extended profile data (phone, bio) — will only work if caller has RLS access
-      let phone: string | null = null;
-      let bio: string | null = null;
+      // Try to get extended profile data — will only work if caller has RLS access.
+      let phone: string | null = publicData?.phone || null;
+      let bio: string | null = publicData?.bio || null;
+      let instagramHandle: string | null = publicData?.instagram_handle || null;
       const { data: fullProfile } = await supabase
         .from("profiles")
-        .select("phone, bio")
+        .select("phone, bio, instagram_handle")
         .eq("id", organizerId)
         .single();
       if (fullProfile) {
-        phone = fullProfile.phone;
-        bio = fullProfile.bio;
+        phone = fullProfile.phone || phone;
+        bio = fullProfile.bio || bio;
+        instagramHandle = fullProfile.instagram_handle || instagramHandle;
       }
 
       // Fetch total event count
@@ -672,6 +678,8 @@ export const useOrganizerProfile = (organizerId: string | undefined) => {
         profile: {
           first_name: publicData?.first_name || "",
           avatar_url: publicData?.avatar_url || null,
+          total_points: publicData?.total_points ?? 0,
+          instagram_handle: instagramHandle,
           phone,
           bio,
         },

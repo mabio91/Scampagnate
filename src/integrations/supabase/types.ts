@@ -3328,6 +3328,7 @@ export type Database = {
           bio: string
           first_name: string
           id: string
+          instagram_handle: string | null
           last_name_initial: string
           phone: string
           total_points: number
@@ -3340,6 +3341,7 @@ export type Database = {
           bio: string
           first_name: string
           id: string
+          instagram_handle: string | null
           last_name_initial: string
           phone: string
           total_points: number
