@@ -41,6 +41,7 @@ export interface EventWithDetails {
   visibility: "public" | "private" | "hidden";
   gallery_images: { url: string; order: number }[] | null;
   access_rules: any;
+  whatsapp_group_url?: string | null;
   category?: { name: string; icon: string } | null;
   meeting_points?: { id: string; name: string; location: string; time: string; notes: string | null }[];
   price_options?: {
@@ -143,11 +144,12 @@ export const useEvent = (id: string) => {
         .eq("id", id)
         .single();
       if (error) throw error;
+      const eventData = data as any;
       return {
-        ...data,
-        category: data.event_categories,
-        meeting_points: sortMeetingPointsChronologically(data.event_meeting_points),
-        price_options: ((data as any).event_price_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+        ...eventData,
+        category: eventData.event_categories,
+        meeting_points: sortMeetingPointsChronologically(eventData.event_meeting_points),
+        price_options: (eventData.event_price_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
       } as unknown as EventWithDetails;
     },
     enabled: !!id,

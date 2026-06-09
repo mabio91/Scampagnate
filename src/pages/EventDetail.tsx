@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import OptimizedImage, { resolveEventImageSrc } from "@/components/OptimizedImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { ToastAction } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDeterministicEventClosingSentence, normalizeEventClosingSentence } from "@/lib/eventClosingSentences";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +64,7 @@ import {
   shouldShowLastSpotsUrgency,
 } from "@/lib/priceOptions";
 import { renderEventDescriptionHtml } from "@/lib/eventDescription";
+import { canRegistrationViewWhatsappGroup, normalizeWhatsappGroupUrl } from "@/lib/eventWhatsapp";
 
 const DescriptionSection = ({ description, expanded, onToggle }: { description: string; expanded: boolean; onToggle: () => void }) => {
   const textRef = useRef<HTMLDivElement>(null);
@@ -100,6 +102,18 @@ const DescriptionSection = ({ description, expanded, onToggle }: { description: 
       </div>
     </motion.div>
   );
+};
+
+const fetchEventWhatsappGroupUrl = async (eventId: string): Promise<string | null> => {
+  const { data, error } = await supabase
+    .from("event_whatsapp_links" as any)
+    .select("url")
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (error) return null;
+
+  return normalizeWhatsappGroupUrl((data as any)?.url);
 };
 
 const invokeAuthenticatedFunction = async (functionName: string, body: Record<string, unknown>) => {
@@ -397,6 +411,15 @@ const EventDetail = () => {
     enabled: !!event?.organizer_id,
   });
 
+  const canRequestWhatsappGroupUrl = Boolean(
+    event?.id && (isAdmin || isOrganizer || canRegistrationViewWhatsappGroup(myRegistration)),
+  );
+  const { data: protectedWhatsappGroupUrl } = useQuery({
+    queryKey: ["event-whatsapp-group-url", event?.id, user?.id, canRequestWhatsappGroupUrl],
+    queryFn: () => fetchEventWhatsappGroupUrl(event!.id),
+    enabled: canRequestWhatsappGroupUrl,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -431,16 +454,21 @@ const EventDetail = () => {
     && myRegistration.status === "registered"
     && currentRegistrationRequiresOnlinePayment
     && myRegistration.payment_status === "pending";
+  const isRegistered = hasCurrentRegistration
+    && myRegistration.status !== "pending_payment"
+    && !isLegacyPendingPayment;
   const hasPendingPayment = hasCurrentRegistration && isPendingPaymentRegistration(myRegistration, event, registrationPriceOption);
+  const canUseRegisteredActions = isRegistered && !hasPendingPayment;
+  const whatsappGroupUrl = protectedWhatsappGroupUrl || null;
+  const canViewWhatsappGroup = Boolean(
+    whatsappGroupUrl && (isAdmin || isOrganizer || canRegistrationViewWhatsappGroup(myRegistration)),
+  );
   const balancePaymentMode = getEventBalancePaymentMode(event, registrationPriceOption);
   const isDepositPaid = hasCurrentRegistration && isDepositRegistration(myRegistration);
   const storedBalanceDue = Number((myRegistration as any)?.balance_due_amount ?? 0);
   const configuredBalanceDue = getRemainingBalanceAmount(event, registrationPriceOption);
   const hasOnlineBalanceDue = isDepositPaid && balancePaymentMode === "online" && Math.max(storedBalanceDue, configuredBalanceDue) > 0;
   const depositStatusMessage = hasCurrentRegistration ? getDepositPaymentLabel(myRegistration, event, registrationPriceOption) : null;
-  const isRegistered = hasCurrentRegistration
-    && myRegistration.status !== "pending_payment"
-    && !isLegacyPendingPayment;
   const isSportCategory = event.category?.name === "Sport & Movimento";
   
   const eventBadges = resolveEventBadges({
@@ -809,7 +837,21 @@ const EventDetail = () => {
       } else if (isWaitlist) {
         toast({ title: "Lista d'attesa", description: `Sarai notificato quando si libererà un posto per ${event.title}` });
       } else {
-        toast({ title: "Registrazione confermata", description: `Ti sei iscritto a ${event.title}` });
+        const protectedWhatsappGroupUrl = await fetchEventWhatsappGroupUrl(event.id);
+        toast({
+          title: "Registrazione confermata",
+          description: protectedWhatsappGroupUrl
+            ? `Ti sei iscritto a ${event.title}. Puoi entrare nel gruppo WhatsApp dell'evento.`
+            : `Ti sei iscritto a ${event.title}`,
+          action: protectedWhatsappGroupUrl ? (
+            <ToastAction
+              altText="Entra nel gruppo WhatsApp"
+              onClick={() => window.open(protectedWhatsappGroupUrl, "_blank", "noopener,noreferrer")}
+            >
+              Entra
+            </ToastAction>
+          ) : undefined,
+        });
       }
     } catch (err: any) {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
@@ -1595,8 +1637,30 @@ const getCTALabel = () => {
         {/* Price section removed — price only shown in bottom sticky bar */}
 
         {/* Actions for registered users */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className={isRegistered && !hasPendingPayment ? "pt-3" : "hidden"}>
-          {isRegistered && !hasPendingPayment && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className={canUseRegisteredActions || canViewWhatsappGroup ? "pt-3" : "hidden"}>
+          {canViewWhatsappGroup && (
+            <div className="mb-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 p-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#25D366] text-white">
+                  <MessageCircle className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-body font-semibold text-foreground">Gruppo WhatsApp evento</p>
+                  <p className="mt-0.5 text-xs font-body leading-relaxed text-muted-foreground">
+                    Entra nel gruppo dedicato per aggiornamenti, dettagli pratici e comunicazioni dello staff.
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="mt-3 h-10 w-full bg-[#25D366] text-white hover:bg-[#22bf5b]">
+                <a href={whatsappGroupUrl!} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Entra nel gruppo
+                </a>
+              </Button>
+            </div>
+          )}
+
+          {canUseRegisteredActions && (
             <>
               <Button variant="outline" onClick={handleCancelClick} disabled={cancelMutation.isPending} className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20">
                 {cancelMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Annullamento...</> : "Annulla iscrizione"}

@@ -18,6 +18,7 @@ import {
 } from "@/lib/meetingPoints";
 import { formatPromoDateInput, promoDateInputToIso } from "@/lib/promoPricing";
 import { isGeneratedPriceOptionName } from "@/lib/priceOptions";
+import { normalizeWhatsappGroupUrl } from "@/lib/eventWhatsapp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain, Route,
-  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield, Car, Award
+  Trash2, Plus, Image as ImageIcon, Map as MapIcon, Info, HelpCircle, AlertCircle, Loader2, Save, X, GripVertical, ChevronUp, ChevronDown, PackageCheck, Upload, Shield, Car, Award, MessageCircle
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
@@ -308,6 +309,7 @@ const EventForm = () => {
     image_url: "",
     visibility: "public" as "public" | "private" | "hidden",
     gallery_images: [] as { url: string; order: number }[],
+    whatsapp_group_url: "",
   });
   const [fitScoreMainCategory, setFitScoreMainCategory] = useState("");
   const [fitScoreSecondaryCategories, setFitScoreSecondaryCategories] = useState<string[]>([]);
@@ -531,6 +533,16 @@ const EventForm = () => {
       // Parse elevation (remove m suffix)
       let elevationVal = event.elevation || "";
       if (elevationVal) elevationVal = elevationVal.replace(/\s*m$/i, "").trim();
+      let whatsappGroupUrl = "";
+      if (!isDuplicating) {
+        const { data: whatsappLinkRow, error: whatsappLinkError } = await supabase
+          .from("event_whatsapp_links" as any)
+          .select("url")
+          .eq("event_id", eventId)
+          .maybeSingle();
+        if (whatsappLinkError) throw whatsappLinkError;
+        whatsappGroupUrl = normalizeWhatsappGroupUrl((whatsappLinkRow as any)?.url) || "";
+      }
 
       setForm({
         title: isDuplicating ? `Copia di ${event.title}` : event.title,
@@ -556,6 +568,7 @@ const EventForm = () => {
         image_url: event.image_url || "",
         visibility: isDuplicating ? "private" : (event.visibility || "public"),
         gallery_images: (event.gallery_images as any[]) || [],
+        whatsapp_group_url: whatsappGroupUrl,
       });
       setExistingOrganizer(
         isDuplicating
@@ -1056,6 +1069,17 @@ const EventForm = () => {
     }
     setValidationErrors({});
 
+    const requestedWhatsappGroupUrl = form.whatsapp_group_url.trim();
+    const whatsappGroupUrl = normalizeWhatsappGroupUrl(requestedWhatsappGroupUrl);
+    if (requestedWhatsappGroupUrl && !whatsappGroupUrl) {
+      toast({
+        title: "Link WhatsApp non valido",
+        description: "Usa un invito gruppo nel formato https://chat.whatsapp.com/...",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const imageUrl = await uploadImage();
@@ -1151,6 +1175,21 @@ const EventForm = () => {
             .from("activity_proposals" as any)
             .update({ status: "converted", updated_at: new Date().toISOString() } as any)
             .eq("id", proposalId);
+        }
+      }
+
+      if (eventId) {
+        if (whatsappGroupUrl) {
+          const { error: whatsappUpsertError } = await supabase
+            .from("event_whatsapp_links" as any)
+            .upsert({ event_id: eventId, url: whatsappGroupUrl }, { onConflict: "event_id" });
+          if (whatsappUpsertError) throw whatsappUpsertError;
+        } else {
+          const { error: whatsappDeleteError } = await supabase
+            .from("event_whatsapp_links" as any)
+            .delete()
+            .eq("event_id", eventId);
+          if (whatsappDeleteError) throw whatsappDeleteError;
         }
       }
 
@@ -1521,6 +1560,21 @@ const EventForm = () => {
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">Se vuoto, verrà mostrato l'indirizzo completo</p>
               </div>
+            </div>
+            <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3">
+              <Label htmlFor="whatsapp_group_url" className="flex items-center gap-1.5 text-sm font-semibold">
+                <MessageCircle className="h-4 w-4 text-[#25D366]" />
+                Gruppo WhatsApp evento
+              </Label>
+              <Input
+                id="whatsapp_group_url"
+                value={form.whatsapp_group_url}
+                onChange={(e) => updateForm("whatsapp_group_url", e.target.value)}
+                placeholder="https://chat.whatsapp.com/..."
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Opzionale. Il link appare solo ad admin, organizzatore e utenti con iscrizione confermata.
+              </p>
             </div>
             <div>
               <Label htmlFor="category">Categoria</Label>

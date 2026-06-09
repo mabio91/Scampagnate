@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   CalendarDays, MapPin, Share2, Bookmark, BookmarkCheck, X,
-  CalendarPlus, Clock, Calendar, Mail, Loader2, Zap, SquarePen
+  CalendarPlus, Clock, Calendar, Mail, Loader2, Zap, SquarePen, MessageCircle
 } from "lucide-react";
 import { getRefundInfo, getCancellationDialogMessage, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 
@@ -28,6 +29,7 @@ import {
 import { parseEventDateTime } from "@/lib/timezone";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, getRemainingBalanceAmount, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
 import { getEventHomeCardImageSrc } from "@/lib/eventImages";
+import { canRegistrationViewWhatsappGroup, normalizeWhatsappGroupUrl } from "@/lib/eventWhatsapp";
 import {
   findPriceOptionById,
   type EventPricingLike,
@@ -73,6 +75,7 @@ interface MyEventRecord extends EventPricingLike {
   price_options?: PriceOptionLike[] | null;
   meeting_points?: MeetingPoint[] | null;
   additional_fields?: EventAdditionalFields | null;
+  whatsapp_group_url?: string | null;
 }
 
 interface MyRegistrationRecord {
@@ -94,6 +97,18 @@ interface SavedEventRecord {
   id: string;
   events?: MyEventRecord | null;
 }
+
+const fetchEventWhatsappGroupUrl = async (eventId: string): Promise<string | null> => {
+  const { data, error } = await supabase
+    .from("event_whatsapp_links" as any)
+    .select("url")
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (error) return null;
+
+  return normalizeWhatsappGroupUrl((data as any)?.url);
+};
 
 interface PriceChangeFunctionResponse {
   quote?: RegistrationChangeQuote;
@@ -337,6 +352,12 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
     );
   }, [event?.cancellation_policy, event?.date, event?.time, registrationPaymentType]);
   const cancellationDialogMessage = useMemo(() => getCancellationDialogMessage(refundInfo), [refundInfo]);
+  const canRequestWhatsappGroupUrl = Boolean(event?.id && canRegistrationViewWhatsappGroup(registration));
+  const { data: protectedWhatsappGroupUrl } = useQuery({
+    queryKey: ["event-whatsapp-group-url", event?.id, registration.id],
+    queryFn: () => fetchEventWhatsappGroupUrl(event!.id),
+    enabled: canRequestWhatsappGroupUrl,
+  });
 
   if (!event) return null;
 
@@ -371,6 +392,8 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
   const editableFieldsAvailable = hasEditableRegistrationFields(event) || canChangeFormula;
   const registrationStillEditable = canEditRegistration(event);
   const showEditButton = Boolean(canManageUpcomingRegistration && editableFieldsAvailable && registrationStillEditable);
+  const whatsappGroupUrl = protectedWhatsappGroupUrl || null;
+  const canViewWhatsappGroup = Boolean(whatsappGroupUrl && canRequestWhatsappGroupUrl);
 
   const eventUrl = `${window.location.origin}/event/${event.id}`;
   const shareText = `${event.title} - ${new Date(event.date).toLocaleDateString(language === "it" ? "it-IT" : "en-US")}`;
@@ -560,6 +583,28 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
             )}
           </div>
         </Link>
+
+        {canViewWhatsappGroup && (
+          <div className="mx-3 mb-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 p-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#25D366] text-white">
+                <MessageCircle className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-body font-semibold text-foreground">Gruppo WhatsApp evento</p>
+                <p className="mt-0.5 text-xs font-body leading-relaxed text-muted-foreground">
+                  Aggiornamenti e dettagli pratici per la tua partecipazione.
+                </p>
+              </div>
+            </div>
+            <Button asChild className="mt-3 h-10 w-full bg-[#25D366] text-white hover:bg-[#22bf5b]">
+              <a href={whatsappGroupUrl!} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Entra nel gruppo
+              </a>
+            </Button>
+          </div>
+        )}
 
         {canManageUpcomingRegistration && (
           <div className="flex items-center gap-2 px-3 pb-3 pt-1 flex-wrap">
