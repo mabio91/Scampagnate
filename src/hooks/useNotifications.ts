@@ -11,6 +11,7 @@ export interface Notification {
   event_id: string | null;
   read: boolean;
   created_at: string;
+  clicked_at?: string | null;
 }
 
 const HIDDEN_NOTIFICATION_TYPE = "event_update";
@@ -65,6 +66,27 @@ export const useMarkAsRead = () => {
         .from("notifications" as any)
         .update({ read: true } as any)
         .eq("id", notificationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
+  });
+};
+
+export const useMarkNotificationClicked = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (notificationId: string) => {
+      if (!user) return;
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true, clicked_at: new Date().toISOString() } as never)
+        .eq("id", notificationId)
+        .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {

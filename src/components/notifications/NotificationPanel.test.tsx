@@ -2,11 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import NotificationPanel from "./NotificationPanel";
-import { useMarkAllAsRead, useMarkAsRead, useNotifications } from "@/hooks/useNotifications";
+import { useMarkAllAsRead, useMarkAsRead, useMarkNotificationClicked, useNotifications } from "@/hooks/useNotifications";
 
 vi.mock("@/hooks/useNotifications", () => ({
   useNotifications: vi.fn(),
   useMarkAsRead: vi.fn(),
+  useMarkNotificationClicked: vi.fn(),
   useMarkAllAsRead: vi.fn(),
 }));
 
@@ -69,6 +70,7 @@ const renderPanel = (onClose = vi.fn()) => {
 
 describe("NotificationPanel", () => {
   const markAsRead = vi.fn();
+  const markNotificationClicked = vi.fn();
   const markAllAsRead = vi.fn();
 
   beforeEach(() => {
@@ -78,6 +80,7 @@ describe("NotificationPanel", () => {
       isLoading: false,
     } as unknown as ReturnType<typeof useNotifications>);
     vi.mocked(useMarkAsRead).mockReturnValue({ mutate: markAsRead } as unknown as ReturnType<typeof useMarkAsRead>);
+    vi.mocked(useMarkNotificationClicked).mockReturnValue({ mutate: markNotificationClicked } as unknown as ReturnType<typeof useMarkNotificationClicked>);
     vi.mocked(useMarkAllAsRead).mockReturnValue({ mutate: markAllAsRead } as unknown as ReturnType<typeof useMarkAllAsRead>);
   });
 
@@ -99,6 +102,7 @@ describe("NotificationPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apri evento" }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
+    expect(markNotificationClicked).toHaveBeenCalledWith("notification-1");
     expect(screen.getByTestId("location")).toHaveTextContent("/event/event-1");
   });
 });

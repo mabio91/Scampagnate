@@ -1,5 +1,5 @@
 import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock, ArrowLeft, MapPin, Navigation, Star } from "lucide-react";
-import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
+import { useNotifications, useMarkAsRead, useMarkAllAsRead, useMarkNotificationClicked, Notification } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
@@ -33,6 +33,7 @@ const isRewardsNotification = (notification: Notification) => rewardsNotificatio
 const NotificationRow = ({ notification }: { notification: Notification }) => {
   const navigate = useNavigate();
   const markAsRead = useMarkAsRead();
+  const markNotificationClicked = useMarkNotificationClicked();
   const { language, t } = useLanguage();
 
   const handleClick = () => {
@@ -40,8 +41,10 @@ const NotificationRow = ({ notification }: { notification: Notification }) => {
       markAsRead.mutate(notification.id);
     }
     if (notification.event_id) {
+      markNotificationClicked.mutate(notification.id);
       navigate(`/event/${notification.event_id}`);
     } else if (isRewardsNotification(notification)) {
+      markNotificationClicked.mutate(notification.id);
       navigate("/rewards");
     }
   };

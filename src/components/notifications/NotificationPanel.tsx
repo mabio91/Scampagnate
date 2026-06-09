@@ -1,6 +1,6 @@
 import { useState, forwardRef } from "react";
 import { Bell, BellRing, CalendarDays, CreditCard, Users, AlertCircle, CheckCheck, Clock, Star } from "lucide-react";
-import { useNotifications, useMarkAsRead, useMarkAllAsRead, Notification } from "@/hooks/useNotifications";
+import { useNotifications, useMarkAsRead, useMarkAllAsRead, useMarkNotificationClicked, Notification } from "@/hooks/useNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
@@ -82,6 +82,7 @@ NotificationItem.displayName = "NotificationItem";
 const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({ onClose }, ref) => {
   const { data: notifications, isLoading } = useNotifications();
   const markAllAsRead = useMarkAllAsRead();
+  const markNotificationClicked = useMarkNotificationClicked();
   const hasUnread = notifications?.some((n) => !n.read);
   const { isSupported, canManagePush, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, errorMessage: pushError } = usePushNotifications();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
@@ -117,8 +118,10 @@ const NotificationPanel = forwardRef<HTMLDivElement, { onClose: () => void }>(({
     const handleOpenDestination = () => {
       onClose();
       if (selectedNotification.event_id) {
+        markNotificationClicked.mutate(selectedNotification.id);
         navigate(`/event/${selectedNotification.event_id}`);
       } else if (isRewardsNotification(selectedNotification)) {
+        markNotificationClicked.mutate(selectedNotification.id);
         navigate("/rewards");
       }
     };

@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id, title, message, event_id, type } = await req.json();
+    const { user_id, notification_id, title, message, event_id, type } = await req.json();
 
     if (!user_id || !title) {
       return new Response(JSON.stringify({ error: 'Missing user_id or title' }), {
@@ -53,7 +53,9 @@ serve(async (req) => {
 
     if (!players || players.length === 0) {
       // Fallback: try sending via external_user_id (OneSignal login)
-      const url = event_id ? `/event/${event_id}` : '/';
+      const url = event_id
+        ? `/event/${event_id}${notification_id ? `?notification_id=${encodeURIComponent(notification_id)}` : ''}`
+        : '/';
 
       const response = await fetch('https://onesignal.com/api/v1/notifications', {
         method: 'POST',
@@ -73,6 +75,7 @@ serve(async (req) => {
           chrome_web_badge: NOTIFICATION_BADGE_URL,
           firefox_icon: NOTIFICATION_ICON_URL,
           safari_icon: NOTIFICATION_ICON_URL,
+          data: { type: type || 'info', event_id: event_id || null, notification_id: notification_id || null },
         }),
       });
 
@@ -85,7 +88,9 @@ serve(async (req) => {
     }
 
     const playerIds = players.map((p: any) => p.player_id);
-    const url = event_id ? `/event/${event_id}` : '/';
+    const url = event_id
+      ? `/event/${event_id}${notification_id ? `?notification_id=${encodeURIComponent(notification_id)}` : ''}`
+      : '/';
 
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -104,7 +109,7 @@ serve(async (req) => {
         chrome_web_badge: NOTIFICATION_BADGE_URL,
         firefox_icon: NOTIFICATION_ICON_URL,
         safari_icon: NOTIFICATION_ICON_URL,
-        data: { type: type || 'info', event_id: event_id || null },
+        data: { type: type || 'info', event_id: event_id || null, notification_id: notification_id || null },
       }),
     });
 

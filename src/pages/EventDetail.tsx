@@ -50,6 +50,7 @@ import RegistrationCheckoutDialog from "@/components/events/RegistrationCheckout
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import useEmblaCarousel from "embla-carousel-react";
 import { useEventFitScore } from "@/hooks/useEventFitScore";
+import { useMarkNotificationClicked } from "@/hooks/useNotifications";
 import EventFitScore from "@/components/events/EventFitScore";
 import { resolveEventBadges } from "@/lib/eventBadges";
 import { getDepositPaymentLabel, getEventBalancePaymentMode, getRemainingBalanceAmount, isDepositRegistration, isPendingPaymentRegistration } from "@/lib/eventPayments";
@@ -183,6 +184,7 @@ const EventDetail = () => {
   const cancelMutation = useCancelRegistration();
   const toggleSaveMutation = useToggleSaveEvent();
   const toggleOpeningReminderMutation = useToggleEventOpeningReminder();
+  const markNotificationClicked = useMarkNotificationClicked();
 
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [showFitScoreWarning, setShowFitScoreWarning] = useState(false);
@@ -211,10 +213,19 @@ const EventDetail = () => {
   const [navigationLocation, setNavigationLocation] = useState("");
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const clickedNotificationIdRef = useRef<string | null>(null);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [id]);
+
+  useEffect(() => {
+    const notificationId = new URLSearchParams(location.search).get("notification_id");
+    if (!notificationId || !user) return;
+    if (clickedNotificationIdRef.current === notificationId) return;
+    clickedNotificationIdRef.current = notificationId;
+    markNotificationClicked.mutate(notificationId);
+  }, [location.search, markNotificationClicked, user]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
