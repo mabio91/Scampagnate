@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, CalendarDays, MapPin, Users, Clock, Mountain,
   Route, Share2, Navigation, ChevronRight, Heart, Bookmark, BookmarkCheck, CalendarPlus,
-  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, ChevronDown, X, ZoomIn, Bell, BellRing
+  Calendar, Apple, Mail, Map, Car, MapPinned, MessageCircle, Phone, User as UserIcon, Loader2, CreditCard, Ticket, Lock, Tag, Sparkles, AlertCircle, ShieldAlert, X, ZoomIn, Bell, BellRing
 } from "lucide-react";
 import { parseCancellationPolicy, CANCELLATION_POLICIES, getRefundInfo, getCancellationDialogMessage, getPolicyDefinition, getServiceFeeAmount } from "@/lib/cancellationPolicy";
 import { parseEventDateTime } from "@/lib/timezone";
@@ -1419,9 +1419,9 @@ const getCTALabel = () => {
               <Collapsible open={equipmentOpen} onOpenChange={setEquipmentOpen}>
                 <CollapsibleTrigger className="flex items-center justify-between w-full group">
                   <h3 className="font-display text-lg font-bold text-foreground">{t("equipment")}</h3>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${equipmentOpen ? "rotate-180" : ""}`} />
+                  <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ease-out ${equipmentOpen ? "rotate-90" : ""}`} />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-3">
+                <CollapsibleContent className="pt-3">
                   {/* Mandatory Equipment – amber/orange */}
                   {hasMandatory && (
                     <div className="mb-4">
@@ -1480,9 +1480,9 @@ const getCTALabel = () => {
             <Collapsible open={meetingPointsOpen} onOpenChange={setMeetingPointsOpen}>
               <CollapsibleTrigger className="flex items-center justify-between w-full group">
                 <h3 className="font-display text-lg font-bold text-foreground">{t("meetingPoints")}</h3>
-                <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${meetingPointsOpen ? "rotate-180" : ""}`} />
+                <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ease-out ${meetingPointsOpen ? "rotate-90" : ""}`} />
               </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3">
+              <CollapsibleContent className="pt-3">
                 <div className="space-y-2">
                   {event.meeting_points.map((mp) => {
                     const note = mp.notes?.trim() ?? "";
@@ -1567,9 +1567,9 @@ const getCTALabel = () => {
                       </p>
                     )}
                   </div>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 mt-1 ${rulesOpen ? "rotate-180" : ""}`} />
+                  <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ease-out mt-1 ${rulesOpen ? "rotate-90" : ""}`} />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-3">
+                <CollapsibleContent className="pt-3">
                   <ul className="space-y-2.5">
                     {bullets.map((b, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm font-body text-foreground/80 dark:text-foreground/90 leading-relaxed">
