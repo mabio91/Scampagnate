@@ -1,4 +1,5 @@
 import { recordUserPaymentTransaction } from "./user-payment-transactions.ts";
+import type { StripeFeeDetails } from "./stripe-fees.ts";
 
 export type PaymentType = "free" | "paid" | "deposit" | "location";
 export type BalancePaymentMode = "online" | "on_site" | null;
@@ -352,6 +353,7 @@ export const applyRegistrationChangeRequest = async (
     stripePaymentIntentId?: string | null;
     stripeRefundId?: string | null;
     stripeCheckoutSessionId?: string | null;
+    stripeFeeDetails?: StripeFeeDetails | null;
   } = {},
 ) => {
   const requestId = String(changeRequest.id);
@@ -406,6 +408,7 @@ export const applyRegistrationChangeRequest = async (
       event_amount: additionalPaymentAmount,
       stripe_checkout_session_id: params.stripeCheckoutSessionId || String(changeRequest.stripe_checkout_session_id || "") || null,
       stripe_payment_intent_id: params.stripePaymentIntentId || null,
+      ...(params.stripeFeeDetails || {}),
       metadata: {
         change_request_id: requestId,
       },

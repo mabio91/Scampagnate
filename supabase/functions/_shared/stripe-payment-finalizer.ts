@@ -1,5 +1,6 @@
 import { applyRegistrationChangeRequest } from "./registration-change.ts";
 import { isEventStarted } from "./event-timing.ts";
+import { lookupStripeFeeDetails, type StripeFeeLookupClient } from "./stripe-fees.ts";
 import { centsToEuros, recordUserPaymentTransaction } from "./user-payment-transactions.ts";
 
 type CheckoutKind = "full" | "deposit" | "balance";
@@ -12,7 +13,7 @@ type StripeSessionLike = {
   metadata?: Record<string, string | undefined> | null;
 };
 
-type StripeRefundsClient = {
+type StripeRefundsClient = StripeFeeLookupClient & {
   refunds: {
     create: (params: { payment_intent: string; amount?: number }) => Promise<unknown>;
   };
@@ -254,8 +255,9 @@ const refundSpotTakenRegistration = async (
 
 export const finalizeMembershipCheckoutSession = async ({
   session,
+  stripe,
   supabaseAdmin,
-}: Omit<FinalizePaymentParams, "stripe">): Promise<PaymentFinalizerResult> => {
+}: FinalizePaymentParams): Promise<PaymentFinalizerResult> => {
   const db = supabaseAdmin as SupabaseAdminClient;
 
   if (session.payment_status !== "paid") {
@@ -279,6 +281,9 @@ export const finalizeMembershipCheckoutSession = async ({
   const membershipFeeAmount = centsToEuros(
     Number(session.metadata?.membership_fee_cents || "0") || Number(session.amount_total || "0")
   );
+  const stripePaymentIntentId = paymentIntentIdFromSession(session);
+  const stripeFeeDetails = await lookupStripeFeeDetails(stripe, stripePaymentIntentId);
+
   await recordUserPaymentTransaction(db, {
     user_id: userId,
     event_id: session.metadata?.event_id || null,
@@ -287,7 +292,8 @@ export const finalizeMembershipCheckoutSession = async ({
     amount: membershipFeeAmount,
     membership_fee_amount: membershipFeeAmount,
     stripe_checkout_session_id: session.id || null,
-    stripe_payment_intent_id: paymentIntentIdFromSession(session),
+    stripe_payment_intent_id: stripePaymentIntentId,
+    ...(stripeFeeDetails || {}),
     metadata: {
       type: "membership",
     },
@@ -319,6 +325,7 @@ export const finalizeEventCheckoutSession = async ({
   if (!userId) throw new Error("User not found in session");
 
   const stripePaymentIntentId = paymentIntentIdFromSession(session);
+  const stripeFeeDetails = await lookupStripeFeeDetails(stripe, stripePaymentIntentId);
 
   const { data: reg, error: regError } = await db
     .from<EventRegistrationRow>("event_registrations")
@@ -373,6 +380,7 @@ export const finalizeEventCheckoutSession = async ({
       membership_fee_amount: ledgerAmounts.membershipFeeAmount,
       stripe_checkout_session_id: session.id || null,
       stripe_payment_intent_id: stripePaymentIntentId,
+      ...(stripeFeeDetails || {}),
       metadata: {
         checkout_kind: checkoutKind,
         booking_amount_cents: String(ledgerAmounts.bookingAmountCents),
@@ -539,6 +547,7 @@ export const finalizeEventCheckoutSession = async ({
     membership_fee_amount: ledgerAmounts.membershipFeeAmount,
     stripe_checkout_session_id: session.id || null,
     stripe_payment_intent_id: stripePaymentIntentId,
+    ...(stripeFeeDetails || {}),
     metadata: {
       checkout_kind: checkoutKind,
       booking_amount_cents: String(ledgerAmounts.bookingAmountCents),
@@ -570,8 +579,9 @@ export const finalizeEventCheckoutSession = async ({
 
 export const finalizeRegistrationChangeCheckoutSession = async ({
   session,
+  stripe,
   supabaseAdmin,
-}: Omit<FinalizePaymentParams, "stripe">): Promise<PaymentFinalizerResult> => {
+}: FinalizePaymentParams): Promise<PaymentFinalizerResult> => {
   const db = supabaseAdmin as SupabaseAdminClient;
 
   if (session.payment_status !== "paid") {
@@ -597,9 +607,12 @@ export const finalizeRegistrationChangeCheckoutSession = async ({
   }
 
   const stripePaymentIntentId = paymentIntentIdFromSession(session);
+  const stripeFeeDetails = await lookupStripeFeeDetails(stripe, stripePaymentIntentId);
+
   await applyRegistrationChangeRequest(db as unknown as Parameters<typeof applyRegistrationChangeRequest>[0], changeRequest as Record<string, unknown>, {
     stripePaymentIntentId,
     stripeCheckoutSessionId: session.id || null,
+    stripeFeeDetails,
   });
 
   return { success: true, eventId: eventId || String((changeRequest as Record<string, unknown>).event_id || "") };

@@ -100,7 +100,7 @@ const createFakeSupabase = (tables: Record<string, Row[]>) => ({
   rpc: async () => ({ data: [], error: null }),
 });
 
-const createStripe = () => {
+const createStripe = (balanceTransaction?: Row) => {
   const refunds: Row[] = [];
   return {
     client: {
@@ -109,6 +109,13 @@ const createStripe = () => {
           refunds.push(params);
           return {};
         },
+      },
+      paymentIntents: {
+        retrieve: async () => ({
+          latest_charge: balanceTransaction
+            ? { balance_transaction: balanceTransaction }
+            : null,
+        }),
       },
     },
     refunds,
@@ -225,6 +232,63 @@ describe("finalizeEventCheckoutSession", () => {
 
     expect(result.success).toBe(true);
     expect(tables.discount_code_usage).toHaveLength(1);
+  });
+
+  it("stores Stripe fee details on paid ledger rows when available", async () => {
+    const tables = {
+      event_registrations: [{
+        id: "reg_1",
+        user_id: "user_1",
+        event_id: "event_1",
+        status: "pending_payment",
+        payment_status: "pending",
+        amount_paid: null,
+        service_fee_amount: 0,
+        total_price_amount: 40,
+        deposit_amount: null,
+        balance_due_amount: null,
+        price_option_id: null,
+      }],
+      events: [{
+        id: "event_1",
+        status: "open",
+        spots_total: 10,
+        spots_taken: 0,
+        title: "Evento test",
+      }],
+      discount_code_usage: [],
+      registration_payment_transactions: [],
+      user_payment_transactions: [],
+    };
+    const stripe = createStripe({ id: "txn_1", fee: 120, net: 3980 });
+
+    const result = await finalizeEventCheckoutSession({
+      session: {
+        id: "cs_1",
+        payment_status: "paid",
+        payment_intent: "pi_1",
+        amount_total: 4100,
+        metadata: {
+          registration_id: "reg_1",
+          event_id: "event_1",
+          user_id: "user_1",
+          checkout_kind: "full",
+          booking_amount_cents: "4100",
+          event_amount_cents: "4000",
+          service_fee_cents: "100",
+        },
+      },
+      stripe: stripe.client,
+      supabaseAdmin: createFakeSupabase(tables),
+    });
+
+    expect(result.success).toBe(true);
+    expect(tables.user_payment_transactions[0]).toMatchObject({
+      stripe_payment_intent_id: "pi_1",
+      stripe_fee_amount: 1.2,
+      stripe_net_amount: 39.8,
+      stripe_balance_transaction_id: "txn_1",
+    });
   });
 
   it("refunds cancelled registrations without recording coupon usage", async () => {

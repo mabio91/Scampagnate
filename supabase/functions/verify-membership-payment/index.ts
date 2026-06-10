@@ -88,7 +88,7 @@ serve(async (req) => {
       }
     }
 
-    const result = await finalizeMembershipCheckoutSession({ session, supabaseAdmin });
+    const result = await finalizeMembershipCheckoutSession({ session, stripe, supabaseAdmin });
     return jsonResponse(result, result.success ? 200 : 400);
   } catch (error) {
     console.error("Verify membership error:", error);

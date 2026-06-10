@@ -63,7 +63,7 @@ serve(async (req) => {
     }
 
     const result = session.metadata?.type === "registration_change"
-      ? await finalizeRegistrationChangeCheckoutSession({ session, supabaseAdmin })
+      ? await finalizeRegistrationChangeCheckoutSession({ session, stripe, supabaseAdmin })
       : await finalizeEventCheckoutSession({
         session,
         stripe,

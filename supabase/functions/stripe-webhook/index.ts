@@ -75,12 +75,12 @@ serve(async (req) => {
 
   try {
     if (session.metadata?.type === "membership") {
-      const result = await finalizeMembershipCheckoutSession({ session, supabaseAdmin });
+      const result = await finalizeMembershipCheckoutSession({ session, stripe, supabaseAdmin });
       return jsonResponse({ received: true, result });
     }
 
     if (session.metadata?.type === "registration_change") {
-      const result = await finalizeRegistrationChangeCheckoutSession({ session, supabaseAdmin });
+      const result = await finalizeRegistrationChangeCheckoutSession({ session, stripe, supabaseAdmin });
       return jsonResponse({ received: true, result });
     }
 

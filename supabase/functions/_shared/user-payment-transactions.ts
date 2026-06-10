@@ -22,6 +22,9 @@ type PaymentTransactionInput = {
   stripe_checkout_session_id?: string | null;
   stripe_payment_intent_id?: string | null;
   stripe_refund_id?: string | null;
+  stripe_fee_amount?: number;
+  stripe_net_amount?: number | null;
+  stripe_balance_transaction_id?: string | null;
   metadata?: Record<string, unknown>;
   created_at?: string;
 };
@@ -63,6 +66,9 @@ export const recordUserPaymentTransaction = async (
     stripe_checkout_session_id: input.stripe_checkout_session_id || null,
     stripe_payment_intent_id: input.stripe_payment_intent_id || null,
     stripe_refund_id: input.stripe_refund_id || null,
+    stripe_fee_amount: toMoney(input.stripe_fee_amount),
+    stripe_net_amount: input.stripe_net_amount == null ? null : toMoney(input.stripe_net_amount),
+    stripe_balance_transaction_id: input.stripe_balance_transaction_id || null,
     metadata: input.metadata || {},
     ...(input.created_at ? { created_at: input.created_at } : {}),
   };

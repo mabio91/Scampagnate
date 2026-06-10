@@ -2957,7 +2957,10 @@ export type Database = {
           registration_id: string | null
           service_fee_amount: number
           source: string
+          stripe_balance_transaction_id: string | null
           stripe_checkout_session_id: string | null
+          stripe_fee_amount: number
+          stripe_net_amount: number | null
           stripe_payment_intent_id: string | null
           stripe_refund_id: string | null
           user_id: string
@@ -2975,7 +2978,10 @@ export type Database = {
           registration_id?: string | null
           service_fee_amount?: number
           source: string
+          stripe_balance_transaction_id?: string | null
           stripe_checkout_session_id?: string | null
+          stripe_fee_amount?: number
+          stripe_net_amount?: number | null
           stripe_payment_intent_id?: string | null
           stripe_refund_id?: string | null
           user_id: string
@@ -2993,7 +2999,10 @@ export type Database = {
           registration_id?: string | null
           service_fee_amount?: number
           source?: string
+          stripe_balance_transaction_id?: string | null
           stripe_checkout_session_id?: string | null
+          stripe_fee_amount?: number
+          stripe_net_amount?: number | null
           stripe_payment_intent_id?: string | null
           stripe_refund_id?: string | null
           user_id?: string
@@ -3143,6 +3152,8 @@ export type Database = {
           refund_count: number | null
           refunded_amount: number | null
           service_fee_amount: number | null
+          stripe_fee_amount: number | null
+          stripe_net_amount: number | null
           user_id: string | null
         }
         Relationships: [
