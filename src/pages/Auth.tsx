@@ -104,6 +104,12 @@ const Auth = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
 
+  const getNextPath = () => {
+    const params = new URLSearchParams(location.search);
+    const next = params.get("next");
+    return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  };
+
   const getPasswordStrength = (pw: string) => {
     const checks = {
       length: pw.length >= 8,
@@ -129,7 +135,7 @@ const Auth = () => {
       if (error) {
         toast({ title: t("error"), description: error.message, variant: "destructive" });
       } else {
-        navigate("/");
+        navigate(getNextPath(), { replace: true });
       }
     } else {
       if (!acceptTerms || !acceptAge) {
@@ -157,7 +163,7 @@ const Auth = () => {
           console.warn("Failed to save consents:", e);
         }
         toast({ title: t("welcomeBack"), description: t("accountCreated") });
-        navigate("/");
+        navigate(getNextPath(), { replace: true });
       }
     }
     setLoading(false);
@@ -167,7 +173,7 @@ const Auth = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: `${window.location.origin}${getNextPath()}` },
       });
       if (error) throw error;
     } catch (error: any) {

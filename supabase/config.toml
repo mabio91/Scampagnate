@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.change-registration-price-option]
 verify_jwt = true
+
+[functions.event-self-checkin]
+verify_jwt = true

@@ -54,6 +54,7 @@ const Privacy = lazyWithChunkRecovery(() => import("./pages/Privacy"));
 const Terms = lazyWithChunkRecovery(() => import("./pages/Terms"));
 const DeleteAccount = lazyWithChunkRecovery(() => import("./pages/DeleteAccount"));
 const EventParticipants = lazyWithChunkRecovery(() => import("./pages/EventParticipants"));
+const EventSelfCheckIn = lazyWithChunkRecovery(() => import("./pages/EventSelfCheckIn"));
 const EventStaff = lazyWithChunkRecovery(() => import("./pages/EventStaff"));
 const ContentPage = lazyWithChunkRecovery(() => import("./pages/ContentPage"));
 const Rewards = lazyWithChunkRecovery(() => import("./pages/Rewards"));
@@ -179,6 +180,7 @@ const AnimatedRoutes = () => {
             <RouteErrorBoundary key={location.pathname}>
               <Routes location={location}>
                 <Route path="/event/:id" element={<EventDetail />} />
+                <Route path="/event/:id/check-in" element={<EventSelfCheckIn />} />
                 <Route path="/event/:id/staff" element={<EventStaff />} />
                 <Route path="/event/:id/participants" element={<EventParticipants />} />
                 <Route path="/auth" element={<Auth />} />

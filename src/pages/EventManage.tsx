@@ -44,11 +44,12 @@ import {
   Loader2, Zap, BarChart3, Trash2, Send, Search, Copy,
   MessageCircle, Bell, AlertTriangle, History,
   FileEdit, Eye, CircleOff, Lock, XCircle, Archive, UserCog, Instagram,
-  MoreVertical, ZoomIn
+  MoreVertical, QrCode, ZoomIn
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import EventAnalytics from "@/components/events/EventAnalytics";
+import { EventCheckInQrDialog } from "@/components/events/EventCheckInQrDialog";
 import { instagramProfileUrl } from "@/lib/instagram";
 
 const NO_PRICE_OPTION = "__none__";
@@ -246,6 +247,7 @@ const EventManage = () => {
   const [meetingPointFilter, setMeetingPointFilter] = useState<string>("all");
   const [checkInSearch, setCheckInSearch] = useState("");
   const [checkInMpFilter, setCheckInMpFilter] = useState<string>("all");
+  const [showCheckInQr, setShowCheckInQr] = useState(false);
 
   // Dialogs
   const [showAddParticipant, setShowAddParticipant] = useState(false);
@@ -1505,6 +1507,15 @@ const EventManage = () => {
                 />
               </div>
               <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 shrink-0"
+                onClick={() => setShowCheckInQr(true)}
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                QR
+              </Button>
+              <Button
                 variant={quickCheckIn ? "default" : "outline"}
                 size="sm"
                 className="gap-1 shrink-0"
@@ -2372,6 +2383,15 @@ const EventManage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {event && (
+        <EventCheckInQrDialog
+          eventId={event.id}
+          eventTitle={event.title || "Evento"}
+          open={showCheckInQr}
+          onOpenChange={setShowCheckInQr}
+        />
+      )}
 
       {/* Cancel Event Confirmation Dialog */}
       <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
