@@ -586,25 +586,24 @@ const EventRegistrationCard = ({ registration, showActions, isPast }: { registra
         </Link>
 
         {canViewWhatsappGroup && (
-          <div className="mx-3 mb-3 rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-800/30 dark:bg-green-950/20">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-green-500 text-white">
-                <WhatsAppIcon className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-body font-semibold text-foreground">Gruppo WhatsApp evento</p>
-                <p className="mt-0.5 text-xs font-body leading-relaxed text-muted-foreground">
-                  Aggiornamenti e dettagli pratici per la tua partecipazione.
-                </p>
-              </div>
+          <a
+            href={whatsappGroupUrl!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-3 mb-3 flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/10 p-2.5 text-left transition-colors hover:bg-success/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/40"
+            aria-label="Entra nel gruppo WhatsApp evento"
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-success text-white">
+              <WhatsAppIcon className="h-4 w-4" />
             </div>
-            <Button asChild className="mt-3 h-10 w-full bg-green-500 text-white hover:bg-green-600">
-              <a href={whatsappGroupUrl!} target="_blank" rel="noopener noreferrer">
-                <WhatsAppIcon className="mr-2 h-4 w-4" />
-                Entra nel gruppo
-              </a>
-            </Button>
-          </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-body font-bold text-foreground">Gruppo WhatsApp</p>
+              <p className="truncate text-[11px] font-body text-muted-foreground">Aggiornamenti e dettagli pratici</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-xs font-body font-bold text-success">
+              Entra
+            </span>
+          </a>
         )}
 
         {canManageUpcomingRegistration && (
