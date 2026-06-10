@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { lookupStripeFeeDetails } from "../_shared/stripe-fees.ts";
+import { lookupStripeFeeDetails, type StripeFeeDetails } from "../_shared/stripe-fees.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +28,86 @@ const uniquePaymentIntentIds = (value: unknown) => {
       .map((item) => item.trim())
       .filter(Boolean),
   )].slice(0, 100);
+};
+
+const MAX_STRIPE_LOOKUP_CONCURRENCY = 8;
+
+type SupabaseAdminClient = ReturnType<typeof createClient>;
+
+const toStoredFeeDetails = (row: Record<string, unknown>): StripeFeeDetails | null => {
+  const feeAmount = Number(row.stripe_fee_amount || 0);
+  if (!Number.isFinite(feeAmount) || feeAmount <= 0) return null;
+  return {
+    stripe_fee_amount: feeAmount,
+    stripe_net_amount: row.stripe_net_amount == null ? null : Number(row.stripe_net_amount),
+    stripe_balance_transaction_id: typeof row.stripe_balance_transaction_id === "string" ? row.stripe_balance_transaction_id : null,
+  };
+};
+
+const fetchCachedFeeDetails = async (supabaseAdmin: SupabaseAdminClient, paymentIntentIds: string[]) => {
+  const cachedFees = new Map<string, StripeFeeDetails>();
+  if (paymentIntentIds.length === 0) return cachedFees;
+
+  const { data, error } = await supabaseAdmin
+    .from("user_payment_transactions")
+    .select("stripe_payment_intent_id, stripe_balance_transaction_id, stripe_fee_amount, stripe_net_amount")
+    .eq("kind", "payment")
+    .in("stripe_payment_intent_id", paymentIntentIds)
+    .gt("stripe_fee_amount", 0);
+  if (error) throw error;
+
+  for (const row of data || []) {
+    const paymentIntentId = row.stripe_payment_intent_id;
+    const details = toStoredFeeDetails(row);
+    if (typeof paymentIntentId === "string" && details && !cachedFees.has(paymentIntentId)) {
+      cachedFees.set(paymentIntentId, details);
+    }
+  }
+
+  return cachedFees;
+};
+
+const persistFeeDetails = async (
+  supabaseAdmin: SupabaseAdminClient,
+  paymentIntentId: string,
+  details: StripeFeeDetails,
+) => {
+  const { error } = await supabaseAdmin
+    .from("user_payment_transactions")
+    .update({
+      stripe_balance_transaction_id: details.stripe_balance_transaction_id,
+      stripe_fee_amount: details.stripe_fee_amount,
+      stripe_net_amount: details.stripe_net_amount,
+    })
+    .eq("kind", "payment")
+    .eq("stripe_payment_intent_id", paymentIntentId);
+
+  if (error) {
+    console.warn("Unable to persist Stripe fee details:", {
+      paymentIntentId,
+      error: error.message,
+    });
+  }
+};
+
+const mapWithConcurrency = async <T, R>(
+  values: T[],
+  concurrency: number,
+  mapper: (value: T) => Promise<R>,
+) => {
+  const results: R[] = [];
+  let nextIndex = 0;
+  const workerCount = Math.min(concurrency, values.length);
+
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < values.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(values[currentIndex]);
+    }
+  }));
+
+  return results;
 };
 
 serve(async (req) => {
@@ -79,12 +159,28 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    const fees: Record<string, unknown> = {};
+    const fees: Record<string, StripeFeeDetails> = {};
     const unavailable: string[] = [];
+    const cachedFees = await fetchCachedFeeDetails(supabaseAdmin, paymentIntentIds);
 
-    for (const paymentIntentId of paymentIntentIds) {
+    for (const [paymentIntentId, details] of cachedFees) {
+      fees[paymentIntentId] = details;
+    }
+
+    const uncachedPaymentIntentIds = paymentIntentIds.filter((paymentIntentId) => !cachedFees.has(paymentIntentId));
+
+    const lookupResults = await mapWithConcurrency(uncachedPaymentIntentIds, MAX_STRIPE_LOOKUP_CONCURRENCY, async (paymentIntentId) => {
       const details = await lookupStripeFeeDetails(stripe, paymentIntentId);
       if (!details || details.stripe_fee_amount <= 0) {
+        return { paymentIntentId, details: null };
+      }
+
+      await persistFeeDetails(supabaseAdmin, paymentIntentId, details);
+      return { paymentIntentId, details };
+    });
+
+    for (const { paymentIntentId, details } of lookupResults) {
+      if (!details) {
         unavailable.push(paymentIntentId);
         continue;
       }
