@@ -180,6 +180,7 @@ export type Database = {
           category: string | null
           created_at: string
           description: string
+          event_filters: Json
           icon: string
           id: string
           name: string
@@ -191,6 +192,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string
+          event_filters?: Json
           icon?: string
           id?: string
           name: string
@@ -202,6 +204,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string
+          event_filters?: Json
           icon?: string
           id?: string
           name?: string

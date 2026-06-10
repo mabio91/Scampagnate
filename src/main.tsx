@@ -3,8 +3,10 @@ import { registerSW } from "virtual:pwa-register";
 import App from "./App.tsx";
 import "./index.css";
 
+// The callback can run before registerSW returns, so keep this as a late-bound let.
 let updateServiceWorker: ReturnType<typeof registerSW> | undefined;
 
+// eslint-disable-next-line prefer-const
 updateServiceWorker = registerSW({
   immediate: true,
   onNeedRefresh() {
