@@ -40,7 +40,13 @@ import {
   isOptionBookable,
   type PriceOptionLike,
 } from "@/lib/priceOptions";
-import { isEventPastByDateTime, isEventUpcomingByDateTime } from "@/lib/eventDates";
+import {
+  compareEventsByRelevantDateTime,
+  comparePastEventsByDateTime,
+  compareUpcomingEventsByDateTime,
+  isEventPastByDateTime,
+  isEventUpcomingByDateTime,
+} from "@/lib/eventDates";
 
 interface AdditionalRegistrationField {
   label: string;
@@ -240,6 +246,30 @@ const MyEvents = () => {
   const { data: registrations, isLoading } = useMyEvents();
   const { data: savedEvents, isLoading: savedLoading } = useSavedEvents();
   const { t, language } = useLanguage();
+  const { upcoming, past } = useMemo(() => {
+    const active = ((registrations as MyRegistrationRecord[] | undefined) || [])
+      .filter((r) => r.status !== "cancelled");
+
+    return {
+      upcoming: active
+        .filter((r) => !!r.events && isEventUpcomingByDateTime(r.events))
+        .sort((left, right) => compareUpcomingEventsByDateTime(left.events!, right.events!)),
+      past: active
+        .filter((r) => !!r.events && isEventPastByDateTime(r.events))
+        .sort((left, right) => comparePastEventsByDateTime(left.events!, right.events!)),
+    };
+  }, [registrations]);
+  const sortedSavedEvents = useMemo(
+    () => ((savedEvents as SavedEventRecord[] | undefined) || [])
+      .slice()
+      .sort((left, right) => {
+        if (!left.events && !right.events) return 0;
+        if (!left.events) return 1;
+        if (!right.events) return -1;
+        return compareEventsByRelevantDateTime(left.events, right.events);
+      }),
+    [savedEvents]
+  );
 
   if (!user) {
     return (
@@ -254,10 +284,6 @@ const MyEvents = () => {
     );
   }
 
-  const active = (registrations as MyRegistrationRecord[] | undefined)?.filter((r) => r.status !== "cancelled") || [];
-  const upcoming = active.filter((r) => !!r.events && isEventUpcomingByDateTime(r.events));
-  const past = active.filter((r) => !!r.events && isEventPastByDateTime(r.events));
-
   return (
     <>
       <div className="px-4 py-4">
@@ -267,7 +293,7 @@ const MyEvents = () => {
             <TabsTrigger value="upcoming" className="flex-1 font-body">{t("upcoming")} ({upcoming.length})</TabsTrigger>
             <TabsTrigger value="past" className="flex-1 font-body">{t("past")} ({past.length})</TabsTrigger>
             <TabsTrigger value="saved" className="flex-1 font-body">
-              <Bookmark className="h-3 w-3 mr-1" /> {t("saved")} ({savedEvents?.length || 0})
+              <Bookmark className="h-3 w-3 mr-1" /> {t("saved")} ({sortedSavedEvents.length})
             </TabsTrigger>
           </TabsList>
 
@@ -303,7 +329,7 @@ const MyEvents = () => {
           <TabsContent value="saved">
             {savedLoading ? (
               <div className="space-y-3 mt-4">{[1, 2].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-            ) : !savedEvents || savedEvents.length === 0 ? (
+            ) : sortedSavedEvents.length === 0 ? (
               <div className="text-center py-8">
                 <Bookmark className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-muted-foreground font-body text-sm">{t("noSavedEvents")}</p>
@@ -311,7 +337,7 @@ const MyEvents = () => {
               </div>
             ) : (
               <div className="space-y-3 mt-4">
-                {(savedEvents as SavedEventRecord[]).map((se) => (
+                {sortedSavedEvents.map((se) => (
                   <SavedEventCard key={se.id} savedEvent={se} />
                 ))}
               </div>

@@ -5,6 +5,8 @@ type EventTiming = {
   time?: string | null;
   duration?: string | null;
   status?: string | null;
+  title?: string | null;
+  id?: string | null;
 };
 
 const COMPLETED_EVENT_STATUSES = new Set(["past", "completed"]);
@@ -49,6 +51,11 @@ const nextLocalDateString = (date: string | null | undefined) => {
 export const getEventStartDateTime = (event: EventTiming): Date | null => {
   if (!event.date || !event.time) return null;
   return parseEventDateTime(event.date, event.time);
+};
+
+export const getEventSortDateTime = (event: EventTiming): Date | null => {
+  if (event.date && event.time) return parseEventDateTime(event.date, event.time);
+  return event.date ? parseEventDateTime(event.date, "00:00:00") : null;
 };
 
 export const getEventEndOfDayDateTime = (date: string | null | undefined): Date | null => {
@@ -113,4 +120,35 @@ export function isEventUpcomingByDateTime(event: EventTiming, referenceDate = ne
   if (endDate) return endDate.getTime() > referenceDate.getTime();
 
   return isEventUpcomingByDate(event.date, referenceDate);
+}
+
+const fallbackSortLabel = (event: EventTiming) => `${event.title || ""}-${event.id || ""}`;
+
+const compareEventTieBreakers = (left: EventTiming, right: EventTiming) =>
+  fallbackSortLabel(left).localeCompare(fallbackSortLabel(right), "it", { sensitivity: "base" });
+
+export function compareUpcomingEventsByDateTime(left: EventTiming, right: EventTiming): number {
+  const leftTime = getEventSortDateTime(left)?.getTime() ?? Number.POSITIVE_INFINITY;
+  const rightTime = getEventSortDateTime(right)?.getTime() ?? Number.POSITIVE_INFINITY;
+  return leftTime - rightTime || compareEventTieBreakers(left, right);
+}
+
+export function comparePastEventsByDateTime(left: EventTiming, right: EventTiming): number {
+  const leftTime = getEventSortDateTime(left)?.getTime() ?? Number.NEGATIVE_INFINITY;
+  const rightTime = getEventSortDateTime(right)?.getTime() ?? Number.NEGATIVE_INFINITY;
+  return rightTime - leftTime || compareEventTieBreakers(left, right);
+}
+
+export function compareEventsByRelevantDateTime(
+  left: EventTiming,
+  right: EventTiming,
+  referenceDate = new Date()
+): number {
+  const leftPast = isEventPastByDateTime(left, referenceDate);
+  const rightPast = isEventPastByDateTime(right, referenceDate);
+
+  if (leftPast !== rightPast) return leftPast ? 1 : -1;
+  return leftPast
+    ? comparePastEventsByDateTime(left, right)
+    : compareUpcomingEventsByDateTime(left, right);
 }
