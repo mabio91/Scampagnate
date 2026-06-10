@@ -10,13 +10,6 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare let self: ServiceWorkerGlobalScope;
 
-// The app shell uses hashed chunks, so activating the newest worker avoids
-// keeping installed PWAs on stale UI after a production deploy.
-self.skipWaiting();
-self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
 // Clean old caches
 cleanupOutdatedCaches();
 
