@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "74744E6N6J.com.fmcp.scampagnate.app",
-        "paths": ["/event/*"]
+        "paths": ["NOT /event/*/check-in", "/event/*"]
       }
     ]
   }

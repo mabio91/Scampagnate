@@ -128,6 +128,7 @@ const FULL_SCREEN_ROUTES = ["/auth", "/reset-password", "/profile-setup", "/memb
 const isFullScreenRoute = (pathname: string) => {
   if (FULL_SCREEN_ROUTES.includes(pathname)) return true;
   if (pathname.startsWith("/event/")) return true;
+  if (pathname.startsWith("/check-in/")) return true;
   return false;
 };
 
@@ -181,6 +182,7 @@ const AnimatedRoutes = () => {
               <Routes location={location}>
                 <Route path="/event/:id" element={<EventDetail />} />
                 <Route path="/event/:id/check-in" element={<EventSelfCheckIn />} />
+                <Route path="/check-in/event/:id" element={<EventSelfCheckIn />} />
                 <Route path="/event/:id/staff" element={<EventStaff />} />
                 <Route path="/event/:id/participants" element={<EventParticipants />} />
                 <Route path="/auth" element={<Auth />} />
