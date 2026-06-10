@@ -13,7 +13,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { countUniqueAttendedEvents, type EventRegistrationIdentity } from "@/lib/eventRegistrations";
+import {
+  countGenericAttendanceBadgeProgress,
+  getBadgeTarget,
+  resolveBadgeProgress,
+  type BadgeProgressRegistration,
+} from "@/lib/badgeProgress";
 
 const PROGRESSION_BADGES = [
   { name: "Nuovo Arrivato", required: 1, description: "Partecipa al tuo primo evento" },
@@ -33,6 +38,7 @@ interface BadgeData {
   requirement_type: string | null;
   requirement_value: number;
   category: string | null;
+  event_filters: Record<string, number | string | null> | null;
 }
 
 interface UserBadgeData {
@@ -40,12 +46,9 @@ interface UserBadgeData {
   badge_id: string;
   earned_at: string;
   completed?: boolean;
+  progress?: number;
   badges: BadgeData;
 }
-
-type AttendanceRegistration = EventRegistrationIdentity & {
-  sport_level?: string | null;
-};
 
 const ProfileBadges = () => {
   const { user, profile } = useAuth();
@@ -76,21 +79,20 @@ const ProfileBadges = () => {
     },
   });
 
-  // Count actual attended events (not points) for badge progress
-  const { data: attendedCount = 0 } = useQuery({
-    queryKey: ["attended-count", user?.id],
+  const { data: attendedRegistrations = [] } = useQuery({
+    queryKey: ["attended-badge-registrations", user?.id],
     queryFn: async () => {
-      if (!user) return 0;
+      if (!user) return [];
       const { data } = await supabase
         .from("event_registrations")
-        .select("event_id, status, checked_in, created_at, sport_level")
+        .select("id,event_id,status,checked_in,created_at,sport_level,events(id,date,difficulty,additional_fields,event_categories(name))")
         .eq("user_id", user.id)
         .or("status.eq.attended,checked_in.eq.true");
-      const registrations = (data || []) as AttendanceRegistration[];
-      return countUniqueAttendedEvents(registrations.filter((registration) => !registration.sport_level?.startsWith("manual:")));
+      return (data || []) as unknown as BadgeProgressRegistration[];
     },
     enabled: !!user,
   });
+  const attendedCount = countGenericAttendanceBadgeProgress(attendedRegistrations);
 
   const completedBadges = userBadges.filter((ub) => ub.completed ?? true);
   const earnedIds = new Set(completedBadges.map((ub) => ub.badge_id));
@@ -104,7 +106,9 @@ const ProfileBadges = () => {
     .slice(0, 3)
     .map((pb) => {
       const dbBadge = allBadges.find((b) => b.name === pb.name);
-      const progress = Math.min(attendedCount, pb.required);
+      const progress = dbBadge
+        ? resolveBadgeProgress({ badge: dbBadge, registrations: attendedRegistrations })
+        : Math.min(attendedCount, pb.required);
       return { ...pb, icon: dbBadge?.icon || "💫", id: dbBadge?.id || pb.name, progress, dbBadge };
     });
 
@@ -115,15 +119,22 @@ const ProfileBadges = () => {
       !earnedNames.has(badge.name)
   );
 
+  const userBadgeFor = (badge: BadgeData) =>
+    userBadges.find((ub) => ub.badge_id === badge.id || ub.badges?.name === badge.name);
+
   const getBadgeMeta = (badge: BadgeData) => {
+    const userBadge = userBadgeFor(badge);
+    const current = resolveBadgeProgress({ badge, userBadge, registrations: attendedRegistrations });
+    const target = getBadgeTarget(badge);
+
     if (badge.requirement_type === "membership_first_150") {
       const hasMembership = Boolean(profile?.membership_id);
       const isEarned = earnedIds.has(badge.id);
 
       return {
         howToGet: "Sottoscrivi la tessera associativa",
-        current: isEarned ? 1 : 0,
-        target: 1,
+        current: isEarned ? target : 0,
+        target,
         unitLabel: "tessera",
         lockedMessage: hasMembership
           ? "Questo badge è riservato ai primi 150 membri della ASD Gruppo Scampagnate"
@@ -131,12 +142,14 @@ const ProfileBadges = () => {
       };
     }
 
+    const remaining = Math.max(target - current, 0);
+
     return {
-      howToGet: `Partecipa a ${badge.required_events} ${badge.required_events === 1 ? "evento" : "eventi"}`,
-      current: Math.min(attendedCount, badge.required_events),
-      target: badge.required_events,
+      howToGet: `Partecipa a ${target} ${target === 1 ? "evento" : "eventi"}`,
+      current,
+      target,
       unitLabel: "eventi",
-      lockedMessage: `Mancano ${badge.required_events - Math.min(attendedCount, badge.required_events)} eventi`,
+      lockedMessage: remaining > 0 ? `Mancano ${remaining} eventi` : "Badge in verifica",
     };
   };
 
