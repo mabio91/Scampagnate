@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => ({
       strategies: "injectManifest",
       srcDir: "src",
       filename: "sw.ts",
-      registerType: "prompt",
+      registerType: "autoUpdate",
       includeAssets: [
         "favicon.png",
         "pwa-512x512.png",

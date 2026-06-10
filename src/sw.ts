@@ -2,6 +2,7 @@
 // Keep OneSignal in the root PWA worker for legacy subscriptions that were
 // created before the dedicated /push/onesignal/ worker split.
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst } from 'workbox-strategies';
@@ -9,6 +10,9 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare let self: ServiceWorkerGlobalScope;
+
+self.skipWaiting();
+clientsClaim();
 
 // Clean old caches
 cleanupOutdatedCaches();
