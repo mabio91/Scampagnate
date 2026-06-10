@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.verify-membership-payment]
 verify_jwt = false
 
+[functions.admin-stripe-fees]
+verify_jwt = true
+
 [functions.stripe-webhook]
 verify_jwt = false
 
