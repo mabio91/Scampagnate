@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { isActiveParticipantRegistration } from "@/lib/eventPayments";
 import { isEventPastByDateTime, isEventUpcomingByDateTime } from "@/lib/eventDates";
 import { cn } from "@/lib/utils";
+import { isAnalyticsEvent } from "@/lib/analyticsEvents";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, PieChart, Pie, AreaChart, Area, Legend, CartesianGrid,
@@ -72,10 +73,11 @@ const OrganizerDashboard = () => {
   const { toast } = useToast();
   const { data: events, isLoading } = useOrganizerEvents();
   const organizerEvents = useMemo(() => events || [], [events]);
+  const analyticsEvents = useMemo(() => organizerEvents.filter(isAnalyticsEvent), [organizerEvents]);
   const [eventFilter, setEventFilter] = useState<EventFilter>("published");
 
-  // Fetch all registrations for organizer's events
-  const eventIds = organizerEvents.map((e) => e.id);
+  // Fetch registrations only for events that can contribute to statistics.
+  const eventIds = analyticsEvents.map((e) => e.id);
   const { data: allRegistrations } = useQuery({
     queryKey: ["organizer-all-registrations", eventIds],
     enabled: eventIds.length > 0,
@@ -94,13 +96,13 @@ const OrganizerDashboard = () => {
   ));
   const draftEvents = organizerEvents.filter((e) => DRAFT_EVENT_STATUSES.has(String(e.status || "")));
   const cancelledEvents = organizerEvents.filter((e) => CANCELLED_EVENT_STATUSES.has(String(e.status || "")));
-  const pastEvents = organizerEvents.filter((e) => isEventPastByDateTime(e));
+  const pastEvents = analyticsEvents.filter((e) => isEventPastByDateTime(e));
   const filteredEvents = {
     published: publishedEvents,
     draft: draftEvents,
     cancelled: cancelledEvents,
   }[eventFilter];
-  const totalRegistrations = organizerEvents.reduce((sum, event) => sum + event.spots_taken, 0);
+  const totalRegistrations = analyticsEvents.reduce((sum, event) => sum + event.spots_taken, 0);
   const emptyMessage = {
     published: "Nessun evento pubblicato",
     draft: "Nessuna bozza",
@@ -109,10 +111,10 @@ const OrganizerDashboard = () => {
 
   // Aggregate analytics
   const analytics = useMemo(() => {
-    if (!organizerEvents.length || !allRegistrations) return null;
+    if (!analyticsEvents.length || !allRegistrations) return null;
 
-    const totalEvents = organizerEvents.length;
-    const pe = organizerEvents.filter((e) => isEventPastByDateTime(e));
+    const totalEvents = analyticsEvents.length;
+    const pe = analyticsEvents.filter((e) => isEventPastByDateTime(e));
     const totalPast = pe.length;
 
     const regsByEvent: Record<string, typeof allRegistrations> = {};
@@ -172,7 +174,7 @@ const OrganizerDashboard = () => {
       totalCancelled, totalNoShows, pastEventStats, pastEventStatsChronological,
       bestAttended, highestAttendance, highestCancellation,
     };
-  }, [organizerEvents, allRegistrations]);
+  }, [analyticsEvents, allRegistrations]);
 
   if (loading) return null;
   if (!user || !isOrganizer) return <Navigate to="/" replace />;
@@ -256,7 +258,7 @@ const OrganizerDashboard = () => {
             <div className="grid grid-cols-3 gap-3">
               <Card className="rounded-2xl p-4 text-center shadow-none">
                 <Calendar className="h-6 w-6 mx-auto text-primary mb-2" />
-                <p className="text-2xl font-bold font-display text-foreground">{organizerEvents.length}</p>
+                <p className="text-2xl font-bold font-display text-foreground">{analyticsEvents.length}</p>
                 <p className="text-xs text-muted-foreground font-display font-bold">Eventi</p>
               </Card>
               <Card className="rounded-2xl p-4 text-center shadow-none">

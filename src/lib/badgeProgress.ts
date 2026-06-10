@@ -23,6 +23,7 @@ export type BadgeProgressRegistration = Omit<EventRegistrationIdentity, "events"
   events?: {
     id?: string | null;
     date?: string | null;
+    status?: string | null;
     difficulty?: string | null;
     additional_fields?: Record<string, unknown> | null;
     event_categories?: { name?: string | null } | { name?: string | null }[] | null;

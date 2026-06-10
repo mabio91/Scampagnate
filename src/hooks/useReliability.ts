@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { dedupeRegistrationsByEvent, isAttendedRegistration } from "@/lib/eventRegistrations";
+import { isAnalyticsRegistration } from "@/lib/analyticsEvents";
 
 export interface ReliabilityData {
   score: number;
@@ -20,10 +21,14 @@ export const useReliability = (userId: string | undefined) => {
 
       const { data: registrations } = await supabase
         .from("event_registrations")
-        .select("status, checked_in, created_at, event_id, sport_level")
+        .select("status, checked_in, created_at, event_id, sport_level, events(status)")
         .eq("user_id", userId);
 
-      const all = dedupeRegistrationsByEvent((registrations || []).filter((r: any) => !r.sport_level?.startsWith("manual:")));
+      const all = dedupeRegistrationsByEvent(
+        (registrations || [])
+          .filter((r: any) => !r.sport_level?.startsWith("manual:"))
+          .filter(isAnalyticsRegistration)
+      );
       const total = all.length;
       if (total === 0) return { score: 100, label: "Ottima affidabilità", totalRegistrations: 0, attended: 0, noShows: 0, cancellations: 0, lateCancellations: 0 };
 

@@ -19,6 +19,7 @@ import {
   resolveBadgeProgress,
   type BadgeProgressRegistration,
 } from "@/lib/badgeProgress";
+import { isAnalyticsRegistration } from "@/lib/analyticsEvents";
 
 const PROGRESSION_BADGES = [
   { name: "Nuovo Arrivato", required: 1, description: "Partecipa al tuo primo evento" },
@@ -85,10 +86,11 @@ const ProfileBadges = () => {
       if (!user) return [];
       const { data } = await supabase
         .from("event_registrations")
-        .select("id,event_id,status,checked_in,created_at,sport_level,events(id,date,difficulty,additional_fields,event_categories(name))")
+        .select("id,event_id,status,checked_in,created_at,sport_level,events(id,date,status,difficulty,additional_fields,event_categories(name))")
         .eq("user_id", user.id)
         .or("status.eq.attended,checked_in.eq.true");
-      return (data || []) as unknown as BadgeProgressRegistration[];
+      return (data || [])
+        .filter(isAnalyticsRegistration) as unknown as BadgeProgressRegistration[];
     },
     enabled: !!user,
   });

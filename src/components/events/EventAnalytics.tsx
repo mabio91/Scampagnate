@@ -11,6 +11,7 @@ import { CalendarX, Users, CheckCircle2, UserX, TrendingUp } from "lucide-react"
 import { isActiveParticipantRegistration } from "@/lib/eventPayments";
 import { isEventPastByDate, parseEventCalendarDate } from "@/lib/eventDates";
 import { findPriceOptionById, getPriceOptionDisplayName, type PriceOptionLike } from "@/lib/priceOptions";
+import { isAnalyticsEvent } from "@/lib/analyticsEvents";
 
 interface Registration {
   id: string;
@@ -33,6 +34,7 @@ interface MeetingPoint {
 interface EventAnalyticsProps {
   event: {
     date: string;
+    status?: string | null;
     spots_total: number;
     spots_taken: number;
     created_at: string;
@@ -67,6 +69,7 @@ function formatCancellationDate(value?: string | null) {
 
 const EventAnalytics = ({ event, registrations, meetingPoints, priceOptions = [] }: EventAnalyticsProps) => {
   const [showCancelledDetails, setShowCancelledDetails] = useState(false);
+  const isEligibleForAnalytics = isAnalyticsEvent(event);
   const registered = registrations.filter(isActiveParticipantRegistration);
   const checkedIn = registered.filter((r) => r.checked_in);
   const isPast = isEventPastByDate(event.date);
@@ -154,6 +157,16 @@ const EventAnalytics = ({ event, registrations, meetingPoints, priceOptions = []
     if (registration.price_option_id) return "Formula non disponibile";
     return "Nessuna formula";
   };
+
+  if (!isEligibleForAnalytics) {
+    return (
+      <div className="space-y-4">
+        <Card className="p-6 text-center">
+          <p className="text-sm text-muted-foreground font-body">Analytics non disponibili per eventi in bozza</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

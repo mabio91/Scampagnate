@@ -40,4 +40,31 @@ describe("EventAnalytics", () => {
     expect(screen.getByText("Formula tesserati")).toBeInTheDocument();
     expect(screen.queryByText(/39/)).not.toBeInTheDocument();
   });
+
+  it("does not show analytics metrics for draft events", () => {
+    render(
+      <EventAnalytics
+        event={{
+          date: "2026-06-20",
+          status: "draft",
+          spots_total: 12,
+          spots_taken: 4,
+          created_at: "2026-06-01T09:00:00",
+        }}
+        meetingPoints={[]}
+        registrations={[{
+          id: "registration-1",
+          created_at: "2026-06-02T10:00:00",
+          status: "paid",
+          checked_in: true,
+          meeting_point_id: null,
+          profiles: {},
+        }]}
+      />,
+    );
+
+    expect(screen.getByText(/Analytics non disponibili/i)).toBeInTheDocument();
+    expect(screen.queryByText("Fill Rate")).not.toBeInTheDocument();
+    expect(screen.queryByText("Total Signups")).not.toBeInTheDocument();
+  });
 });

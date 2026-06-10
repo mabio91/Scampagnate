@@ -27,6 +27,7 @@ import { getPersonalizedRecommendations } from "@/lib/recommendations";
 import { normalizeInterestCategory } from "@/lib/fitScoreAffinityTables";
 import { isEventUpcomingByDateTime } from "@/lib/eventDates";
 import { matchesAllHomeQuickFilters } from "@/lib/homeQuickFilters";
+import { isAnalyticsRegistration } from "@/lib/analyticsEvents";
 
 const NON_MANUAL_REGISTRATION_FILTER = "sport_level.is.null,sport_level.not.like.manual:%";
 
@@ -82,7 +83,7 @@ const Index = () => {
 
       const { data, error } = await supabase
         .from("event_registrations")
-        .select("status, checked_in, events(difficulty, additional_fields, event_categories(name))")
+        .select("status, checked_in, events(status, difficulty, additional_fields, event_categories(name))")
         .eq("user_id", user.id)
         .or(NON_MANUAL_REGISTRATION_FILTER)
         .in("status", ["registered", "paid", "deposit_paid", "attended", "no_show"]);
@@ -91,7 +92,9 @@ const Index = () => {
 
       const joinedCategoryCounts: Record<string, number> = {};
 
-      const attendedRows = (data || []).filter((row: any) => row.checked_in || row.status === "attended");
+      const attendedRows = (data || [])
+        .filter(isAnalyticsRegistration)
+        .filter((row: any) => row.checked_in || row.status === "attended");
 
       for (const row of attendedRows) {
         const eventRecord = Array.isArray((row as any).events) ? (row as any).events[0] : (row as any).events;

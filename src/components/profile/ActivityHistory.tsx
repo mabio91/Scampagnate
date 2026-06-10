@@ -10,6 +10,7 @@ import EmptyState from "@/components/EmptyState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { dedupeRegistrationsByEvent, isAttendedRegistration } from "@/lib/eventRegistrations";
 import { isEventPastByDateTime, parseEventCalendarDate } from "@/lib/eventDates";
+import { isAnalyticsRegistration } from "@/lib/analyticsEvents";
 import {
   Activity, CalendarCheck, CalendarX, AlertCircle, CheckCircle2,
   Flame, Clock, TrendingUp, ChevronDown, ChevronUp, BarChart3, Shield,
@@ -63,7 +64,9 @@ export const ActivityHistory = () => {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (regs || []).filter((r: any) => !r.sport_level?.startsWith("manual:")) as unknown as RegistrationWithEvent[];
+      return (regs || [])
+        .filter((r: any) => !r.sport_level?.startsWith("manual:"))
+        .filter(isAnalyticsRegistration) as unknown as RegistrationWithEvent[];
     },
     enabled: !!user,
   });
