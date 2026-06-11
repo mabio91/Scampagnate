@@ -107,7 +107,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get all OneSignal player IDs for this user
+    // Keep stored subscription IDs available as a fallback for older records.
     const { data: players, error } = await supabase
       .from('onesignal_players')
       .select('player_id')
