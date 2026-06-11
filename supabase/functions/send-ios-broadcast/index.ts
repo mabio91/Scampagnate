@@ -9,7 +9,6 @@ const corsHeaders = {
 
 const DEFAULT_BUNDLE_ID = "com.fmcp.scampagnate.app";
 const PAGE_SIZE = 1000;
-const SEND_CONCURRENCY = 12;
 
 type IOSPushEnvironment = "sandbox" | "production";
 
@@ -18,13 +17,12 @@ type IOSPushTarget = {
   device_token: string;
 };
 
-type UserSendResult = {
-  userId: string;
-  sent: number;
-  failed: number;
-  expired: number;
-  error?: string | null;
+type OneSignalTarget = {
+  user_id: string;
+  player_id: string;
 };
+
+type SupabaseAdminClient = ReturnType<typeof createClient>;
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -60,7 +58,11 @@ function userIdFromVerifiedJwt(authHeader: string | null) {
   }
 }
 
-async function fetchTargets(supabaseAdmin: any, environment: IOSPushEnvironment, bundleId: string) {
+async function fetchIOSTargets(
+  supabaseAdmin: SupabaseAdminClient,
+  environment: IOSPushEnvironment,
+  bundleId: string,
+) {
   const targets: IOSPushTarget[] = [];
 
   for (let from = 0; ; from += PAGE_SIZE) {
@@ -82,24 +84,27 @@ async function fetchTargets(supabaseAdmin: any, environment: IOSPushEnvironment,
   return targets.filter((target) => target.user_id && target.device_token);
 }
 
-async function runWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T) => Promise<R>,
-) {
-  const results: R[] = [];
-  let cursor = 0;
+async function fetchOneSignalTargets(supabaseAdmin: SupabaseAdminClient) {
+  const targets: OneSignalTarget[] = [];
 
-  async function next() {
-    while (cursor < items.length) {
-      const index = cursor;
-      cursor += 1;
-      results[index] = await worker(items[index]);
-    }
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabaseAdmin
+      .from("onesignal_players")
+      .select("user_id,player_id")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const page = (data ?? []) as OneSignalTarget[];
+    targets.push(...page);
+    if (page.length < PAGE_SIZE) break;
   }
 
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, next));
-  return results;
+  return targets.filter((target) => target.user_id && target.player_id);
+}
+
+function uniqueUserIds(targets: Array<{ user_id: string }>) {
+  return Array.from(new Set(targets.map((target) => target.user_id)));
 }
 
 serve(async (req) => {
@@ -113,7 +118,6 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const internalPushSecret = Deno.env.get("SCAMPAGNATE_INTERNAL_PUSH_SECRET") ?? "";
   const bundleId = Deno.env.get("APNS_BUNDLE_ID") || DEFAULT_BUNDLE_ID;
 
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
@@ -149,21 +153,25 @@ serve(async (req) => {
     if (title.length > 120) return json({ error: "Title must be 120 characters or less" }, 400);
     if (message.length > 800) return json({ error: "Message must be 800 characters or less" }, 400);
 
-    const targets = await fetchTargets(supabaseAdmin, environment, bundleId);
-    const uniqueUserIds = Array.from(new Set(targets.map((target) => target.user_id)));
+    const iosTargets = await fetchIOSTargets(supabaseAdmin, environment, bundleId);
+    const oneSignalTargets = await fetchOneSignalTargets(supabaseAdmin);
+    const iosUserIds = uniqueUserIds(iosTargets);
+    const oneSignalUserIds = uniqueUserIds(oneSignalTargets);
+    const broadcastUserIds = Array.from(new Set([...iosUserIds, ...oneSignalUserIds]));
+    const targetCount = iosTargets.length + oneSignalTargets.length;
 
     if (dryRun) {
       return json({
         success: true,
         dry_run: true,
         environment,
-        target_count: targets.length,
-        unique_user_count: uniqueUserIds.length,
+        target_count: targetCount,
+        unique_user_count: broadcastUserIds.length,
+        ios_target_count: iosTargets.length,
+        ios_user_count: iosUserIds.length,
+        onesignal_target_count: oneSignalTargets.length,
+        onesignal_user_count: oneSignalUserIds.length,
       });
-    }
-
-    if (!internalPushSecret) {
-      throw new Error("Internal iOS push secret is not configured");
     }
 
     const { data: campaign, error: campaignError } = await supabaseAdmin
@@ -172,17 +180,17 @@ serve(async (req) => {
         title,
         message,
         environment,
-        status: uniqueUserIds.length === 0 ? "completed" : "sending",
+        status: broadcastUserIds.length === 0 ? "completed" : "sending",
         created_by: userId,
-        target_count: targets.length,
-        unique_user_count: uniqueUserIds.length,
+        target_count: targetCount,
+        unique_user_count: broadcastUserIds.length,
       })
       .select("*")
       .single();
 
     if (campaignError || !campaign) throw campaignError ?? new Error("Unable to create campaign");
 
-    if (uniqueUserIds.length === 0) {
+    if (broadcastUserIds.length === 0) {
       const now = new Date().toISOString();
       const { data: completedCampaign } = await supabaseAdmin
         .from("ios_push_broadcasts")
@@ -199,10 +207,14 @@ serve(async (req) => {
         sent_count: 0,
         failed_count: 0,
         expired_count: 0,
+        ios_target_count: iosTargets.length,
+        ios_user_count: iosUserIds.length,
+        onesignal_target_count: oneSignalTargets.length,
+        onesignal_user_count: oneSignalUserIds.length,
       });
     }
 
-    const notificationRows = uniqueUserIds.map((targetUserId) => ({
+    const notificationRows = broadcastUserIds.map((targetUserId) => ({
       user_id: targetUserId,
       type: "admin_broadcast",
       title,
@@ -218,63 +230,12 @@ serve(async (req) => {
 
     if (notificationError) throw notificationError;
 
-    const notificationIdByUser = new Map(
-      (savedNotifications ?? []).map((notification) => [notification.user_id, notification.id]),
-    );
-
-    const senderUrl = `${supabaseUrl}/functions/v1/send-ios-push-notification`;
-    const results = await runWithConcurrency(uniqueUserIds, SEND_CONCURRENCY, async (targetUserId) => {
-      try {
-        const response = await fetch(senderUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": authHeader ?? "",
-            "Content-Type": "application/json",
-            "x-scampagnate-internal-secret": internalPushSecret,
-          },
-          body: JSON.stringify({
-            user_id: targetUserId,
-            title,
-            message,
-            notification_id: notificationIdByUser.get(targetUserId) ?? null,
-            environment,
-            type: "admin_broadcast",
-          }),
-        });
-
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          return {
-            userId: targetUserId,
-            sent: 0,
-            failed: 1,
-            expired: 0,
-            error: payload?.error || response.statusText,
-          } satisfies UserSendResult;
-        }
-
-        return {
-          userId: targetUserId,
-          sent: Number(payload.sent ?? 0),
-          failed: Number(payload.failed ?? 0),
-          expired: Number(payload.expired ?? 0),
-          error: null,
-        } satisfies UserSendResult;
-      } catch (error) {
-        return {
-          userId: targetUserId,
-          sent: 0,
-          failed: 1,
-          expired: 0,
-          error: error instanceof Error ? error.message : "Unknown error",
-        } satisfies UserSendResult;
-      }
-    });
-
-    const sentCount = results.reduce((sum, result) => sum + result.sent, 0);
-    const failedCount = results.reduce((sum, result) => sum + result.failed, 0);
-    const expiredCount = results.reduce((sum, result) => sum + result.expired, 0);
-    const firstError = results.find((result) => result.error)?.error ?? null;
+    const sentCount = savedNotifications?.length ?? 0;
+    const failedCount = Math.max(broadcastUserIds.length - sentCount, 0);
+    const expiredCount = 0;
+    const firstError = failedCount > 0
+      ? `Unable to queue ${failedCount} push notification${failedCount === 1 ? "" : "s"}`
+      : null;
     const status = failedCount === 0
       ? "completed"
       : sentCount > 0
@@ -302,16 +263,20 @@ serve(async (req) => {
     return json({
       success: status !== "failed",
       campaign: updatedCampaign,
-      target_count: targets.length,
-      unique_user_count: uniqueUserIds.length,
+      target_count: targetCount,
+      unique_user_count: broadcastUserIds.length,
       sent_count: sentCount,
       failed_count: failedCount,
       expired_count: expiredCount,
       error: firstError,
+      ios_target_count: iosTargets.length,
+      ios_user_count: iosUserIds.length,
+      onesignal_target_count: oneSignalTargets.length,
+      onesignal_user_count: oneSignalUserIds.length,
     });
   } catch (error) {
     console.error("send-ios-broadcast error:", error);
-    const message = error instanceof Error ? error.message : "Unable to send iOS broadcast";
+    const message = error instanceof Error ? error.message : "Unable to send push broadcast";
     return json({ error: message }, 500);
   }
 });
